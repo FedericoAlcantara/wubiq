@@ -59,7 +59,7 @@
 	&lt;!-- wubiq servlet --&gt;
 	&lt;servlet&gt;
 		&lt;servlet-name&gt;wubiq&lt;/servlet-name&gt;
-		&lt;servlet-class&gt;org.wubiq.servlets.RemotePrintServlet&lt;/servlet-class&gt;
+		&lt;servlet-class&gt;net.sf.wubiq.servlets.RemotePrintServlet&lt;/servlet-class&gt;
 	&lt;/servlet&gt;
 	&lt;servlet-mapping&gt;
 		&lt;servlet-name&gt;wubiq&lt;/servlet-name&gt;
@@ -72,7 +72,7 @@
 	<target name="update-web-xml" if="web-exists">
 		<condition property="web-defined">
 			<isfileselected file="${workspace.dir}/${target.project}/${webdir}/WEB-INF/web.xml">
-				<contains text="org.wubiq.servlets.RemotePrintServlet" />
+				<contains text="net.sf.wubiq.servlets.RemotePrintServlet" />
 			</isfileselected>
 		</condition>
 		<echo message="wubiq defined in web.xml: ${web-defined}" />
@@ -87,7 +87,7 @@
 	&lt;!-- wubiq servlet --&gt;
 	&lt;servlet&gt;
 		&lt;servlet-name&gt;wubiq&lt;/servlet-name&gt;
-		&lt;servlet-class&gt;org.wubiq.servlets.RemotePrintServlet&lt;/servlet-class&gt;
+		&lt;servlet-class&gt;net.sf.wubiq.servlets.RemotePrintServlet&lt;/servlet-class&gt;
 	&lt;/servlet&gt;
 	&lt;servlet-mapping&gt;
 		&lt;servlet-name&gt;wubiq&lt;/servlet-name&gt;

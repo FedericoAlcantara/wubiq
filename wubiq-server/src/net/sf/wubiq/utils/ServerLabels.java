@@ -1,7 +1,9 @@
 /**
  * 
  */
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
+
+import net.sf.wubiq.utils.Labels;
 
 /**
  * Gets the label for the client

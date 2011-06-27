@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.print.jobs;
+package net.sf.wubiq.print.jobs;
 
 /**
  * Indicates the status of the print job.

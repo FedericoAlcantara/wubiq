@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.servlets;
+package net.sf.wubiq.servlets;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -21,23 +21,24 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.wubiq.common.AttributeInputStream;
+import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.data.RemoteInfo;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
+import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
+import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.print.services.RemotePrintService;
+import net.sf.wubiq.print.services.RemotePrintServiceLookup;
+import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.utils.ServerLabels;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wubiq.common.AttributeInputStream;
-import org.wubiq.common.CommandKeys;
-import org.wubiq.common.ParameterKeys;
-import org.wubiq.common.WebKeys;
-import org.wubiq.data.RemoteInfo;
-import org.wubiq.print.jobs.IRemotePrintJob;
-import org.wubiq.print.jobs.RemotePrintJobStatus;
-import org.wubiq.print.jobs.impl.PrintJobInputStream;
-import org.wubiq.print.managers.IRemotePrintJobManager;
-import org.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import org.wubiq.print.services.RemotePrintService;
-import org.wubiq.print.services.RemotePrintServiceLookup;
-import org.wubiq.utils.Is;
-import org.wubiq.utils.PrintServiceUtils;
-import org.wubiq.utils.ServerLabels;
 
 /**
  * Handles the communication between clients and server.
@@ -389,7 +390,7 @@ public class RemotePrintServlet extends HttpServlet {
 		if (Is.emptyString(testPageName)) {
 			testPageName = "TestPage.pdf";
 		}
-		String testPage = "org/wubiq/reports/" + testPageName;  
+		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		boolean toRemote = false;

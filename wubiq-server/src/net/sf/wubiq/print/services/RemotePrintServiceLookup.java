@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.print.services;
+package net.sf.wubiq.print.services;
 
 import java.util.ArrayList;
 import java.util.HashMap;

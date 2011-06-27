@@ -1,9 +1,9 @@
 /**
  * 
  */
-package org.wubiq.print.managers.impl;
+package net.sf.wubiq.print.managers.impl;
 
-import org.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 
 /**
  * Returns a instance of a print job manager.

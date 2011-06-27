@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,13 +19,15 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
 
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
+import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.print.services.RemotePrintService;
+import net.sf.wubiq.utils.PrintServiceUtils;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wubiq.print.jobs.IRemotePrintJob;
-import org.wubiq.print.jobs.impl.PrintJobInputStream;
-import org.wubiq.print.managers.IRemotePrintJobManager;
-import org.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import org.wubiq.print.services.RemotePrintService;
 
 /**
  * Prints the pdf file directly to print service.

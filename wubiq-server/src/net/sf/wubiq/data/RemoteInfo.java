@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.data;
+package net.sf.wubiq.data;
 
 import java.util.ArrayList;
 import java.util.Date;

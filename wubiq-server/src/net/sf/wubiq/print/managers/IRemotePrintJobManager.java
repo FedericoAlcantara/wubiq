@@ -1,12 +1,12 @@
 /**
  * 
  */
-package org.wubiq.print.managers;
+package net.sf.wubiq.print.managers;
 
 import java.util.Collection;
 
-import org.wubiq.print.jobs.IRemotePrintJob;
-import org.wubiq.print.jobs.RemotePrintJobStatus;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
  * Defines the behavior of Remote print job manager.

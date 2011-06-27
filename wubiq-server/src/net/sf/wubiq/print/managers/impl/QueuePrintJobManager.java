@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.print.managers.impl;
+package net.sf.wubiq.print.managers.impl;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,9 +10,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
-import org.wubiq.print.jobs.IRemotePrintJob;
-import org.wubiq.print.jobs.RemotePrintJobStatus;
-import org.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
+import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+
 
 /**
  * Implements a basic print job manager using memory queues.
@@ -29,7 +30,7 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * @see org.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(org.wubiq.print.jobs.IRemotePrintJob)
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(net.sf.wubiq.print.jobs.IRemotePrintJob)
 	 */
 	@Override
 	public long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
@@ -40,7 +41,7 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * @see org.wubiq.print.managers.IRemotePrintJobManager#removeRemotePrintJob(java.lang.String)
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#removeRemotePrintJob(java.lang.String)
 	 */
 	@Override
 	public boolean removeRemotePrintJob(long jobId) {

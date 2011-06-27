@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.print.jobs.impl;
+package net.sf.wubiq.print.jobs.impl;
 
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -9,8 +9,8 @@ import java.util.Collection;
 
 import javax.print.attribute.Attribute;
 
-import org.wubiq.print.jobs.IRemotePrintJob;
-import org.wubiq.print.jobs.RemotePrintJobStatus;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
  * Implements IRemotePrintJob by using input stream as report transport.
@@ -38,7 +38,7 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	}
 	
 	/**
-	 * @see org.wubiq.print.jobs.IRemotePrintJob#getAttributes()
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getAttributes()
 	 */
 	@Override
 	public Collection<Attribute> getAttributes() {
@@ -46,7 +46,7 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	}
 
 	/**
-	 * @see org.wubiq.print.jobs.IRemotePrintJob#getPrintObject()
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getPrintObject()
 	 */
 	@Override
 	public Object getPrintObject() {
@@ -54,7 +54,7 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	}
 
 	/**
-	 * @see org.wubiq.print.jobs.IRemotePrintJob#getStatus()
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getStatus()
 	 */
 	@Override
 	public RemotePrintJobStatus getStatus() {
