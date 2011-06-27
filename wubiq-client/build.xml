@@ -1,0 +1,66 @@
+<?xml version="1.0"?>
+
+<project name="wubiq-client" basedir="." default="create-client-jar">
+
+	<property name="project" value="wubiq-client" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="src" value="${basedir}/src" />
+	<property name="i18n" value="${basedir}/i18n" />
+	<property name="bin" value="${basedir}/bin" />
+	<property name="lib" value="${basedir}/lib" />
+	<property name="lib-nondeploy" value="${basedir}/lib-nondeploy" />
+	<property name="output.jar" value="${dist}/${project}.jar" />
+	<property name="workspace.dir" value="${basedir}/.." />
+	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
+	
+	<path id="project.classpath">
+		<pathelement path="${lib}"/>
+		<pathelement path="${bin}"/>
+		<fileset dir="${lib}"> 
+			<include name="**/*.jar"/> 
+		</fileset> 
+		<fileset dir="${basedir.common}/bin" />
+		<fileset dir="${basedir.common}/lib">
+			<include name="**/*.jar"/> 
+		</fileset>
+	</path>
+	
+	<path id="project.src">
+		<pathelement path="${src}"/>
+	</path>	
+		
+	<target name="create-client-jar" depends="clean">
+		<available file="${basedir.common}" property="wubiq-common-exists" />
+		<antcall target="create-common-jar" />
+		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="builds.failed"
+				debug="true"> 
+			<src refid="project.src"/>
+			<classpath refid="project.classpath" /> 
+		</javac>
+		<manifestclasspath jarfile="${output.jar}" property="manifest.class.path">
+			<classpath refid="project.classpath"/>
+		</manifestclasspath>
+		<jar jarfile="${output.jar}">
+			<fileset dir="${bin}" />
+			<fileset dir="${i18n}" />
+			<manifest>
+				<attribute name="Class-Path" value="${manifest.class.path}" />
+				<attribute name="Main-Class" value="org.wubiq.clients.LocalPrintManager"/>	
+			</manifest>		
+		</jar>
+		<delete file="${lib}/wubiq-common.jar"/>
+	</target>
+	
+	<target name="create-common-jar" if="wubiq-common-exists">
+		<ant antfile="${basedir.common}/build.xml" dir="${basedir.common}" target="create-common-jar" 
+				inheritall="false" inheritrefs="false"/>
+		<copy file="${basedir.common}/dist/wubiq-common.jar" todir="${lib}" />
+	</target>
+		
+	<target name="clean">
+		<delete dir="${dist}" failonerror="false" />
+		<delete dir="${bin}" failonerror="false" />
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${bin}"/>
+	</target>
+</project>
