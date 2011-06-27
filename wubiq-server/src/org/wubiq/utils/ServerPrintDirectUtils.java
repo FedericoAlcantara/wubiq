@@ -1,0 +1,73 @@
+/**
+ * 
+ */
+package org.wubiq.utils;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Collection;
+import java.util.Locale;
+
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.SimpleDoc;
+import javax.print.attribute.Attribute;
+import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.JobName;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.wubiq.print.jobs.IRemotePrintJob;
+import org.wubiq.print.jobs.impl.PrintJobInputStream;
+import org.wubiq.print.managers.IRemotePrintJobManager;
+import org.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import org.wubiq.print.services.RemotePrintService;
+
+/**
+ * Prints the pdf file directly to print service.
+ * @author Federico Alcantara
+ *
+ */
+public final class ServerPrintDirectUtils {
+	private static Log LOG = LogFactory.getLog(ServerPrintDirectUtils.class);
+	
+	/**
+	 * Prints the pdf file with the given preference.
+	 * @param file pdf file.
+	 * @param preference preference information.
+	 * @throws IOException if service is not found and no default service.
+	 */
+	public static void printPdf(String jobId, String printServiceName, Collection<Attribute> allAttributes, InputStream jreport)  throws IOException {
+		try {
+			PrintService printService = PrintServiceUtils.findPrinterOrDefault(printServiceName);
+			if (printService == null) {
+				throw new IOException(("error.print.noPrintDevice"));
+			}
+			if (printService instanceof RemotePrintService) {
+				RemotePrintService remotePrintService = (RemotePrintService)printService;
+				IRemotePrintJob remotePrintJob = new PrintJobInputStream(remotePrintService.getRemoteName(), jreport, allAttributes);
+				IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
+				manager.addRemotePrintJob(remotePrintService.getUuid(), remotePrintJob);
+			} else {
+				// Set Document Attributes
+				DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(allAttributes);
+				// Set Request Attributes
+				PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(allAttributes);
+				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
+				
+				// Create doc and printJob
+				Doc doc = new SimpleDoc(jreport, DocFlavor.INPUT_STREAM.PDF, attributes);
+				DocPrintJob printJob = printService.createPrintJob();
+	
+				printJob.print(doc, requestAttributes);
+			}
+		} catch (PrintException e) {
+			LOG.error(e.getMessage(), e);
+		}
+	}
+
+}
