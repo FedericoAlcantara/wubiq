@@ -110,7 +110,7 @@
 			<fileset dir="${basedir}/i18n">
 				<include name="*" />
 			</fileset>
-			<fileset dir="${src}" includes="org/wubiq/reports/*.pdf" />
+			<fileset dir="${src}" includes="net/sf/wubiq/reports/*.pdf" />
 		</jar>
 	</target>
 	
