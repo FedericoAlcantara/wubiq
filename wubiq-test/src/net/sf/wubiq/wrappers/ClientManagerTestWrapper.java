@@ -1,8 +1,8 @@
-package org.wubiq.fortests;
+package net.sf.wubiq.wrappers;
 
 import java.net.ConnectException;
 
-import org.wubiq.clients.LocalPrintManager;
+import net.sf.wubiq.clients.LocalPrintManager;
 
 import com.gargoylesoftware.htmlunit.WebClient;
 

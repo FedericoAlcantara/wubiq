@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.tests;
+package net.sf.wubiq.tests;
 
 import junit.framework.TestCase;
 

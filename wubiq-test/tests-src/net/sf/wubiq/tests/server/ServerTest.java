@@ -1,18 +1,19 @@
 /**
  * 
  */
-package org.wubiq.tests.server;
+package net.sf.wubiq.tests.server;
 
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
-import org.wubiq.common.CommandKeys;
-import org.wubiq.common.ParameterKeys;
-import org.wubiq.common.WebKeys;
-import org.wubiq.fortests.ClientManagerTestWrapper;
-import org.wubiq.tests.WubiqBaseTest;
-import org.wubiq.utils.ClientProperties;
-import org.wubiq.utils.ServerLabels;
+import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.tests.WubiqBaseTest;
+import net.sf.wubiq.utils.ClientProperties;
+import net.sf.wubiq.utils.ServerLabels;
+import net.sf.wubiq.wrappers.ClientManagerTestWrapper;
+
 
 import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
