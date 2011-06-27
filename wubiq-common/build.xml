@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+
+<project name="wubiq-common" basedir="." default="create-common-jar">
+
+	<property name="project" value="wubiq-common" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="bin" value="${basedir}/bin" />
+	<property name="lib" value="${basedir}/lib" />
+	<property name="outputjar" value="${dist}/${project}.jar" />
+
+	<path id="project.classpath">
+		<pathelement path="${lib}"/>
+		<pathelement path="${bin}"/>
+		<fileset dir="${lib}"> 
+			<include name="**/*.jar"/> 
+		</fileset> 
+	</path>
+	
+	<path id="project.src">
+		<pathelement path="${basedir}/src"/>
+	</path>	
+	
+	<target name="create-common-jar" depends="clean">
+		<echo message="Compiling common" />
+		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="buildsFailed" 
+				debug="true"> 
+			<src refid="project.src"/>
+			<classpath refid="project.classpath" /> 
+		</javac>
+		<jar jarfile="${outputjar}">
+			<fileset dir="${bin}" />
+			<fileset dir="${basedir}" includes="lib/*" />
+		</jar>
+	</target>
+		
+	<target name="clean">
+		<delete dir="${dist}" failonerror="false" />
+		<delete dir="${bin}" failonerror="false" />
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${bin}"/>
+	</target>
+</project>
