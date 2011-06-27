@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project-modules id="moduleCoreId" project-version="1.5.0">
+    <wb-module deploy-name="wubiq-test">
+        <wb-resource deploy-path="/" source-path="/WebContent"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/tests-src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/properties-src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/i18n"/>
+        <property name="context-root" value="wubiq-test"/>
+        <property name="java-output-path" value="/wubiq-test/build/classes"/>
+    </wb-module>
+</project-modules>
