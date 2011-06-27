@@ -1,5 +1,5 @@
 <?xml version="1.0"?>
-
+ 
 <project name="wubiq-server" basedir="." default="update-wubiq">
 
 	<property name="project" value="wubiq-server" />
