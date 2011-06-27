@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
 
 /**
  * Helper class for testing common conditions.

@@ -1,4 +1,4 @@
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -25,10 +25,11 @@ import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.PageRanges;
 
+import net.sf.wubiq.common.AttributeInputStream;
+import net.sf.wubiq.common.AttributeOutputStream;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wubiq.common.AttributeInputStream;
-import org.wubiq.common.AttributeOutputStream;
 
 /**
  * Utilities for gathering print service information.

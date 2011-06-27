@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.common;
+package net.sf.wubiq.common;
 
 /**
  * @author Federico Alcantara

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
 
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;

@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.common;
+package net.sf.wubiq.common;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -16,9 +16,10 @@ import java.util.Collection;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.standard.MediaPrintableArea;
 
+import net.sf.wubiq.utils.Is;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wubiq.utils.Is;
 
 /**
  * Reads from a stream and converts it to object.

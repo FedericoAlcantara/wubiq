@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.common;
+package net.sf.wubiq.common;
 
 /**
  * Contains keys used for forming parameters.

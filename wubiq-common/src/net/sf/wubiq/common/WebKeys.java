@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.common;
+package net.sf.wubiq.common;
 
 /**
  * Keys used for hadling web pages.
