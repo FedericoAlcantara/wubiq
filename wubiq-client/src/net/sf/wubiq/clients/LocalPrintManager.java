@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.clients;
+package net.sf.wubiq.clients;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -14,6 +14,15 @@ import java.net.UnknownHostException;
 import javax.print.PrintService;
 import javax.print.attribute.Attribute;
 
+import net.sf.wubiq.common.AttributeOutputStream;
+import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.utils.ClientLabels;
+import net.sf.wubiq.utils.ClientPrintDirectUtils;
+import net.sf.wubiq.utils.ClientProperties;
+import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.PrintServiceUtils;
+
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
 import org.apache.commons.cli.GnuParser;
@@ -22,14 +31,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.wubiq.common.AttributeOutputStream;
-import org.wubiq.common.CommandKeys;
-import org.wubiq.common.ParameterKeys;
-import org.wubiq.utils.ClientLabels;
-import org.wubiq.utils.ClientPrintDirectUtils;
-import org.wubiq.utils.ClientProperties;
-import org.wubiq.utils.Is;
-import org.wubiq.utils.PrintServiceUtils;
 
 import com.gargoylesoftware.htmlunit.BinaryPage;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;

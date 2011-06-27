@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -18,6 +18,8 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
+
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

@@ -45,7 +45,7 @@
 			<fileset dir="${i18n}" />
 			<manifest>
 				<attribute name="Class-Path" value="${manifest.class.path}" />
-				<attribute name="Main-Class" value="org.wubiq.clients.LocalPrintManager"/>	
+				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	
 			</manifest>		
 		</jar>
 		<delete file="${lib}/wubiq-common.jar"/>

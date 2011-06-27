@@ -1,7 +1,7 @@
 /**
  * 
  */
-package org.wubiq.utils;
+package net.sf.wubiq.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
