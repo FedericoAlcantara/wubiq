@@ -43,6 +43,8 @@
 		<jar jarfile="${output.jar}">
 			<fileset dir="${bin}" />
 			<fileset dir="${i18n}" />
+			<fileset dir="${lib}" />
+			<fileset dir="${basedir.common}/bin" />
 			<manifest>
 				<attribute name="Class-Path" value="${manifest.class.path}" />
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	

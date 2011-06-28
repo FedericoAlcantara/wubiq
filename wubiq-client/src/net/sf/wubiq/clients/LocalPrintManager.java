@@ -55,7 +55,6 @@ public class LocalPrintManager implements Runnable {
 	private String uuid;
 	private boolean killManager;
 	private boolean refreshServices;
-	private boolean checkConnect;
 	
 	public LocalPrintManager() {
 	}
@@ -81,17 +80,8 @@ public class LocalPrintManager implements Runnable {
 			System.out.println(ClientLabels.get("client.closing_local_manager"));
 		} else {
 			refreshServices = true;
-			checkConnect = true;
 			while (!isKilled()) {
 				try {
-					if (checkConnect) {
-						if (!canConnect()) {
-							System.err.println(ClientLabels.get("client.another_process_is_running"));
-							LOG.debug("client.another_process_is_running");
-							break;
-						}
-						checkConnect = false;
-					}
 					if (refreshServices) {
 						registerPrintServices();
 						refreshServices = false;
@@ -230,23 +220,6 @@ public class LocalPrintManager implements Runnable {
 		try {
 			if (askServer(CommandKeys.IS_KILLED).equals("1")) {
 				returnValue = true;
-			}
-		} catch (ConnectException e) {
-			LOG.debug(e.getMessage());
-		}
-		return returnValue;
-	}
-	
-	/**
-	 * Returns true if the local print manager should connect to the server.
-	 * @return True or false.
-	 */
-	protected boolean canConnect() {
-		boolean returnValue = true;
-		try {
-			if (askServer(CommandKeys.CAN_CONNECT).equals("0")) {
-				returnValue = false;
-				checkConnect = false;
 			}
 		} catch (ConnectException e) {
 			LOG.debug(e.getMessage());
