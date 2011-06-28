@@ -37,6 +37,7 @@
 			<src refid="project.src"/>
 			<classpath refid="project.classpath" /> 
 		</javac>
+		<delete file="${lib}/wubiq-common.jar"/>
 		<manifestclasspath jarfile="${output.jar}" property="manifest.class.path">
 			<classpath refid="project.classpath"/>
 		</manifestclasspath>
@@ -50,7 +51,6 @@
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	
 			</manifest>		
 		</jar>
-		<delete file="${lib}/wubiq-common.jar"/>
 	</target>
 	
 	<target name="create-common-jar" if="wubiq-common-exists">

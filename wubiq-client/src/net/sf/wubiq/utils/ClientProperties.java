@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.utils;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -57,7 +59,15 @@ public class ClientProperties {
 		if (properties == null) {
 			try {
 				properties = new Properties();
-				InputStream stream = Class.class.getResourceAsStream("/wubiq-client.properties");
+				InputStream stream = null;
+				try {
+					stream = new FileInputStream("./wubiq-client.properties");
+				} catch (FileNotFoundException e) {
+					LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
+				}
+				if (stream == null) {
+					stream = Class.class.getResourceAsStream("/wubiq-client.properties");
+				}
 				if (stream == null) {
 					throw new IOException("null");
 				}
