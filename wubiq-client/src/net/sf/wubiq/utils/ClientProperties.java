@@ -62,14 +62,16 @@ public class ClientProperties {
 				InputStream stream = null;
 				try {
 					stream = new FileInputStream("./wubiq-client.properties");
+					LOG.info(ClientLabels.get("client.info_client_properties_found_file"));
 				} catch (FileNotFoundException e) {
 					LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
 				}
 				if (stream == null) {
 					stream = Class.class.getResourceAsStream("/wubiq-client.properties");
-				}
-				if (stream == null) {
-					throw new IOException("null");
+					if (stream == null) {
+						throw new IOException("null");
+					}
+					LOG.info(ClientLabels.get("client.info_client_properties_found"));
 				}
 				properties.load(stream);
 			} catch (IOException e) {

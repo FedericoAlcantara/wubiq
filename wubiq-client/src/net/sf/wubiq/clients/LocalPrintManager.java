@@ -105,11 +105,22 @@ public class LocalPrintManager implements Runnable {
 	}
 	
 	/**
-	 * Kills the manager
+	 * Kills the manager.
 	 */
 	protected void killManager() {
 		try {
 			askServer(CommandKeys.KILL_MANAGER);
+		} catch (ConnectException e) {
+			LOG.debug(e.getMessage());
+		}
+	}
+
+	/**
+	 * Allow manager to re-register.
+	 */
+	protected void bringAlive() {
+		try {
+			askServer(CommandKeys.BRING_ALIVE);
 		} catch (ConnectException e) {
 			LOG.debug(e.getMessage());
 		}
@@ -144,7 +155,7 @@ public class LocalPrintManager implements Runnable {
 			}
 		}
 	}
-
+	
 	/**
 	 * Gets a list of pending jobs.
 	 * @return A list of pending jobs
