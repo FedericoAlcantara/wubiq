@@ -27,8 +27,24 @@ If everything is working you should see a list of servers' print services includ
 
 ***Note: replace *server* with the server, *port* with the port (by default:8080), *yourApplication* with your web application content name.**
 
+Testing remote printing
+-----------------------
+You can test remote printing by downloading wubiq-test.war and deploying it on a tomcat 6 container.
+Assuming it is running on localhost:8080 you can perform the following on a browser.
+After starting up the server, run client(s) with: **java -jar wubiq-client.jar --app wubiq-test --uuid 1234**.
+
+Open a web browser and run these tests urls.
+
+- To view a test page on the browser. **http://localhost:8080/wubiq-test/wubiq.do?command=printTestPage**
+- To show available print services. **http://localhost:8080/wubiq-test/wubiq.do?command=showPrintServices**.
+Take note of the print service name and the uuid (should be 1234 for these tests).  
+- To print a test page to a remote print service (assuming the remote printer is shown in print services as  *HP840C (R) computername*).
+ **http://localhost:8080/wubiq-test/wubiq.do?command=printTestPage&printServiceName=HP840C&&uuid=1234**
+
+
 Limitations
 -----------
--In its first delivery wubiq only allows printing of pdf stream/files. Later installments should handle other type of documents.
--Administration services are not yet implemented for pending printing jobs.
+- In its first delivery wubiq only allows printing of pdf stream/files.
+Later installments should handle other type of documents.
+- Administration services are not yet implemented for pending printing jobs.
 
