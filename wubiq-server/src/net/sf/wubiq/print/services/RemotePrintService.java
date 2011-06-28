@@ -19,6 +19,8 @@ import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.event.PrintServiceAttributeListener;
 
+import net.sf.wubiq.common.WebKeys;
+
 /**
  * Remote Print Services implementation.
  * Its main purpose is to create a discoverable service on the server side.
@@ -92,7 +94,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public String getName() {
-		return getRemoteName() + " (R) " + getRemoteComputerName();
+		return getRemoteName() + WebKeys.REMOTE_SERVICE_SEPARATOR + getRemoteComputerName();
 	}
 
 	/**

@@ -70,6 +70,8 @@ public class RemotePrintServlet extends HttpServlet {
 					killManagerCommand(uuid, request, response);
 				} else if (command.equalsIgnoreCase(CommandKeys.IS_KILLED)) {
 					isKilledCommand(uuid, request, response);
+				} else if (command.equalsIgnoreCase(CommandKeys.BRING_ALIVE)) {
+					bringAliveCommand(uuid, request, response);
 				} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_COMPUTER_NAME)) {
 					registerComputerNameCommand(uuid, request, response);
 				} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_PRINT_SERVICE)) {
@@ -127,6 +129,27 @@ public class RemotePrintServlet extends HttpServlet {
 		}
 	}
 	
+	/**
+	 * Sets remote info to true.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void bringAliveCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		RemoteInfo info = remotes().get(uuid);
+		if (info != null) {
+			info.setKilled(false);
+		} else {
+			info = new RemoteInfo();
+			info.setSession(request.getSession());
+			remotes().put(uuid, info);
+		}
+		response.setContentType("text/html");
+		response.getWriter().print("alive");
+	}
+
 	/**
 	 * Registers computer name and clear its print services.
 	 * @param uuid Unique computer identification.
@@ -333,6 +356,7 @@ public class RemotePrintServlet extends HttpServlet {
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
 		OutputStream output = response.getOutputStream();
 		InputStream input = (InputStream)printJob.getPrintObject();
+		input.reset();
 		while (input.available() > 0) {
 			output.write(input.read());
 		}
@@ -377,6 +401,9 @@ public class RemotePrintServlet extends HttpServlet {
 		}
 		if (input != null) {
 			if (toRemote) {
+				if (printServiceName.contains(WebKeys.REMOTE_SERVICE_SEPARATOR)) {
+					printServiceName = printServiceName.substring(0, printServiceName.indexOf(WebKeys.REMOTE_SERVICE_SEPARATOR));
+				}
 				response.setContentType("text/html");				
 				IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 				IRemotePrintJob remotePrintJob = new PrintJobInputStream(printServiceName, input, null);
