@@ -9,9 +9,11 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
@@ -54,62 +56,37 @@ public class RemotePrintServlet extends HttpServlet {
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String uuid = request.getParameter(ParameterKeys.UUID);
 		String command = request.getParameter(ParameterKeys.COMMAND);
-		if (command.equals(CommandKeys.PRINT_TEST_PAGE)) {
+		notifyRemote(uuid, request);
+		if (command.equalsIgnoreCase(CommandKeys.PRINT_TEST_PAGE)) {
 			printTestPageCommand(uuid, request, response);
-		} else if (command.equals(CommandKeys.SHOW_PRINT_SERVICES)) {
+		} else if (command.equalsIgnoreCase(CommandKeys.SHOW_PRINT_SERVICES)) {
 			showPrintServicesCommand("", request, response);
 		}
 		if (!Is.emptyString(uuid)) {
 			LOG.debug("accesing:" + uuid);
 			if (!Is.emptyString(command)) {
 				LOG.debug("command:" + command);
-				if (command.equals(CommandKeys.CAN_CONNECT)) {
-					canConnectCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.KILL_MANAGER)) {
+				if (command.equalsIgnoreCase(CommandKeys.KILL_MANAGER)) {
 					killManagerCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.IS_KILLED)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.IS_KILLED)) {
 					isKilledCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.REGISTER_COMPUTER_NAME)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_COMPUTER_NAME)) {
 					registerComputerNameCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.REGISTER_PRINT_SERVICE)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_PRINT_SERVICE)) {
 					registerPrintServiceCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.PENDING_JOBS)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.PENDING_JOBS)) {
 					getPendingJobsCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.READ_PRINT_SERVICE_NAME)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_SERVICE_NAME)) {
 					getPrintServiceNameCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.READ_PRINT_ATTRIBUTES)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_ATTRIBUTES)) {
 					getPrintAttributesCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.READ_PRINT_JOB)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
 					getPrintJobCommand(uuid, request, response);
-				} else if (command.equals(CommandKeys.CLOSE_PRINT_JOB)) {
+				} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
 					closePrintJobCommand(uuid, request, response);
 				}
 				
 			}
-			notifyRemote(uuid, request);
-		}
-	}
-
-	/**
-	 * Produces a text response with a 1 for can connect and 0 for no connection allowed.
-	 * @param uuid Unique computer identification.
-	 * @param request Originating request.
-	 * @param response Destination response.
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	private void canConnectCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
-		RemoteInfo info = remotes().get(uuid);
-		if (info == null ||
-				!info.isRemoteActive() ||
-				info.isKilled()) {
-			if (info != null) {
-				info.setKilled(false);
-			}
-			response.getWriter().print('1');
-		} else {
-			response.getWriter().print('0');
 		}
 	}
 	
@@ -439,12 +416,24 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param request Originating request.
 	 */
 	private void notifyRemote(String uuid, HttpServletRequest request) {
-		RemoteInfo info = remotes().get(uuid);
-		if (info == null) {
-			info = new RemoteInfo();
-			remotes().put(uuid, info);
+		if (!Is.emptyString(uuid)) {
+			RemoteInfo info = remotes().get(uuid);
+			if (info == null) {
+				info = new RemoteInfo();
+				remotes().put(uuid, info);
+			}
+			info.setSession(request.getSession(true));
 		}
-		info.setSession(request.getSession(true));
+		Collection<String> uuidToRemoves = new ArrayList<String>();
+		for (Entry<String, RemoteInfo> infoEntry : remotes().entrySet()) {
+			if (!infoEntry.getValue().isRemoteActive()) {
+				uuidToRemoves.add(infoEntry.getKey());
+			}
+		}
+		getRemoteLookup();
+		for (String uuidToRemove : uuidToRemoves) {
+			RemotePrintServiceLookup.removePrintServices(uuidToRemove);
+		}
 	}
 
 	/**
