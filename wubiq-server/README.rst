@@ -37,7 +37,7 @@ Open a web browser and run these tests urls.
 
 - To view a test page on the browser. **http://localhost:8080/wubiq-test/wubiq.do?command=printTestPage**
 - To show available print services. **http://localhost:8080/wubiq-test/wubiq.do?command=showPrintServices**.
-Take note of the print service name and the uuid (should be 1234 for these tests).  
+  Take note of the print service name and the uuid (should be 1234 for these tests).  
 - To print a test page to a remote print service (assuming the remote printer is shown in print services as  *HP840C (R) computername*).
  **http://localhost:8080/wubiq-test/wubiq.do?command=printTestPage&printServiceName=HP840C&&uuid=1234**
 
@@ -45,6 +45,6 @@ Take note of the print service name and the uuid (should be 1234 for these tests
 Limitations
 -----------
 - In its first delivery wubiq only allows printing of pdf stream/files.
-Later installments should handle other type of documents.
+  Later installments should handle other type of documents.
 - Administration services are not yet implemented for pending printing jobs.
 
