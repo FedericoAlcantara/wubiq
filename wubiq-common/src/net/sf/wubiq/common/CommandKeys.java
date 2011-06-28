@@ -10,7 +10,6 @@ package net.sf.wubiq.common;
 public final class CommandKeys {
 	private CommandKeys() {
 	}
-	public static final String CAN_CONNECT = "canConnect";
 	public static final String KILL_MANAGER = "killManager";
 	public static final String IS_KILLED = "isKilled";	
 	public static final String REGISTER_COMPUTER_NAME = "registerComputerName";
