@@ -11,7 +11,8 @@ public final class CommandKeys {
 	private CommandKeys() {
 	}
 	public static final String KILL_MANAGER = "killManager";
-	public static final String IS_KILLED = "isKilled";	
+	public static final String IS_KILLED = "isKilled";
+	public static final String BRING_ALIVE = "bringAlive";
 	public static final String REGISTER_COMPUTER_NAME = "registerComputerName";
 	public static final String REGISTER_PRINT_SERVICE = "registerPrintService";
 	public static final String SHOW_PRINT_SERVICES = "showPrintServices";
