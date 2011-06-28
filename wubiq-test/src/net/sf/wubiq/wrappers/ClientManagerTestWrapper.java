@@ -9,14 +9,24 @@ import com.gargoylesoftware.htmlunit.WebClient;
 public class ClientManagerTestWrapper extends LocalPrintManager {
 
 	@Override
-	public boolean canConnect() {
-		return super.canConnect();
+	public boolean isKilled() {
+		return super.isKilled();
+	}
+	
+	@Override
+	public void bringAlive() {
+		super.bringAlive();
 	}
 	
 	@Override
 	public void registerPrintServices() throws ConnectException {
 		super.registerPrintServices();
 	}	
+	
+	@Override
+	public String[] getPendingJobs() throws ConnectException {
+		return super.getPendingJobs();
+	}
 	
 	@Override
 	public void killManager() {
@@ -42,13 +52,11 @@ public class ClientManagerTestWrapper extends LocalPrintManager {
 	
 	@Override
 	public WebClient getClient() {
-		// TODO Auto-generated method stub
 		return super.getClient();
 	}
 	
 	@Override
 	public Object getPage() {
-		// TODO Auto-generated method stub
 		return super.getPage();
 	}
 

@@ -11,6 +11,7 @@ import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.tests.WubiqBaseTest;
 import net.sf.wubiq.utils.ClientProperties;
+import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.ServerLabels;
 import net.sf.wubiq.wrappers.ClientManagerTestWrapper;
 
@@ -53,16 +54,20 @@ public class ServerTest extends WubiqBaseTest {
 	 * Tests the canConnect command.
 	 * @throws Exception
 	 */
-	public void testCanConnect() throws Exception {
-		String value = manager.askServer(CommandKeys.CAN_CONNECT);
-		assertEquals("Should be 1", "1", value);
+	public void testKillAndBringAlive() throws Exception {
+		manager.bringAlive();
+		String value = manager.askServer(CommandKeys.IS_KILLED);
+		assertEquals("Should be 0", "0", value);
 		//Let's test the actual method in the client.
-		assertFalse("canConnect() should return false, because a connection was established", manager.canConnect());
+		assertFalse("canConnect() should return false, because a connection was established", manager.isKilled());
 		// Kill it
 		manager.askServer(CommandKeys.KILL_MANAGER);
 		// now it should return true;
-		assertTrue("canConnect() should return true", manager.canConnect());
-		assertFalse("canConnect() should return false, because a connection was established", manager.canConnect());
+		value = manager.askServer(CommandKeys.IS_KILLED);
+		assertEquals("Should be 1", "1", value);
+		manager.bringAlive();
+		value = manager.askServer(CommandKeys.IS_KILLED);
+		assertEquals("Should be 0", "0", value);
 	}
 	
 	/**
@@ -70,8 +75,6 @@ public class ServerTest extends WubiqBaseTest {
 	 * @throws Exception
 	 */
 	public void testRegisterPrintServices() throws Exception {
-		String value = manager.askServer(CommandKeys.CAN_CONNECT);
-		assertEquals("Should be 1", "1", value);
 		manager.askServer(CommandKeys.SHOW_PRINT_SERVICES);
 		Object pageObject = manager.getPage();
 		assertTrue("Must be instance of HtmlPage", (pageObject instanceof HtmlPage));
@@ -93,13 +96,8 @@ public class ServerTest extends WubiqBaseTest {
 	public void testPrintTestPage() throws Exception {
 		UnexpectedPage page = (UnexpectedPage)getNewPage(manager, CommandKeys.PRINT_TEST_PAGE);
 		assertEquals("Content type should be application.pdf", "application/pdf", page.getWebResponse().getContentType());
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		InputStream input = page.getInputStream();
-		while (input.available() > 0) {
-			stream.write(input.read());
-		}
-		stream.close();
-		assertTrue("Size should be bigger than 20k and less than 25k", stream.size() > 20000 && stream.size() < 30000);
+		checkTestPageSize(input);
 	}
 
 	public void testRemotePrintTestPage() throws Exception{
@@ -112,12 +110,33 @@ public class ServerTest extends WubiqBaseTest {
 		assertTrue("Should be at least another remote service", rowCount < table.getRowCount());
 		HtmlTableCell cell = table.getCellAt(rowCount, 0);
 		String cellValue = cell.asText();
+		if (cellValue.contains(WebKeys.REMOTE_SERVICE_SEPARATOR)) {
+			cellValue = cellValue.substring(0, cellValue.indexOf(WebKeys.REMOTE_SERVICE_SEPARATOR));
+		}
 		StringBuffer buffer = new StringBuffer("")
 				.append(ParameterKeys.PRINT_SERVICE_NAME)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
 				.append(cellValue);
+		int jobCount = manager.getPendingJobs().length;
 		String response = manager.askServer(CommandKeys.PRINT_TEST_PAGE, buffer.toString());
 		assertEquals("Response ", ServerLabels.get("server.test_page_sent", cellValue), response);
+		// Validate job count
+		int newJobCount = manager.getPendingJobs().length;
+		assertTrue("At least one more pending job should have be created", newJobCount > jobCount);
+		String[] printJobs = manager.getPendingJobs();
+		for (String jobId : printJobs) {
+			StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
+			.append(ParameterKeys.PARAMETER_SEPARATOR)
+			.append(jobId);
+			InputStream input = null;
+			String printServiceName = manager.askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
+			String attributesData = manager.askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter.toString());
+			input = (InputStream)manager.pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
+			assertFalse("Print service name should not be empty", Is.emptyString(printServiceName));
+			assertNotNull("Attributes data should not be null", attributesData);
+			assertNotNull("Input stream should contain the print test page", input);
+			checkTestPageSize(input);
+		}
 	}
 	
 	/** 
@@ -134,5 +153,20 @@ public class ServerTest extends WubiqBaseTest {
 			.append(ParameterKeys.PARAMETER_SEPARATOR)
 			.append(command);
 		return manager.getClient().getPage(buffer.toString());
+	}
+	
+	/**
+	 * Checks the size 
+	 * @param input
+	 * @throws Exception
+	 */
+	private void checkTestPageSize(InputStream input) throws Exception {
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		while (input.available() > 0) {
+			stream.write(input.read());
+		}
+		stream.close();
+		assertTrue("Size should be bigger than 20k and less than 25k (" + stream.size() + ")", stream.size() > 20000 && stream.size() < 30000);
+		
 	}
 }
