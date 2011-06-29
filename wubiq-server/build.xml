@@ -33,6 +33,7 @@
 		<available file="${workspace.dir}/${target.project}/${webdir}" property="project-exists" />
 		<echo message="Project ${target.project} exists: ${project-exists}" />
 		<antcall target="update-wubiq-all" />
+		<antcall target="update-wubiq-all-noproject" />
 	</target>
 	
 	<target name="update-wubiq-all" depends="create-server-jar" if="project-exists" >
@@ -43,6 +44,11 @@
 			</fileset>
 		</copy>
 		<antcall target="web-xml" />
+	</target>
+	
+	<target name="update-wubiq-all-noproject" unless="project-exists" >
+		<input message="Folder ${target.project}/${webdir} was not found. No update were performed" 
+			validargs="Ok" defaultvalue="Ok"/>
 	</target>
 
 	<target name="web-xml">

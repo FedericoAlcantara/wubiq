@@ -54,10 +54,7 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	@Override
 	public PrintService[] getPrintServices(DocFlavor flavor,
 			AttributeSet attributes) {
-		if (flavor.equals(DocFlavor.INPUT_STREAM.PDF)) {
-			return getRemotePrintServices().toArray(new PrintService[0]);
-		}
-		return null;
+		return getRemotePrintServices().toArray(new PrintService[0]);
 	}
 
 	/**

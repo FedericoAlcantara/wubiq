@@ -151,7 +151,7 @@ public class RemotePrintServlet extends HttpServlet {
 	}
 
 	/**
-	 * Registers computer name and clear its print services.
+	 * Registers computer and clear its print services.
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
@@ -162,7 +162,7 @@ public class RemotePrintServlet extends HttpServlet {
 		notifyRemote(uuid, request);
 		RemoteInfo info = remotes().get(uuid);
 		info.setServices(null);
-		info.setComputerName(request.getParameter(ParameterKeys.COMPUTER_NAME));
+		info.setComputerName(request.getRemoteAddr());
 	}
 	
 	/**
@@ -447,6 +447,7 @@ public class RemotePrintServlet extends HttpServlet {
 			RemoteInfo info = remotes().get(uuid);
 			if (info == null) {
 				info = new RemoteInfo();
+				info.setComputerName(request.getRemoteAddr());
 				remotes().put(uuid, info);
 			}
 			info.setSession(request.getSession(true));

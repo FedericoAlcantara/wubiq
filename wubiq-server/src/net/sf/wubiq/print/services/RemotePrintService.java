@@ -128,7 +128,8 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public DocFlavor[] getSupportedDocFlavors() {
-		return new DocFlavor[]{DocFlavor.INPUT_STREAM.PDF};
+		return new DocFlavor[]{DocFlavor.INPUT_STREAM.AUTOSENSE, 
+				DocFlavor.BYTE_ARRAY.AUTOSENSE};
 	}
 
 	/**
@@ -164,7 +165,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public boolean isDocFlavorSupported(DocFlavor flavor) {
-		return flavor.equals(DocFlavor.INPUT_STREAM.PDF);
+		return true;
 	}
 
 	/**

@@ -1,4 +1,18 @@
 ======================
+Wubiq 0.2 (2011-06-28)
+======================
+New Features
+--------
+- Printing can be performed from other formats besides PDF.
+
+Fixes
+-----
+- wubiq-client.jar manifest was not according to Jar_specifications_.
+- Wrong computer id gathered upon initialization in wubiq-server.
+
+.. _Jar_specifications: http://download.oracle.com/javase/1.4.2/docs/guide/jar/jar.html
+
+======================
 Wubiq 0.1 (2011-06-27)
 ======================
 What is Wubiq?
