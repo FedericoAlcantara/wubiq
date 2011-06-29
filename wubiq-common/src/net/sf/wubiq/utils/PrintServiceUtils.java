@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.Attribute;
@@ -44,8 +43,7 @@ public class PrintServiceUtils {
 	 * @return
 	 */
 	public static PrintService[] getPrintServices() {
-		DocFlavor pdfFlavor = DocFlavor.INPUT_STREAM.PDF;
-		return PrintServiceLookup.lookupPrintServices(pdfFlavor, null);
+		return PrintServiceLookup.lookupPrintServices(null, null);
 	}
 	
 	/**
@@ -205,7 +203,7 @@ public class PrintServiceUtils {
 				returnValue.add(Chromaticity.MONOCHROME);
 				returnValue.add(Chromaticity.COLOR);
 			} else if (category.equals(MediaTray.class) || category.equals(MediaSizeName.class)) {
-				Attribute[] attributes = (Attribute[]) printService.getSupportedAttributeValues(Media.class, DocFlavor.INPUT_STREAM.PDF, null);
+				Attribute[] attributes = (Attribute[]) printService.getSupportedAttributeValues(Media.class, null, null);
 				if (attributes != null) {
 					for (Attribute attribute : attributes) {
 						if ((attribute instanceof MediaTray && category.equals(MediaTray.class)) ||
@@ -217,7 +215,7 @@ public class PrintServiceUtils {
 					}
 				}				
 			} else  {
-				Object attributeObject = printService.getSupportedAttributeValues(category, DocFlavor.INPUT_STREAM.PDF, null);
+				Object attributeObject = printService.getSupportedAttributeValues(category, null, null);
 				if (attributeObject instanceof Attribute[]) {
 					Attribute[] attributes = (Attribute[]) attributeObject ;
 					if (attributes != null) {
