@@ -10,6 +10,7 @@
 	<property name="lib" value="${basedir}/lib" />
 	<property name="lib-nondeploy" value="${basedir}/lib-nondeploy" />
 	<property name="output.jar" value="${dist}/${project}.jar" />
+	<property name="jar.build" value="${basedir}/dist/build" />
 	<property name="workspace.dir" value="${basedir}/.." />
 	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
 	
@@ -37,17 +38,14 @@
 			<src refid="project.src"/>
 			<classpath refid="project.classpath" /> 
 		</javac>
+		
+		<antcall target="create-client-jar-build" />
+
 		<delete file="${lib}/wubiq-common.jar"/>
-		<manifestclasspath jarfile="${output.jar}" property="manifest.class.path">
-			<classpath refid="project.classpath"/>
-		</manifestclasspath>
+
 		<jar jarfile="${output.jar}">
-			<fileset dir="${bin}" />
-			<fileset dir="${i18n}" />
-			<fileset dir="${lib}" />
-			<fileset dir="${basedir.common}/bin" />
+			<fileset dir="${jar.build}" />
 			<manifest>
-				<attribute name="Class-Path" value="${manifest.class.path}" />
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	
 			</manifest>		
 		</jar>
@@ -58,11 +56,25 @@
 				inheritall="false" inheritrefs="false"/>
 		<copy file="${basedir.common}/dist/wubiq-common.jar" todir="${lib}" />
 	</target>
+	
+	<target name="create-client-jar-build">
+		<unjar dest="${jar.build}">
+			<fileset dir="${lib}" includes="*.jar" />
+		</unjar>
+		<copy todir="${jar.build}" >
+			<fileset dir="${bin}" includes = "**/*" />
+		</copy>
+		<copy todir="${jar.build}" >
+			<fileset dir="${i18n}" includes = "**/*" />
+		</copy>
+	</target>
 		
 	<target name="clean">
 		<delete dir="${dist}" failonerror="false" />
 		<delete dir="${bin}" failonerror="false" />
+		<delete dir="${jar.build}" failonerror="false" />
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${bin}"/>
+		<mkdir dir="${jar.build}"/>
 	</target>
 </project>

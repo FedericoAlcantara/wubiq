@@ -51,7 +51,7 @@ public final class ClientPrintDirectUtils {
 			requestAttributes.add(new JobName(jobId, Locale.getDefault()));
 			
 			// Create doc and printJob
-			Doc doc = new SimpleDoc(jreport, DocFlavor.INPUT_STREAM.PDF, attributes);
+			Doc doc = new SimpleDoc(jreport, DocFlavor.INPUT_STREAM.AUTOSENSE, attributes);
 			DocPrintJob printJob = printService.createPrintJob();
 
 			printJob.print(doc, requestAttributes);

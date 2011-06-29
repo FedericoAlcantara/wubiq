@@ -55,6 +55,7 @@ public class LocalPrintManager implements Runnable {
 	private String uuid;
 	private boolean killManager;
 	private boolean refreshServices;
+	private boolean debugMode;
 	
 	public LocalPrintManager() {
 	}
@@ -108,10 +109,11 @@ public class LocalPrintManager implements Runnable {
 	 * Kills the manager.
 	 */
 	protected void killManager() {
+		doLog("Kill Manager");
 		try {
 			askServer(CommandKeys.KILL_MANAGER);
 		} catch (ConnectException e) {
-			LOG.debug(e.getMessage());
+			doLog(e.getMessage());
 		}
 	}
 
@@ -119,10 +121,11 @@ public class LocalPrintManager implements Runnable {
 	 * Allow manager to re-register.
 	 */
 	protected void bringAlive() {
+		doLog("Bring alive");
 		try {
 			askServer(CommandKeys.BRING_ALIVE);
 		} catch (ConnectException e) {
-			LOG.debug(e.getMessage());
+			doLog(e.getMessage());
 		}
 	}
 	
@@ -134,13 +137,20 @@ public class LocalPrintManager implements Runnable {
 		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
 			.append(ParameterKeys.PARAMETER_SEPARATOR)
 			.append(jobId);
+		doLog("Process Pending Job:" + jobId);
 		InputStream stream = null;
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
+			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
 			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter.toString());
+			doLog("Job(" + jobId + ") attributesData:" + attributesData);
 			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
+			doLog("Job(" + jobId + ") stream:" + stream);
+			doLog("Job(" + jobId + ") print pdf");
 			ClientPrintDirectUtils.printPdf(jobId, printServiceName, PrintServiceUtils.convertToAttributes(attributesData), stream);
+			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
+			doLog("Job(" + jobId + ") close print job.");
 		} catch (ConnectException e) {
 			throw e;
 		} catch (IOException e) {
@@ -151,7 +161,7 @@ public class LocalPrintManager implements Runnable {
 					stream.close();
 				}
 			} catch (IOException e) {
-				LOG.debug(e.getMessage());
+				doLog(e.getMessage());
 			}
 		}
 	}
@@ -161,6 +171,7 @@ public class LocalPrintManager implements Runnable {
 	 * @return A list of pending jobs
 	 */
 	protected String[] getPendingJobs() throws ConnectException {
+		doLog("Get Pending Jobs");
 		String[]returnValue = new String[]{};
 		String pendingJobResponse = askServer(CommandKeys.PENDING_JOBS);
 		if (!Is.emptyString(pendingJobResponse)
@@ -168,6 +179,7 @@ public class LocalPrintManager implements Runnable {
 			returnValue = pendingJobResponse.substring(ParameterKeys.PENDING_JOB_SIGNATURE.length())
 				.split(ParameterKeys.CATEGORIES_SEPARATOR);
 		}
+		doLog("pending jobs:" + pendingJobResponse);
 		return returnValue;
 	}
 	
@@ -175,11 +187,13 @@ public class LocalPrintManager implements Runnable {
 	 * Registers and initializes remote print services.
 	 */
 	protected void registerComputerName() throws ConnectException {
+		doLog("Register Computer Name");
 		// Gather computer Name.
 		StringBuffer computerName = new StringBuffer(ParameterKeys.COMPUTER_NAME)
 		.append(ParameterKeys.PARAMETER_SEPARATOR); 
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
+			doLog("Register computer name:" + computerName);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -192,7 +206,9 @@ public class LocalPrintManager implements Runnable {
 	protected void registerPrintServices() throws ConnectException {
 		registerComputerName();
 		// Gather printServices.
+		doLog("Register Print Services");
 		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
+			doLog("Print service:" + printService.getName());
 			StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
 					.append(ParameterKeys.PARAMETER_SEPARATOR)
 					.append(printService.getName());
@@ -211,7 +227,7 @@ public class LocalPrintManager implements Runnable {
 					encoder.close();
 					attributes = stream.toString();
 				} catch (Exception e) {
-					LOG.error(e.getMessage());
+					doLog(e.getMessage());
 				}
 
 				categories.append(attributes);
@@ -233,8 +249,9 @@ public class LocalPrintManager implements Runnable {
 				returnValue = true;
 			}
 		} catch (ConnectException e) {
-			LOG.debug(e.getMessage());
+			doLog(e.getMessage());
 		}
+		doLog("Is Killed?" + returnValue);
 		return returnValue;
 	}
 	
@@ -417,6 +434,20 @@ public class LocalPrintManager implements Runnable {
 		
 
 	/**
+	 * @param debugMode the debugMode to set
+	 */
+	public void setDebugMode(boolean debugMode) {
+		this.debugMode = debugMode;
+	}
+
+	/**
+	 * @return the debugMode
+	 */
+	public boolean isDebugMode() {
+		return debugMode;
+	}
+
+	/**
 	 * Appends a character to the buffer only if the buffer doesn't end with that character.
 	 * @param buffer Buffer to be appended.
 	 * @param webChar Character to be appended.
@@ -431,6 +462,14 @@ public class LocalPrintManager implements Runnable {
 		return buffer;
 	}
 	
+	private void doLog(Object message) {
+		if (isDebugMode()) {
+			LOG.info(message);
+		} else {
+			LOG.debug(message);
+		}
+	}
+
 	public static void main (String[] args) throws Exception {
 		LocalPrintManager manager = new LocalPrintManager();
 		Options options = new Options();
@@ -441,6 +480,7 @@ public class LocalPrintManager implements Runnable {
 		options.addOption("a", "app", true, ClientLabels.get("client.command_line_app"));
 		options.addOption("s", "servlet", true, ClientLabels.get("client.command_line_servlet"));
 		options.addOption("u", "uuid", true, ClientLabels.get("client.command_uuid"));
+		options.addOption("d", "debug", false, ClientLabels.get("client.command_debug"));
 		
 		// Set values based on wubiq-client.properties
 		manager.setHost(ClientProperties.getHost());
@@ -474,6 +514,10 @@ public class LocalPrintManager implements Runnable {
 				if (line.hasOption("uuid")) {
 					manager.setUuid(line.getOptionValue("uuid"));
 				}
+				if (line.hasOption("debug")) {
+					manager.setDebugMode(true);
+				}
+
 			}
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());
