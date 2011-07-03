@@ -10,6 +10,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -101,7 +102,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void killManagerCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteInfo info = remotes().get(uuid);
+		RemoteInfo info = getRemoteInfo(uuid);
 		if (info != null) {
 			info.setKilled(true);
 			getRemoteLookup();
@@ -120,7 +121,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void isKilledCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteInfo info = remotes().get(uuid);
+		RemoteInfo info = getRemoteInfo(uuid);
 		response.setContentType("text/html");
 		if (info != null && info.isKilled()) {
 			response.getWriter().print("1");
@@ -138,13 +139,12 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void bringAliveCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteInfo info = remotes().get(uuid);
+		RemoteInfo info = getRemoteInfo(uuid);
 		if (info != null) {
 			info.setKilled(false);
 		} else {
 			info = new RemoteInfo();
-			info.setSession(request.getSession());
-			remotes().put(uuid, info);
+			getRemotes().put(uuid, info);
 		}
 		response.setContentType("text/html");
 		response.getWriter().print("alive");
@@ -160,9 +160,11 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void registerComputerNameCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		notifyRemote(uuid, request);
-		RemoteInfo info = remotes().get(uuid);
+		RemoteInfo info = getRemoteInfo(uuid);
 		info.setServices(null);
 		info.setComputerName(request.getRemoteAddr());
+		response.setContentType("text/html");
+		response.getWriter().print("ok");
 	}
 	
 	/**
@@ -174,7 +176,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void registerPrintServiceCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteInfo info = remotes().get(uuid);
+		RemoteInfo info = getRemoteInfo(uuid);
 		if (info != null) {
 			String serviceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 			String categoriesString = request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES);
@@ -223,6 +225,8 @@ public class RemotePrintServlet extends HttpServlet {
 			}
 			getRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
+			response.setContentType("text/html");
+			response.getWriter().print("ok");
 		}
 	}
 	
@@ -376,6 +380,8 @@ public class RemotePrintServlet extends HttpServlet {
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		manager.removeRemotePrintJob(Long.parseLong(jobId));
+		response.setContentType("text/html");
+		response.getWriter().print("ok");
 	}
 	
 	/**
@@ -430,7 +436,20 @@ public class RemotePrintServlet extends HttpServlet {
 		doGet(request, response);
 	}
 	
-	public static Map<String, RemoteInfo> remotes() {
+	/**
+	 * Gets the remote info and updates its last accessed time.
+	 * @param uuid Unique identifier to look for
+	 * @return
+	 */
+	private RemoteInfo getRemoteInfo(String uuid) {
+		RemoteInfo returnValue = getRemotes().get(uuid);
+		if (returnValue != null) {
+			returnValue.setLastAccessedTime(new Date().getTime());
+		}
+		return returnValue;
+	}
+	
+	private Map<String, RemoteInfo> getRemotes() {
 		if (remotes == null) {
 			remotes = new HashMap<String, RemoteInfo>();
 		}
@@ -444,16 +463,16 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void notifyRemote(String uuid, HttpServletRequest request) {
 		if (!Is.emptyString(uuid)) {
-			RemoteInfo info = remotes().get(uuid);
+			RemoteInfo info = getRemoteInfo(uuid);
 			if (info == null) {
 				info = new RemoteInfo();
 				info.setComputerName(request.getRemoteAddr());
-				remotes().put(uuid, info);
+				getRemotes().put(uuid, info);
 			}
-			info.setSession(request.getSession(true));
+			info.setLastAccessedTime(new Date().getTime());
 		}
 		Collection<String> uuidToRemoves = new ArrayList<String>();
-		for (Entry<String, RemoteInfo> infoEntry : remotes().entrySet()) {
+		for (Entry<String, RemoteInfo> infoEntry : getRemotes().entrySet()) {
 			if (!infoEntry.getValue().isRemoteActive()) {
 				uuidToRemoves.add(infoEntry.getKey());
 			}
@@ -467,7 +486,7 @@ public class RemotePrintServlet extends HttpServlet {
 	/**
 	 * @return the remoteLookup
 	 */
-	public static RemotePrintServiceLookup getRemoteLookup() {
+	public RemotePrintServiceLookup getRemoteLookup() {
 		if (remoteLookup == null) {
 			remoteLookup = new RemotePrintServiceLookup();
 			PrintServiceLookup.registerServiceProvider(remoteLookup);

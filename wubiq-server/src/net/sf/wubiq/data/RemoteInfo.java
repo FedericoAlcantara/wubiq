@@ -7,8 +7,6 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
-import javax.servlet.http.HttpSession;
-
 /**
  * Contains the remote info and status.
  * @author Federico Alcantara
@@ -18,38 +16,20 @@ public class RemoteInfo {
 	/**
 	 * Time in milliseconds where after not having notification from remote the connection is considered dead.
 	 */
-	private HttpSession session;
 	private Integer inactiveTime;
 	private Boolean killed;
 	private List<String> services;
 	private String computerName;
+	private Long lastAccessedTime;
 	
 	public RemoteInfo() {
-		this(20000); // 5 minutes default idle time
+		this(20000); // 20 seconds default idle time
+		lastAccessedTime = new Date().getTime();
 	}
 	
 	public RemoteInfo(Integer inactiveTime) {
 		this.inactiveTime = inactiveTime;
 		this.setKilled(false);
-	}
-	/**
-	 * @param inactiveTime the inactiveTime to set
-	 */
-
-	/**
-	 * @param session the session to set
-	 */
-	public void setSession(HttpSession session) {
-		session.setMaxInactiveInterval(getInactiveTime());
-		this.session = session;
-		
-	}
-
-	/**
-	 * @return the session
-	 */
-	public HttpSession getSession() {
-		return session;
 	}
 	
 	/**
@@ -115,12 +95,26 @@ public class RemoteInfo {
 	}
 
 	/**
+	 * @param lastAccessedTime the lastAccessedTime to set
+	 */
+	public void setLastAccessedTime(Long lastAccessedTime) {
+		this.lastAccessedTime = lastAccessedTime;
+	}
+
+	/**
+	 * @return the lastAccessedTime
+	 */
+	public Long getLastAccessedTime() {
+		return lastAccessedTime;
+	}
+
+	/**
 	 * Determines if the remote is active and working.
 	 * @return True or false.
 	 */
 	public boolean isRemoteActive() {
 		long currentTime = new Date().getTime();
-		if (Math.abs(currentTime - getSession().getLastAccessedTime()) > inactiveTime) {
+		if (Math.abs(currentTime - getLastAccessedTime()) > inactiveTime) {
 			return false;
 		} 
 		return true;
