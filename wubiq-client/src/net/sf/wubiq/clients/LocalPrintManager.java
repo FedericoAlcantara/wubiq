@@ -3,13 +3,20 @@
  */
 package net.sf.wubiq.clients;
 
+import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
+import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.net.UnknownHostException;
+import java.net.UnknownServiceException;
 
 import javax.print.PrintService;
 import javax.print.attribute.Attribute;
@@ -32,13 +39,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import com.gargoylesoftware.htmlunit.BinaryPage;
-import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
-import com.gargoylesoftware.htmlunit.TextPage;
-import com.gargoylesoftware.htmlunit.UnexpectedPage;
-import com.gargoylesoftware.htmlunit.WebClient;
-import com.gargoylesoftware.htmlunit.html.HtmlPage;
-
 /**
  * Keeps gathering printer information and reports it to the server.
  * @author Federico Alcantara
@@ -46,8 +46,6 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
  */
 public class LocalPrintManager implements Runnable {
 	private static final Log LOG = LogFactory.getLog(LocalPrintManager.class);
-	private WebClient client;
-	private Object page;
 	private String host;
 	private String port;
 	private String applicationName;
@@ -265,7 +263,7 @@ public class LocalPrintManager implements Runnable {
 	protected String askServer(String command, String...parameters) throws ConnectException {
 		return (String)pollServer(command, parameters);
 	}
-	
+		
 	/**
 	 * Send command to server and returns it response as an object.
 	 * @param command Command to send to the server.
@@ -275,6 +273,51 @@ public class LocalPrintManager implements Runnable {
 	 */
 	protected Object pollServer(String command, String... parameters) throws ConnectException {
 		Object returnValue = "";
+		URL webUrl = null;
+		HttpURLConnection connection = null;
+		BufferedReader reader = null;
+		try {
+			webUrl = new URL(getEncodedUrl(command, parameters));
+			connection = (HttpURLConnection) webUrl.openConnection();
+			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+			Object content = connection.getContent();
+			if (connection.getContentType() != null) {
+				if (connection.getContentType().equals("application/pdf")) {
+					returnValue = (InputStream)content;
+				} else if (connection.getContentType().equals("text/html")) {
+					reader = new BufferedReader(new InputStreamReader((InputStream)content));
+					StringBuffer value = new StringBuffer("");
+					while (reader.ready()) {
+						value.append(reader.readLine());
+					}
+					returnValue = value.toString();
+				}
+			}
+		} catch (MalformedURLException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (UnknownServiceException e) {
+			doLog(e.getMessage());
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		} finally {			
+			if (reader != null) {
+				try {
+					reader.close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
+	 * @param command Command to be encoded
+	 * @param parameters Arrays of parameters in the form parameterName=parameterValue
+	 * @return
+	 */
+	protected String getEncodedUrl(String command, String... parameters) {
 		StringBuffer url = new StringBuffer(hostServletUrl())
 			.append('?')
 			.append(ParameterKeys.UUID)
@@ -287,40 +330,27 @@ public class LocalPrintManager implements Runnable {
 			.append(command);
 		}
 		for (String parameter: parameters) {
-			url.append('&')
-					.append(parameter);
-		}
-		
-		try {
-			page = getClient().getPage(url.toString());
-			if (page instanceof HtmlPage) {
-				returnValue = ((HtmlPage)page).asText();
-			} else if (page instanceof TextPage) {
-				returnValue = ((TextPage)page).getContent();
-			} else if (page instanceof BinaryPage) {
-				returnValue = ((BinaryPage)page).getInputStream();
-			} else if (page instanceof UnexpectedPage) {
-				returnValue = ((UnexpectedPage)page).getInputStream();
+			String parameterString = parameter;
+			if (parameter.contains("=")) {
+				String parameterName = parameter.substring(0, parameter.indexOf("="));
+				String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
+				try {
+					parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
+					parameterString = parameterName + "=" + parameterValue;
+				} catch (UnsupportedEncodingException e) {
+					LOG.error(e.getMessage());
+				}
 			}
-		} catch (ConnectException e) {
-			LOG.debug(e.getMessage());
-			refreshServices = true;
-			throw e;
-		} catch (FailingHttpStatusCodeException e) {
-			LOG.error(e.getMessage());
-		} catch (MalformedURLException e) {
-			LOG.error(e.getMessage());
-		} catch (IOException e) {
-			LOG.error(e.getMessage());
+			url.append('&')
+					.append(parameterString);
 		}
-		return returnValue;
+		return url.toString();
 	}
-
 	/**
 	 * Properly concatenates host, port, applicationName and servlet name.
 	 * @return Concatenated strings.
 	 */
-	public String hostServletUrl() {
+	protected String hostServletUrl() {
 		StringBuffer buffer = new StringBuffer(getHost());
 		if (!Is.emptyString(getPort())) {
 			buffer.append(':')
@@ -337,31 +367,6 @@ public class LocalPrintManager implements Runnable {
 		return buffer.toString();
 	}
 	
-	/**
-	 * Sets the new client.
-	 * @param client the new client.
-	 */
-	protected void setClient(WebClient client) {
-		this.client = client;
-	}
-	
-	/**
-	 * @return the client
-	 */
-	protected WebClient getClient() {
-		if (client == null) {
-			client = new WebClient();
-		}
-		return client;
-	}
-
-	/**
-	 * @return the page
-	 */
-	protected Object getPage() {
-		return page;
-	}
-
 	/**
 	 * @param host the host to set
 	 */
