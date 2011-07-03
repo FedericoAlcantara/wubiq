@@ -480,12 +480,12 @@ public class LocalPrintManager implements Runnable {
 		Options options = new Options();
 		options.addOption("?", "help", false, ClientLabels.get("client.command_line_help"));
 		options.addOption("k", "kill", false, ClientLabels.get("client.command_line_kill"));
-		options.addOption("host", true, ClientLabels.get("client.command_line_host"));
+		options.addOption("h", "host", true, ClientLabels.get("client.command_line_host"));
 		options.addOption("p", "port", true, ClientLabels.get("client.command_line_port"));
 		options.addOption("a", "app", true, ClientLabels.get("client.command_line_app"));
 		options.addOption("s", "servlet", true, ClientLabels.get("client.command_line_servlet"));
-		options.addOption("u", "uuid", true, ClientLabels.get("client.command_uuid"));
-		options.addOption("d", "debug", false, ClientLabels.get("client.command_debug"));
+		options.addOption("u", "uuid", true, ClientLabels.get("client.command_line_uuid"));
+		options.addOption("v", "verbose", false, ClientLabels.get("client.command_line_verbose"));
 		
 		// Set values based on wubiq-client.properties
 		manager.setHost(ClientProperties.getHost());
@@ -522,15 +522,14 @@ public class LocalPrintManager implements Runnable {
 				if (line.hasOption("debug")) {
 					manager.setDebugMode(true);
 				}
-
+				Thread r = new Thread(manager);
+				r.start();
 			}
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();
 			formatter.printHelp("java -jar wubiq-client.jar", options, true);
 		}
-		Thread r = new Thread(manager);
-		r.start();
 	}
 
 }
