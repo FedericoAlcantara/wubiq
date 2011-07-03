@@ -4,6 +4,7 @@
 package net.sf.wubiq.common;
 
 /**
+ * Constants used for client/server commands recognition.
  * @author Federico Alcantara
  *
  */

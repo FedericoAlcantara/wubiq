@@ -10,7 +10,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Manages the label resources.
+ * Manages the label resources. Used as a platform for client and server labels handling.
  * @author Federico Alcantara
  *
  */

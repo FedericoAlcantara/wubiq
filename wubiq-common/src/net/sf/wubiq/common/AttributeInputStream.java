@@ -22,7 +22,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Reads from a stream and converts it to object.
+ * Reads from a stream deserializing it into object.
  * @author Federico Alcantara
  *
  */
@@ -33,7 +33,7 @@ public class AttributeInputStream extends InputStreamReader {
 	}
 	
 	/**
-	 * Deserialize a single attribute from the stream.
+	 * Deserializes a single attribute from the stream.
 	 * @return Object or null.
 	 * @throws IOException
 	 */

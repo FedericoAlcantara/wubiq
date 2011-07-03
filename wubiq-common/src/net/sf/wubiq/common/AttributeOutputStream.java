@@ -18,7 +18,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Serialize print attributes.
+ * Serializes print attributes.
  * @author Federico Alcantara
  *
  */
@@ -62,7 +62,7 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	}
 	
 	/**
-	 * Serialize SetOfIntegerSyntax attribute types.
+	 * Serialize SetOfIntegerSyntax attribute type.
 	 * @param attribute Attribute to serialize.
 	 * @param data Buffered data to output.
 	 * @throws IOException
@@ -86,6 +86,12 @@ public class AttributeOutputStream extends OutputStreamWriter {
 		data.append(memberData);
 	}
 	
+	/**
+	 * Analyze the attribute and perform the appropriate serialization.
+	 * @param attribute Attribute to be inspected.
+	 * @return StringBuffer containing the attribute serialization.
+	 * @throws IOException
+	 */
 	private StringBuffer convertAttributeToString(Attribute attribute) throws IOException {
 		StringBuffer data = new StringBuffer(attribute.getClass().getName())
 		.append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);

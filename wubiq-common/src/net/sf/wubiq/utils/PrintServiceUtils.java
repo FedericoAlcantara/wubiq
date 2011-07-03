@@ -31,7 +31,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Utilities for gathering print service information.
+ * Utility for querying print service information.
  * @author Federico Alcantara
  *
  */
@@ -39,8 +39,8 @@ public class PrintServiceUtils {
 	private static final Log LOG = LogFactory.getLog(PrintServiceUtils.class);
 	
 	/**
-	 * Returns an array of printers supporting PDF flavor
-	 * @return
+	 * Returns an array of printers supporting PDF flavor.
+	 * @return Array of print services. If no services is found the return value is JVM implementation dependent.
 	 */
 	public static PrintService[] getPrintServices() {
 		return PrintServiceLookup.lookupPrintServices(null, null);
