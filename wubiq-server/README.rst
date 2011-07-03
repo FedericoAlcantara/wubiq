@@ -22,7 +22,7 @@ java -jar wubiq-client.jar --host server --port port --app yourApplication --uui
 5.To test if your clients are connecting on any browser write: http://server:port/yourApplication/wubiq.do?command=showPrintServices.
 If everything is working you should see a list of servers' print services including remote print services (R).
 
-***Note: replace *server* with the server, *port* with the port (by default:8080), *yourApplication* with your web application content name.**
+**Note: replace *server* with the server, *port* with the port (by default:8080), *yourApplication* with your web application content name.**
 
 Testing remote printing
 -----------------------
