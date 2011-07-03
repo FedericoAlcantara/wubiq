@@ -359,7 +359,7 @@ public class RemotePrintServlet extends HttpServlet {
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
 		OutputStream output = response.getOutputStream();
-		InputStream input = (InputStream)printJob.getPrintObject();
+		InputStream input = (InputStream)printJob.getPrintDocument();
 		input.reset();
 		while (input.available() > 0) {
 			output.write(input.read());

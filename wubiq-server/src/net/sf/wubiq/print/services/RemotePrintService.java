@@ -25,7 +25,7 @@ import net.sf.wubiq.common.WebKeys;
  * Remote Print Services implementation.
  * Its main purpose is to create a discoverable service on the server side.
  * Shouldn't be use for printing. DocPrintJob is ignored and PrintServiceAttributeListener.
- * It mimics the behavior of a PDF capable printer.
+ * It mimics the behavior of a InputStream capable print service.
  * @author Federico Alcantara
  *
  */

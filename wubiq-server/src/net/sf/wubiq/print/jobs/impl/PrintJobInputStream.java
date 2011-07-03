@@ -14,12 +14,13 @@ import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
  * Implements IRemotePrintJob by using input stream as report transport.
+ * This implementation relies on memory space for saving the print job document.
  * @author Federico Alcantara
  *
  */
 public class PrintJobInputStream implements IRemotePrintJob {
 	private Collection<Attribute> attributes;
-	private InputStream printObject;
+	private InputStream printDocument;
 	private RemotePrintJobStatus status;
 	private String printServiceName;
 	
@@ -27,7 +28,7 @@ public class PrintJobInputStream implements IRemotePrintJob {
 		if (attributes == null) {
 			attributes = new ArrayList<Attribute>();
 		}
-		this.printObject = inputStream;
+		this.printDocument = inputStream;
 		this.attributes = attributes;
 		this.printServiceName = printServiceName;
 	}
@@ -46,11 +47,11 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	}
 
 	/**
-	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getPrintObject()
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getPrintDocument()
 	 */
 	@Override
-	public Object getPrintObject() {
-		return printObject;
+	public Object getPrintDocument() {
+		return printDocument;
 	}
 
 	/**

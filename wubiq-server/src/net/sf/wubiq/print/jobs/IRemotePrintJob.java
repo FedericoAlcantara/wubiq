@@ -9,6 +9,7 @@ import javax.print.attribute.Attribute;
 
 
 /**
+ * Defines the contract for remote print jobs.
  * @author Federico Alcantara
  *
  */
@@ -24,9 +25,9 @@ public interface IRemotePrintJob {
 	Collection<Attribute> getAttributes();
 	
 	/**
-	 * @return The object to be printed.
+	 * @return The document to be printed.
 	 */
-	Object getPrintObject();
+	Object getPrintDocument();
 	
 	/**
 	 * @return Current job status.

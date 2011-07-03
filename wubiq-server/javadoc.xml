@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project default="javadoc">
+    <target name="javadoc">
+        <javadoc access="public" author="true" classpath="lib/commons-logging-1.1.1.jar:../wubiq-common/bin:lib-nondeploy/servlet-api.jar:../wubiq-client/lib/commons-logging-1.1.1.jar:../wubiq-client/lib/commons-cli-1.2.jar:../wubiq-common/lib/commons-logging-1.1.1.jar" destdir="doc" doctitle="Wubiq - Remote Printing for Groups" nodeprecated="false" nodeprecatedlist="false" noindex="false" nonavbar="false" notree="false" packagenames="net.sf.wubiq.data,net.sf.wubiq.print.services,net.sf.wubiq.print.jobs.impl,net.sf.wubiq.servlets,net.sf.wubiq.print.managers.impl,net.sf.wubiq.utils,net.sf.wubiq.print.jobs,net.sf.wubiq.common,net.sf.wubiq.clients,net.sf.wubiq.print.managers" source="1.6" sourcepath="../wubiq-client/src:../wubiq-client/i18n:src:../wubiq-common/src:i18n:../wubiq-client/properties-src" splitindex="true" use="true" version="true"/>
+    </target>
+</project>

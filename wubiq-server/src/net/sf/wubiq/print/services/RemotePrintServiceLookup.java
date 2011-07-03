@@ -16,6 +16,7 @@ import javax.print.PrintServiceLookup;
 import javax.print.attribute.AttributeSet;
 
 /**
+ * Implements a RemotePrintServiceLookup aware of the remote print services that are online.
  * @author Federico Alcantara
  *
  */
@@ -101,7 +102,7 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	}		
 
 	/**
-	 * @return the allRemotePrintServices
+	 * @return All remote print services.
 	 */
 	private static Map<String, Map<String, PrintService>> getAllRemotePrintServices() {
 		if (allRemotePrintServices == null) {
@@ -111,7 +112,7 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	}
 
 	/**
-	 * @return the remoteDefaultPrintService
+	 * @return Default remote print service.
 	 */
 	private static PrintService getRemoteDefaultPrintService() {
 		return remoteDefaultPrintService;

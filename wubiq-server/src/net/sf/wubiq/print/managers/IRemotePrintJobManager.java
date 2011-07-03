@@ -9,7 +9,8 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
- * Defines the behavior of Remote print job manager.
+ * Defines the contract of Remote print job manager.
+ * Implementations of remote print job manager decides how print jobs are stored and removed.
  * @author Federico Alcantara.
  *
  */

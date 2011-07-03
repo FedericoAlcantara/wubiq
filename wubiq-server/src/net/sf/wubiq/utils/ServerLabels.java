@@ -6,7 +6,7 @@ package net.sf.wubiq.utils;
 import net.sf.wubiq.utils.Labels;
 
 /**
- * Gets the label for the client
+ * Gets the labels associated to wubiq's servers.
  * @author Federico Alcantara
  *
  */

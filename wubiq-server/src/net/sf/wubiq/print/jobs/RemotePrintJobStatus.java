@@ -4,7 +4,7 @@
 package net.sf.wubiq.print.jobs;
 
 /**
- * Indicates the status of the print job.
+ * Indicates the possible status of print jobs.
  * @author Federico Alcantara
  *
  */

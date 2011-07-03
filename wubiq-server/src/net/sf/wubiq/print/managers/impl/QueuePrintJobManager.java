@@ -16,7 +16,7 @@ import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 
 
 /**
- * Implements a basic print job manager using memory queues.
+ * Implements a basic print job manager using in-memory queues.
  * @author Federico Alcantara
  *
  */
@@ -30,7 +30,7 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(net.sf.wubiq.print.jobs.IRemotePrintJob)
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(java.lang.String, net.sf.wubiq.print.jobs.IRemotePrintJob)
 	 */
 	@Override
 	public long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
@@ -41,7 +41,7 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#removeRemotePrintJob(java.lang.String)
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#removeRemotePrintJob(long)
 	 */
 	@Override
 	public boolean removeRemotePrintJob(long jobId) {

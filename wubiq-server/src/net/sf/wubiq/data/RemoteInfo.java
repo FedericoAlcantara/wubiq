@@ -8,7 +8,7 @@ import java.util.Date;
 import java.util.List;
 
 /**
- * Contains the remote info and status.
+ * Contains the remote info and status. Each connected client is represented by an instance of this class.
  * @author Federico Alcantara
  *
  */
