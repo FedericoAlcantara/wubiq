@@ -75,37 +75,34 @@ public class ServerTest extends WubiqBaseTest {
 	 * @throws Exception
 	 */
 	public void testRegisterPrintServices() throws Exception {
-		manager.askServer(CommandKeys.SHOW_PRINT_SERVICES);
-		Object pageObject = manager.getPage();
-		assertTrue("Must be instance of HtmlPage", (pageObject instanceof HtmlPage));
-		HtmlPage page = (HtmlPage)pageObject;
+		HtmlPage page = (HtmlPage)getNewPage(CommandKeys.SHOW_PRINT_SERVICES);
 		HtmlTable table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
 		int originalRowCount = table.getRowCount();
 		manager.registerPrintServices();
-		page = (HtmlPage)getNewPage(manager, CommandKeys.SHOW_PRINT_SERVICES);
+		page = (HtmlPage)getNewPage(CommandKeys.SHOW_PRINT_SERVICES);
 		table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
 		int newRowCount = ((originalRowCount - 1) * 2) + 1;
 		assertEquals("Should be the double of print services registered", newRowCount, table.getRowCount());
 		// Checks if it unregisters.
 		manager.killManager();
-		page = (HtmlPage)getNewPage(manager, CommandKeys.SHOW_PRINT_SERVICES);
+		page = (HtmlPage)getNewPage(CommandKeys.SHOW_PRINT_SERVICES);
 		table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
 		assertEquals("Should be no remote print services registered", originalRowCount, table.getRowCount());
 	}
 	
 	public void testPrintTestPage() throws Exception {
-		UnexpectedPage page = (UnexpectedPage)getNewPage(manager, CommandKeys.PRINT_TEST_PAGE);
+		UnexpectedPage page = (UnexpectedPage)getNewPage(CommandKeys.PRINT_TEST_PAGE);
 		assertEquals("Content type should be application.pdf", "application/pdf", page.getWebResponse().getContentType());
 		InputStream input = page.getInputStream();
 		checkTestPageSize(input);
 	}
 
 	public void testRemotePrintTestPage() throws Exception{
-		HtmlPage page = (HtmlPage)getNewPage(manager, CommandKeys.SHOW_PRINT_SERVICES);
+		HtmlPage page = (HtmlPage)getNewPage(CommandKeys.SHOW_PRINT_SERVICES);
 		HtmlTable table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
 		int rowCount = table.getRowCount();
 		manager.registerPrintServices();
-		page = (HtmlPage)getNewPage(manager, CommandKeys.SHOW_PRINT_SERVICES);
+		page = (HtmlPage)getNewPage(CommandKeys.SHOW_PRINT_SERVICES);
 		table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
 		assertTrue("Should be at least another remote service", rowCount < table.getRowCount());
 		HtmlTableCell cell = table.getCellAt(rowCount, 0);
@@ -146,13 +143,8 @@ public class ServerTest extends WubiqBaseTest {
 	 * @return
 	 * @throws Exception
 	 */
-	private Object getNewPage(ClientManagerTestWrapper manager, String command) throws Exception {
-		StringBuffer buffer = new StringBuffer(manager.hostServletUrl())
-			.append('?')
-			.append(ParameterKeys.COMMAND)
-			.append(ParameterKeys.PARAMETER_SEPARATOR)
-			.append(command);
-		return manager.getClient().getPage(buffer.toString());
+	private Object getNewPage(String command) throws Exception {
+		return getPage(manager.getEncodedUrl(command));
 	}
 	
 	/**

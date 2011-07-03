@@ -4,8 +4,6 @@ import java.net.ConnectException;
 
 import net.sf.wubiq.clients.LocalPrintManager;
 
-import com.gargoylesoftware.htmlunit.WebClient;
-
 public class ClientManagerTestWrapper extends LocalPrintManager {
 
 	@Override
@@ -46,20 +44,10 @@ public class ClientManagerTestWrapper extends LocalPrintManager {
 	}
 	
 	@Override
-	public void setClient(WebClient client) {
-		super.setClient(client);
+	public String getEncodedUrl(String command, String... parameters) {
+		return super.getEncodedUrl(command, parameters);
 	}
 	
-	@Override
-	public WebClient getClient() {
-		return super.getClient();
-	}
-	
-	@Override
-	public Object getPage() {
-		return super.getPage();
-	}
-
 	@Override
 	public void setHost(String host) {
 		super.setHost(host);
