@@ -14,6 +14,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
+ * Collects the value from wubiq-client.properties.
+ * This file search is as followed. It is first searched in the folder in the system file where the client is run.
+ * If not found then it is look up in the default paths of java class paths.
  * @author Federico Alcantara
  *
  */

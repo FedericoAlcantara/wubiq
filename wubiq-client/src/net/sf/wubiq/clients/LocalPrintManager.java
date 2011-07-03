@@ -41,6 +41,11 @@ import org.apache.commons.logging.LogFactory;
 
 /**
  * Keeps gathering printer information and reports it to the server.
+ * This is the main element of the client.
+ * If the connection to the client fails, it keeps trying until the program is closed.
+ * As soon as connection is established identifies itself, sends the probable computer name
+ * and, if defined, a unique id (UUID). If no unique id is defined, the uuid is automatically
+ * generated.
  * @author Federico Alcantara
  *
  */
@@ -128,7 +133,7 @@ public class LocalPrintManager implements Runnable {
 	}
 	
 	/**
-	 * Process pending job.
+	 * Process a single pending job.
 	 * @param jobId Id of the job to be printed.
 	 */
 	protected void processPendingJob(String jobId) throws ConnectException {
@@ -145,7 +150,7 @@ public class LocalPrintManager implements Runnable {
 			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") stream:" + stream);
 			doLog("Job(" + jobId + ") print pdf");
-			ClientPrintDirectUtils.printPdf(jobId, printServiceName, PrintServiceUtils.convertToAttributes(attributesData), stream);
+			ClientPrintDirectUtils.print(jobId, printServiceName, PrintServiceUtils.convertToAttributes(attributesData), stream);
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") close print job.");
@@ -165,8 +170,8 @@ public class LocalPrintManager implements Runnable {
 	}
 	
 	/**
-	 * Gets a list of pending jobs.
-	 * @return A list of pending jobs
+	 * Ask to the server for a list of all pending jobs for this client instance.
+	 * @return A list of pending jobs, or a zero element String array. Never null.
 	 */
 	protected String[] getPendingJobs() throws ConnectException {
 		doLog("Get Pending Jobs");
@@ -182,7 +187,7 @@ public class LocalPrintManager implements Runnable {
 	}
 	
 	/**
-	 * Registers and initializes remote print services.
+	 * Registers the probable computer name, and initializes remote print services for this client instance.
 	 */
 	protected void registerComputerName() throws ConnectException {
 		doLog("Register Computer Name");
@@ -199,7 +204,7 @@ public class LocalPrintManager implements Runnable {
 	}
 
 	/**
-	 * Register Local print services in remote.
+	 * Registers all valid local print services to the remote server.
 	 */
 	protected void registerPrintServices() throws ConnectException {
 		registerComputerName();
@@ -237,7 +242,8 @@ public class LocalPrintManager implements Runnable {
 	}
 
 	/**
-	 * If true the manager must exit.
+	 * Asks the server if this instance of the client should be closed. This will allow for remote cancellation of client.
+	 * (Not yet implemented).
 	 * @return
 	 */
 	protected boolean isKilled() {
@@ -254,11 +260,11 @@ public class LocalPrintManager implements Runnable {
 	}
 	
 	/**
-	 * Send command to server and returns it response as a string.
+	 * Send command to server and returns its response as a string.
 	 * @param command Command to send to the server.
 	 * @param parameters List of parameters to be sent.
 	 * @return Response from server.
-	 * @throws Exception
+	 * @throws ConnectException If it can't connect to the server.
 	 */
 	protected String askServer(String command, String...parameters) throws ConnectException {
 		return (String)pollServer(command, parameters);
@@ -269,7 +275,7 @@ public class LocalPrintManager implements Runnable {
 	 * @param command Command to send to the server.
 	 * @param parameters List of parameters to be sent.
 	 * @return Response from server.
-	 * @throws Exception
+	 * @throws ConnectException If it can't connect to the server.
 	 */
 	protected Object pollServer(String command, String... parameters) throws ConnectException {
 		Object returnValue = "";
@@ -313,9 +319,9 @@ public class LocalPrintManager implements Runnable {
 	
 	/**
 	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
-	 * @param command Command to be encoded
-	 * @param parameters Arrays of parameters in the form parameterName=parameterValue
-	 * @return
+	 * @param command Command to be encoded as part of the url.
+	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
+	 * @return Url string with parameterValues encoded.
 	 */
 	protected String getEncodedUrl(String command, String... parameters) {
 		StringBuffer url = new StringBuffer(hostServletUrl())
@@ -475,6 +481,11 @@ public class LocalPrintManager implements Runnable {
 		}
 	}
 
+	/**
+	 * Parses the command line and starts an instance of a client.
+	 * @param args Command line arguments.
+	 * @throws Exception
+	 */
 	public static void main (String[] args) throws Exception {
 		LocalPrintManager manager = new LocalPrintManager();
 		Options options = new Options();

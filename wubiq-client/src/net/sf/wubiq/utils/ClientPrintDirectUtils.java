@@ -25,7 +25,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Prints the pdf file directly to print service.
+ * Sends the document object directly to print service.
  * @author Federico Alcantara
  *
  */
@@ -33,25 +33,26 @@ public final class ClientPrintDirectUtils {
 	private static Log LOG = LogFactory.getLog(ClientPrintDirectUtils.class);
 	
 	/**
-	 * Prints the pdf file with the given preference.
-	 * @param file pdf file.
-	 * @param preference preference information.
+	 * Sends the input stream file with the given preferences to the print service.
+	 * @param jobId Identifying job id.
+	 * @param printAttributes Attributes to be set on the print service.
+	 * @param printDocument Document as input stream to sent to the print service.
 	 * @throws IOException if service is not found and no default service.
 	 */
-	public static void printPdf(String jobId, String printServiceName, Collection<Attribute> allAttributes, InputStream jreport)  throws IOException {
+	public static void print(String jobId, String printServiceName, Collection<Attribute> printAttributes, InputStream printDocument)  throws IOException {
 		try {
 			PrintService printService = PrintServiceUtils.findPrinterOrDefault(printServiceName);
 			if (printService == null) {
 				throw new IOException(("error.print.noPrintDevice"));
 			}
 			// Set Document Attributes
-			DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(allAttributes);
+			DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
 			// Set Request Attributes
-			PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(allAttributes);
+			PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);
 			requestAttributes.add(new JobName(jobId, Locale.getDefault()));
 			
 			// Create doc and printJob
-			Doc doc = new SimpleDoc(jreport, DocFlavor.INPUT_STREAM.AUTOSENSE, attributes);
+			Doc doc = new SimpleDoc(printDocument, DocFlavor.INPUT_STREAM.AUTOSENSE, attributes);
 			DocPrintJob printJob = printService.createPrintJob();
 
 			printJob.print(doc, requestAttributes);
