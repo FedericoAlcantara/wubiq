@@ -50,7 +50,7 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getPrintDocument()
 	 */
 	@Override
-	public Object getPrintDocument() {
+	public InputStream getPrintDocument() {
 		return printDocument;
 	}
 

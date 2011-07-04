@@ -52,7 +52,7 @@ public class RemotePrintServlet extends HttpServlet {
 	private static final Log LOG = LogFactory.getLog(RemotePrintServlet.class);
 	private static final long serialVersionUID = 1L;
 	private static Map<String, RemoteInfo> remotes;
-	private static RemotePrintServiceLookup remoteLookup;
+	public static RemotePrintServiceLookup remoteLookup;
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String uuid = request.getParameter(ParameterKeys.UUID);
@@ -359,7 +359,7 @@ public class RemotePrintServlet extends HttpServlet {
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
 		OutputStream output = response.getOutputStream();
-		InputStream input = (InputStream)printJob.getPrintDocument();
+		InputStream input = printJob.getPrintDocument();
 		input.reset();
 		while (input.available() > 0) {
 			output.write(input.read());

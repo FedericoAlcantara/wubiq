@@ -16,6 +16,11 @@ import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
  */
 public interface IRemotePrintJobManager {
 	/**
+	 * Initializes the print job manager.
+	 */
+	void initialize() throws Exception;
+	
+	/**
 	 * Add remote print job to a queue. The implementation of the queue
 	 * is not specified, nor its behavior (LIFO, FIFO, any other).
 	 * @param queueId Id of the queue that will have the print job. It can be interpreted

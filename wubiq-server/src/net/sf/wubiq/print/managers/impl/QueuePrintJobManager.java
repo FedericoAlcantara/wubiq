@@ -24,9 +24,12 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	private static long lastJobId;
 	private static Map<Long, String> printJobs;
 	private static Map<String, Map<Long, IRemotePrintJob>> queues;
-	private static QueuePrintJobManager instance;
 	
-	private QueuePrintJobManager() {
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
+	 */
+	@Override
+	public void initialize() {
 	}
 
 	/**
@@ -121,14 +124,5 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 		}
 		return returnValue;
 	}	
-	/**
-	 * @return Singleton remote print job manager.
-	 */
-	protected static QueuePrintJobManager getInstance() {
-		if (instance == null) {
-			instance = new QueuePrintJobManager();
-		}
-		return instance;
-	}
 
 }

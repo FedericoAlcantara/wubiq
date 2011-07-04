@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.print.jobs;
 
+import java.io.InputStream;
 import java.util.Collection;
 
 import javax.print.attribute.Attribute;
@@ -27,7 +28,7 @@ public interface IRemotePrintJob {
 	/**
 	 * @return The document to be printed.
 	 */
-	Object getPrintDocument();
+	InputStream getPrintDocument();
 	
 	/**
 	 * @return Current job status.
