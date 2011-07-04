@@ -38,5 +38,6 @@
 	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-server"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-client"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-common"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hsqldb.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>

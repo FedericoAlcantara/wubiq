@@ -10,6 +10,9 @@
     <welcome-file>default.jsp</welcome-file>
   </welcome-file-list>
 
+	<listener>
+		<listener-class>net.sf.wubiq.servlets.HsqldbContextListener</listener-class>
+	</listener>
 	<!-- wubiq servlet -->
 	<servlet>
 		<servlet-name>wubiq</servlet-name>
