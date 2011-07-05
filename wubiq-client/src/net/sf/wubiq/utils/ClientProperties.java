@@ -36,7 +36,7 @@ public class ClientProperties {
 	}
 	
 	public static String getApplicationName() {
-		return get("application", "wubiq");
+		return get("application", "wubiq-server");
 	}
 	
 	public static String getServletName() {

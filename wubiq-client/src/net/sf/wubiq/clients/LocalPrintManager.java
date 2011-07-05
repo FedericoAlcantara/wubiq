@@ -98,7 +98,12 @@ public class LocalPrintManager implements Runnable {
 					Thread.sleep(10000);
 				} catch (ConnectException e) {
 					LOG.debug(e.getMessage());
-					refreshServices = false;
+					refreshServices = true;
+					try {
+						Thread.sleep(10000);
+					} catch (InterruptedException e1) {
+						LOG.debug(e.getMessage());
+					}
 				} catch (InterruptedException e) {
 					LOG.error(e.getMessage(), e);
 					break;
@@ -304,7 +309,8 @@ public class LocalPrintManager implements Runnable {
 		} catch (UnknownServiceException e) {
 			doLog(e.getMessage());
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(e.getMessage() + " " + webUrl);
+			throw new ConnectException(e.getMessage());
 		} finally {			
 			if (reader != null) {
 				try {
