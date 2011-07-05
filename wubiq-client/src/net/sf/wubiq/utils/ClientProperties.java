@@ -4,7 +4,6 @@
 package net.sf.wubiq.utils;
 
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
@@ -28,23 +27,23 @@ public class ClientProperties {
 	}
 
 	public static String getHost() {
-		return get("host", "http://localhost");
+		return get("host", "http://localhost").trim();
 	}
 	
 	public static String getPort() {
-		return get("port", "8080");
+		return get("port", "8080").trim();
 	}
 	
 	public static String getApplicationName() {
-		return get("application", "wubiq-server");
+		return get("application", "wubiq-server").trim();
 	}
 	
 	public static String getServletName() {
-		return get("servlet", "wubiq.do");
+		return get("servlet", "wubiq.do").trim();
 	}
 	
 	public static String getUuid() {
-		return get("uuid", UUID.randomUUID().toString());
+		return get("uuid", UUID.randomUUID().toString()).trim();
 	}
 	
 	private static String get(String key, String defaultValue) {
@@ -66,7 +65,7 @@ public class ClientProperties {
 				try {
 					stream = new FileInputStream("./wubiq-client.properties");
 					LOG.info(ClientLabels.get("client.info_client_properties_found_file"));
-				} catch (FileNotFoundException e) {
+				} catch (Exception e) {
 					LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
 				}
 				if (stream == null) {
@@ -77,7 +76,7 @@ public class ClientProperties {
 					LOG.info(ClientLabels.get("client.info_client_properties_found"));
 				}
 				properties.load(stream);
-			} catch (IOException e) {
+			} catch (Exception e) {
 				LOG.info(ClientLabels.get("client.info_no_client_properties_found"));
 			}
 		}

@@ -284,11 +284,14 @@ public class LocalPrintManager implements Runnable {
 	 */
 	protected Object pollServer(String command, String... parameters) throws ConnectException {
 		Object returnValue = "";
+		String url = null;
 		URL webUrl = null;
 		HttpURLConnection connection = null;
 		BufferedReader reader = null;
 		try {
-			webUrl = new URL(getEncodedUrl(command, parameters));
+			url = getEncodedUrl(command, parameters);
+			doLog("URL:" + url);
+			webUrl = new URL(url);
 			connection = (HttpURLConnection) webUrl.openConnection();
 			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 			Object content = connection.getContent();
@@ -305,11 +308,11 @@ public class LocalPrintManager implements Runnable {
 				}
 			}
 		} catch (MalformedURLException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(e.getMessage() + "->" + url);
 		} catch (UnknownServiceException e) {
 			doLog(e.getMessage());
 		} catch (IOException e) {
-			LOG.error(e.getMessage() + " " + webUrl);
+			LOG.error(e.getMessage() + " " + url);
 			throw new ConnectException(e.getMessage());
 		} finally {			
 			if (reader != null) {
@@ -404,7 +407,7 @@ public class LocalPrintManager implements Runnable {
 	 * @return the port
 	 */
 	public String getPort() {
-		return port;
+		return port.trim();
 	}
 
 	/**
@@ -418,7 +421,7 @@ public class LocalPrintManager implements Runnable {
 	 * @return the applicationName
 	 */
 	public String getApplicationName() {
-		return applicationName;
+		return applicationName.trim();
 	}
 
 	/**
@@ -432,7 +435,7 @@ public class LocalPrintManager implements Runnable {
 	 * @return the servletName
 	 */
 	public String getServletName() {
-		return servletName;
+		return servletName.trim();
 	}
 	
 	/**
@@ -446,7 +449,7 @@ public class LocalPrintManager implements Runnable {
 	 * @return the uuid
 	 */
 	public String getUuid() {
-		return uuid;
+		return uuid.trim();
 	}
 		
 
