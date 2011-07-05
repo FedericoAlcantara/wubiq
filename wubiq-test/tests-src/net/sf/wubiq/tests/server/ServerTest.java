@@ -3,7 +3,6 @@
  */
 package net.sf.wubiq.tests.server;
 
-import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 
 import net.sf.wubiq.common.CommandKeys;
@@ -14,7 +13,6 @@ import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.ServerLabels;
 import net.sf.wubiq.wrappers.ClientManagerTestWrapper;
-
 
 import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -153,12 +151,13 @@ public class ServerTest extends WubiqBaseTest {
 	 * @throws Exception
 	 */
 	private void checkTestPageSize(InputStream input) throws Exception {
-		ByteArrayOutputStream stream = new ByteArrayOutputStream();
-		while (input.available() > 0) {
-			stream.write(input.read());
-		}
-		stream.close();
-		assertTrue("Size should be bigger than 20k and less than 25k (" + stream.size() + ")", stream.size() > 20000 && stream.size() < 30000);
-		
+		int count = 0;
+		int value = -1;
+		do {
+			value = input.read();
+			count++;
+		} while (value != -1);
+	
+		assertTrue("Size should be bigger than 20k and less than 25k (" + count + ")", count > 20000 && count < 30000);
 	}
 }
