@@ -11,6 +11,10 @@ Printing requests can then be directed to the server along with the print servic
 that will receive the document. The clients polls the server for its pending print jobs, if any, 
 takes care of them and notifies the server of its success.
 
+Documentation
+-------------
+Wiki pages are available at: **http://sourceforge.net/apps/mediawiki/wubiq/index.php?title=Main_Page**
+
 Installing wubiq as a server
 ----------------------------
 1. Download wubiq.zip and extract its files.
