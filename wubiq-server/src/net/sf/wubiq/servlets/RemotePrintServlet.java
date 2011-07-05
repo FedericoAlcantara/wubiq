@@ -39,6 +39,7 @@ import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
+import net.sf.wubiq.utils.ServerPrintDirectUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -52,7 +53,8 @@ public class RemotePrintServlet extends HttpServlet {
 	private static final Log LOG = LogFactory.getLog(RemotePrintServlet.class);
 	private static final long serialVersionUID = 1L;
 	private static Map<String, RemoteInfo> remotes;
-	public static RemotePrintServiceLookup remoteLookup;
+	private static RemotePrintServiceLookup remoteLookup;
+	private static ServerPrintDirectUtils printDirectUtils;
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String uuid = request.getParameter(ParameterKeys.UUID);
@@ -416,10 +418,15 @@ public class RemotePrintServlet extends HttpServlet {
 				manager.addRemotePrintJob(uuid, remotePrintJob);
 				response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
 			} else {
-				response.setContentType("application/pdf");				
-				OutputStream output = response.getOutputStream();
-				while (input.available() > 0) {
-					output.write(input.read());
+				if (Is.emptyString(printServiceName)) {
+					response.setContentType("application/pdf");				
+					OutputStream output = response.getOutputStream();
+					while (input.available() > 0) {
+						output.write(input.read());
+					}
+				} else {
+					getPrintDirectUtils().print("testpage-0", printServiceName, null, input);
+					response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
 				}
 			}
 			input.close();
@@ -486,11 +493,21 @@ public class RemotePrintServlet extends HttpServlet {
 	/**
 	 * @return the remoteLookup
 	 */
-	public RemotePrintServiceLookup getRemoteLookup() {
+	private RemotePrintServiceLookup getRemoteLookup() {
 		if (remoteLookup == null) {
 			remoteLookup = new RemotePrintServiceLookup();
 			PrintServiceLookup.registerServiceProvider(remoteLookup);
 		}
 		return remoteLookup;
+	}
+
+	/**
+	 * @return the printDirectUtils
+	 */
+	private static ServerPrintDirectUtils getPrintDirectUtils() {
+		if (printDirectUtils == null) {
+			printDirectUtils = new ServerPrintDirectUtils();
+		}
+		return printDirectUtils;
 	}
 }

@@ -1,4 +1,22 @@
 ======================
+Wubiq 0.4 (2011-07-04)
+======================
+wubiq-client
+------------
+- Automatically recovers from server failures.
+- Verbose option for tracing its behavior.
+
+wubiq-server
+------------
+- Converted to web application.
+- Implements hsqldb based print management, making it more scalable.
+- Support for external server configuration.
+
+wubiq-common
+------------
+- Comprises all elements for accessing the remote print functions from web application or clients.
+
+======================
 Wubiq 0.3 (2011-07-01)
 ======================
 - wubiq-client rewritten to remove use of HtmlUnit. Size of jar changed from 12mb to 184kb.
@@ -7,7 +25,7 @@ Wubiq 0.3 (2011-07-01)
 Wubiq 0.2 (2011-06-28)
 ======================
 New Features
---------
+------------
 - Printing can be performed from other formats besides PDF.
 
 Fixes
