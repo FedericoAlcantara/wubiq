@@ -10,5 +10,6 @@
 		</attributes>
 	</classpathentry>
 	<classpathentry kind="lib" path="lib-nondeploy/servlet-api.jar"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-client"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
