@@ -239,9 +239,11 @@ public class PrintServiceUtils {
 	 */
 	public static DocAttributeSet createDocAttributes(Collection<Attribute> attributes) {
 		DocAttributeSet returnValue = new HashDocAttributeSet();
-		for (Attribute attribute: attributes) {
-			if (attribute instanceof DocAttribute) {
-				returnValue.add(attribute);
+		if (attributes != null) {
+			for (Attribute attribute: attributes) {
+				if (attribute instanceof DocAttribute) {
+					returnValue.add(attribute);
+				}
 			}
 		}
 		return returnValue;
@@ -254,9 +256,11 @@ public class PrintServiceUtils {
 	 */
 	public static PrintRequestAttributeSet createPrintRequestAttributes(Collection<Attribute> attributes) {
 		PrintRequestAttributeSet returnValue = new HashPrintRequestAttributeSet();
-		for (Attribute attribute: attributes) {
-			if (attribute instanceof PrintRequestAttribute) {
-				returnValue.add(attribute);
+		if (attributes != null) {
+			for (Attribute attribute: attributes) {
+				if (attribute instanceof PrintRequestAttribute) {
+					returnValue.add(attribute);
+				}
 			}
 		}
 		return returnValue;
@@ -287,20 +291,22 @@ public class PrintServiceUtils {
 	 */
 	public static Collection<Attribute> convertToAttributes(String attributesData) {
 		Collection<Attribute> returnValue = new ArrayList<Attribute>();
-		ByteArrayInputStream stream = new ByteArrayInputStream(attributesData.getBytes());
-		AttributeInputStream decoder = new AttributeInputStream(stream);
-		try {
-			returnValue = decoder.readAttributes();
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		} finally {
+		if (!Is.emptyString(attributesData)) {
+			ByteArrayInputStream stream = new ByteArrayInputStream(attributesData.getBytes());
+			AttributeInputStream decoder = new AttributeInputStream(stream);
 			try {
-				stream.close();
+				returnValue = decoder.readAttributes();
 			} catch (IOException e) {
-				LOG.debug(e.getMessage());
+				LOG.error(e.getMessage(), e);
+			} finally {
+				try {
+					stream.close();
+				} catch (IOException e) {
+					LOG.debug(e.getMessage());
+				}
+				stream = null;
+				decoder = null;
 			}
-			stream = null;
-			decoder = null;
 		}
 		return returnValue;
 	}

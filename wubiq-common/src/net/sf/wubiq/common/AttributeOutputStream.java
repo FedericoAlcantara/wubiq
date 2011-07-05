@@ -46,16 +46,18 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	 */
 	public void writeAttributes(Collection<Attribute> attributesCollection) throws IOException {
 		StringBuffer attributes = new StringBuffer("");
-		for (Attribute attribute : attributesCollection) {
-			if (attribute != null) {
-				if (attributes.length() > 0) {
-					attributes.append(ParameterKeys.ATTRIBUTES_SEPARATOR);
-				}
-				try {
-					StringBuffer serialized = convertAttributeToString(attribute);
-					attributes.append(serialized);
-				} catch (Exception e) {
-					LOG.error(e.getMessage());
+		if (attributesCollection != null) {
+			for (Attribute attribute : attributesCollection) {
+				if (attribute != null) {
+					if (attributes.length() > 0) {
+						attributes.append(ParameterKeys.ATTRIBUTES_SEPARATOR);
+					}
+					try {
+						StringBuffer serialized = convertAttributeToString(attribute);
+						attributes.append(serialized);
+					} catch (Exception e) {
+						LOG.error(e.getMessage());
+					}
 				}
 			}
 		}

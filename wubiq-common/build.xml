@@ -29,7 +29,6 @@
 		</javac>
 		<jar jarfile="${outputjar}">
 			<fileset dir="${bin}" />
-			<fileset dir="${basedir}" includes="lib/*" />
 		</jar>
 	</target>
 		
