@@ -1,4 +1,11 @@
 ======================
+Wubiq 0.5 (2011-07-07)
+======================
+- Wubiq Manager. Implementation of a web manager
+- Auto refresh of print services when the server fails.
+- Remote killing of the client.
+
+======================
 Wubiq 0.4 (2011-07-05)
 ======================
 wubiq-client

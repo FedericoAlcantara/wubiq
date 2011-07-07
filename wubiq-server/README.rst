@@ -23,6 +23,16 @@ Installing wubiq as a server
 4. You can test if wubiq is running by opening a web browser and write: http://server:port/yourApplication/wubiq.do?command=printTestPage.
    If everything is fine you should see a test page on your browser or pdf viewer.
 
+Using the wubiq manager
+-----------------------
+Wubiq has a manager from where you can check the status of connected clients and their services. 
+Also provides a link for running wubiq-client on a local computer to expose connected devices.
+Use its methods for installing and testing remote clients. 
+To bring up the manager on any client open a browser and just type: http://your-host:port/wubiq-server.
+
+Base methods
+============
+
 Installing on the client
 ------------------------
 1. From the previous downnload extract wubiq-client.jar.

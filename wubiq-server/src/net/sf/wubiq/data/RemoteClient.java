@@ -12,37 +12,41 @@ import java.util.List;
  * @author Federico Alcantara
  *
  */
-public class RemoteInfo {
+public class RemoteClient {
 	/**
 	 * Time in milliseconds where after not having notification from remote the connection is considered dead.
 	 */
-	private Integer inactiveTime;
+	private long inactiveTime;
+	private long longInactiveTime;
 	private Boolean killed;
 	private List<String> services;
 	private String computerName;
 	private Long lastAccessedTime;
+	private Boolean refreshed;
 	
-	public RemoteInfo() {
+	public RemoteClient() {
 		this(20000); // 20 seconds default idle time
 		lastAccessedTime = new Date().getTime();
 	}
 	
-	public RemoteInfo(Integer inactiveTime) {
+	public RemoteClient(Integer inactiveTime) {
 		this.inactiveTime = inactiveTime;
+		this.longInactiveTime = 2l * (60l * 60l * 1000l); // Two hours without activities is considered dead
 		this.setKilled(false);
+		this.setRefreshed(false);
 	}
 	
 	/**
 	 * @return the inactiveTime
 	 */
-	public Integer getInactiveTime() {
+	public Long getInactiveTime() {
 		return inactiveTime;
 	}
 
 	/**
 	 * @param inactiveTime the inactiveTime to set
 	 */
-	public void setInactiveTime(Integer inactiveTime) {
+	public void setInactiveTime(Long inactiveTime) {
 		this.inactiveTime = inactiveTime;
 	}
 
@@ -51,6 +55,11 @@ public class RemoteInfo {
 	 */
 	public void setKilled(Boolean killed) {
 		this.killed = killed;
+		if (killed) {
+			if (lastAccessedTime > inactiveTime) {
+				lastAccessedTime = lastAccessedTime - inactiveTime;
+			}
+		}
 	}
 
 	/**
@@ -109,12 +118,38 @@ public class RemoteInfo {
 	}
 
 	/**
+	 * @param refreshed the refreshed to set
+	 */
+	public void setRefreshed(Boolean refreshed) {
+		this.refreshed = refreshed;
+	}
+
+	/**
+	 * @return the refreshed
+	 */
+	public Boolean isRefreshed() {
+		return refreshed;
+	}
+
+	/**
 	 * Determines if the remote is active and working.
 	 * @return True or false.
 	 */
 	public boolean isRemoteActive() {
 		long currentTime = new Date().getTime();
 		if (Math.abs(currentTime - getLastAccessedTime()) > inactiveTime) {
+			return false;
+		} 
+		return true;
+	}
+	
+	/**
+	 * Determines if the remote is dead for a long time.
+	 * @return True or false.
+	 */
+	public boolean isRemoteDead() {
+		long currentTime = new Date().getTime();
+		if (Math.abs(currentTime - getLastAccessedTime()) > longInactiveTime) {
 			return false;
 		} 
 		return true;
