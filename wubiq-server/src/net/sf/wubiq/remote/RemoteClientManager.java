@@ -38,8 +38,8 @@ public class RemoteClientManager {
 
 	/**
 	 * Gets the remote client and updates its last accessed time.
-	 * @param uuid Unique identifier to look for
-	 * @return
+	 * @param uuid Unique identifier to look for.
+	 * @return The client or null.
 	 */
 	public RemoteClient getRemoteClient(String uuid) {
 		validateRemoteLookup();
