@@ -25,7 +25,6 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -51,7 +50,7 @@ public final class ServerPrintDirectUtils {
 			if (printService == null) {
 				throw new IOException(("error.print.noPrintDevice"));
 			}
-			if (isRemotePrintService(printService)) {
+			if (PrintServiceUtils.isRemotePrintService(printService)) {
 				try {
 					Method getRemoteName = printService.getClass().getDeclaredMethod("getRemoteName", new Class[]{});
 					Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
@@ -88,25 +87,5 @@ public final class ServerPrintDirectUtils {
 			LOG.error(e.getMessage(), e);
 		}
 	}
-
 	
-	/**
-	 * Returns true if print service is an instance of RemotePrintService.
-	 * However keep in mind that PrintService and RemotePrintService might be 
-	 * loaded by different class loader thus not being registered as the
-	 * same instance.
-	 * @param printService PrintService to test.
-	 * @return True if the service is an instance of RemotePrintService. 
-	 */
-	private boolean isRemotePrintService(PrintService printService) {
-		boolean returnValue = false;
-		returnValue = printService instanceof RemotePrintService;
-		if (returnValue == false) {
-			returnValue = printService.getClass().isAssignableFrom(RemotePrintService.class);
-		}
-		if (returnValue == false) {
-			returnValue = printService.getClass().getName().equals((RemotePrintService.class.getName()));
-		}
-		return returnValue;
-	}
 }

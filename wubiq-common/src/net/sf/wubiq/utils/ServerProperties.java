@@ -8,6 +8,8 @@ import java.util.MissingResourceException;
 import java.util.Properties;
 import java.util.ResourceBundle;
 
+import net.sf.wubiq.common.WebKeys;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -34,11 +36,11 @@ public class ServerProperties {
 	}
 	
 	public static String getHsqldbDatabaseName() {
-		return get("hsqldb.database", "wubiq_data");
+		return get("hsqldb.database", WebKeys.DEFAULT_HSQLDB_DATABASE_NAME);
 	}
 	
 	public static String getHsqldbDbName() {
-		return get("hsqldb.dbname", "wubiq");
+		return get("hsqldb.dbname", WebKeys.DEFAULT_HSQLDB_DB_ALIAS);
 	}
 	
 	public static String getPrintJobManager() {
@@ -60,7 +62,7 @@ public class ServerProperties {
 		if (properties == null) {
 			try {
 				properties = new Properties();
-				ResourceBundle bundle = ResourceBundle.getBundle("./wubiq-server", new Locale(""));
+				ResourceBundle bundle = ResourceBundle.getBundle("./" + WebKeys.SERVER_PROPERTIES_FILE_NAME, new Locale(""));
 				if (bundle != null) {
 					LOG.info(ServerLabels.get("server.info_server_properties_found"));
 					for (String key : bundle.keySet()) {

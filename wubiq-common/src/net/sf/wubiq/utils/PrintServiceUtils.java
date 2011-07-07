@@ -26,6 +26,7 @@ import javax.print.attribute.standard.PageRanges;
 
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
+import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -311,5 +312,24 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 
-
+	/**
+	 * Returns true if print service is an instance of RemotePrintService.
+	 * However keep in mind that PrintService and RemotePrintService might be 
+	 * loaded by different class loader thus not being registered as the
+	 * same instance.
+	 * @param printService PrintService to test.
+	 * @return True if the service is an instance of RemotePrintService. 
+	 */
+	public static boolean isRemotePrintService(PrintService printService) {
+		boolean returnValue = false;
+		returnValue = printService instanceof RemotePrintService;
+		if (returnValue == false) {
+			returnValue = printService.getClass().isAssignableFrom(RemotePrintService.class);
+		}
+		if (returnValue == false) {
+			returnValue = printService.getClass().getName().equals((RemotePrintService.class.getName()));
+		}
+		return returnValue;
+	}
+	
 }
