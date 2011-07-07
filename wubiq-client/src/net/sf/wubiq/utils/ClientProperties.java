@@ -9,6 +9,8 @@ import java.io.InputStream;
 import java.util.Properties;
 import java.util.UUID;
 
+import net.sf.wubiq.common.WebKeys;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -35,11 +37,11 @@ public class ClientProperties {
 	}
 	
 	public static String getApplicationName() {
-		return get("application", "wubiq-server").trim();
+		return get("application", WebKeys.DEFAULT_APPLICATION_NAME).trim();
 	}
 	
 	public static String getServletName() {
-		return get("servlet", "wubiq.do").trim();
+		return get("servlet", WebKeys.DEFAULT_SERVLET_NAME).trim();
 	}
 	
 	public static String getUuid() {
@@ -63,13 +65,13 @@ public class ClientProperties {
 				properties = new Properties();
 				InputStream stream = null;
 				try {
-					stream = new FileInputStream("./wubiq-client.properties");
+					stream = new FileInputStream("./" + WebKeys.CLIENT_PROPERTIES_FILE_NAME +".properties");
 					LOG.info(ClientLabels.get("client.info_client_properties_found_file"));
 				} catch (Exception e) {
 					LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
 				}
 				if (stream == null) {
-					stream = Class.class.getResourceAsStream("/wubiq-client.properties");
+					stream = Class.class.getResourceAsStream("/" + WebKeys.CLIENT_PROPERTIES_FILE_NAME + ".properties");
 					if (stream == null) {
 						throw new IOException("null");
 					}

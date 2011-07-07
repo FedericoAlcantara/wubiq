@@ -83,33 +83,36 @@ public class LocalPrintManager implements Runnable {
 			killManager();
 			System.out.println(ClientLabels.get("client.closing_local_manager"));
 		} else {
-			refreshServices = true;
-			while (!isKilled()) {
-				try {
-					if (refreshServices) {
-						registerPrintServices();
-						refreshServices = false;
-					}
-					String[] pendingJobs = getPendingJobs();
-					for (String pendingJob : pendingJobs) {
-						processPendingJob(pendingJob);
-						Thread.sleep(3000);
-					}
-					Thread.sleep(10000);
-				} catch (ConnectException e) {
-					LOG.debug(e.getMessage());
-					refreshServices = true;
+			if (!isActive()) {
+				bringAlive();
+				refreshServices = true;
+				while (!isKilled()) {
 					try {
+						if (needsRefresh()) {
+							registerPrintServices();
+							refreshServices = false;
+						}
+						String[] pendingJobs = getPendingJobs();
+						for (String pendingJob : pendingJobs) {
+							processPendingJob(pendingJob);
+							Thread.sleep(3000);
+						}
 						Thread.sleep(10000);
-					} catch (InterruptedException e1) {
+					} catch (ConnectException e) {
 						LOG.debug(e.getMessage());
+						refreshServices = true;
+						try {
+							Thread.sleep(10000);
+						} catch (InterruptedException e1) {
+							LOG.debug(e.getMessage());
+						}
+					} catch (InterruptedException e) {
+						LOG.error(e.getMessage(), e);
+						break;
 					}
-				} catch (InterruptedException e) {
-					LOG.error(e.getMessage(), e);
-					break;
 				}
+				killManager();
 			}
-			killManager();
 		}
 	}
 	
@@ -264,6 +267,41 @@ public class LocalPrintManager implements Runnable {
 		return returnValue;
 	}
 	
+	/**
+	 * Asks the server if this instance of the client should be closed. This will allow for remote cancellation of client.
+	 * (Not yet implemented).
+	 * @return
+	 */
+	protected boolean isActive() {
+		boolean returnValue = false;
+		try {
+			if (askServer(CommandKeys.IS_ACTIVE).equals("1")) {
+				returnValue = true;
+			}
+		} catch (ConnectException e) {
+			doLog(e.getMessage());
+		}
+		doLog("Is Active?" + returnValue);
+		return returnValue;
+	}
+
+	/**
+	 * Asks the server if this instance of the client needs to be refreshed with the list of print services.
+	 * @return
+	 */
+	protected boolean needsRefresh() {
+		boolean returnValue = true;
+		try {
+			if (askServer(CommandKeys.IS_REFRESHED).equals("1") && !refreshServices) {
+				returnValue = false;
+			}
+		} catch (ConnectException e) {
+			doLog(e.getMessage());
+		}
+		doLog("Needs Refresh?" + returnValue);
+		return returnValue;
+	}
+
 	/**
 	 * Send command to server and returns its response as a string.
 	 * @param command Command to send to the server.
