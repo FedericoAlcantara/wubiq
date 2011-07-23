@@ -36,7 +36,7 @@ public class HsqldbContextListener implements ServletContextListener {
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
-		Level hibernateLevel = getLevel("org");
+		Level level = getLevel("org");
 		hsqlServer = new Server();
 		hsqlServer.setDatabasePath(0, event.getServletContext().getRealPath("/WEB-INF/" + ServerProperties.getHsqldbDatabaseName()));
 		hsqlServer.setDatabaseName(0, ServerProperties.getHsqldbDbName());
@@ -46,7 +46,8 @@ public class HsqldbContextListener implements ServletContextListener {
 		hsqlServer.setSilent(true);
 		hsqlServer.setTrace(false);
 		hsqlServer.start();
-		Logger.getLogger("org").setLevel(hibernateLevel);
+		Logger.getLogger("org").setLevel(level);
+		Logger.getLogger("net").setLevel(level);
 	}
 
 	/** 
