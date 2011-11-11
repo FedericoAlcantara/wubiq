@@ -1,5 +1,5 @@
 What is Wubiq?
--------------
+==============
 Wubiq is a web / client combination that allows users to share its printing services (printers).
 It consist of a web application companion (wubiq-server) and a client print manager (wubiq-client).
 
@@ -19,41 +19,35 @@ Installing wubiq as a server
 ----------------------------
 1. Download wubiq.zip and extract its files.
 2. Deploy wubiq-server.war on a servlet container (this has been tested on Tomcat 6).
-3. Copy wubiq-common.jar to your web application lib folder. (Re)start your servlet container if needed.
-4. You can test if wubiq is running by opening a web browser and write: http://server:port/yourApplication/wubiq.do?command=printTestPage.
-   If everything is fine you should see a test page on your browser or pdf viewer.
+3. Copy wubiq-common.jar and hsqldb.jar (included in the distribution) to your web application lib folder.
+   (Re)start your servlet container if needed.
+4. You can test if wubiq is running by opening a web browser and write: http://host:port/wubiq-server.
+   If everything is fine you should see a list of local services (from server).
 
 Using the wubiq manager
 -----------------------
 Wubiq has a manager from where you can check the status of connected clients and their services. 
 Also provides a link for running wubiq-client on a local computer to expose connected devices.
 Use its methods for installing and testing remote clients. 
-To bring up the manager on any client open a browser and just type: http://your-host:port/wubiq-server.
+To bring up the manager on any client open a browser and just type: http://host:port/wubiq-server.
 
 Base methods
 ============
+Installing and Testing on the client
+------------------------------------
+There are two ways to get the client to work on the remote computer.
+1. Connecting to the wubiq-manager using http://host:port/wubiq-server.
 
-Installing on the client
-------------------------
+Or by downloading a client program and running it from the command line.
 1. From the previous downnload extract wubiq-client.jar.
 2. You can make a batch or script to run the client with the following:
-   **java -jar wubiq-client.jar --host your-web-application-url**. For example:
-   - java -jar wubiq-client.jar --host http://sicflex.com
+   **java -jar wubiq-client.jar --host http://host:port/wubiq-server**. For example:
+   - java -jar wubiq-client.jar --host http://localhost:8080/wubiq-server
    See the wubiq-client help by running java -jar wubiq-client.jar -?
-3. To test if your clients are connecting on any browser write: http://server:port/yourApplication/wubiq.do?command=showPrintServices.
-   If everything is working you should see a list of servers' print services including remote print services (R).
+3. To test if your clients are working as expected connect to wubiq-manager with: http://host:port/wubiq-server.
+   If everything is working you should see a list of servers' print services including remote print services from client computers.
 
-**Note: replace *server* with the server, *port* with the port (by default:8080), *yourApplication* with your web application content name.**
-
-Testing remote printing
------------------------
-You can test remote printing by opening a web browser and run these tests urls. (Remember to have your clients running)
-
-- To view a test page on the browser. **http://localhost:8080/wubiq-test/wubiq.do?command=printTestPage**
-- To show available print services. **http://localhost:8080/wubiq-test/wubiq.do?command=showPrintServices**.
-  Take note of the print service name and the uuid (should be 1234 for these tests).  
-- To print a test page to a remote print service (assuming the remote printer is shown in print services as  *HP840C (R) computername*).
-  **http://localhost:8080/wubiq-test/wubiq.do?command=printTestPage&printServiceName=HP840C&&uuid=1234**
+**Note: replace *host* with the host address, *port* with the port (by default:8080).
 
 Limitations
 -----------
