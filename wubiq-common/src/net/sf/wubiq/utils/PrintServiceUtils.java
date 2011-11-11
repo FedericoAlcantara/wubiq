@@ -3,8 +3,12 @@ package net.sf.wubiq.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
@@ -26,6 +30,7 @@ import javax.print.attribute.standard.PageRanges;
 
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
+import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
@@ -38,12 +43,41 @@ import org.apache.commons.logging.LogFactory;
  */
 public class PrintServiceUtils {
 	private static final Log LOG = LogFactory.getLog(PrintServiceUtils.class);
+	public static boolean OUTPUT_LOG = true;
+	public static void main(String[] args) {
+		getPrintServices();
+	}
+	
+	/**
+	 * Tries to refresh print services.
+	 */
+	public static void refreshServices(){
+		Method method;
+		try {
+			method = PrintServiceLookup.class.getDeclaredMethod("getAllLookupServices", new Class[]{});
+			method.setAccessible(true);
+			List lookupPrintServices = (List) method.invoke(null, new Object[]{});
+			for (Object object : lookupPrintServices) {
+				Method refreshServices;
+				try {
+					refreshServices = object.getClass().getDeclaredMethod("refreshServices", new Class[]{});
+					refreshServices.invoke(object, new Object[]{});
+				} catch (Exception e) {
+					LOG.debug(e.getMessage());
+				}
+			}
+		} catch (Exception e) {
+			LOG.debug(e.getMessage());
+		}
+
+	}
 	
 	/**
 	 * Returns an array of printers supporting PDF flavor.
 	 * @return Array of print services. If no services is found the return value is JVM implementation dependent.
 	 */
 	public static PrintService[] getPrintServices() {
+		refreshServices();
 		return PrintServiceLookup.lookupPrintServices(null, null);
 	}
 	
@@ -322,14 +356,128 @@ public class PrintServiceUtils {
 	 */
 	public static boolean isRemotePrintService(PrintService printService) {
 		boolean returnValue = false;
-		returnValue = printService instanceof RemotePrintService;
-		if (returnValue == false) {
-			returnValue = printService.getClass().isAssignableFrom(RemotePrintService.class);
+		try {
+			Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
+			String uuid = ((String) getUuid.invoke(printService, new Object[]{}));
+			returnValue = !Is.emptyString(uuid);
+		} catch (SecurityException e) {
+			LOG.debug(e.getMessage());
+		} catch (NoSuchMethodException e) {
+			LOG.debug(e.getMessage());
+		} catch (IllegalArgumentException e) {
+			LOG.debug(e.getMessage());
+		} catch (IllegalAccessException e) {
+			LOG.debug(e.getMessage());
+		} catch (InvocationTargetException e) {
+			LOG.debug(e.getMessage());
 		}
-		if (returnValue == false) {
-			returnValue = printService.getClass().getName().equals((RemotePrintService.class.getName()));
-		}
+		
 		return returnValue;
+	}
+	
+	/**
+	 * Serialize print service categories.
+	 * @param printService Print service to serialize
+ 	 * @param debugMode if true all errors are logged out.
+	 * @return Serialize print service categories.
+	 */
+	public static String serializeServiceCategories(PrintService printService, boolean debugMode) {
+		StringBuffer categories = new StringBuffer("");
+		for (Class<? extends Attribute> category : PrintServiceUtils.getCategories(printService)) {
+			if (categories.length() > 0) {
+				categories.append(ParameterKeys.CATEGORIES_SEPARATOR);
+			}
+			categories.append(category.getName())
+				.append(ParameterKeys.CATEGORIES_ATTRIBUTES_STARTER);
+			String attributes = "";
+			try {
+				ByteArrayOutputStream stream = new ByteArrayOutputStream();
+				AttributeOutputStream encoder = new AttributeOutputStream(stream);
+				encoder.writeAttributes(getCategoryAttributes(printService, category));
+				encoder.close();
+				attributes = stream.toString();
+			} catch (Exception e) {
+				if (OUTPUT_LOG) {
+					if (debugMode) {
+						LOG.info(e.getMessage());
+					} else {
+						LOG.debug(e.getMessage());
+					}
+				}
+			}
+		
+			categories.append(attributes);
+		}
+		return categories.toString();
+	}
+	
+	/**
+	 * Serialize service name
+	 * @param service Service to be serialized
+	 * @param debugMode If true all errors are logged out
+	 * @return Serialized service name
+	 */
+	public static String serializeServiceName(PrintService printService, boolean debugMode) {
+		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
+		.append(ParameterKeys.PARAMETER_SEPARATOR)
+		.append(printService.getName());
+		return printServiceRegister.toString();
+	}
+	
+	/**
+	 * Deserialize printService and its categories
+	 * @param printServiceName Print service to deserialize
+	 * @param categoriesString List of categories.
+	 * @return RemotePrintService
+	 */
+	public static RemotePrintService deSerializeService(String printServiceName, String categoriesString) {
+		String serviceName = printServiceName.contains(ParameterKeys.PARAMETER_SEPARATOR) 
+				? printServiceName.substring(printServiceName.lastIndexOf(ParameterKeys.PARAMETER_SEPARATOR) + 1) 
+				: printServiceName;
+		RemotePrintService remotePrintService = new RemotePrintService();
+		remotePrintService.setUuid("");
+		remotePrintService.setRemoteName(serviceName);
+		remotePrintService.setRemoteComputerName("");
+		if (!Is.emptyString(categoriesString)) {
+			for (String categoryLine : categoriesString.split(ParameterKeys.CATEGORIES_SEPARATOR)) {
+				String categoryName = categoryLine.substring(0, categoryLine.indexOf(ParameterKeys.CATEGORIES_ATTRIBUTES_STARTER));
+				String attributes = categoryLine.substring(categoryLine.indexOf(ParameterKeys.CATEGORIES_ATTRIBUTES_STARTER) + 1);
+				try {
+					remotePrintService.getRemoteCategories().add(Class.forName(categoryName));
+					if (!Is.emptyString(attributes)) {
+						String[] attributeValues = attributes.split(ParameterKeys.ATTRIBUTES_SEPARATOR);
+						if (attributeValues.length > 0) {
+							List<Attribute> values = new ArrayList<Attribute>(); 
+							for (String attributeValue : attributeValues) {
+								try {
+									ByteArrayInputStream stream = new ByteArrayInputStream(attributeValue.getBytes());
+									AttributeInputStream input = new AttributeInputStream(stream);
+									Attribute attribute = input.readAttribute();
+									if (attribute != null) {
+										values.add(attribute);
+									}
+								} catch (Exception e) {
+									LOG.debug(e.getMessage());
+								}
+							}
+							remotePrintService.getRemoteAttributes().put(categoryName, values);
+						} else {
+							try {
+								remotePrintService.getRemoteAttributes().put(categoryName, 
+										(Attribute)Class.forName(attributes).newInstance());
+							} catch (InstantiationException e) {
+								LOG.debug(e.getMessage());
+							} catch (IllegalAccessException e) {
+								LOG.debug(e.getMessage());
+							}
+						}
+					}
+				} catch (ClassNotFoundException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
+		}
+		return remotePrintService;
 	}
 	
 }

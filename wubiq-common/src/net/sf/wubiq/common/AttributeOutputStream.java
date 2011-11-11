@@ -14,6 +14,8 @@ import javax.print.attribute.IntegerSyntax;
 import javax.print.attribute.SetOfIntegerSyntax;
 import javax.print.attribute.standard.MediaPrintableArea;
 
+import net.sf.wubiq.utils.PrintServiceUtils;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -56,7 +58,9 @@ public class AttributeOutputStream extends OutputStreamWriter {
 						StringBuffer serialized = convertAttributeToString(attribute);
 						attributes.append(serialized);
 					} catch (Exception e) {
-						LOG.error(e.getMessage());
+						if (PrintServiceUtils.OUTPUT_LOG) {
+							LOG.error(e.getMessage());
+						}
 					}
 				}
 			}
@@ -113,8 +117,10 @@ public class AttributeOutputStream extends OutputStreamWriter {
 						data.append(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 						writeMediaPrintableArea((MediaPrintableArea)attribute, data);
 					} else {
-						LOG.info("Attribute not converted:" + attribute);
-						System.out.println(attribute);
+						if (PrintServiceUtils.OUTPUT_LOG) {
+							LOG.info("Attribute not converted:" + attribute);
+							System.out.println(attribute);
+						}
 					}
 				}
 			}

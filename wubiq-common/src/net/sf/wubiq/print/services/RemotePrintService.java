@@ -110,7 +110,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public Class<?>[] getSupportedAttributeCategories() {
-		return getRemoteCategories().toArray(new Class<?>[0]);
+		return getRemoteCategories().toArray(new Class<?>[getRemoteCategories().size()]);
 	}
 
 	/**
