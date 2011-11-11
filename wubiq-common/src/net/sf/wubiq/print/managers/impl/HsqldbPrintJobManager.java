@@ -96,21 +96,12 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			stmt.setString(4, PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
 			stmt.setInt(5, RemotePrintJobStatus.NOT_PRINTED.ordinal());
 			stmt.setBytes(6, outputStream.toByteArray());
-			//stmt = getJobStatement(connection, SELECT_JOB, returnValue);
 			stmt.executeUpdate();
-			//rs.updateLong(JOB_ID_FIELD_NAME, returnValue);
-			//rs.updateString(QUEUE_ID_FIELD_NAME, queueId);
-			//rs.updateString("PRINT_SERVICE_NAME", remotePrintJob.getPrintServiceName());
-			//rs.updateString("ATTRIBUTES", PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
-			//rs.updateInt("STATUS", RemotePrintJobStatus.NOT_PRINTED.ordinal());
-			//rs.updateBinaryStream("PRINT_DOCUMENT", remotePrintJob.getPrintDocument());
-			//rs.updateRow();
 			connection.commit();
 		} catch (SQLException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.error(e.getMessage(), e);
 		} finally {
 			close(rs, stmt, connection);
 		}
