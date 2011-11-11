@@ -1,4 +1,9 @@
 ======================
+Wubiq 0.6 (2011-11-11)
+======================
+- Refresh of server services improved.
+
+======================
 Wubiq 0.5 (2011-07-08)
 ======================
 - Wubiq Manager. Implementation of a web manager
