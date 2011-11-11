@@ -3,23 +3,18 @@
  */
 package net.sf.wubiq.servlets;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
-import java.util.ArrayList;
 import java.util.Date;
-import java.util.List;
 
 import javax.print.PrintService;
-import javax.print.attribute.Attribute;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
@@ -219,49 +214,10 @@ public class RemotePrintServlet extends HttpServlet {
 		if (client != null) {
 			String serviceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 			String categoriesString = request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES);
-			RemotePrintService remotePrintService = new RemotePrintService();
+			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
-			if (!Is.emptyString(categoriesString)) {
-				for (String categoryLine : categoriesString.split(ParameterKeys.CATEGORIES_SEPARATOR)) {
-					String categoryName = categoryLine.substring(0, categoryLine.indexOf(ParameterKeys.CATEGORIES_ATTRIBUTES_STARTER));
-					String attributes = categoryLine.substring(categoryLine.indexOf(ParameterKeys.CATEGORIES_ATTRIBUTES_STARTER) + 1);
-					try {
-						remotePrintService.getRemoteCategories().add(Class.forName(categoryName));
-						if (!Is.emptyString(attributes)) {
-							String[] attributeValues = attributes.split(ParameterKeys.ATTRIBUTES_SEPARATOR);
-							if (attributeValues.length > 0) {
-								List<Attribute> values = new ArrayList<Attribute>(); 
-								for (String attributeValue : attributeValues) {
-									try {
-										ByteArrayInputStream stream = new ByteArrayInputStream(attributeValue.getBytes());
-										AttributeInputStream input = new AttributeInputStream(stream);
-										Attribute attribute = input.readAttribute();
-										if (attribute != null) {
-											values.add(attribute);
-										}
-									} catch (Exception e) {
-										LOG.debug(e.getMessage());
-									}
-								}
-								remotePrintService.getRemoteAttributes().put(categoryName, values);
-							} else {
-								try {
-									remotePrintService.getRemoteAttributes().put(categoryName, 
-											(Attribute)Class.forName(attributes).newInstance());
-								} catch (InstantiationException e) {
-									LOG.debug(e.getMessage());
-								} catch (IllegalAccessException e) {
-									LOG.debug(e.getMessage());
-								}
-							}
-						}
-					} catch (ClassNotFoundException e) {
-						LOG.error(e.getMessage(), e);
-					}
-				}
-			}
 			getRemoteClientManager(request).validateRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
 			response.setContentType("text/html");
