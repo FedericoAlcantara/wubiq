@@ -4,6 +4,8 @@
 package net.sf.wubiq.print.managers.impl;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -59,7 +61,6 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			connection.commit();
 		} catch (SQLException e) {
 			LOG.debug(e.getMessage());
-			throw e;
 		} finally {
 			close(connection);
 		}
@@ -75,21 +76,41 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		ResultSet rs = null;
 		long returnValue = 0l;
 		try {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+			int byteVal = -1;
+			while ((byteVal = remotePrintJob.getPrintDocument().read()) != -1) {
+				outputStream.write(byteVal);
+			}
+			outputStream.close();
 			returnValue = getLastJobId() + 1;
 			connection = getConnection();
-			stmt = getJobStatement(connection, SELECT_JOB, returnValue);
-			rs = stmt.executeQuery();
-			rs.moveToInsertRow();
-			rs.updateLong(JOB_ID_FIELD_NAME, returnValue);
-			rs.updateString(QUEUE_ID_FIELD_NAME, queueId);
-			rs.updateString("PRINT_SERVICE_NAME", remotePrintJob.getPrintServiceName());
-			rs.updateString("ATTRIBUTES", PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
-			rs.updateInt("STATUS", RemotePrintJobStatus.NOT_PRINTED.ordinal());
-			rs.updateBinaryStream("PRINT_DOCUMENT", remotePrintJob.getPrintDocument());
-			rs.insertRow();
+			connection.setAutoCommit(false);
+			String query = "insert into PRINT_JOB (" +
+					JOB_ID_FIELD_NAME + "," +
+					QUEUE_ID_FIELD_NAME + "," +
+					"PRINT_SERVICE_NAME, ATTRIBUTES, STATUS, PRINT_DOCUMENT) values (?,?,?,?,?,?)";
+			stmt = connection.prepareStatement(query);
+			stmt.setLong(1, returnValue);
+			stmt.setString(2, queueId);
+			stmt.setString(3, remotePrintJob.getPrintServiceName());
+			stmt.setString(4, PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
+			stmt.setInt(5, RemotePrintJobStatus.NOT_PRINTED.ordinal());
+			stmt.setBytes(6, outputStream.toByteArray());
+			//stmt = getJobStatement(connection, SELECT_JOB, returnValue);
+			stmt.executeUpdate();
+			//rs.updateLong(JOB_ID_FIELD_NAME, returnValue);
+			//rs.updateString(QUEUE_ID_FIELD_NAME, queueId);
+			//rs.updateString("PRINT_SERVICE_NAME", remotePrintJob.getPrintServiceName());
+			//rs.updateString("ATTRIBUTES", PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
+			//rs.updateInt("STATUS", RemotePrintJobStatus.NOT_PRINTED.ordinal());
+			//rs.updateBinaryStream("PRINT_DOCUMENT", remotePrintJob.getPrintDocument());
+			//rs.updateRow();
 			connection.commit();
 		} catch (SQLException e) {
 			LOG.error(e.getMessage(), e);
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		} finally {
 			close(rs, stmt, connection);
 		}
