@@ -3,7 +3,6 @@ package net.sf.wubiq.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -51,6 +50,7 @@ public class PrintServiceUtils {
 	/**
 	 * Tries to refresh print services.
 	 */
+	@SuppressWarnings("rawtypes")
 	public static void refreshServices(){
 		Method method;
 		try {
