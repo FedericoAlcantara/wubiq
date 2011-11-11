@@ -4,7 +4,6 @@
 package net.sf.wubiq.clients;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -19,9 +18,7 @@ import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
 
 import javax.print.PrintService;
-import javax.print.attribute.Attribute;
 
-import net.sf.wubiq.common.AttributeOutputStream;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.utils.ClientLabels;
@@ -220,29 +217,8 @@ public class LocalPrintManager implements Runnable {
 		doLog("Register Print Services");
 		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
 			doLog("Print service:" + printService.getName());
-			StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
-					.append(ParameterKeys.PARAMETER_SEPARATOR)
-					.append(printService.getName());
-			StringBuffer categories = new StringBuffer("");
-			for (Class<? extends Attribute> category : PrintServiceUtils.getCategories(printService)) {
-				if (categories.length() > 0) {
-					categories.append(ParameterKeys.CATEGORIES_SEPARATOR);
-				}
-				categories.append(category.getName())
-					.append(ParameterKeys.CATEGORIES_ATTRIBUTES_STARTER);
-				String attributes = "";
-				try {
-					ByteArrayOutputStream stream = new ByteArrayOutputStream();
-					AttributeOutputStream encoder = new AttributeOutputStream(stream);
-					encoder.writeAttributes(PrintServiceUtils.getCategoryAttributes(printService, category));
-					encoder.close();
-					attributes = stream.toString();
-				} catch (Exception e) {
-					doLog(e.getMessage());
-				}
-
-				categories.append(attributes);
-			}
+			StringBuffer printServiceRegister = new StringBuffer(PrintServiceUtils.serializeServiceName(printService, debugMode)); 
+			StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, debugMode));
 			categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 				.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
 			askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString());
