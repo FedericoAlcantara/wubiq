@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="app_name">Wubiq-android</string>
+	<string name="configure_bluetooth">Configurar Dispositivos Bluetooth</string>
+	<string name="select_driver">Seleccione Controlador</string>
+	<string-array name = "drivers">
+	    <item>--</item>
+	    <item>Generico</item>
+	    <item>Star Micronics - SM-T300</item>
+	</string-array>
+	    	    
+</resources>
