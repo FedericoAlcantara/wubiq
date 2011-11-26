@@ -35,6 +35,7 @@ public class RemotePrintService implements PrintService {
 	private String remoteComputerName;
 	private List<Class<?>> remoteCategories;
 	private Map<String, Object> remoteAttributes;
+	private boolean mobile;
 	
 	/**
 	 * @see javax.print.PrintService#addPrintServiceAttributeListener(javax.print.event.PrintServiceAttributeListener)
@@ -253,6 +254,20 @@ public class RemotePrintService implements PrintService {
 	 */
 	public String getRemoteComputerName() {
 		return remoteComputerName;
+	}
+
+	/**
+	 * @return the mobile
+	 */
+	public boolean isMobile() {
+		return mobile;
+	}
+
+	/**
+	 * @param mobile the mobile to set
+	 */
+	public void setMobile(boolean mobile) {
+		this.mobile = mobile;
 	}
 
 }

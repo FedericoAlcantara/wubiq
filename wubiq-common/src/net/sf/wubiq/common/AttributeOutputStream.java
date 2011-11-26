@@ -65,6 +65,7 @@ public class AttributeOutputStream extends OutputStreamWriter {
 				}
 			}
 		}
+		write(attributes.toString());
 	}
 	
 	/**

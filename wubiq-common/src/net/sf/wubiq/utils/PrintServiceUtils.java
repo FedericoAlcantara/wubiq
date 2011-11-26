@@ -7,7 +7,10 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
@@ -43,6 +46,8 @@ import org.apache.commons.logging.LogFactory;
 public class PrintServiceUtils {
 	private static final Log LOG = LogFactory.getLog(PrintServiceUtils.class);
 	public static boolean OUTPUT_LOG = true;
+	private static Map<String, String> compressionMap;
+	
 	public static void main(String[] args) {
 		getPrintServices();
 	}
@@ -235,8 +240,8 @@ public class PrintServiceUtils {
 		Collection<Attribute> returnValue = new ArrayList<Attribute>();
 		if (printService != null) {
 			if (category.equals(Chromaticity.class)) {
-				returnValue.add(Chromaticity.MONOCHROME);
-				returnValue.add(Chromaticity.COLOR);
+				addAttribute(returnValue, Chromaticity.MONOCHROME);
+				addAttribute(returnValue, Chromaticity.COLOR);
 			} else if (category.equals(MediaTray.class) || category.equals(MediaSizeName.class)) {
 				Attribute[] attributes = (Attribute[]) printService.getSupportedAttributeValues(Media.class, null, null);
 				if (attributes != null) {
@@ -244,7 +249,7 @@ public class PrintServiceUtils {
 						if ((attribute instanceof MediaTray && category.equals(MediaTray.class)) ||
 								attribute instanceof MediaSizeName && category.equals(MediaSizeName.class)) {
 							if (!attribute.toString().equalsIgnoreCase("Custom")) {
-								returnValue.add(attribute);
+								addAttribute(returnValue, attribute);
 							}
 						}
 					}
@@ -255,17 +260,27 @@ public class PrintServiceUtils {
 					Attribute[] attributes = (Attribute[]) attributeObject ;
 					if (attributes != null) {
 						for (Attribute attribute : attributes) {
-							returnValue.add(attribute);
+							addAttribute(returnValue, attribute);
 						}
 					}
 				} else if (attributeObject instanceof Attribute){
-					returnValue.add((Attribute)attributeObject);
+					addAttribute(returnValue, (Attribute)attributeObject);
 				}
 			}
 		}
 		return returnValue;
 	}
 
+	/**
+	 * Ensures no duplicates of attributes in the collection.
+	 * @param attributes Collection of attributes
+	 * @param attribute attribute to add
+	 */
+	private static void addAttribute(Collection<Attribute> attributes, Attribute attribute) {
+		if (!attributes.contains(attribute)) {
+			attributes.add(attribute);
+		}
+	}
 	
 	/**
 	 * Returns a DocAttributeSet from a collection of attributes.
@@ -408,7 +423,7 @@ public class PrintServiceUtils {
 		
 			categories.append(attributes);
 		}
-		return categories.toString();
+		return compressAttributes(categories.toString());
 	}
 	
 	/**
@@ -430,7 +445,8 @@ public class PrintServiceUtils {
 	 * @param categoriesString List of categories.
 	 * @return RemotePrintService
 	 */
-	public static RemotePrintService deSerializeService(String printServiceName, String categoriesString) {
+	public static RemotePrintService deSerializeService(String printServiceName, String compressedCategoriesString) {
+		String categoriesString = deCompressAttributes(compressedCategoriesString);
 		String serviceName = printServiceName.contains(ParameterKeys.PARAMETER_SEPARATOR) 
 				? printServiceName.substring(printServiceName.lastIndexOf(ParameterKeys.PARAMETER_SEPARATOR) + 1) 
 				: printServiceName;
@@ -478,6 +494,41 @@ public class PrintServiceUtils {
 			}
 		}
 		return remotePrintService;
+	}
+	
+	public static String compressAttributes(String attributeList) {
+		String returnValue = attributeList;
+		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
+			returnValue = returnValue.replaceAll(entry.getKey(), entry.getValue());
+		}
+		return returnValue;
+	}
+	
+	public static String deCompressAttributes(String attributeList) {
+		String returnValue = attributeList;
+		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
+			returnValue = returnValue.replaceAll(entry.getValue(), entry.getKey());
+		}
+		return returnValue;
+	}
+
+	private static Map<String, String>getCompressionMap() {
+		if (compressionMap == null) {
+			compressionMap = new LinkedHashMap<String, String>();
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.MediaPrintableArea", "xMPAx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.MediaSizeName", "xMSNx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.NumberUp", "xNUPx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.OrientationRequested", "xORQx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Sides", "xSIDx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.PageRanges", "xPRAx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.JobSheets", "xJSHx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Finishings", "xFINx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.CopiesSupported", "xCSUx");
+			compressionMap.put("javax.print.attribute.standard.Chromaticity", "xCHRx");
+			compressionMap.put("javax.print.attribute.standard.Destination", "xDSTx");
+			compressionMap.put("sun.print.CustomMediaSizeName", "xSCMx");
+		}
+		return compressionMap;
 	}
 	
 }
