@@ -35,16 +35,23 @@ public class ConfigureServerActivity extends Activity {
 		host.setText(preferences.getString(AndroidActivity.HOST_KEY, resources.getString(R.string.server_host_default)));
 		port.setText(preferences.getString(AndroidActivity.PORT_KEY, resources.getString(R.string.server_port_default)));
 		uuid.setText(preferences.getString(AndroidActivity.UUID_KEY, UUID.randomUUID().toString()));
+		savePreferences();
 	}
 
 	@Override
 	protected void onPause() {
 		super.onPause();
+		savePreferences();
+	}
+	
+	private void savePreferences() {
 		SharedPreferences.Editor editor = preferences.edit();
 		EditText host = (EditText) findViewById(R.id.hostField);
 		EditText port = (EditText) findViewById(R.id.portField);
+		EditText uuid = (EditText) findViewById(R.id.clientUUIDField);
 		editor.putString(AndroidActivity.HOST_KEY, host.getText().toString());
 		editor.putString(AndroidActivity.PORT_KEY, port.getText().toString());
+		editor.putString(AndroidActivity.UUID_KEY, uuid.getText().toString());
 		editor.commit();
-	}	
+	}
 }

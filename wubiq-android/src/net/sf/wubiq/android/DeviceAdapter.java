@@ -37,14 +37,14 @@ public class DeviceAdapter extends BaseAdapter {
 			texts.add(deviceName);
 			
 			Spinner spinner = new Spinner(context);
-			ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(context, R.array.drivers, android.R.layout.simple_spinner_item);
+			ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, MobileDevices.INSTANCE.getDeviceNames()); 
 			adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 			spinner.setAdapter(adapter);
 			spinners.add(spinner);
 		}
 		this.deviceCount = devices.size();
 	}
-	
+
 	/*
 	 * @see android.widget.Adapter#getCount()
 	 */

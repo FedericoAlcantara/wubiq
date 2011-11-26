@@ -4,15 +4,11 @@
     <string name="app_name">Wubiq-android</string>
     <string name="configure_bluetooth">Configure Bluetooth devices</string>
     <string name="select_driver">Select Driver</string>
-	<string-array name = "drivers">
-	    <item>--</item>
-	    <item>Generic</item>
-	    <item>SM-T300</item>
-	</string-array>
-	    <string name="configure_server">Configure Server Connection</string>
-	    <string name="server_host">Host</string>
-	    <string name="server_port">Port</string>
-	    <string name="server_port_default">8080</string>
-	    <string name="server_host_default">http://localhost</string>
-	    <string name="client_uuid">UUID</string>
+    <string name="configure_server">Configure Server Connection</string>
+    <string name="server_host">Host</string>
+    <string name="server_port">Port</string>
+    <string name="server_port_default">8080</string>
+    <string name="server_host_default">http://localhost</string>
+    <string name="client_uuid">UUID</string>
+
 </resources>

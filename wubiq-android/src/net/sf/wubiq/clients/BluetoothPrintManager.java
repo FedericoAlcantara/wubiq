@@ -13,8 +13,8 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import net.sf.wubiq.android.AndroidActivity;
+import net.sf.wubiq.android.PrintClientUtils;
 import net.sf.wubiq.android.R;
-import net.sf.wubiq.clients.impl.StarDirectPrintImpl;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import android.bluetooth.BluetoothAdapter;
@@ -49,11 +49,11 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		for (BluetoothDevice device : bAdapter.getBondedDevices()) {
 			String deviceKey = AndroidActivity.DEVICE_PREFIX + device.getAddress();
 			String selection = preferences.getString(deviceKey, null);
-			if (selection != null) {
-				StringBuffer printServiceRegister = new StringBuffer(serializeServiceName(device));
+			if (selection != null && !selection.equals("--")) {
+				StringBuffer printServiceRegister = new StringBuffer(serializeServiceName(device, selection));
 				StringBuffer categories = new StringBuffer(serializePrintServiceCategories(device));
 				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
-				.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
+						.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
 				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString());
 			}
 		}
@@ -74,8 +74,7 @@ public class BluetoothPrintManager extends LocalPrintManager {
 			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") stream:" + stream);
 			doLog("Job(" + jobId + ") print pdf");
-			IMobileDirectPrint directPrint = new StarDirectPrintImpl(context);
-			directPrint.printBmpImage(printServiceName, stream);
+			PrintClientUtils.INSTANCE.print(context, printServiceName, stream);
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") close print job.");
@@ -109,10 +108,14 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		return preferences.getString(AndroidActivity.UUID_KEY, UUID.randomUUID().toString());
 	}
 		
-	private String serializeServiceName(BluetoothDevice device) {
+	private String serializeServiceName(BluetoothDevice device, String selection) {
 		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
-		.append(ParameterKeys.PARAMETER_SEPARATOR)
-		.append(device.getAddress());
+			.append(ParameterKeys.PARAMETER_SEPARATOR)
+			.append(device.getName())
+			.append(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)
+			.append(device.getAddress())
+			.append(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)
+			.append(selection);
 		return printServiceRegister.toString();
 
 	}
