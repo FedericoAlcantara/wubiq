@@ -15,6 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.wubiq.android.ConversionUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
@@ -73,6 +74,8 @@ public class RemotePrintServlet extends HttpServlet {
 						registerComputerNameCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_PRINT_SERVICE)) {
 						registerPrintServiceCommand(uuid, request, response);
+					} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_MOBILE_PRINT_SERVICE)) {
+						registerMobilePrintServiceCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.PENDING_JOBS)) {
 						getPendingJobsCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_SERVICE_NAME)) {
@@ -218,6 +221,32 @@ public class RemotePrintServlet extends HttpServlet {
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
+			remotePrintService.setMobile(true);
+			getRemoteClientManager(request).validateRemoteLookup();
+			RemotePrintServiceLookup.registerService(remotePrintService);
+			response.setContentType("text/html");
+			response.getWriter().print("ok");
+		}
+	}
+	
+	/**
+	 * Registers a printService along with its categories and attributes.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void registerMobilePrintServiceCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		if (client != null) {
+			String serviceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
+			String categoriesString = request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES);
+			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
+			remotePrintService.setUuid(uuid);
+			remotePrintService.setRemoteName(serviceName);
+			remotePrintService.setRemoteComputerName(client.getComputerName());
+			remotePrintService.setMobile(true);
 			getRemoteClientManager(request).validateRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
 			response.setContentType("text/html");
@@ -354,12 +383,20 @@ public class RemotePrintServlet extends HttpServlet {
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
 		OutputStream output = response.getOutputStream();
-		InputStream input = printJob.getPrintDocument();
-		input.reset();
-		while (input.available() > 0) {
-			output.write(input.read());
+		InputStream input = null;
+		// If it is remote we must convert pdf to image and then scale it to print size
+		if (RemotePrintServiceLookup.isMobile(uuid)) {
+			input = ConversionUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintDocument());
+		} else {
+			input = printJob.getPrintDocument();
+			input.reset();
 		}
-		input.close();
+		if (input != null) {
+			while (input.available() > 0) {
+				output.write(input.read());
+			}
+			input.close();
+		}
 	}
 	
 	/**
@@ -391,6 +428,9 @@ public class RemotePrintServlet extends HttpServlet {
 		String testPageName = ServerLabels.get("server.test_page_name");
 		if (Is.emptyString(testPageName)) {
 			testPageName = "TestPage.pdf";
+		}
+		if (RemotePrintServiceLookup.isMobile(uuid)) {
+			testPageName = "MobileTestPage.pdf";
 		}
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);

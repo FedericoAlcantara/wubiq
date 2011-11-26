@@ -23,6 +23,7 @@ import javax.print.attribute.AttributeSet;
 public class RemotePrintServiceLookup extends PrintServiceLookup {
 	private static Map<String, Map<String, PrintService>> allRemotePrintServices;
 	private static PrintService remoteDefaultPrintService; 
+	private static Map<String, Boolean> mobilePrintServices;
 	
 	/**
 	 * @see javax.print.PrintServiceLookup#getDefaultPrintService()
@@ -64,8 +65,12 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * @return Always true.
 	 */
 	public static boolean registerService(PrintService printService) {
-		Map<String, PrintService> uuidServices = getRemotePrintServices(((RemotePrintService)printService).getUuid());
+		String uuid = ((RemotePrintService)printService).getUuid();
+		Map<String, PrintService> uuidServices = getRemotePrintServices(uuid);
 		uuidServices.put(printService.getName(), printService);
+		if (((RemotePrintService)printService).isMobile()) {
+			getMobilePrintServices().put(uuid, true);
+		}
 		return true;
 	}
 	
@@ -125,5 +130,20 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 		RemotePrintServiceLookup.remoteDefaultPrintService = remoteDefaultPrintService;
 	}
 
+	/**
+	 * @param uuid Unique uuid.
+	 * @return True if the pending tasks should be handle as mobile processes.
+	 */
+	public static boolean isMobile(String uuid) {
+		Boolean returnValue = getMobilePrintServices().get(uuid);
+		return returnValue != null && returnValue;
+	}
+	
+	private static Map<String, Boolean> getMobilePrintServices() {
+		if (mobilePrintServices == null) {
+			mobilePrintServices = new HashMap<String, Boolean>();
+		}
+		return mobilePrintServices;
+	}
 	
 }
