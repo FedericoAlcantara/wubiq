@@ -56,6 +56,8 @@ public class LocalPrintManager implements Runnable {
 	private boolean killManager;
 	private boolean refreshServices;
 	private boolean debugMode;
+	private long checkPendingJobInterval = 10000;
+	private long printingJobInterval = 3000;
 	
 	public LocalPrintManager() {
 	}
@@ -92,9 +94,9 @@ public class LocalPrintManager implements Runnable {
 						String[] pendingJobs = getPendingJobs();
 						for (String pendingJob : pendingJobs) {
 							processPendingJob(pendingJob);
-							Thread.sleep(3000);
+							Thread.sleep(getPrintingJobInterval());
 						}
-						Thread.sleep(10000);
+						Thread.sleep(getCheckPendingJobInterval());
 					} catch (ConnectException e) {
 						LOG.debug(e.getMessage());
 						refreshServices = true;
@@ -482,6 +484,34 @@ public class LocalPrintManager implements Runnable {
 	}
 
 	/**
+	 * @return the checkPendingJobInterval
+	 */
+	public long getCheckPendingJobInterval() {
+		return checkPendingJobInterval;
+	}
+
+	/**
+	 * @param checkPendingJobInterval the checkPendingJobInterval to set
+	 */
+	public void setCheckPendingJobInterval(long checkPendingJobInterval) {
+		this.checkPendingJobInterval = checkPendingJobInterval;
+	}
+
+	/**
+	 * @return the printingJobInterval
+	 */
+	public long getPrintingJobInterval() {
+		return printingJobInterval;
+	}
+
+	/**
+	 * @param printingJobInterval the printingJobInterval to set
+	 */
+	public void setPrintingJobInterval(long printingJobInterval) {
+		this.printingJobInterval = printingJobInterval;
+	}
+
+	/**
 	 * Appends a character to the buffer only if the buffer doesn't end with that character.
 	 * @param buffer Buffer to be appended.
 	 * @param webChar Character to be appended.
@@ -496,12 +526,21 @@ public class LocalPrintManager implements Runnable {
 		return buffer;
 	}
 	
-	private void doLog(Object message) {
+	protected void doLog(Object message) {
 		if (isDebugMode()) {
 			LOG.info(message);
 		} else {
 			LOG.debug(message);
 		}
+	}
+	
+	protected static void initializeDefault(LocalPrintManager manager) {
+		// Set values based on wubiq-client.properties
+		manager.setHost(ClientProperties.getHost());
+		manager.setPort(ClientProperties.getPort());
+		manager.setApplicationName(ClientProperties.getApplicationName());
+		manager.setServletName(ClientProperties.getServletName());
+		manager.setUuid(ClientProperties.getUuid());
 	}
 
 	/**
@@ -521,12 +560,7 @@ public class LocalPrintManager implements Runnable {
 		options.addOption("u", "uuid", true, ClientLabels.get("client.command_line_uuid"));
 		options.addOption("v", "verbose", false, ClientLabels.get("client.command_line_verbose"));
 		
-		// Set values based on wubiq-client.properties
-		manager.setHost(ClientProperties.getHost());
-		manager.setPort(ClientProperties.getPort());
-		manager.setApplicationName(ClientProperties.getApplicationName());
-		manager.setServletName(ClientProperties.getServletName());
-		manager.setUuid(ClientProperties.getUuid());
+		initializeDefault(manager);
 		
 		CommandLineParser parser = new GnuParser();
 		try {
