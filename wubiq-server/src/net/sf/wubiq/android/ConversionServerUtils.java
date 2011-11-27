@@ -25,10 +25,10 @@ import org.imgscalr.Scalr;
  * @author Federico Alcantara
  *
  */
-public enum ConversionUtils {
+public enum ConversionServerUtils {
 	INSTANCE;
 	
-	private static final Log LOG = LogFactory.getLog(ConversionUtils.class);
+	private static final Log LOG = LogFactory.getLog(ConversionServerUtils.class);
 	
 	/*
 	 * Perform the steps according to device specifications
@@ -106,14 +106,14 @@ public enum ConversionUtils {
 	 */
 	protected InputStream imageToEscaped(MobileDeviceInfo deviceInfo, BufferedImage img) {
 		ByteArrayOutputStream printData = new ByteArrayOutputStream();
-		//ArrayList<byte> printData = new ArrayList<byte>();
-		byte[] pixels = null;
+		int[] pixels = null;
 		int width = img.getWidth();
 		int height = img.getHeight();
+
 		PixelGrabber grabber = new PixelGrabber(img, 0, 0, -1, -1, true);
 		try {
 			if (grabber.grabPixels()) {
-				pixels = (byte[]) grabber.getPixels();
+				pixels = (int[]) grabber.getPixels();
 			}
 		} catch (InterruptedException e) {
 			LOG.error(e.getMessage(), e);
@@ -134,8 +134,7 @@ public enum ConversionUtils {
 		{
 			startBitmapDefinition(deviceInfo, printData, byteWidth);
 			totalRowCount = 
-					defineBitmapData(deviceInfo, printData, byteWidth, byteWidth, mWidth, height, pixels, totalRowCount);
-			
+					defineBitmapData(deviceInfo, printData, byteWidth, width, mWidth, height, pixels, totalRowCount);
 			printDefinedBitmap(deviceInfo, printData);
 		}
 			
@@ -144,7 +143,7 @@ public enum ConversionUtils {
 			startBitmapDefinition(deviceInfo, printData, byteWidth);
 
 			totalRowCount = 
-					defineBitmapData(deviceInfo, printData, byteWidth, byteWidth, mWidth, height, pixels, totalRowCount);
+					defineBitmapData(deviceInfo, printData, byteWidth, width, mWidth, height, pixels, totalRowCount);
 			
 			printDefinedBitmap(deviceInfo, printData);
 		}
@@ -224,7 +223,7 @@ public enum ConversionUtils {
 	private int defineBitmapData(MobileDeviceInfo deviceInfo, ByteArrayOutputStream printData,
 			int byteWidth, int width, int mWidth,
 			int height,
-			byte[] pixels,
+			int[] pixels,
 			int totalRowCount){
 
 		int idx = 0;

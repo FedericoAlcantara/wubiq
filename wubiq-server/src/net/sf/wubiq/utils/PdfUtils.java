@@ -38,7 +38,7 @@ public enum PdfUtils {
 	        int endPage = Integer.MAX_VALUE;
 	        File tempFile = File.createTempFile("temp", "pdf.png");
 	        String outputPrefix = tempFile.getPath().substring(0, tempFile.getPath().lastIndexOf('.'));
-	        int imageType = colorCapable ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_BYTE_GRAY;
+	        int imageType = colorCapable ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_RGB;
 	        int resolution = Toolkit.getDefaultToolkit().getScreenResolution() * 2;
 	        if (imageWriter.writeImage(document, imageFormat, "", startPage, endPage, outputPrefix, imageType, resolution)) {
 	        	returnValue = new File(outputPrefix + "1." + imageFormat);

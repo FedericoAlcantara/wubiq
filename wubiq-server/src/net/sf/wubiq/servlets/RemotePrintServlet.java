@@ -15,7 +15,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import net.sf.wubiq.android.ConversionUtils;
+import net.sf.wubiq.android.ConversionServerUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
@@ -386,7 +386,7 @@ public class RemotePrintServlet extends HttpServlet {
 		InputStream input = null;
 		// If it is remote we must convert pdf to image and then scale it to print size
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
-			input = ConversionUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintDocument());
+			input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintDocument());
 		} else {
 			input = printJob.getPrintDocument();
 			input.reset();
