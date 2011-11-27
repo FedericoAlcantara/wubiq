@@ -58,6 +58,8 @@ public class LocalPrintManager implements Runnable {
 	private boolean debugMode;
 	private long checkPendingJobInterval = 10000;
 	private long printingJobInterval = 3000;
+	private int connectionErrorRetries = -1;
+	private int connectionErrorCount = 0;
 	
 	public LocalPrintManager() {
 	}
@@ -90,6 +92,7 @@ public class LocalPrintManager implements Runnable {
 						if (needsRefresh()) {
 							registerPrintServices();
 							refreshServices = false;
+							connectionErrorCount = 0;
 						}
 						String[] pendingJobs = getPendingJobs();
 						for (String pendingJob : pendingJobs) {
@@ -98,6 +101,12 @@ public class LocalPrintManager implements Runnable {
 						}
 						Thread.sleep(getCheckPendingJobInterval());
 					} catch (ConnectException e) {
+						if (getConnectionErrorRetries() >= 0) {
+							connectionErrorCount++;
+							if (connectionErrorCount > getConnectionErrorRetries()) {
+								break;
+							}
+						}
 						LOG.debug(e.getMessage());
 						refreshServices = true;
 						try {
@@ -509,6 +518,20 @@ public class LocalPrintManager implements Runnable {
 	 */
 	public void setPrintingJobInterval(long printingJobInterval) {
 		this.printingJobInterval = printingJobInterval;
+	}
+
+	/**
+	 * @return the connectionErrorRetries
+	 */
+	public int getConnectionErrorRetries() {
+		return connectionErrorRetries;
+	}
+
+	/**
+	 * @param connectionErrorRetries the connectionErrorRetries to set
+	 */
+	public void setConnectionErrorRetries(int connectionErrorRetries) {
+		this.connectionErrorRetries = connectionErrorRetries;
 	}
 
 	/**
