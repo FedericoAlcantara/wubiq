@@ -33,11 +33,11 @@ public enum PrintClientUtils {
 		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2]);
 		String deviceAddress = deviceData[1];
 		try {
-			input.reset();
-			while (input.available() > 0) {
-				output.write(input.read());
-			}
-			output.flush();
+			byte[] b = new byte[16 * 1024];  
+			int read;  
+			while ((read = input.read(b)) != -1) {  
+				output.write(b, 0, read);  
+			}  
 			byte[] printData = output.toByteArray();
 			for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
 				if (step.equals(MobileClientConversionStep.OUTPUT_SM_BYTES)) {

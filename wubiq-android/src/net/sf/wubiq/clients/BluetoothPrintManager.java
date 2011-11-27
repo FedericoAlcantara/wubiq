@@ -38,6 +38,9 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		this.context = context;
 		this.preferences = preferences;
 		this.bAdapter = BluetoothAdapter.getDefaultAdapter();
+		setCheckPendingJobInterval(5000);
+		setPrintingJobInterval(1000);
+		setConnectionErrorRetries(3);
 		initializeDefault(this);
 	}
 	

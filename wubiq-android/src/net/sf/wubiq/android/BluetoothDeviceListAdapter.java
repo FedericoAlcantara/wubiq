@@ -4,7 +4,6 @@
 package net.sf.wubiq.android;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -33,8 +32,6 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		super();
 		int minimumHeight = 50;
 		Set<BluetoothDevice> devices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
-		String[] drivers = context.getResources().getStringArray(R.array.drivers);
-		List<String> driverList = new ArrayList<String>(Arrays.asList(drivers));
 		for (BluetoothDevice device : devices) {
 			String deviceKey = DEVICE_PREFIX + device.getAddress();
 			TextView deviceName = new TextView(context);
@@ -44,13 +41,13 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 			texts.add(deviceName);
 			
 			Spinner spinner = new Spinner(context);
-			ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(context, R.array.drivers, android.R.layout.simple_spinner_item);
+			ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, MobileDevices.INSTANCE.getDeviceNames());
 			adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 			spinner.setAdapter(adapter);
 			spinner.setMinimumHeight(minimumHeight);
 			spinner.setPromptId(R.string.select_driver);
 			String selection = preferences.getString(deviceKey, "--");
-			int index = driverList.indexOf(selection);
+			int index = MobileDevices.INSTANCE.getDeviceNames().indexOf(selection);
 			if (index > -1) {
 				spinner.setSelection(index);
 			}

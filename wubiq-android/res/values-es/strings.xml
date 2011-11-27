@@ -4,10 +4,14 @@
     <string name="app_name">Wubiq-android</string>
 	<string name="configure_bluetooth">Configurar Dispositivos Bluetooth</string>
 	<string name="select_driver">Seleccione Controlador</string>
-	<string-array name = "drivers">
-	    <item>--</item>
-	    <item>Generico</item>
-	    <item>Star Micronics - SM-T300</item>
-	</string-array>
-	    	    
+    <string name="configure_server">Configurar Conexión a Servidor</string>
+    <string name="server_host">Host</string>
+    <string name="server_port">Puerto</string>
+    <string name="client_uuid">UUID</string>
+    <string name="check_manager_status">Verificar Estado Adm.Impresión</string>
+    <string name="reconnect_manager">Reconectar</string>
+    <string name="status_pending">En Espera...</string>
+    <string name="status_connected">Conectado</string>
+    <string name="status_disconnected">Disconectado</string>
+	    	    	    
 </resources>
