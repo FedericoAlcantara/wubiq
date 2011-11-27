@@ -30,12 +30,13 @@ public enum MobileDevices {
 	public Map<String, MobileDeviceInfo> getDevices() {
 		if (devices == null) {
 			devices = new LinkedHashMap<String, MobileDeviceInfo>();
+			registerBlank();
 			registerGenerics();
 			registerStarMicronics();
 		}
 		return devices;
 	}
-
+	
 	/**
 	 * 
 	 * @return Device name list
@@ -44,6 +45,12 @@ public enum MobileDevices {
 		return new ArrayList<String>(getDevices().keySet());
 	}
 		
+	private void registerBlank() {
+		MobileDeviceInfo device = new MobileDeviceInfo();
+		device.setName("--");
+		devices.put("--", device);
+	}
+
 	private void registerGenerics() {
 		devices.put("Generic - 2 in.", genericBw("2"));
 		devices.put("Generic - 3 in.", genericBw("3"));
@@ -58,35 +65,41 @@ public enum MobileDevices {
 	
 	private MobileDeviceInfo genericBw(String width) {
 		MobileDeviceInfo device = new MobileDeviceInfo();
-		ArrayList<MobileConversionStep> serverSteps = new ArrayList<MobileConversionStep>();
+		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
+		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
 		device.setName("Generic -" + width + " in.");
 		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
 		device.setColorCapable(false);
-		serverSteps.add(MobileConversionStep.PDF_TO_IMAGE);
-		serverSteps.add(MobileConversionStep.RESIZE);
-		serverSteps.add(MobileConversionStep.IMAGE_TO_ESCAPED);
+		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
+		serverSteps.add(MobileServerConversionStep.RESIZE);
+		serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
+		clientSteps.add(MobileClientConversionStep.OUTPUT_SM_BYTES);
 		compatibleDevices.add("Generic -" + width + " in.");
 		device.setServerSteps(serverSteps);
+		device.setClientSteps(clientSteps);
 		device.setCompatibleDevices(compatibleDevices);
 		return device;
 	}
 
 	private MobileDeviceInfo starMicronics(String width) {
 		MobileDeviceInfo device = new MobileDeviceInfo();
-		ArrayList<MobileConversionStep> serverSteps = new ArrayList<MobileConversionStep>();
+		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
+		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
 		device.setName("Star Micronics -" + width + " in.");
 		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
 		device.setColorCapable(false);
-		serverSteps.add(MobileConversionStep.PDF_TO_IMAGE);
-		serverSteps.add(MobileConversionStep.RESIZE);
-		serverSteps.add(MobileConversionStep.IMAGE_TO_ESCAPED);
+		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
+		serverSteps.add(MobileServerConversionStep.RESIZE);
+		serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
+		clientSteps.add(MobileClientConversionStep.OUTPUT_SM_BYTES);
 		compatibleDevices.add("SM-S" + width + "00");
 		if (width.equals("3")) {
 			compatibleDevices.add("SM-T"+ width + "00");
 		}
 		device.setServerSteps(serverSteps);
+		device.setClientSteps(clientSteps);
 		device.setCompatibleDevices(compatibleDevices);
 		return device;
 	}

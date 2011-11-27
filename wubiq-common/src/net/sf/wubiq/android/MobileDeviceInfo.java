@@ -5,6 +5,7 @@ package net.sf.wubiq.android;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -23,7 +24,12 @@ public class MobileDeviceInfo {
 	/**
 	 * Order is important in this object
 	 */
-	private ArrayList<MobileConversionStep> serverSteps ;
+	private ArrayList<MobileServerConversionStep> serverSteps ;
+
+	/**
+	 * Order is important in this object
+	 */
+	private ArrayList<MobileClientConversionStep> clientSteps ;
 
 	/**
 	 * @return the name
@@ -43,6 +49,9 @@ public class MobileDeviceInfo {
 	 * @return the compatibleDevices
 	 */
 	public Collection<String> getCompatibleDevices() {
+		if (compatibleDevices == null) {
+			compatibleDevices = new ArrayList<String>();
+		}
 		return compatibleDevices;
 	}
 
@@ -85,6 +94,9 @@ public class MobileDeviceInfo {
 	 * @return the hints
 	 */
 	public Map<MobileConversionHint, Object> getHints() {
+		if (hints == null) {
+			hints = new HashMap<MobileConversionHint, Object>();
+		}
 		return hints;
 	}
 
@@ -98,14 +110,34 @@ public class MobileDeviceInfo {
 	/**
 	 * @return the serverSteps
 	 */
-	public ArrayList<MobileConversionStep> getServerSteps() {
+	public ArrayList<MobileServerConversionStep> getServerSteps() {
+		if (serverSteps == null) {
+			serverSteps = new ArrayList<MobileServerConversionStep>();
+		}
 		return serverSteps;
 	}
 
 	/**
 	 * @param serverSteps the serverSteps to set
 	 */
-	public void setServerSteps(ArrayList<MobileConversionStep> serverSteps) {
+	public void setServerSteps(ArrayList<MobileServerConversionStep> serverSteps) {
 		this.serverSteps = serverSteps;
+	}
+
+	/**
+	 * @return the clientSteps
+	 */
+	public ArrayList<MobileClientConversionStep> getClientSteps() {
+		if (clientSteps == null) {
+			clientSteps = new ArrayList<MobileClientConversionStep>();
+		}
+		return clientSteps;
+	}
+
+	/**
+	 * @param clientSteps the clientSteps to set
+	 */
+	public void setClientSteps(ArrayList<MobileClientConversionStep> clientSteps) {
+		this.clientSteps = clientSteps;
 	}
 }
