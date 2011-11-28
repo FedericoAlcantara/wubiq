@@ -18,31 +18,24 @@
         android:onClick="configureBluetooth"
         android:text="@string/configure_bluetooth" />
 
-    <TextView
-        android:id="@+id/managerStatusField"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:text="Medium Text"
-        android:textAppearance="?android:attr/textAppearanceMedium" />
-
     <LinearLayout
         android:id="@+id/linearLayout1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content" >
 
         <Button
-            android:id="@+id/checkManagerStatusButton"
+            android:id="@+id/startServiceButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:onClick="checkPrintManagerStatus"
-            android:text="@string/check_manager_status" />
+            android:onClick="startService"
+            android:text="@string/start_service" />
 
         <Button
-            android:id="@+id/reconnectManagerButton"
+            android:id="@+id/stopServiceButton"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:onClick="reconnectManager"
-            android:text="@string/reconnect_manager" />
+            android:onClick="stopService"
+            android:text="@string/stop_service" />
 
     </LinearLayout>
 

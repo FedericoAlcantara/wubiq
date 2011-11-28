@@ -2,16 +2,17 @@
 <resources>
 
     <string name="app_name">Wubiq-android</string>
-	<string name="configure_bluetooth">Configurar Dispositivos Bluetooth</string>
+    <string name="print_manager_service">Servicios de Impresión Wubiq</string>
+    <string name="configure_bluetooth">Configurar Dispositivos Bluetooth</string>
 	<string name="select_driver">Seleccione Controlador</string>
     <string name="configure_server">Configurar Conexión a Servidor</string>
     <string name="server_host">Host</string>
     <string name="server_port">Puerto</string>
     <string name="client_uuid">UUID</string>
-    <string name="check_manager_status">Verificar Estado Adm.Impresión</string>
-    <string name="reconnect_manager">Reconectar</string>
-    <string name="status_pending">En Espera...</string>
-    <string name="status_connected">Conectado</string>
-    <string name="status_disconnected">Disconectado</string>
-	    	    	    
+    <string name="start_service">Iniciar Servicios Impresión</string>
+    <string name="stop_service">Detener Servicios Impresión</string>
+	<string name="error_cant_connect_to">Error conectadose a: %0</string>
+	<string name="service_started">Servicios de Impresión Wubiq Iniciados</string>
+    <string name="service_stopped">Servicios de Impresión Wubiq Detenidos</string>
+	    
 </resources>

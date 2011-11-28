@@ -2,6 +2,7 @@
 <resources>
 
     <string name="app_name">Wubiq-android</string>
+    <string name="print_manager_service">Wubiq Print Manager Service</string>
     <string name="configure_bluetooth">Configure Bluetooth devices</string>
     <string name="select_driver">Select Driver</string>
     <string name="configure_server">Configure Server Connection</string>
@@ -10,10 +11,10 @@
     <string name="server_port_default">8080</string>
     <string name="server_host_default">http://localhost</string>
     <string name="client_uuid">UUID</string>
-    <string name="check_manager_status">Check Manager Status</string>
-    <string name="reconnect_manager">Reconnect</string>
-    <string name="status_pending">Pending...</string>
-    <string name="status_connected">Connected</string>
-    <string name="status_disconnected">Disconnected</string>
+    <string name="start_service">Start Print Manager</string>
+    <string name="stop_service">Stop Print Manager</string>
+    <string name="error_cant_connect_to">Can\'t connect to host %0</string>
+    <string name="service_started">Wubiq print services started</string>
+    <string name="service_stopped">Wubiq print services stopped</string>
         
 </resources>

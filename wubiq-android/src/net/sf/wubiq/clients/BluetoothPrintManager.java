@@ -95,6 +95,11 @@ public class BluetoothPrintManager extends LocalPrintManager {
 	}
 	
 	@Override
+	public String hostServletUrl() {
+		return super.hostServletUrl();
+	}
+	
+	@Override
 	public String getHost() {
 		Resources resources = context.getResources();
 		return preferences.getString(AndroidActivity.HOST_KEY, resources.getString(R.string.server_host_default));
@@ -110,6 +115,7 @@ public class BluetoothPrintManager extends LocalPrintManager {
 	public String getUuid() {
 		return preferences.getString(AndroidActivity.UUID_KEY, UUID.randomUUID().toString());
 	}
+	
 		
 	private String serializeServiceName(BluetoothDevice device, String selection) {
 		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)

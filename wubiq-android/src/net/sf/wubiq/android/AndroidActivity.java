@@ -1,15 +1,14 @@
 package net.sf.wubiq.android;
 
-import java.lang.Thread.State;
-
-import net.sf.wubiq.clients.BluetoothPrintManager;
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.Intent;
-import android.content.SharedPreferences;
+import android.content.ServiceConnection;
 import android.os.Bundle;
-import android.os.Handler;
+import android.os.IBinder;
 import android.view.View;
-import android.widget.TextView;
+import android.widget.Toast;
 
 public class AndroidActivity extends Activity {
 	public static final String PREFERENCES = "WUBIQ_ANDROID";
@@ -17,13 +16,19 @@ public class AndroidActivity extends Activity {
 	public static final String PORT_KEY="server_port";
 	public static final String UUID_KEY="client_uuid";
 	public static final String DEVICE_PREFIX = "wubiq-android-bt_";
-	private Thread managerThread;
-	SharedPreferences preferences;
-	private Handler timerHandler = new Handler();
-	private Runnable timerRunnable = new Runnable() {
-		public void run() {
-			checkPrintManagerStatus();
-			timerHandler.postDelayed(this, 15000);
+	
+	@SuppressWarnings("unused")
+	private PrintManagerService printManagerService;
+	private boolean printManagerServiceBound = false;
+	private ServiceConnection serviceConnection = new ServiceConnection() {
+
+		public void onServiceConnected(ComponentName className, IBinder binder) {
+			printManagerService = ((PrintManagerService.PrintManagerBinder)binder).getService();
+			Toast.makeText(AndroidActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
+		}
+
+		public void onServiceDisconnected(ComponentName name) {
+			printManagerService = null;
 		}
 		
 	};
@@ -33,8 +38,6 @@ public class AndroidActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-		preferences = getSharedPreferences(AndroidActivity.PREFERENCES, MODE_PRIVATE);
-		startPrintManager();
     }
     
     public void configureServer(View view) {
@@ -47,36 +50,15 @@ public class AndroidActivity extends Activity {
     	startActivity(intent);
     }
     
-    public void checkPrintManagerStatus(View view) {
-    	checkPrintManagerStatus();
+    public void startService(View view) {
+		bindService(new Intent(this, PrintManagerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
+		printManagerServiceBound = true;
     }
     
-    public void checkPrintManagerStatus() {
-		TextView status = (TextView) findViewById(R.id.managerStatusField);
-    	if (managerThread.getState().equals(State.TERMINATED)) {
-    		status.setText(R.string.status_disconnected);
-    	} else {
-    		status.setText(R.string.status_connected);
+    public void stopService(View view) {
+    	if (printManagerServiceBound) {
+    		unbindService(serviceConnection);
+    		printManagerServiceBound = false;
     	}
-    }
-    
-    public void reconnectManager(View view) {
-    	if (managerThread.getState().equals(State.TERMINATED)) {
-    		startPrintManager();
-    	}
-    }
-    
-    private void startPrintManager() {
-		BluetoothPrintManager manager = new BluetoothPrintManager(this, preferences);
-        managerThread = new Thread(manager);
-        managerThread.start();
-		TextView status = (TextView) findViewById(R.id.managerStatusField);
-		status.setText(R.string.status_pending);
-		startTimer();
-    }
-    
-    private void startTimer() {
-    	timerHandler.removeCallbacks(timerRunnable);
-    	timerHandler.postDelayed(timerRunnable, 5000);
     }
 }
