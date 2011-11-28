@@ -60,6 +60,7 @@ public class LocalPrintManager implements Runnable {
 	private long printingJobInterval = 3000;
 	private int connectionErrorRetries = -1;
 	private int connectionErrorCount = 0;
+	private boolean cancelManager = false;
 	
 	public LocalPrintManager() {
 	}
@@ -242,13 +243,15 @@ public class LocalPrintManager implements Runnable {
 	 * @return
 	 */
 	protected boolean isKilled() {
-		boolean returnValue = false;
-		try {
-			if (askServer(CommandKeys.IS_KILLED).equals("1")) {
-				returnValue = true;
+		boolean returnValue = isCancelManager();
+		if (!returnValue) {
+			try {
+				if (askServer(CommandKeys.IS_KILLED).equals("1")) {
+					returnValue = true;
+				}
+			} catch (ConnectException e) {
+				doLog(e.getMessage());
 			}
-		} catch (ConnectException e) {
-			doLog(e.getMessage());
 		}
 		doLog("Is Killed?" + returnValue);
 		return returnValue;
@@ -532,6 +535,20 @@ public class LocalPrintManager implements Runnable {
 	 */
 	public void setConnectionErrorRetries(int connectionErrorRetries) {
 		this.connectionErrorRetries = connectionErrorRetries;
+	}
+
+	/**
+	 * @return the cancelManager
+	 */
+	public boolean isCancelManager() {
+		return cancelManager;
+	}
+
+	/**
+	 * @param cancelManager the cancelManager to set
+	 */
+	public void setCancelManager(boolean cancelManager) {
+		this.cancelManager = cancelManager;
 	}
 
 	/**
