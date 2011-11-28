@@ -5,6 +5,7 @@ package net.sf.wubiq.android;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -67,6 +68,7 @@ public enum MobileDevices {
 		MobileDeviceInfo device = new MobileDeviceInfo();
 		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
 		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
+		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
 		device.setName("Generic -" + width + " in.");
 		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
@@ -75,9 +77,11 @@ public enum MobileDevices {
 		serverSteps.add(MobileServerConversionStep.RESIZE);
 		serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
 		clientSteps.add(MobileClientConversionStep.OUTPUT_SM_BYTES);
+		hints.put(MobileConversionHint.PRINT_DEFINED_BITMAP, new byte[]{0x1b, 0x58, 0x32, 0x18});
 		compatibleDevices.add("Generic -" + width + " in.");
 		device.setServerSteps(serverSteps);
 		device.setClientSteps(clientSteps);
+		device.setHints(hints);
 		device.setCompatibleDevices(compatibleDevices);
 		return device;
 	}
