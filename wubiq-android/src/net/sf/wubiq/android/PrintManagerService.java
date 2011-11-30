@@ -114,4 +114,5 @@ public class PrintManagerService extends Service {
     public String checkKilledStatus() throws Exception {
     	return manager.askServer("isKilled");
     }
+    
 }

@@ -12,9 +12,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import net.sf.wubiq.android.WubiqActivity;
 import net.sf.wubiq.android.PrintClientUtils;
 import net.sf.wubiq.android.R;
+import net.sf.wubiq.android.WubiqActivity;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import android.bluetooth.BluetoothAdapter;
@@ -126,7 +126,7 @@ public class BluetoothPrintManager extends LocalPrintManager {
 			throws ConnectException {
 		return super.askServer(command, parameters);
 	}
-		
+	
 	private String serializeServiceName(BluetoothDevice device, String selection) {
 		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
 			.append(ParameterKeys.PARAMETER_SEPARATOR)
@@ -136,7 +136,6 @@ public class BluetoothPrintManager extends LocalPrintManager {
 			.append(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)
 			.append(selection);
 		return printServiceRegister.toString();
-
 	}
 	
 	private String serializePrintServiceCategories(BluetoothDevice device) {
@@ -218,7 +217,7 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		return compressAttributes(categories.toString());
 	}
 	
-	public String compressAttributes(String attributeList) {
+	protected String compressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
 			returnValue = returnValue.replaceAll(entry.getKey(), entry.getValue());
@@ -226,7 +225,7 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		return returnValue;
 	}
 	
-	public String deCompressAttributes(String attributeList) {
+	protected String deCompressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
 			returnValue = returnValue.replaceAll(entry.getValue(), entry.getKey());
