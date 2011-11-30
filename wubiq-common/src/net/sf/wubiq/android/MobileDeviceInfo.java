@@ -15,11 +15,18 @@ import java.util.Map;
  *
  */
 public class MobileDeviceInfo {
+	private final int DEFAULT_DPI = 192;
+
 	private String name;
 	private Collection<String> compatibleDevices;
 	private Integer maxHorPixels;
 	private boolean colorCapable;
 	private Map<MobileConversionHint, Object> hints;
+	private Integer resolutionDpi;
+	
+	public MobileDeviceInfo() {
+		resolutionDpi = DEFAULT_DPI;
+	}
 	
 	/**
 	 * Order is important in this object
@@ -105,6 +112,20 @@ public class MobileDeviceInfo {
 	 */
 	public void setHints(Map<MobileConversionHint, Object> hints) {
 		this.hints = hints;
+	}
+
+	/**
+	 * @return the resolutionDpi
+	 */
+	public Integer getResolutionDpi() {
+		return resolutionDpi;
+	}
+
+	/**
+	 * @param resolutionDpi the resolutionDpi to set
+	 */
+	public void setResolutionDpi(Integer resolutionDpi) {
+		this.resolutionDpi = resolutionDpi;
 	}
 
 	/**

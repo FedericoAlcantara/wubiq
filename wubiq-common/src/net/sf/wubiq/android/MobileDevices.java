@@ -17,7 +17,6 @@ import java.util.Map;
  */
 public enum MobileDevices {
 	INSTANCE;
-	private final int DEFAULT_DPI = 192;
 	
 	/**
 	 * Order is important.
@@ -78,7 +77,7 @@ public enum MobileDevices {
 		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
 		device.setName("Generic -" + width + " in.");
-		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
+		device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
 		device.setColorCapable(false);
 		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
 		serverSteps.add(MobileServerConversionStep.RESIZE);
@@ -99,7 +98,7 @@ public enum MobileDevices {
 		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
 		device.setName("Star Micronics -" + width + " in.");
-		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
+		device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
 		device.setColorCapable(false);
 		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
 		serverSteps.add(MobileServerConversionStep.RESIZE);
@@ -122,7 +121,7 @@ public enum MobileDevices {
 		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
 		device.setName("Porti-S -" + width + " in.");
-		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
+		device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
 		device.setColorCapable(false);
 		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
 		serverSteps.add(MobileServerConversionStep.RESIZE);
