@@ -48,10 +48,6 @@ public class PrintServiceUtils {
 	public static boolean OUTPUT_LOG = true;
 	private static Map<String, String> compressionMap;
 	
-	public static void main(String[] args) {
-		getPrintServices();
-	}
-	
 	/**
 	 * Tries to refresh print services.
 	 */
@@ -63,12 +59,14 @@ public class PrintServiceUtils {
 			method.setAccessible(true);
 			List lookupPrintServices = (List) method.invoke(null, new Object[]{});
 			for (Object object : lookupPrintServices) {
+				LOG.info("Trying to refresh:" + object.getClass());
 				Method refreshServices;
 				try {
 					refreshServices = object.getClass().getDeclaredMethod("refreshServices", new Class[]{});
 					refreshServices.invoke(object, new Object[]{});
+					LOG.info("  refreshServices executed on:" + object.getClass());
 				} catch (Exception e) {
-					LOG.debug(e.getMessage());
+					LOG.info("  Error trying refreshServices on:" + object.getClass() + " -> " + e.getMessage());
 				}
 			}
 		} catch (Exception e) {
@@ -428,7 +426,6 @@ public class PrintServiceUtils {
 	
 	/**
 	 * Serialize service name
-	 * @param service Service to be serialized
 	 * @param debugMode If true all errors are logged out
 	 * @return Serialized service name
 	 */
@@ -442,7 +439,6 @@ public class PrintServiceUtils {
 	/**
 	 * Deserialize printService and its categories
 	 * @param printServiceName Print service to deserialize
-	 * @param categoriesString List of categories.
 	 * @return RemotePrintService
 	 */
 	public static RemotePrintService deSerializeService(String printServiceName, String compressedCategoriesString) {

@@ -34,6 +34,7 @@ public enum MobileDevices {
 			registerBlank();
 			registerGenerics();
 			registerStarMicronics();
+			registerPortiS();
 		}
 		return devices;
 	}
@@ -64,6 +65,12 @@ public enum MobileDevices {
 		devices.put("Star Micronics - 4 in.", starMicronics("4"));
 	}
 	
+	private void registerPortiS() {
+		devices.put("Porti-S - 2 in.", portiS("2"));
+		devices.put("Porti-S - 3 in.", portiS("3"));
+		devices.put("Porti-S - 4 in.", portiS("4"));
+	}
+	
 	private MobileDeviceInfo genericBw(String width) {
 		MobileDeviceInfo device = new MobileDeviceInfo();
 		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
@@ -76,7 +83,7 @@ public enum MobileDevices {
 		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
 		serverSteps.add(MobileServerConversionStep.RESIZE);
 		serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
-		clientSteps.add(MobileClientConversionStep.OUTPUT_SM_BYTES);
+		clientSteps.add(MobileClientConversionStep.OUTPUT_BYTES);
 		hints.put(MobileConversionHint.PRINT_DEFINED_BITMAP, new byte[]{0x1b, 0x58, 0x32, 0x18});
 		compatibleDevices.add("Generic -" + width + " in.");
 		device.setServerSteps(serverSteps);
@@ -108,4 +115,24 @@ public enum MobileDevices {
 		return device;
 	}
 
+	private MobileDeviceInfo portiS(String width) {
+		MobileDeviceInfo device = new MobileDeviceInfo();
+		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
+		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
+		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
+		Collection<String> compatibleDevices = new ArrayList<String>();
+		device.setName("Porti-S -" + width + " in.");
+		device.setMaxHorPixels(Integer.parseInt(width) * DEFAULT_DPI);
+		device.setColorCapable(false);
+		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
+		serverSteps.add(MobileServerConversionStep.RESIZE);
+		serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
+		clientSteps.add(MobileClientConversionStep.OUTPUT_BYTES);
+		compatibleDevices.add("Porti-S -" + width + " in.");
+		device.setServerSteps(serverSteps);
+		device.setClientSteps(clientSteps);
+		device.setHints(hints);
+		device.setCompatibleDevices(compatibleDevices);
+		return device;
+	}
 }
