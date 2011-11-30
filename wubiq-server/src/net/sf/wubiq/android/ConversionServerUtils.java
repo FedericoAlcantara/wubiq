@@ -9,8 +9,11 @@ import java.awt.image.PixelGrabber;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 
 import javax.imageio.ImageIO;
 
@@ -70,7 +73,7 @@ public enum ConversionServerUtils {
 	 * @return a stream representing a bitmap
 	 */
 	protected BufferedImage pdfToImg(MobileDeviceInfo deviceInfo, InputStream pdf) {
-		File bitmap = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.isColorCapable());
+		File bitmap = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.getResolutionDpi());
 		BufferedImage returnValue = null;
 		try {
 			returnValue = ImageIO.read(bitmap);
@@ -93,7 +96,20 @@ public enum ConversionServerUtils {
 		int width = img.getWidth();
 		// Let's resize it
 		if (width > maxWidth) {
-			returnValue = Scalr.resize(img, maxWidth);
+			double rate = new Double(width) / new Double(maxWidth);
+			int maxHeight = new Double(img.getHeight() / rate).intValue();
+			returnValue = Scalr.resize(img, maxWidth, maxHeight);
+		}
+		OutputStream output;
+		try {
+			output = new FileOutputStream("/Users/federico/Desktop/Z-Borrame/image.png");
+			ImageIO.createImageOutputStream(output);
+		} catch (FileNotFoundException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return returnValue;
 	}

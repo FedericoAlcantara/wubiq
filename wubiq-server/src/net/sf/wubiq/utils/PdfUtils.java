@@ -3,7 +3,6 @@
  */
 package net.sf.wubiq.utils;
 
-import java.awt.Toolkit;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
@@ -27,7 +26,7 @@ public enum PdfUtils {
 	 * @param pdf Pdf file
 	 * @return File object or null if something failed.
 	 */
-	public File convertPdfToPng(InputStream pdf, boolean colorCapable) {
+	public File convertPdfToPng(InputStream pdf, int resolution) {
 		File returnValue = null;
 		PDDocument document = null;
 		try {
@@ -38,8 +37,7 @@ public enum PdfUtils {
 	        int endPage = Integer.MAX_VALUE;
 	        File tempFile = File.createTempFile("temp", "pdf.png");
 	        String outputPrefix = tempFile.getPath().substring(0, tempFile.getPath().lastIndexOf('.'));
-	        int imageType = colorCapable ? BufferedImage.TYPE_INT_RGB : BufferedImage.TYPE_INT_RGB;
-	        int resolution = Toolkit.getDefaultToolkit().getScreenResolution() * 2;
+	        int imageType = BufferedImage.TYPE_INT_RGB;
 	        if (imageWriter.writeImage(document, imageFormat, "", startPage, endPage, outputPrefix, imageType, resolution)) {
 	        	returnValue = new File(outputPrefix + "1." + imageFormat);
 	        }

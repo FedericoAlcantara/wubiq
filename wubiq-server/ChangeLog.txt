@@ -1,4 +1,8 @@
 ======================
+Wubiq 0.8 (2011-11-30)
+======================
+- Fixed scaling issues with mobile printing.
+======================
 Wubiq 0.7 (2011-11-30)
 ======================
 - Added Android application for bluetooth devices.
