@@ -9,6 +9,7 @@ import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
 
 /**
+ * Sets the driver that will handle the device printing.
  * @author Federico Alcantara
  *
  */

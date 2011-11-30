@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 
 /**
+ * Receiver for ensuring boot up service initialization.
  * @author Federico Alcantara
  *
  */

@@ -24,7 +24,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 
 /**
- * Establish the connection to the server and prints the data received.
+ * Manage the document printing between the server and the client.
  * @author Federico Alcantara
  *
  */
@@ -44,6 +44,9 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		initializeDefault(this);
 	}
 	
+	/**
+	 * Bluetooth print service registration
+	 */
 	@Override
 	protected void registerPrintServices() throws ConnectException {
 		registerComputerName();
@@ -64,6 +67,9 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		}
 	}
 	
+	/**
+	 * Print pending jobs to the client.
+	 */
 	@Override
 	protected void processPendingJob(String jobId) throws ConnectException {
 		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)

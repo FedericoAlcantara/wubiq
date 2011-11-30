@@ -9,12 +9,15 @@ import android.os.Bundle;
 import android.widget.GridView;
 
 /**
- * Allows configuration of bluetooth devices
+ * Allows configuration of bluetooth devices.
  * @author Federico Alcantara
  *
  */
 public class ConfigureBluetoothActivity extends Activity {
 	
+	/**
+	 * Called upon activity creation.
+	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -23,6 +26,10 @@ public class ConfigureBluetoothActivity extends Activity {
 		initialize(preferences);
 	}
 	
+	/**
+	 * Loads view with new or previously stored preferences.
+	 * @param preferences Application preferences.
+	 */
 	private void initialize(SharedPreferences preferences) {
 		GridView grid = (GridView) findViewById(R.id.devices);
 		grid.setAdapter(new BluetoothDeviceListAdapter(this, preferences));

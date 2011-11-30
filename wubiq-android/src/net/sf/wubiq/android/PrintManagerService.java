@@ -15,6 +15,8 @@ import android.os.IBinder;
 import android.util.Log;
 
 /**
+ * Service that controls the communication to server.
+ * Design to keep connection alive and restore dropped communication.
  * @author Federico Alcantara
  *
  */

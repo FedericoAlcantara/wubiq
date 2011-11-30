@@ -10,6 +10,11 @@ import android.os.IBinder;
 import android.view.View;
 import android.widget.Toast;
 
+/**
+ * Main activity.
+ * @author Federico Alcantara
+ *
+ */
 public class WubiqActivity extends Activity {
 	public static final String PREFERENCES = "WUBIQ_ANDROID";
 	public static final String HOST_KEY="server_host";
@@ -40,21 +45,37 @@ public class WubiqActivity extends Activity {
         setContentView(R.layout.main);
     }
     
+    /**
+     * Called when configure server is selected.
+     * @param view Calling view object.
+     */
     public void configureServer(View view) {
     	Intent intent = new Intent(this, ConfigureServerActivity.class);
     	startActivity(intent);
     }
 
+    /**
+     * Invokes bluetooth devices configuration.
+     * @param view Calling view object.
+     */
     public void configureBluetooth(View view) {
     	Intent intent = new Intent(this, ConfigureBluetoothActivity.class);
     	startActivity(intent);
     }
     
+    /**
+     * Start print services.
+     * @param view Calling view object.
+     */
     public void startService(View view) {
 		bindService(new Intent(this, PrintManagerService.class), serviceConnection, Context.BIND_AUTO_CREATE);
 		printManagerServiceBound = true;
     }
     
+    /**
+     * Stop print services. 
+     * @param view Calling view object.
+     */
     public void stopService(View view) {
     	if (printManagerServiceBound) {
     		unbindService(serviceConnection);

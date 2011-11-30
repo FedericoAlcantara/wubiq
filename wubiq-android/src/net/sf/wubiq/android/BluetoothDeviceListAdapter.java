@@ -19,6 +19,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 /**
+ * Creates the bluetooth list of paired devices.
  * @author Federico Alcantara
  *
  */
@@ -28,6 +29,11 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	List<TextView> texts = new ArrayList<TextView>();
 	List<Spinner> spinners = new ArrayList<Spinner>();
 	
+	/**
+	 * Constructor.
+	 * @param context Context running the application.
+	 * @param preferences Application preferences.
+	 */
 	public BluetoothDeviceListAdapter(Context context, SharedPreferences preferences) {
 		super();
 		int minimumHeight = 50;

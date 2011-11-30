@@ -18,6 +18,8 @@ import android.widget.Spinner;
 import android.widget.TextView;
 
 /**
+ * Represents the spinner adapter with the driver information for 
+ * bluetooth devices.
  * @author Federico Alcantara
  *
  */

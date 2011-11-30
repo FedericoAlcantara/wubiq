@@ -19,6 +19,9 @@ import android.widget.EditText;
 public class ConfigureServerActivity extends Activity {
 	SharedPreferences preferences;
 	
+	/**
+	 * Called upon activity creation.
+	 */
 	@Override
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -27,6 +30,9 @@ public class ConfigureServerActivity extends Activity {
 		initialize();
 	}
 
+	/**
+	 * Loads view with new or previously stored preferences.
+	 */
 	private void initialize() {
 		EditText host = (EditText) findViewById(R.id.hostField);
 		EditText port = (EditText) findViewById(R.id.portField);
