@@ -221,7 +221,7 @@ public class RemotePrintServlet extends HttpServlet {
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
-			remotePrintService.setMobile(true);
+			remotePrintService.setMobile(false);
 			getRemoteClientManager(request).validateRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
 			response.setContentType("text/html");

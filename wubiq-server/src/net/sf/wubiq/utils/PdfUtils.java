@@ -54,6 +54,7 @@ public enum PdfUtils {
 				}
 			}
 		}
+		LOG.info("Converted:" + returnValue);
 		return returnValue;
 	}
 	

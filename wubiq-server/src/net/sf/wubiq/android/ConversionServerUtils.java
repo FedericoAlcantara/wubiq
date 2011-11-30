@@ -153,6 +153,8 @@ public enum ConversionServerUtils {
 			lineFeed = (byte[]) deviceInfo.getHints().get(MobileConversionHint.LINE_FEED);
 		}
 		writeData(printData, lineFeed);
+		writeData(printData, lineFeed);
+		writeData(printData, lineFeed);
 		return new ByteArrayInputStream(printData.toByteArray());
 	}
 
@@ -186,11 +188,14 @@ public enum ConversionServerUtils {
 	 * @param printData Print data to be outputted.
 	 */
 	private void initializePrinter(MobileDeviceInfo deviceInfo, ByteArrayOutputStream printData) {
-		byte[] initializePrinter = {0x1b, 0x40, 0x1b, 0x58, 0x32, 0x18};
+		byte[] initializePrinter = {0x1b, 0x40};
+
 		if (deviceInfo.getHints().containsKey(MobileConversionHint.INITIALIZE_PRINTER)) {
 			initializePrinter = (byte[]) deviceInfo.getHints().get(MobileConversionHint.INITIALIZE_PRINTER);
 		}
 		writeData(printData, initializePrinter);
+		
+		printDefinedBitmap(deviceInfo, printData);
 	}
 	
 	/**
@@ -201,8 +206,8 @@ public enum ConversionServerUtils {
 	 */
 	private void startBitmapDefinition(MobileDeviceInfo deviceInfo, ByteArrayOutputStream printData, int byteWidth) {
 		byte[] defineBitmap = { 0x1b, 0x58, 0x34, 0, 24 };
-		if (deviceInfo.getHints().containsKey(MobileConversionHint.DEFINE_BITMAP_WIDTH_ON_THIRD)) {
-			defineBitmap = (byte[]) deviceInfo.getHints().get(MobileConversionHint.DEFINE_BITMAP_WIDTH_ON_THIRD);
+		if (deviceInfo.getHints().containsKey(MobileConversionHint.DEFINE_BITMAP_WIDTH_ON_FOURTH)) {
+			defineBitmap = (byte[]) deviceInfo.getHints().get(MobileConversionHint.DEFINE_BITMAP_WIDTH_ON_FOURTH);
 		}
 		defineBitmap[3] = (byte)byteWidth;
 		writeData(printData, defineBitmap);

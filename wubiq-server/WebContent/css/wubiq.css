@@ -4,12 +4,21 @@ body {
 
 .wubiq_jws_button {
 	text-align: center;
+	vertical-align: text-top;
 }
 
 .wubiq_s_table {
-	margin-top: 15px;
+	margin-top: 5px;
 	border: 2px solid #98bf21;
 	width: 100%;
+}
+
+.wubiq_header td {
+	text-align:center;
+}
+
+.wubiq_header form {
+	margin-bottom: 0px;
 }
 
 .wubiq_sd_table {

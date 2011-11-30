@@ -55,14 +55,28 @@
 		<title>Wubiq</title>
 	</head>
 	<body>
-		<div class="wubiq_jws_button">
-			<script>
-				var dir = location.href.substring(0, location.href.lastIndexOf('/')+1);
-			    var url = dir + "wubiq-client-webstart.jsp";
-			    deployJava.launchButtonPNG = "<%=ServerLabels.get("server.jws_image") %>";
-			    deployJava.createWebStartLaunchButton(url, '1.6.0');	
-			</script>
-		</div>
+		<table class="wubiq_header" width="100%">
+			<tr>
+				<td>
+					<form action="wubiq-android.apk">
+						<input type="Submit" value ='<%=ServerLabels.get("server.install_wubiq_android")%>'/>
+					</form>
+				</td>
+				<td>
+					<script>
+						var dir = location.href.substring(0, location.href.lastIndexOf('/')+1);
+					    var url = dir + "wubiq-client-webstart.jsp";
+					    deployJava.launchButtonPNG = "<%=ServerLabels.get("server.jws_image") %>";
+					    deployJava.createWebStartLaunchButton(url, '1.6.0');	
+					</script>
+				</td>
+				<td>
+					<form action="wubiq-client.jar">
+						<input type="Submit" value ='<%=ServerLabels.get("server.download_wubiq_client")%>'/>
+					</form>
+				</td>
+			</tr>
+		</table>
 		<%
 		RemoteClientManager manager = RemoteClientManager.getRemoteClientManager(request);
 		String protocol = request.getProtocol().substring(0, request.getProtocol().indexOf("/")).toLowerCase();

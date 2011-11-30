@@ -1,4 +1,9 @@
 ======================
+Wubiq 0.7 (2011-11-30)
+======================
+- Added Android application for bluetooth devices.
+- Bluetooth devices supported: Star Micronics SM models, Woosim Porti-S models.
+======================
 Wubiq 0.6 (2011-11-11)
 ======================
 - Refresh of server services improved.

@@ -27,8 +27,7 @@ Installing wubiq as a server
 Using the wubiq manager
 -----------------------
 Wubiq has a manager from where you can check the status of connected clients and their services. 
-Also provides a link for running wubiq-client on a local computer to expose connected devices.
-Use its methods for installing and testing remote clients. 
+Also provides a link for installing or downloading wubiq-client to be run on local computers or mobile devices.
 To bring up the manager on any client open a browser and just type: http://host:port/wubiq-server.
 
 Base methods
@@ -41,13 +40,23 @@ There are two ways to get the client to work on the remote computer.
 Or by downloading a client program and running it from the command line.
 1. From the previous downnload extract wubiq-client.jar.
 2. You can make a batch or script to run the client with the following:
-   **java -jar wubiq-client.jar --host http://host:port/wubiq-server**. For example:
-   - java -jar wubiq-client.jar --host http://localhost:8080/wubiq-server
+   **java -jar wubiq-client.jar --host http://host --port 8080**. For example:
+   - java -jar wubiq-client.jar --host http://localhost --port 8080
    See the wubiq-client help by running java -jar wubiq-client.jar -?
 3. To test if your clients are working as expected connect to wubiq-manager with: http://host:port/wubiq-server.
    If everything is working you should see a list of servers' print services including remote print services from client computers.
 
 **Note: replace *host* with the host address, *port* with the port (by default:8080).
+
+Installing on Android
+---------------------
+Wubiq can now be installed on android powered devices. It will enable bluetooth printing through wubiq's interface.
+To install it on Android you have two options:
+1. Connecting to the wubiq-manager using http://host:port/wubiq-server, and download the android app (wubiq-android.apk)
+
+Or by extracting the android application wubiq-android.apk from a previously downloaded wubiq.zip.
+
+Follow the installation steps and then configure the server address and the printers to be managed by wubiq.
 
 Limitations
 -----------
