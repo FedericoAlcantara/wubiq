@@ -23,7 +23,7 @@ public class ConfigureServerActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.configure_server);
-		preferences = getSharedPreferences(AndroidActivity.PREFERENCES, MODE_PRIVATE);
+		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 		initialize();
 	}
 
@@ -32,9 +32,9 @@ public class ConfigureServerActivity extends Activity {
 		EditText port = (EditText) findViewById(R.id.portField);
 		EditText uuid = (EditText) findViewById(R.id.clientUUIDField);
 		Resources resources = getResources();
-		host.setText(preferences.getString(AndroidActivity.HOST_KEY, resources.getString(R.string.server_host_default)));
-		port.setText(preferences.getString(AndroidActivity.PORT_KEY, resources.getString(R.string.server_port_default)));
-		uuid.setText(preferences.getString(AndroidActivity.UUID_KEY, UUID.randomUUID().toString()));
+		host.setText(preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default)));
+		port.setText(preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default)));
+		uuid.setText(preferences.getString(WubiqActivity.UUID_KEY, UUID.randomUUID().toString()));
 		savePreferences();
 	}
 
@@ -49,9 +49,10 @@ public class ConfigureServerActivity extends Activity {
 		EditText host = (EditText) findViewById(R.id.hostField);
 		EditText port = (EditText) findViewById(R.id.portField);
 		EditText uuid = (EditText) findViewById(R.id.clientUUIDField);
-		editor.putString(AndroidActivity.HOST_KEY, host.getText().toString());
-		editor.putString(AndroidActivity.PORT_KEY, port.getText().toString());
-		editor.putString(AndroidActivity.UUID_KEY, uuid.getText().toString());
+		editor.putString(WubiqActivity.HOST_KEY, host.getText().toString());
+		editor.putString(WubiqActivity.PORT_KEY, port.getText().toString());
+		editor.putString(WubiqActivity.UUID_KEY, uuid.getText().toString());
 		editor.commit();
 	}
+	
 }

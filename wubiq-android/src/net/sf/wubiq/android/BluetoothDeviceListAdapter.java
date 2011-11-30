@@ -31,30 +31,35 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	public BluetoothDeviceListAdapter(Context context, SharedPreferences preferences) {
 		super();
 		int minimumHeight = 50;
-		Set<BluetoothDevice> devices = BluetoothAdapter.getDefaultAdapter().getBondedDevices();
-		for (BluetoothDevice device : devices) {
-			String deviceKey = DEVICE_PREFIX + device.getAddress();
-			TextView deviceName = new TextView(context);
-			deviceName.setText(device.getName() + " " + device.getAddress());
-			deviceName.setHeight(minimumHeight);
-			deviceName.setTextAppearance(context, android.R.attr.textAppearanceMedium);
-			texts.add(deviceName);
-			
-			Spinner spinner = new Spinner(context);
-			ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, MobileDevices.INSTANCE.getDeviceNames());
-			adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-			spinner.setAdapter(adapter);
-			spinner.setMinimumHeight(minimumHeight);
-			spinner.setPromptId(R.string.select_driver);
-			String selection = preferences.getString(deviceKey, "--");
-			int index = MobileDevices.INSTANCE.getDeviceNames().indexOf(selection);
-			if (index > -1) {
-				spinner.setSelection(index);
+		BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
+		if (btAdapter != null) {
+			Set<BluetoothDevice> devices = btAdapter.getBondedDevices();
+			for (BluetoothDevice device : devices) {
+				String deviceKey = DEVICE_PREFIX + device.getAddress();
+				TextView deviceName = new TextView(context);
+				deviceName.setText(device.getName() + " " + device.getAddress());
+				deviceName.setHeight(minimumHeight);
+				deviceName.setTextAppearance(context, android.R.attr.textAppearanceMedium);
+				texts.add(deviceName);
+				
+				Spinner spinner = new Spinner(context);
+				ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, MobileDevices.INSTANCE.getDeviceNames());
+				adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+				spinner.setAdapter(adapter);
+				spinner.setMinimumHeight(minimumHeight);
+				spinner.setPromptId(R.string.select_driver);
+				String selection = preferences.getString(deviceKey, "--");
+				int index = MobileDevices.INSTANCE.getDeviceNames().indexOf(selection);
+				if (index > -1) {
+					spinner.setSelection(index);
+				}
+				spinner.setOnItemSelectedListener(new BluetoothDeviceListListener(preferences, deviceKey));
+				spinners.add(spinner);
 			}
-			spinner.setOnItemSelectedListener(new BluetoothDeviceListListener(preferences, deviceKey));
-			spinners.add(spinner);
+			this.deviceCount = devices.size();
+		} else {
+			this.deviceCount = 0;
 		}
-		this.deviceCount = devices.size();
 	}
 	
 	/*

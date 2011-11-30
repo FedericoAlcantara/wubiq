@@ -12,7 +12,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
 
-import net.sf.wubiq.android.AndroidActivity;
+import net.sf.wubiq.android.WubiqActivity;
 import net.sf.wubiq.android.PrintClientUtils;
 import net.sf.wubiq.android.R;
 import net.sf.wubiq.common.CommandKeys;
@@ -49,15 +49,17 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		registerComputerName();
 		// Gather printServices.
 		doLog("Register Print Services");
-		for (BluetoothDevice device : bAdapter.getBondedDevices()) {
-			String deviceKey = AndroidActivity.DEVICE_PREFIX + device.getAddress();
-			String selection = preferences.getString(deviceKey, null);
-			if (selection != null && !selection.equals("--")) {
-				StringBuffer printServiceRegister = new StringBuffer(serializeServiceName(device, selection));
-				StringBuffer categories = new StringBuffer(serializePrintServiceCategories(device));
-				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
-						.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
-				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString());
+		if (bAdapter != null) {
+			for (BluetoothDevice device : bAdapter.getBondedDevices()) {
+				String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();
+				String selection = preferences.getString(deviceKey, null);
+				if (selection != null && !selection.equals("--")) {
+					StringBuffer printServiceRegister = new StringBuffer(serializeServiceName(device, selection));
+					StringBuffer categories = new StringBuffer(serializePrintServiceCategories(device));
+					categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
+							.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
+					askServer(CommandKeys.REGISTER_MOBILE_PRINT_SERVICE, printServiceRegister.toString(), categories.toString());
+				}
 			}
 		}
 	}
@@ -102,20 +104,28 @@ public class BluetoothPrintManager extends LocalPrintManager {
 	@Override
 	public String getHost() {
 		Resources resources = context.getResources();
-		return preferences.getString(AndroidActivity.HOST_KEY, resources.getString(R.string.server_host_default));
+		return preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default));
 	}
 	
 	@Override
 	public String getPort() {
 		Resources resources = context.getResources();
-		return preferences.getString(AndroidActivity.PORT_KEY, resources.getString(R.string.server_port_default));
+		return preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default));
 	}
 	
 	@Override
 	public String getUuid() {
-		return preferences.getString(AndroidActivity.UUID_KEY, UUID.randomUUID().toString());
+		return preferences.getString(WubiqActivity.UUID_KEY, UUID.randomUUID().toString());
 	}
 	
+	/** 
+	 * Public for testing purposes
+	 */
+	@Override
+	public String askServer(String command, String... parameters)
+			throws ConnectException {
+		return super.askServer(command, parameters);
+	}
 		
 	private String serializeServiceName(BluetoothDevice device, String selection) {
 		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)

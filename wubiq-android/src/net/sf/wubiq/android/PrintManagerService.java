@@ -22,8 +22,8 @@ public class PrintManagerService extends Service {
 
 	private static final String TAG = "PrintManagerService";
 	private Thread managerThread;
-	SharedPreferences preferences;
-	BluetoothPrintManager manager;
+	private SharedPreferences preferences;
+	private BluetoothPrintManager manager;
 	private boolean cancelManager;
 	private Handler timerHandler = new Handler();
 	private Runnable timerRunnable = new Runnable() {
@@ -51,24 +51,35 @@ public class PrintManagerService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
-		preferences = getSharedPreferences(AndroidActivity.PREFERENCES, MODE_PRIVATE);
+		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 		startPrintManager();
 	}
 	
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+	}
+	
+	@Override
+	public boolean onUnbind(Intent intent) {
+		cancelManager = true;
 		if (manager != null) {
 			manager.setCancelManager(true);
 		}
+		timerHandler.removeCallbacks(timerRunnable);
+		timerHandler = null;
+		
+		return super.onUnbind(intent);
 	}
-	
-    private void startPrintManager() {
+
+	private void startPrintManager() {
     	if (!cancelManager) {
 			manager = new BluetoothPrintManager(this, preferences);
 	        managerThread = new Thread(manager);
 	        managerThread.start();
 			startTimer();
+    	} else {
+    		manager = null;
     	}
     }
     
@@ -77,13 +88,30 @@ public class PrintManagerService extends Service {
     	timerHandler.postDelayed(timerRunnable, 5000);
     }
 
-    private void checkPrintManagerStatus() {
+    /**
+     * @return True if print manager is running
+     */
+    public boolean checkPrintManagerStatus() {
+    	boolean returnValue = false;
     	if (managerThread.getState().equals(State.TERMINATED)) {
     		String message = getString(R.string.error_cant_connect_to).replaceAll("%0", manager.hostServletUrl());
     		Log.e(TAG, message);
     		startPrintManager();
+    	} else {
+    		if (cancelManager) {
+    			manager.setCancelManager(true);
+    		} else {
+    			returnValue = true;
+    		}
     	}
+    	return returnValue;
     }
 
-    
+    /**
+     * @return Status of the manager.
+     * @throws Exception
+     */
+    public String checkKilledStatus() throws Exception {
+    	return manager.askServer("isKilled");
+    }
 }

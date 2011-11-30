@@ -6,9 +6,16 @@ package net.sf.wubiq.android;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
+import java.lang.reflect.Method;
+import java.util.UUID;
 
 import net.sf.wubiq.common.ParameterKeys;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.util.Log;
 
 import com.starmicronics.stario.StarIOPort;
 import com.starmicronics.stario.StarIOPortException;
@@ -20,7 +27,7 @@ import com.starmicronics.stario.StarIOPortException;
  */
 public enum PrintClientUtils {
 	INSTANCE;
-	
+	private static final String TAG = "PrintClientUtils";
 	/**
 	 * Prints the given input to the device, performing all required conversion steps.
 	 * @param context Android context.
@@ -40,7 +47,9 @@ public enum PrintClientUtils {
 			}  
 			byte[] printData = output.toByteArray();
 			for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
-				if (step.equals(MobileClientConversionStep.OUTPUT_SM_BYTES)) {
+				if (step.equals(MobileClientConversionStep.OUTPUT_BYTES)) {
+					printBytes(deviceInfo, deviceAddress, printData);
+				} else if (step.equals(MobileClientConversionStep.OUTPUT_SM_BYTES)) {
 					printStarMicronicsByteArray(deviceInfo, deviceAddress, printData);
 				}
 			}
@@ -82,14 +91,6 @@ public enum PrintClientUtils {
     	catch (Exception e)
     	{
     		e.printStackTrace();
-    		/*
-    		Builder dialog = new AlertDialog.Builder(context);
-    		dialog.setNegativeButton("Ok", null);
-    		AlertDialog alert = dialog.create();
-    		alert.setTitle("Failure");
-    		alert.setMessage("Failed to connect to printer");
-    		alert.show();
-    		*/
 		}
 		finally
 		{
@@ -102,5 +103,105 @@ public enum PrintClientUtils {
 		}
 		
 		return false;
+	}
+	
+	/**
+	 * Print bytes creating a basic bluetooth connection
+	 * @param deviceInfo Device to be connected to.
+	 * @param deviceAddress Address of the device
+	 * @param printData Data to be printed.
+	 * @return true if printing was okey.
+	 */
+	private boolean printBytes(MobileDeviceInfo deviceInfo, String deviceAddress, byte[] printData) {
+		boolean returnValue = false;
+		BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
+		for (BluetoothDevice device : adapter.getBondedDevices()) {
+			if (device.getAddress().equals(deviceAddress)) {
+				Thread connectThread = new ConnectThread(device, UUID.randomUUID(), printData);
+				connectThread.start();
+				returnValue = true;
+				break;
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Private class for handling connection.
+	 * @author Federico Alcantara
+	 *
+	 */
+	private class ConnectThread extends Thread {
+	    private final BluetoothSocket mmSocket;
+	    private byte[] printData;
+	 
+	    public ConnectThread(BluetoothDevice device, UUID uuid, byte[] printData) {
+	        // Use a temporary object that is later assigned to mmSocket,
+	        // because mmSocket is final
+	        BluetoothSocket tmp = null;
+	        this.printData = printData;
+	        
+	        // Get a BluetoothSocket to connect with the given BluetoothDevice
+	        try {
+	            // MY_UUID is the app's UUID string, also used by the server code
+	        	Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
+	            tmp = (BluetoothSocket) m.invoke(device, 1);
+	        } catch (Exception e) {
+	        	Log.e(TAG, e.getMessage());
+	        	e.printStackTrace();
+			}
+	        mmSocket = tmp;
+	    }
+	 
+	    public void run() {
+	        try {
+	            // Connect the device through the socket. This will block
+	            // until it succeeds or throws an exception
+	            mmSocket.connect();
+	        } catch (IOException connectException) {
+	            // Unable to connect; close the socket and get out
+	            try {
+	                mmSocket.close();
+	            } catch (IOException closeException) { 
+	            	Log.d(TAG, closeException.getMessage());
+	            }
+	            return;
+	        }
+	 
+	        // Do work to manage the connection (in a separate thread)
+	        ConnectedThread connectedThread = new ConnectedThread(mmSocket, printData);
+	        connectedThread.start();
+	    }
+	 
+	}
+
+	private class ConnectedThread extends Thread {
+	    private final OutputStream mmOutStream;
+	    private byte[] printData;
+	    
+	    public ConnectedThread(BluetoothSocket socket, byte[] printData) {
+	        this.printData = printData;
+	        OutputStream tmpOut = null;
+	 
+	        // Get the input and output streams, using temp objects because
+	        // member streams are final
+	        try {
+	            tmpOut = socket.getOutputStream();
+	        } catch (IOException e) {
+	        	Log.e(TAG, e.getMessage());
+	        }
+	 
+	        mmOutStream = tmpOut;
+	    }
+	 
+	    public void run() {
+	        try {
+	            mmOutStream.write(printData);
+	        } catch (IOException e) {
+	        	Log.e(TAG, e.getMessage());
+	        	e.printStackTrace();
+	        }
+	    }
+	 
 	}
 }

@@ -5,22 +5,22 @@
     android:orientation="vertical" >
 
     <Button
-        android:id="@+id/button1"
-        android:layout_width="match_parent"
+        android:id="@+id/configureServer"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:onClick="configureServer"
         android:text="@string/configure_server" />
 
     <Button
-        android:id="@+id/configure"
-        android:layout_width="match_parent"
+        android:id="@+id/configureBluetooth"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content"
         android:onClick="configureBluetooth"
         android:text="@string/configure_bluetooth" />
 
     <LinearLayout
         android:id="@+id/linearLayout1"
-        android:layout_width="match_parent"
+        android:layout_width="fill_parent"
         android:layout_height="wrap_content" >
 
         <Button
@@ -32,7 +32,7 @@
 
         <Button
             android:id="@+id/stopServiceButton"
-            android:layout_width="match_parent"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:onClick="stopService"
             android:text="@string/stop_service" />

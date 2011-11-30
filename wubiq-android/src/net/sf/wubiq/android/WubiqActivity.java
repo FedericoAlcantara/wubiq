@@ -10,7 +10,7 @@ import android.os.IBinder;
 import android.view.View;
 import android.widget.Toast;
 
-public class AndroidActivity extends Activity {
+public class WubiqActivity extends Activity {
 	public static final String PREFERENCES = "WUBIQ_ANDROID";
 	public static final String HOST_KEY="server_host";
 	public static final String PORT_KEY="server_port";
@@ -24,7 +24,7 @@ public class AndroidActivity extends Activity {
 
 		public void onServiceConnected(ComponentName className, IBinder binder) {
 			printManagerService = ((PrintManagerService.PrintManagerBinder)binder).getService();
-			Toast.makeText(AndroidActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
+			Toast.makeText(WubiqActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
 		}
 
 		public void onServiceDisconnected(ComponentName name) {

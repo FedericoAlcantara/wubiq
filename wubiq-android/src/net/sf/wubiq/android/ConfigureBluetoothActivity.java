@@ -19,7 +19,7 @@ public class ConfigureBluetoothActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.configure_bluetooth);
-		SharedPreferences preferences = getSharedPreferences(AndroidActivity.PREFERENCES, MODE_PRIVATE);
+		SharedPreferences preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 		initialize(preferences);
 	}
 	
