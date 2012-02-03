@@ -63,6 +63,7 @@ public class PrintServiceUtils {
 				Method refreshServices;
 				try {
 					refreshServices = object.getClass().getDeclaredMethod("refreshServices", new Class[]{});
+					refreshServices.setAccessible(true);
 					refreshServices.invoke(object, new Object[]{});
 					LOG.info("  refreshServices executed on:" + object.getClass());
 				} catch (Exception e) {
