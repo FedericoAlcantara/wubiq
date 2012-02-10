@@ -16,6 +16,8 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.print.PrintService;
 
@@ -61,6 +63,7 @@ public class LocalPrintManager implements Runnable {
 	private int connectionErrorRetries = -1;
 	private int connectionErrorCount = 0;
 	private boolean cancelManager = false;
+	private Map<String, PrintService>printServicesName;
 	
 	public LocalPrintManager() {
 	}
@@ -120,7 +123,10 @@ public class LocalPrintManager implements Runnable {
 						break;
 					}
 				}
+				LOG.info(ClientLabels.get("client.closing_local_manager"));
 				killManager();
+			} else {
+				LOG.info(ClientLabels.get("client.another_process_is_running"));
 			}
 		}
 	}
@@ -162,12 +168,17 @@ public class LocalPrintManager implements Runnable {
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
+			String serializedDocFlavor = askServer(CommandKeys.READ_DOC_FLAVOR, parameter.toString());
+			doLog("Job(" + jobId + ") docFlavorClassName:" + serializedDocFlavor);
 			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter.toString());
 			doLog("Job(" + jobId + ") attributesData:" + attributesData);
-			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
+			Object data = pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
+			if (data != null) {
+				stream = (InputStream) data;
+			}
 			doLog("Job(" + jobId + ") stream:" + stream);
 			doLog("Job(" + jobId + ") print pdf");
-			ClientPrintDirectUtils.print(jobId, printServiceName, PrintServiceUtils.convertToAttributes(attributesData), stream);
+			ClientPrintDirectUtils.print(jobId, getPrintServicesName().get(printServiceName), PrintServiceUtils.convertToAttributes(attributesData), stream, serializedDocFlavor);
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") close print job.");
@@ -227,13 +238,17 @@ public class LocalPrintManager implements Runnable {
 		registerComputerName();
 		// Gather printServices.
 		doLog("Register Print Services");
+		getPrintServicesName().clear();
 		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
-			doLog("Print service:" + printService.getName());
-			StringBuffer printServiceRegister = new StringBuffer(PrintServiceUtils.serializeServiceName(printService, debugMode)); 
+			String printServiceName = PrintServiceUtils.serializeServiceName(printService, debugMode);
+			getPrintServicesName().put(printService.getName().replaceAll("\\\\", "/"), printService);
+			doLog("Print service:" + printServiceName);
+			StringBuffer printServiceRegister = new StringBuffer(printServiceName); 
 			StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, debugMode));
 			categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 				.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
-			askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString());
+			askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
+					PrintServiceUtils.serializeDocumentFlavors(printService, debugMode));
 		}
 	}
 
@@ -583,6 +598,12 @@ public class LocalPrintManager implements Runnable {
 		manager.setUuid(ClientProperties.getUuid());
 	}
 
+	private Map<String, PrintService> getPrintServicesName() {
+		if (printServicesName == null) {
+			printServicesName = new HashMap<String, PrintService>();
+		}
+		return printServicesName;
+	}
 	/**
 	 * Parses the command line and starts an instance of a client.
 	 * @param args Command line arguments.
@@ -627,7 +648,7 @@ public class LocalPrintManager implements Runnable {
 				if (line.hasOption("uuid")) {
 					manager.setUuid(line.getOptionValue("uuid"));
 				}
-				if (line.hasOption("debug")) {
+				if (line.hasOption("verbose")) {
 					manager.setDebugMode(true);
 				}
 				Thread r = new Thread(manager);

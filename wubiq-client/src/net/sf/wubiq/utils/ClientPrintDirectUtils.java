@@ -37,25 +37,29 @@ public final class ClientPrintDirectUtils {
 	 * @param jobId Identifying job id.
 	 * @param printAttributes Attributes to be set on the print service.
 	 * @param printDocument Document as input stream to sent to the print service.
+	 * @param serializedDocFlavor contains the expected docflavor for the document.
 	 * @throws IOException if service is not found and no default service.
 	 */
-	public static void print(String jobId, String printServiceName, Collection<Attribute> printAttributes, InputStream printDocument)  throws IOException {
+	public static void print(String jobId, PrintService printService, Collection<Attribute> printAttributes, 
+			InputStream printDocument, String serializedDocFlavor)  throws IOException {
 		try {
-			PrintService printService = PrintServiceUtils.findPrinterOrDefault(printServiceName);
 			if (printService == null) {
 				throw new IOException(("error.print.noPrintDevice"));
 			}
-			// Set Document Attributes
-			DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
-			// Set Request Attributes
-			PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);
-			requestAttributes.add(new JobName(jobId, Locale.getDefault()));
-			
-			// Create doc and printJob
-			Doc doc = new SimpleDoc(printDocument, DocFlavor.INPUT_STREAM.AUTOSENSE, attributes);
-			DocPrintJob printJob = printService.createPrintJob();
-
-			printJob.print(doc, requestAttributes);
+			if (printDocument != null) {
+				// Set Document Attributes
+				DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
+				// Set Request Attributes
+				PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);
+				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
+				
+				// Create doc and printJob
+				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(serializedDocFlavor);
+				Doc doc = new SimpleDoc(printDocument, docFlavor, attributes);
+				DocPrintJob printJob = printService.createPrintJob();
+	
+				printJob.print(doc, requestAttributes);
+			}
 				
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
