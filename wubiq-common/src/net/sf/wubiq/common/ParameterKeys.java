@@ -17,6 +17,7 @@ public final class ParameterKeys {
 	public static final String COMPUTER_NAME = "computerName";
 	public static final String PRINT_SERVICE_NAME = "printServiceName";
 	public static final String PRINT_SERVICE_CATEGORIES = "printServiceCategories";
+	public static final String PRINT_SERVICE_DOC_FLAVORS = "printServiceDocFlavors";
 	public static final String CATEGORIES_SEPARATOR = ";";
 	public static final String CATEGORIES_ATTRIBUTES_STARTER = "=";
 	public static final String ATTRIBUTES_SEPARATOR = "/";

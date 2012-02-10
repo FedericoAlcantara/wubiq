@@ -6,12 +6,16 @@
 	<property name="dist" value="${basedir}/dist" />
 	<property name="bin" value="${basedir}/bin" />
 	<property name="lib" value="${basedir}/lib" />
+	<property name="libNonDeploy" value="${basedir}/lib-nondeploy" />
 	<property name="outputjar" value="${dist}/${project}.jar" />
 
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
 		<pathelement path="${bin}"/>
 		<fileset dir="${lib}"> 
+			<include name="**/*.jar"/> 
+		</fileset> 
+		<fileset dir="${libNonDeploy}"> 
 			<include name="**/*.jar"/> 
 		</fileset> 
 	</path>

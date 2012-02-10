@@ -15,6 +15,7 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 
+import javax.print.DocFlavor;
 import javax.print.attribute.Attribute;
 
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
@@ -40,7 +41,8 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	private final String QUEUE_ID_FIELD_NAME = "QUEUE_ID";
 	private final String SELECT_JOB = "select * from " + TABLE_NAME + " where " + JOB_ID_FIELD_NAME + " = ?";
 	private final String DELETE_JOB = "delete from " + TABLE_NAME + " where " + JOB_ID_FIELD_NAME + " = ?";
-	private final String LOOK_UP_PENDING = "select " + JOB_ID_FIELD_NAME + " from " + TABLE_NAME + " where " + QUEUE_ID_FIELD_NAME + " = ?";
+	private final String LOOK_UP_PENDING = "select " + JOB_ID_FIELD_NAME + " from " + TABLE_NAME + " where " + QUEUE_ID_FIELD_NAME + " = ? order by "
+			 + JOB_ID_FIELD_NAME;
 	
 	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
@@ -50,12 +52,23 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		Connection connection = null;
 		try {
 			connection = getConnection();
+			connection.prepareStatement("drop table PRINT_JOB").executeUpdate();
+			connection.commit();
+		} catch (SQLException e) {
+			LOG.debug(e.getMessage());
+		} finally {
+			close(connection);
+		}
+		try {
+			connection = getConnection();
 			connection.prepareStatement("create table PRINT_JOB (" +
 					JOB_ID_FIELD_NAME + " integer not null, " +
 					QUEUE_ID_FIELD_NAME + " varchar(32) default ' ' not null, " +
 					"PRINT_SERVICE_NAME varchar(255) not null," +
 					"ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
 					"STATUS integer not null, " +
+					"DOC_FLAVOR varchar(255) not null, " +
+					"CONVERTED integer not null, " +
 					"PRINT_DOCUMENT binary(" + Integer.MAX_VALUE + ")," +
 					"primary key (ID))").executeUpdate();
 			connection.commit();
@@ -88,14 +101,16 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			String query = "insert into PRINT_JOB (" +
 					JOB_ID_FIELD_NAME + "," +
 					QUEUE_ID_FIELD_NAME + "," +
-					"PRINT_SERVICE_NAME, ATTRIBUTES, STATUS, PRINT_DOCUMENT) values (?,?,?,?,?,?)";
+					"PRINT_SERVICE_NAME, ATTRIBUTES, STATUS, DOC_FLAVOR, CONVERTED, PRINT_DOCUMENT) values (?,?,?,?,?,?,?,?)";
 			stmt = connection.prepareStatement(query);
 			stmt.setLong(1, returnValue);
 			stmt.setString(2, queueId);
 			stmt.setString(3, remotePrintJob.getPrintServiceName());
 			stmt.setString(4, PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
 			stmt.setInt(5, RemotePrintJobStatus.NOT_PRINTED.ordinal());
-			stmt.setBytes(6, outputStream.toByteArray());
+			stmt.setString(6, PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor()));
+			stmt.setBoolean(7, remotePrintJob.isConverted());
+			stmt.setBytes(8, outputStream.toByteArray());
 			stmt.executeUpdate();
 			connection.commit();
 		} catch (SQLException e) {
@@ -145,7 +160,11 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 				String printServiceName = rs.getString("PRINT_SERVICE_NAME");
 				Collection<Attribute> attributes = PrintServiceUtils.convertToAttributes(rs.getString("ATTRIBUTES"));
 				ByteArrayInputStream inputStream = new ByteArrayInputStream(rs.getBytes("PRINT_DOCUMENT"));
-				returnValue = new PrintJobInputStream(printServiceName, inputStream, attributes);
+				String serializedDocFlavor = rs.getString("DOC_FLAVOR");
+				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(serializedDocFlavor);
+				Boolean converted = rs.getBoolean("CONVERTED");
+				returnValue = new PrintJobInputStream(printServiceName, inputStream, attributes, docFlavor);
+				returnValue.setConverted(converted);
 			}
 		} catch (SQLException e) {
 			LOG.error(e.getMessage(), e);

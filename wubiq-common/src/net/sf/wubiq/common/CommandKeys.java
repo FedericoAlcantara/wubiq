@@ -22,6 +22,7 @@ public final class CommandKeys {
 	public static final String SHOW_PRINT_SERVICES = "showPrintServices";
 	public static final String PENDING_JOBS = "pendingJobs";
 	public static final String READ_PRINT_SERVICE_NAME = "readPrintService";
+	public static final String READ_DOC_FLAVOR = "readDocFlavor";
 	public static final String READ_PRINT_ATTRIBUTES = "readPrintAttributes";
 	public static final String READ_PRINT_JOB = "readPrintJob";
 	public static final String CLOSE_PRINT_JOB = "closePrintJob";

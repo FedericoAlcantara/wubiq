@@ -2,16 +2,21 @@ package net.sf.wubiq.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.Attribute;
@@ -45,9 +50,12 @@ import org.apache.commons.logging.LogFactory;
  */
 public class PrintServiceUtils {
 	private static final Log LOG = LogFactory.getLog(PrintServiceUtils.class);
-	public static boolean OUTPUT_LOG = true;
+	public static boolean OUTPUT_LOG = false;
+	public static DocFlavor DEFAULT_DOC_FLAVOR = DocFlavor.INPUT_STREAM.AUTOSENSE;
+	private static String DEFAULT_DOC_FLAVOR_NAME = "INPUT_STREAM.AUTOSENSE";
 	private static Map<String, String> compressionMap;
-	
+	private static Map<DocFlavor, String> docFlavorConversionMap;
+	private static List<DocFlavor> implementedDocFlavors;
 	/**
 	 * Tries to refresh print services.
 	 */
@@ -426,6 +434,43 @@ public class PrintServiceUtils {
 	}
 	
 	/**
+	 * Serialize print service's document flavors.
+	 * @param printService Print service to look into.
+	 * @param debugMode If true errors are debugged.
+	 * @return String representing the document flavors. Never null.
+	 */
+	public static String serializeDocumentFlavors(PrintService printService, boolean debugMode) {
+		StringBuffer docFlavors = new StringBuffer("");
+		for (DocFlavor docFlavor : printService.getSupportedDocFlavors()) {
+			if (getImplementedDocFlavors().contains(docFlavor)) {
+				if (docFlavors.length() > 0) {
+					docFlavors.append(ParameterKeys.CATEGORIES_SEPARATOR);
+				}
+				docFlavors.append(PrintServiceUtils.serializeDocFlavor(docFlavor));
+			}
+		}
+		docFlavors.insert(0, ParameterKeys.PARAMETER_SEPARATOR);
+		docFlavors.insert(0, ParameterKeys.PRINT_SERVICE_DOC_FLAVORS);
+		return docFlavors.toString();
+	}
+	
+	public static DocFlavor[] deserializeDocumentFlavors(String docFlavors) {
+		String docs[] = docFlavors.split(ParameterKeys.CATEGORIES_SEPARATOR);
+		DocFlavor[] returnValue = new DocFlavor[]{DEFAULT_DOC_FLAVOR};
+		if (docs.length > 0) {
+			returnValue = new DocFlavor[docs.length];
+			for (int index = 0; index < docs.length; index++) {
+				DocFlavor docFlavor = deSerializeDocFlavor(docs[index]);
+				if (docFlavor != null) {
+					returnValue[index] = docFlavor;
+				} else {
+					returnValue[index] = DEFAULT_DOC_FLAVOR;
+				}
+			}
+		}
+		return returnValue;
+	}
+	/**
 	 * Serialize service name
 	 * @param debugMode If true all errors are logged out
 	 * @return Serialized service name
@@ -433,7 +478,7 @@ public class PrintServiceUtils {
 	public static String serializeServiceName(PrintService printService, boolean debugMode) {
 		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
 		.append(ParameterKeys.PARAMETER_SEPARATOR)
-		.append(printService.getName());
+		.append(printService.getName().replaceAll("\\\\", "/"));
 		return printServiceRegister.toString();
 	}
 	
@@ -509,7 +554,107 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 
-	private static Map<String, String>getCompressionMap() {
+	
+	/**
+	 * If necessary converts a pdf to another document flavor.
+	 * @param pdf Pdf to convert.
+ 	 * @param docFlavor Expected document flavor.
+	 * @return InputStream in the proper format.
+	 * @throws IOException
+	 */
+	public static List<InputStream> convertToProperStream(InputStream pdf, DocFlavor docFlavor) throws IOException {
+		List<InputStream> returnValue = new ArrayList<InputStream>();
+		returnValue.add(pdf);
+		if (!docFlavor.equals(DocFlavor.INPUT_STREAM.PDF) 
+				&& !docFlavor.equals(DocFlavor.INPUT_STREAM.AUTOSENSE)) {
+			returnValue.clear();
+			List<File> files  = new ArrayList<File>();
+			if (docFlavor.equals(DocFlavor.INPUT_STREAM.PNG)) {
+				files = PdfUtils.INSTANCE.convertPdfToPng(pdf, 72);
+			}
+			if (docFlavor.equals(DocFlavor.INPUT_STREAM.JPEG)) {
+				files = PdfUtils.INSTANCE.convertPdfToJpg(pdf, 72);
+			}
+			for (File file : files) {
+				returnValue.add(new FileInputStream(file));
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Determines which is the best doc flavor for the given print service.
+	 * @param printService Print service to check.
+	 * @return Best DocFlavor for the Print Service.
+	 */
+	public static DocFlavor determineDocFlavor(PrintService printService) {
+		DocFlavor returnValue = DocFlavor.INPUT_STREAM.PDF;
+		if (!isDocFlavorSupported(printService, returnValue)) {
+			returnValue = DocFlavor.INPUT_STREAM.PNG;
+		}
+		if (!isDocFlavorSupported(printService, returnValue)) {
+			returnValue = DocFlavor.INPUT_STREAM.JPEG;
+		}
+		if (!isDocFlavorSupported(printService, returnValue)) {
+			returnValue = DocFlavor.INPUT_STREAM.TEXT_PLAIN_HOST;
+		}
+		if (!isDocFlavorSupported(printService, returnValue)) {
+			returnValue = DocFlavor.INPUT_STREAM.AUTOSENSE;
+		}
+		return returnValue;
+	}
+
+	/**
+	 * Returns true if the doc flavor is supported.
+	 * @param printService Print service to check.
+	 * @param docFlavor Document flavor to test.
+	 * @return True if supported, false otherwise.
+	 */
+	private static boolean isDocFlavorSupported(PrintService printService, DocFlavor docFlavor) {
+		boolean returnValue = false;
+		for (DocFlavor readDocFlavor : printService.getSupportedDocFlavors()) {
+			if (docFlavor.equals(readDocFlavor)) {
+				returnValue = true;
+				break;
+			}
+		}
+		return returnValue;
+	}
+	/**
+	 * Serializes a Doc flavor object.
+	 * @param docFlavor Doc flavor object to serialize.
+	 * @return A String representing a DocFlavor object.
+	 */
+	public static String serializeDocFlavor(DocFlavor docFlavor) {
+		String returnValue = getDocFlavorConversionMap().get(docFlavor);
+		if (returnValue == null) {
+			returnValue = DEFAULT_DOC_FLAVOR_NAME;
+		}
+		return returnValue;
+	}
+
+	/**
+	 * Converts a doc flavor class name into a DocFlavor object.
+	 * @param serializedDocFlavor Class name for the DocFlavor.
+	 * @return Instance of DocFlavor.
+	 */
+	public static DocFlavor deSerializeDocFlavor(String serializedDocFlavor) {
+		DocFlavor returnValue = null;
+		if (serializedDocFlavor != null && !serializedDocFlavor.equals("")) {
+			for (Entry<DocFlavor, String> entry : getDocFlavorConversionMap().entrySet()) {
+				if (entry.getValue().equals(serializedDocFlavor)) {
+					returnValue = entry.getKey();
+					break;
+				}
+			}
+		}
+		if (returnValue == null) {
+			returnValue = DEFAULT_DOC_FLAVOR;
+		}
+		return returnValue;
+	}
+	
+	private static Map<String, String> getCompressionMap() {
 		if (compressionMap == null) {
 			compressionMap = new LinkedHashMap<String, String>();
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.MediaPrintableArea", "xMPAx");
@@ -528,4 +673,26 @@ public class PrintServiceUtils {
 		return compressionMap;
 	}
 	
+	private static Map<DocFlavor, String> getDocFlavorConversionMap() {
+		if (docFlavorConversionMap == null) {
+			docFlavorConversionMap = new HashMap<DocFlavor, String>();
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.AUTOSENSE, "I_S.AS");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.PDF, "I_S.PDF");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.PNG, "I_S.PNG");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.JPEG, "I_S.JPEG");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_HOST, "I_S.TXT");
+		}
+		return docFlavorConversionMap;
+	}
+	
+	private static List<DocFlavor> getImplementedDocFlavors() {
+		if (implementedDocFlavors == null) {
+			implementedDocFlavors = new ArrayList<DocFlavor>();
+			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.AUTOSENSE);
+			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.PDF);
+			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.PNG);
+			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.JPEG);
+		}
+		return implementedDocFlavors;
+	}
 }

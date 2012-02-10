@@ -6,6 +6,7 @@ package net.sf.wubiq.print.jobs;
 import java.io.InputStream;
 import java.util.Collection;
 
+import javax.print.DocFlavor;
 import javax.print.attribute.Attribute;
 
 
@@ -40,4 +41,16 @@ public interface IRemotePrintJob {
 	 * @param status
 	 */
 	void setStatus(RemotePrintJobStatus status);
+	
+	/**
+	 * 
+	 */
+	DocFlavor getDocFlavor();
+	
+	void setConverted(boolean converted);
+	
+	/**
+	 * 
+	 */
+	boolean isConverted();
 }

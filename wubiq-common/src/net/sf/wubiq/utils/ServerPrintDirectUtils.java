@@ -8,6 +8,7 @@ import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
+import java.util.List;
 import java.util.Locale;
 
 import javax.print.Doc;
@@ -56,7 +57,8 @@ public final class ServerPrintDirectUtils {
 					Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
 					String remoteName = (String)getRemoteName.invoke(printService, new Object[]{});
 					String uuid = (String)getUuid.invoke(printService, new Object[]{});
-					IRemotePrintJob remotePrintJob = new PrintJobInputStream(remoteName, printDocument, printAttributes);
+					DocFlavor docFlavor = PrintServiceUtils.determineDocFlavor(printService);
+					IRemotePrintJob remotePrintJob = new PrintJobInputStream(remoteName, printDocument, printAttributes, docFlavor);
 					IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 					manager.addRemotePrintJob(uuid, remotePrintJob);
 				} catch (SecurityException e) {
@@ -78,14 +80,17 @@ public final class ServerPrintDirectUtils {
 				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
 				
 				// Create doc and printJob
-				Doc doc = new SimpleDoc(printDocument, DocFlavor.INPUT_STREAM.AUTOSENSE, attributes);
-				DocPrintJob printJob = printService.createPrintJob();
-	
-				printJob.print(doc, requestAttributes);
+				DocFlavor docFlavor = PrintServiceUtils.determineDocFlavor(printService);
+				List<InputStream> documentsToPrint = PrintServiceUtils.convertToProperStream(printDocument, docFlavor);
+				for (InputStream documentToPrint : documentsToPrint) {
+					Doc doc = new SimpleDoc(documentToPrint, docFlavor, attributes);
+					DocPrintJob printJob = printService.createPrintJob();
+					printJob.print(doc, requestAttributes);
+				}
 			}
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
-	
+
 }

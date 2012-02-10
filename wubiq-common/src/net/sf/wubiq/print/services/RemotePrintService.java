@@ -36,6 +36,7 @@ public class RemotePrintService implements PrintService {
 	private List<Class<?>> remoteCategories;
 	private Map<String, Object> remoteAttributes;
 	private boolean mobile;
+	private DocFlavor[] supportedDocFlavors;
 	
 	/**
 	 * @see javax.print.PrintService#addPrintServiceAttributeListener(javax.print.event.PrintServiceAttributeListener)
@@ -129,8 +130,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public DocFlavor[] getSupportedDocFlavors() {
-		return new DocFlavor[]{DocFlavor.INPUT_STREAM.AUTOSENSE, 
-				DocFlavor.BYTE_ARRAY.AUTOSENSE};
+		return supportedDocFlavors;
 	}
 
 	/**
@@ -268,6 +268,13 @@ public class RemotePrintService implements PrintService {
 	 */
 	public void setMobile(boolean mobile) {
 		this.mobile = mobile;
+	}
+
+	/**
+	 * @param supportedDocFlavors the supportedDocFlavors to set
+	 */
+	public void setSupportedDocFlavors(DocFlavor[] supportedDocFlavors) {
+		this.supportedDocFlavors = supportedDocFlavors;
 	}
 
 }
