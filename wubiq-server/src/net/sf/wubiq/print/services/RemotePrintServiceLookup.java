@@ -60,6 +60,12 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	}
 
 	/**
+	 * Just to make it compliant (no errors) when pooled from PrintServiceUtils.
+	 */
+	public void refreshServices() {
+		
+	}
+	/**
 	 * Overrides default behavior and register services in custom form.
 	 * @param printService Service to be registered.
 	 * @return Always true.
@@ -137,6 +143,28 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	public static boolean isMobile(String uuid) {
 		Boolean returnValue = getMobilePrintServices().get(uuid);
 		return returnValue != null && returnValue;
+	}
+	
+	/**
+	 * Finds the print service associated with the remote print service name for the remote computer.
+	 * @param uuid Unique remote computer identifier.
+	 * @param remotePrintServiceName Name of the print service to look for.
+	 * @return PrintService found or null.
+	 */
+	public static PrintService find(String uuid, String remotePrintServiceName) {
+		PrintService returnValue = null;
+		String formattedPrintServiceName = remotePrintServiceName.replace("\\", "\\\\");
+		for (Entry<String, PrintService> entry: getRemotePrintServices(uuid).entrySet()) {
+			String printServiceName = entry.getKey();
+			if (printServiceName.contains("@")) {
+				printServiceName = printServiceName.substring(0, printServiceName.indexOf("@")).trim();
+			}
+			if (printServiceName.equals(formattedPrintServiceName)) {
+				returnValue = entry.getValue();
+				break;
+			}
+		}
+		return returnValue;
 	}
 	
 	private static Map<String, Boolean> getMobilePrintServices() {

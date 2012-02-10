@@ -14,6 +14,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 
@@ -73,10 +74,12 @@ public enum ConversionServerUtils {
 	 * @return a stream representing a bitmap
 	 */
 	protected BufferedImage pdfToImg(MobileDeviceInfo deviceInfo, InputStream pdf) {
-		File bitmap = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.getResolutionDpi());
+		List<File> bitmaps = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.getResolutionDpi());
 		BufferedImage returnValue = null;
 		try {
-			returnValue = ImageIO.read(bitmap);
+			if (bitmaps.size() >= 1) {
+				returnValue = ImageIO.read(bitmaps.get(0));
+			}
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
