@@ -38,7 +38,9 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public final class ServerPrintDirectUtils {
+public enum ServerPrintDirectUtils {
+	INSTANCE;
+	
 	private static Log LOG = LogFactory.getLog(ServerPrintDirectUtils.class);
 	
 	/**
@@ -85,15 +87,23 @@ public final class ServerPrintDirectUtils {
 				// Create doc and printJob
 				DocFlavor docFlavor = PrintServiceUtils.determineDocFlavor(printService);
 				List<PdfImagePage> documentsToPrint = PrintServiceUtils.convertToProperStream(printDocument, docFlavor);
-				for (PdfImagePage pdfImagePage : documentsToPrint) {
-					InputStream documentToPrint = new FileInputStream(pdfImagePage.getImageFile());
+				if (documentsToPrint != null) {
+					for (PdfImagePage pdfImagePage : documentsToPrint) {
+						InputStream documentToPrint = new FileInputStream(pdfImagePage.getImageFile());
+						DocAttributeSet newAttributes = attributes;
+						newAttributes.add(new MediaPrintableArea(0, 0, pdfImagePage.getPageWidth(), 
+								pdfImagePage.getPageHeight(), MediaPrintableArea.INCH));
+						Doc doc = new SimpleDoc(documentToPrint, docFlavor, newAttributes);
+						DocPrintJob printJob = printService.createPrintJob();
+						printJob.print(doc, requestAttributes);
+						documentToPrint.close();
+					}
+				} else {
 					DocAttributeSet newAttributes = attributes;
-					newAttributes.add(new MediaPrintableArea(0, 0, pdfImagePage.getPageHeight(), 
-							pdfImagePage.getPageWidth(), MediaPrintableArea.INCH));
-					Doc doc = new SimpleDoc(documentToPrint, docFlavor, attributes);
+					Doc doc = new SimpleDoc(printDocument, docFlavor, newAttributes);
 					DocPrintJob printJob = printService.createPrintJob();
 					printJob.print(doc, requestAttributes);
-					documentToPrint.close();
+					printDocument.close();
 				}
 			}
 		} catch (PrintException e) {
