@@ -1,8 +1,9 @@
 ======================
-Wubiq 0.9.118 (2012-02-11)
+Wubiq 0.9.119 (2012-02-11)
 ======================
 - Printing from windows old printer drivers fixed.
 - Multiple page documents for old windows drivers enabled.
+- Smaller footprint for wubiq-server.
 ======================
 Wubiq 0.8 (2012-02-02)
 ======================
