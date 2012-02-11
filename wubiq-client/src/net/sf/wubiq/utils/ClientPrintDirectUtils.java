@@ -49,7 +49,7 @@ public final class ClientPrintDirectUtils {
 				// Set Document Attributes
 				DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
 				if (pageHeight > 0 && pageWidth > 0) {
-					attributes.add(new MediaPrintableArea(0, 0, pageHeight, pageWidth, MediaPrintableArea.INCH));
+					attributes.add(new MediaPrintableArea(0, 0, pageWidth, pageHeight, MediaPrintableArea.INCH));
 				}
 				// Set Request Attributes
 				PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);

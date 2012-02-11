@@ -171,6 +171,8 @@ public class LocalPrintManager implements Runnable {
 			String serializedDocFlavor = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
 			doLog("Job(" + jobId + ") docFlavorClassName:" + serializedDocFlavor);
 			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter);
+			float height = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_HEIGHT, parameter));
+			float width = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_WIDTH, parameter));
 			doLog("Job(" + jobId + ") attributesData:" + attributesData);
 			Object data = pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 			PrintService printService = getPrintServicesName().get(printServiceName);
@@ -178,7 +180,7 @@ public class LocalPrintManager implements Runnable {
 			if (data != null && !(data instanceof String)) {
 				stream = (InputStream) data;
 				doLog("Job(" + jobId + ") print " + serializedDocFlavor);
-				ClientPrintDirectUtils.print(jobId, printService, attributes, stream, serializedDocFlavor, -1, -1);
+				ClientPrintDirectUtils.print(jobId, printService, attributes, stream, serializedDocFlavor, height, width);
 				doLog("Job(" + jobId + ") printed.");
 				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
 				doLog("Job(" + jobId + ") close print job.");
@@ -188,8 +190,8 @@ public class LocalPrintManager implements Runnable {
 				if (data != null) {
 					for (String newJobId : ((String)data).split(ParameterKeys.CATEGORIES_SEPARATOR)) {
 						String newParameter = printJobPollString(newJobId);
-						float height = Float.parseFloat((String)pollServer(CommandKeys.READ_PRINT_JOB_HEIGHT, newParameter));
-						float width = Float.parseFloat((String)pollServer(CommandKeys.READ_PRINT_JOB_WIDTH, newParameter));
+						height = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_HEIGHT, newParameter));
+						width = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_WIDTH, newParameter));
 						InputStream newStream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, newParameter);
 						doLog("Job(" + newJobId + ") print " + serializedDocFlavor);
 						ClientPrintDirectUtils.print(newJobId, printService, attributes, newStream, 
@@ -225,6 +227,17 @@ public class LocalPrintManager implements Runnable {
 		.append(ParameterKeys.PARAMETER_SEPARATOR)
 		.append(jobId);
 		return parameter.toString();
+	}
+	
+	private float numericValue(String input) throws ConnectException {
+		float returnValue = 0f;
+		try {
+			returnValue = Float.parseFloat(input);
+		} catch (NumberFormatException e) {
+			LOG.error(e.getMessage(), e);
+			throw new ConnectException(e.getMessage());
+		}
+		return returnValue;
 	}
 	/**
 	 * Ask to the server for a list of all pending jobs for this client instance.
