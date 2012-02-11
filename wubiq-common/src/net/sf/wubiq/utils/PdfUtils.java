@@ -4,16 +4,21 @@
 package net.sf.wubiq.utils;
 
 import java.awt.image.BufferedImage;
+import java.awt.print.Pageable;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.imageio.ImageIO;
+
+import net.sf.wubiq.print.pdf.PdfImagePage;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.util.PDFImageWriter;
+import org.apache.pdfbox.pdmodel.PDPage;
 
 /**
  * @author Federico Alcantara
@@ -28,7 +33,7 @@ public enum PdfUtils {
 	 * @param pdf Pdf file.
 	 * @return File object or null if something failed.
 	 */
-	public List<File> convertPdfToPng(InputStream pdf, int resolution) {
+	public List<PdfImagePage> convertPdfToPng(InputStream pdf, int resolution) {
 		return convertPdfToImg(pdf, resolution, "png");
 	}
 
@@ -37,7 +42,7 @@ public enum PdfUtils {
 	 * @param pdf Pdf file.
 	 * @return File object or null if something failed.
 	 */
-	public List<File> convertPdfToJpg(InputStream pdf, int resolution) {
+	public List<PdfImagePage> convertPdfToJpg(InputStream pdf, int resolution) {
 		return convertPdfToImg(pdf, resolution, "jpg");
 	}
 	
@@ -46,30 +51,32 @@ public enum PdfUtils {
 	 * @param pdf Pdf file.
 	 * @return File object or null if something failed.
 	 */
-	public List<File> convertPdfToImg(InputStream pdf, int resolution, String suffix) {
-		List<File> returnValue = new ArrayList<File>();
+	public List<PdfImagePage> convertPdfToImg(InputStream pdf, int resolution, String suffix) {
+		List<PdfImagePage> returnValue = new ArrayList<PdfImagePage>();
 		PDDocument document = null;
+		File tempFile = null;
 		try {
-			PDFImageWriter imageWriter = new PDFImageWriter();
 			document = PDDocument.load(pdf);
 			String imageFormat = suffix;
-	        int startPage = 1;
-	        int endPage = Integer.MAX_VALUE;
-	        File tempFile = File.createTempFile("temp", "pdf." + suffix);
+	        tempFile = File.createTempFile("temp", "pdf-." + suffix);
 	        String outputPrefix = tempFile.getPath().substring(0, tempFile.getPath().lastIndexOf('.'));
 	        int imageType = BufferedImage.TYPE_INT_RGB;
-	        if (imageWriter.writeImage(document, imageFormat, "", startPage, endPage, outputPrefix, imageType, resolution)) {
-	        	for (int index = startPage; index < endPage; index++) {
-	        		File file = new File(outputPrefix + index + "." + imageFormat);
-	        		if (file.exists()) {
-	        			returnValue.add(file);
-	        		} else {
-	        			break;
-	        		}
-	        	}
+	        Pageable pageable = (Pageable)document;
+	        for (int pageIndex = 0; pageIndex < pageable.getNumberOfPages(); pageIndex++) {
+	        	PDPage page = (PDPage)pageable.getPrintable(pageIndex);
+	        	BufferedImage image = page.convertToImage(imageType, resolution);
+	        	String indexed = ("000000" + pageIndex);
+	        	indexed = indexed.substring(indexed.length() - 6);
+	        	File fileOutput = new File(outputPrefix + indexed + "." + imageFormat);
+	        	ImageIO.write(image, imageFormat, fileOutput);
+	        	float height = page.getArtBox().getHeight() / 72;
+	        	float width = page.getArtBox().getWidth() / 72;
+	        	PdfImagePage pdfImagePage = new PdfImagePage(pageIndex, fileOutput, height, width);
+	        	returnValue.add(pdfImagePage);
 	        }
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
+			e.printStackTrace();
 		} finally {
 			if (document != null) {
 				try {
@@ -78,6 +85,9 @@ public enum PdfUtils {
 					LOG.debug(e.getMessage());
 				}
 			}
+	        if (tempFile != null) {
+	        	tempFile.delete();
+	        }
 		}
 		LOG.info("Converted:" + returnValue);
 		return returnValue;

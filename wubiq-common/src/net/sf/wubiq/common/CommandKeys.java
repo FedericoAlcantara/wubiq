@@ -25,6 +25,8 @@ public final class CommandKeys {
 	public static final String READ_DOC_FLAVOR = "readDocFlavor";
 	public static final String READ_PRINT_ATTRIBUTES = "readPrintAttributes";
 	public static final String READ_PRINT_JOB = "readPrintJob";
+	public static final String READ_PRINT_JOB_HEIGHT = "readPJHeight";
+	public static final String READ_PRINT_JOB_WIDTH = "readPJWidth";
 	public static final String CLOSE_PRINT_JOB = "closePrintJob";
 	public static final String PRINT_TEST_PAGE = "printTestPage";
 }

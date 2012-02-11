@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.utils;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -21,11 +22,13 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
+import javax.print.attribute.standard.MediaPrintableArea;
 
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.print.pdf.PdfImagePage;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -81,11 +84,16 @@ public final class ServerPrintDirectUtils {
 				
 				// Create doc and printJob
 				DocFlavor docFlavor = PrintServiceUtils.determineDocFlavor(printService);
-				List<InputStream> documentsToPrint = PrintServiceUtils.convertToProperStream(printDocument, docFlavor);
-				for (InputStream documentToPrint : documentsToPrint) {
+				List<PdfImagePage> documentsToPrint = PrintServiceUtils.convertToProperStream(printDocument, docFlavor);
+				for (PdfImagePage pdfImagePage : documentsToPrint) {
+					InputStream documentToPrint = new FileInputStream(pdfImagePage.getImageFile());
+					DocAttributeSet newAttributes = attributes;
+					newAttributes.add(new MediaPrintableArea(0, 0, pdfImagePage.getPageHeight(), 
+							pdfImagePage.getPageWidth(), MediaPrintableArea.INCH));
 					Doc doc = new SimpleDoc(documentToPrint, docFlavor, attributes);
 					DocPrintJob printJob = printService.createPrintJob();
 					printJob.print(doc, requestAttributes);
+					documentToPrint.close();
 				}
 			}
 		} catch (PrintException e) {

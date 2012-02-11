@@ -2,8 +2,6 @@ package net.sf.wubiq.utils;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -38,6 +36,7 @@ import javax.print.attribute.standard.PageRanges;
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
@@ -53,6 +52,7 @@ public class PrintServiceUtils {
 	public static boolean OUTPUT_LOG = false;
 	public static DocFlavor DEFAULT_DOC_FLAVOR = DocFlavor.INPUT_STREAM.AUTOSENSE;
 	private static String DEFAULT_DOC_FLAVOR_NAME = "INPUT_STREAM.AUTOSENSE";
+	private static int DEFAULT_RESOLUTION = 192;
 	private static Map<String, String> compressionMap;
 	private static Map<DocFlavor, String> docFlavorConversionMap;
 	private static List<DocFlavor> implementedDocFlavors;
@@ -562,22 +562,19 @@ public class PrintServiceUtils {
 	 * @return InputStream in the proper format.
 	 * @throws IOException
 	 */
-	public static List<InputStream> convertToProperStream(InputStream pdf, DocFlavor docFlavor) throws IOException {
-		List<InputStream> returnValue = new ArrayList<InputStream>();
-		returnValue.add(pdf);
+	public static List<PdfImagePage> convertToProperStream(InputStream pdf, DocFlavor docFlavor) throws IOException {
+		List<PdfImagePage> returnValue = new ArrayList<PdfImagePage>();
 		if (!docFlavor.equals(DocFlavor.INPUT_STREAM.PDF) 
 				&& !docFlavor.equals(DocFlavor.INPUT_STREAM.AUTOSENSE)) {
 			returnValue.clear();
-			List<File> files  = new ArrayList<File>();
 			if (docFlavor.equals(DocFlavor.INPUT_STREAM.PNG)) {
-				files = PdfUtils.INSTANCE.convertPdfToPng(pdf, 72);
+				returnValue = PdfUtils.INSTANCE.convertPdfToPng(pdf, DEFAULT_RESOLUTION);
 			}
 			if (docFlavor.equals(DocFlavor.INPUT_STREAM.JPEG)) {
-				files = PdfUtils.INSTANCE.convertPdfToJpg(pdf, 72);
+				returnValue = PdfUtils.INSTANCE.convertPdfToJpg(pdf, DEFAULT_RESOLUTION);
 			}
-			for (File file : files) {
-				returnValue.add(new FileInputStream(file));
-			}
+		} else {
+			returnValue = null;
 		}
 		return returnValue;
 	}
@@ -657,18 +654,29 @@ public class PrintServiceUtils {
 	private static Map<String, String> getCompressionMap() {
 		if (compressionMap == null) {
 			compressionMap = new LinkedHashMap<String, String>();
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Chromaticity", "xCHRx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.CopiesSupported", "xCSUx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Copies", "xCOPx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Destination", "xDSTx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Fidelity", "xFIDx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Finishings", "xFINx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.JobSheets", "xJSHx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.JobName", "xJNAx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.MediaPrintableArea", "xMPAx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.MediaSizeName", "xMSNx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.MediaTray", "xMTRx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Media", "xMEDx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.NumberUp", "xNUPx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.OrientationRequested", "xORQx");
-			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Sides", "xSIDx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.PageRanges", "xPRAx");
-			compressionMap.put("javax\\.print\\.attribute\\.standard\\.JobSheets", "xJSHx");
-			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Finishings", "xFINx");
-			compressionMap.put("javax\\.print\\.attribute\\.standard\\.CopiesSupported", "xCSUx");
-			compressionMap.put("javax.print.attribute.standard.Chromaticity", "xCHRx");
-			compressionMap.put("javax.print.attribute.standard.Destination", "xDSTx");
-			compressionMap.put("sun.print.CustomMediaSizeName", "xSCMx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.PrinterResolution", "xPREx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.RequestingUserName", "xRUNx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.SheetCollate", "xSCOx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Sides", "xSIDx");
+			compressionMap.put("sun\\.print\\.CustomMediaSizeName", "xCMSx");
+			compressionMap.put("sun\\.print\\.SunAlternateMedia", "xSAMx");
+			compressionMap.put("sun\\.print\\.Win32MediaSize", "xWMSx");
+			compressionMap.put("sun\\.print\\.Win32MediaTray", "xWMTx");
 		}
 		return compressionMap;
 	}

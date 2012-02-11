@@ -69,6 +69,8 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 					"STATUS integer not null, " +
 					"DOC_FLAVOR varchar(255) not null, " +
 					"CONVERTED integer not null, " +
+					"PAGE_HEIGHT decimal(18,6)," +
+					"PAGE_WIDTH decimal(18,6)," +
 					"PRINT_DOCUMENT binary(" + Integer.MAX_VALUE + ")," +
 					"primary key (ID))").executeUpdate();
 			connection.commit();
@@ -101,7 +103,9 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			String query = "insert into PRINT_JOB (" +
 					JOB_ID_FIELD_NAME + "," +
 					QUEUE_ID_FIELD_NAME + "," +
-					"PRINT_SERVICE_NAME, ATTRIBUTES, STATUS, DOC_FLAVOR, CONVERTED, PRINT_DOCUMENT) values (?,?,?,?,?,?,?,?)";
+					"PRINT_SERVICE_NAME, ATTRIBUTES, STATUS, DOC_FLAVOR, CONVERTED," +
+					"PAGE_HEIGHT, PAGE_WIDTH, " +
+					"PRINT_DOCUMENT) values (?,?,?,?,?,?,?,?,?,?)";
 			stmt = connection.prepareStatement(query);
 			stmt.setLong(1, returnValue);
 			stmt.setString(2, queueId);
@@ -110,7 +114,9 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			stmt.setInt(5, RemotePrintJobStatus.NOT_PRINTED.ordinal());
 			stmt.setString(6, PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor()));
 			stmt.setBoolean(7, remotePrintJob.isConverted());
-			stmt.setBytes(8, outputStream.toByteArray());
+			stmt.setFloat(8, remotePrintJob.getPageHeight());
+			stmt.setFloat(9, remotePrintJob.getPageWidth());
+			stmt.setBytes(10, outputStream.toByteArray());
 			stmt.executeUpdate();
 			connection.commit();
 		} catch (SQLException e) {
@@ -163,8 +169,12 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 				String serializedDocFlavor = rs.getString("DOC_FLAVOR");
 				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(serializedDocFlavor);
 				Boolean converted = rs.getBoolean("CONVERTED");
+				float pageHeight = rs.getFloat("PAGE_HEIGHT");
+				float pageWidth = rs.getFloat("PAGE_WIDTH");
 				returnValue = new PrintJobInputStream(printServiceName, inputStream, attributes, docFlavor);
 				returnValue.setConverted(converted);
+				returnValue.setPageHeight(pageHeight);
+				returnValue.setPageWidth(pageWidth);
 			}
 		} catch (SQLException e) {
 			LOG.error(e.getMessage(), e);

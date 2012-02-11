@@ -26,6 +26,8 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	private String printServiceName;
 	private DocFlavor docFlavor;
 	private boolean converted;
+	private float pageHeight;
+	private float pageWidth;
 	
 	public PrintJobInputStream(String printServiceName, InputStream inputStream, Collection<Attribute>attributes,
 			DocFlavor docFlavor) {
@@ -100,6 +102,34 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	@Override
 	public void setConverted(boolean converted) {
 		this.converted = converted;
+	}
+
+	/**
+	 * @return the pageHeight
+	 */
+	public float getPageHeight() {
+		return pageHeight;
+	}
+
+	/**
+	 * @param pageHeight the pageHeight to set
+	 */
+	public void setPageHeight(float pageHeight) {
+		this.pageHeight = pageHeight;
+	}
+
+	/**
+	 * @return the pageWidth
+	 */
+	public float getPageWidth() {
+		return pageWidth;
+	}
+
+	/**
+	 * @param pageWidth the pageWidth to set
+	 */
+	public void setPageWidth(float pageWidth) {
+		this.pageWidth = pageWidth;
 	}
 
 }
