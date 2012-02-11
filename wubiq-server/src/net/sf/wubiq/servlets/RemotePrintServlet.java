@@ -48,7 +48,6 @@ import org.apache.commons.logging.LogFactory;
 public class RemotePrintServlet extends HttpServlet {
 	private static final Log LOG = LogFactory.getLog(RemotePrintServlet.class);
 	private static final long serialVersionUID = 1L;
-	private static ServerPrintDirectUtils printDirectUtils;
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String uuid = request.getParameter(ParameterKeys.UUID);
@@ -57,11 +56,6 @@ public class RemotePrintServlet extends HttpServlet {
 			isActiveCommand(uuid, request, response);
 		} else  {
 			notifyRemote(uuid, request);
-			if (command.equalsIgnoreCase(CommandKeys.PRINT_TEST_PAGE)) {
-				printTestPageCommand(uuid, request, response);
-			} else if (command.equalsIgnoreCase(CommandKeys.SHOW_PRINT_SERVICES)) {
-				showPrintServicesCommand("", request, response);
-			}
 			if (!Is.emptyString(uuid)) {
 				LOG.debug("accesing:" + uuid);
 				if (!Is.emptyString(command)) {
@@ -275,7 +269,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	private void showPrintServicesCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void showPrintServicesCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");
 		String tr = "<tr style='border:1px solid black'>";
 		String th = "<th style='border:1px solid black'>";
@@ -395,7 +389,7 @@ public class RemotePrintServlet extends HttpServlet {
 		PrintWriter writer = response.getWriter();
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		writer.print(printJob.getPageHeight());
+		writer.print(Float.toString(printJob.getPageHeight()));
 	}
 
 	/**
@@ -412,7 +406,7 @@ public class RemotePrintServlet extends HttpServlet {
 		PrintWriter writer = response.getWriter();
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		writer.print(printJob.getPageWidth());
+		writer.print(Float.toString(printJob.getPageWidth()));
 	}
 
 	/**
@@ -458,7 +452,7 @@ public class RemotePrintServlet extends HttpServlet {
 					input = printJob.getPrintDocument();
 				} else {
 					input = null;
-					if (pages.size() > 1) {
+					if (pages.size() > 0) {
 						for (PdfImagePage readPage : pages) {
 							IRemotePrintJob remotePrintJob = new PrintJobInputStream(printJob.getPrintServiceName(), 
 									new FileInputStream(readPage.getImageFile()), null, printJob.getDocFlavor());
@@ -515,7 +509,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	private void printTestPageCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+	protected void printTestPageCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String testPageName = ServerLabels.get("server.test_page_name");
 		//testPageName = "FivePagesTest.pdf";
 		if (Is.emptyString(testPageName)) {
@@ -555,7 +549,7 @@ public class RemotePrintServlet extends HttpServlet {
 						output.write(input.read());
 					}
 				} else {
-					getPrintDirectUtils().print("testpage-0", printServiceName, null, input);
+					ServerPrintDirectUtils.INSTANCE.print("testpage-0", printServiceName, null, input);
 					response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
 				}
 			}
@@ -598,16 +592,6 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private RemoteClientManager getRemoteClientManager(HttpServletRequest request) {
 		return RemoteClientManager.getRemoteClientManager(request);
-	}
-	
-	/**
-	 * @return the printDirectUtils
-	 */
-	private static ServerPrintDirectUtils getPrintDirectUtils() {
-		if (printDirectUtils == null) {
-			printDirectUtils = new ServerPrintDirectUtils();
-		}
-		return printDirectUtils;
 	}
 	
 }

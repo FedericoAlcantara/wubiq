@@ -55,7 +55,8 @@
 		<title>Wubiq</title>
 	</head>
 	<body>
-		<table class="wubiq_header" width="100%">
+	<div align="center">
+		<table class="wubiq_header">
 			<tr>
 				<td>
 					<form action="wubiq-android.apk">
@@ -126,7 +127,6 @@
 							<tr class="wubiq_sd_table_tr">
 								<th class="wubiq_sd_table_th_name"><%=ServerLabels.get("server.service_name")%></th>
 								<th class="wubiq_sd_table_th_remote"><%=ServerLabels.get("server.remote")%></th>
-								<th class="wubiq_sd_table_th_uuid"><%=ServerLabels.get("server.uuid")%></th>
 								<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.actions")%></th>
 							</tr>
 			
@@ -137,7 +137,7 @@
 						.append('"')
 						.append(url)
 						.append('/')
-						.append("wubiq.do?")
+						.append("wubiq-print-test.do?")
 						.append(ParameterKeys.COMMAND)
 						.append(ParameterKeys.PARAMETER_SEPARATOR)
 						.append(CommandKeys.PRINT_TEST_PAGE)
@@ -158,7 +158,6 @@
 							<tr class="wubiq_sd_table_tr">
 								<td class="wubiq_sd_table_td_name"><%=serviceData[0]%></td>
 								<td class="wubiq_sd_table_td_remote"><%=serviceData[1]%></td>
-								<td class="wubiq_sd_table_td_uuid"><%=serviceData[2]%></td>
 								<td class="wubiq_sd_table_td_actions"><input type="button" value='<%=ServerLabels.get("server.print_test_page")%>' 
 									onclick='<%=buffer.toString()%>' 
 									id='wubiq_testpage_button_<%=serviceCount++%>' /></td> 
@@ -172,6 +171,7 @@
 			</table>
 			<%
 		}%>
+		</div>
 		<div id="output" >
 		</div>
 	</body>

@@ -7,18 +7,21 @@ body {
 	vertical-align: text-top;
 }
 
-.wubiq_s_table {
-	margin-top: 5px;
-	border: 2px solid #98bf21;
-	width: 100%;
+.wubiq_header {
+	width: 720px;
 }
-
 .wubiq_header td {
 	text-align:center;
 }
 
 .wubiq_header form {
 	margin-bottom: 0px;
+}
+
+.wubiq_s_table {
+	margin-top: 5px;
+	border: 2px solid #98bf21;
+	width: 720px;
 }
 
 .wubiq_sd_table {

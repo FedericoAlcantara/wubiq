@@ -12,8 +12,16 @@
 		<servlet-name>wubiq</servlet-name>
 		<servlet-class>net.sf.wubiq.servlets.RemotePrintServlet</servlet-class>
 	</servlet>
+	<servlet>
+		<servlet-name>wubiq-print-test</servlet-name>
+		<servlet-class>net.sf.wubiq.servlets.PrintTestServlet</servlet-class>
+	</servlet>
 	<servlet-mapping>
 		<servlet-name>wubiq</servlet-name>
 		<url-pattern>/wubiq.do</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+		<servlet-name>wubiq-print-test</servlet-name>
+		<url-pattern>/wubiq-print-test.do</url-pattern>
 	</servlet-mapping>
 </web-app>
