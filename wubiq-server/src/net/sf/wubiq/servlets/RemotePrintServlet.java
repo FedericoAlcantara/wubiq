@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.servlets;
 
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -27,6 +28,7 @@ import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 import net.sf.wubiq.remote.RemoteClientManager;
@@ -84,6 +86,10 @@ public class RemotePrintServlet extends HttpServlet {
 						getPrintServiceNameCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
 						getDocFlavorCommand(uuid, request, response);
+					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB_HEIGHT)) {
+						getPrintJobHeightCommand(uuid, request, response);
+					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB_WIDTH)) {
+						getPrintJobWidthCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_ATTRIBUTES)) {
 						getPrintAttributesCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
@@ -376,6 +382,40 @@ public class RemotePrintServlet extends HttpServlet {
 	}
 
 	/**
+	 * Returns document page height.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void getPrintJobHeightCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		response.setContentType("text/html");
+		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
+		PrintWriter writer = response.getWriter();
+		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
+		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		writer.print(printJob.getPageHeight());
+	}
+
+	/**
+	 * Returns document page height.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void getPrintJobWidthCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		response.setContentType("text/html");
+		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
+		PrintWriter writer = response.getWriter();
+		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
+		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		writer.print(printJob.getPageWidth());
+	}
+
+	/**
 	 * Returns the serialization of the attributes.
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
@@ -404,26 +444,32 @@ public class RemotePrintServlet extends HttpServlet {
 	private void getPrintJobCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("application/pdf");				
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
+		StringBuffer responseOutput = new StringBuffer("");
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		OutputStream output = response.getOutputStream();
 		InputStream input = null;
 		// If it is remote we must convert pdf to image and then scale it to print size
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintDocument());
 		} else {
 			if (!printJob.isConverted()) {
-				List<InputStream> inputs = PrintServiceUtils.convertToProperStream(printJob.getPrintDocument(), printJob.getDocFlavor());
-				if (inputs.size() == 1) {
-					input = inputs.get(0);
+				List<PdfImagePage> pages = PrintServiceUtils.convertToProperStream(printJob.getPrintDocument(), printJob.getDocFlavor());
+				if (pages == null) {
+					input = printJob.getPrintDocument();
 				} else {
 					input = null;
-					if (inputs.size() > 1) {
-						for (InputStream readInput : inputs) {
+					if (pages.size() > 1) {
+						for (PdfImagePage readPage : pages) {
 							IRemotePrintJob remotePrintJob = new PrintJobInputStream(printJob.getPrintServiceName(), 
-									readInput, null, printJob.getDocFlavor());
+									new FileInputStream(readPage.getImageFile()), null, printJob.getDocFlavor());
 							remotePrintJob.setConverted(true);
-							manager.addRemotePrintJob(uuid, remotePrintJob);
+							remotePrintJob.setPageHeight(readPage.getPageHeight());
+							remotePrintJob.setPageWidth(readPage.getPageWidth());
+							long newJobId = manager.addRemotePrintJob(uuid, remotePrintJob);
+							if (responseOutput.length() > 0) {
+								responseOutput.append(ParameterKeys.CATEGORIES_SEPARATOR);
+							}
+							responseOutput.append(newJobId);
 						}
 					}
 				}
@@ -432,12 +478,15 @@ public class RemotePrintServlet extends HttpServlet {
 			}
 		}
 		if (input != null) {
+			OutputStream output = response.getOutputStream();
 			while (input.available() > 0) {
 				output.write(input.read());
 			}
 			input.close();
 		} else {
 			response.setContentType("text/html");
+			PrintWriter writer = response.getWriter();
+			writer.write(responseOutput.toString());
 		}
 	}
 	
@@ -468,7 +517,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void printTestPageCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String testPageName = ServerLabels.get("server.test_page_name");
-		testPageName = "FivePagesTest.pdf";
+		//testPageName = "FivePagesTest.pdf";
 		if (Is.emptyString(testPageName)) {
 			testPageName = "TestPage.pdf";
 		}

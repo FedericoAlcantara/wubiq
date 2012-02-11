@@ -8,7 +8,6 @@ import java.awt.image.BufferedImage;
 import java.awt.image.PixelGrabber;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -19,6 +18,7 @@ import java.util.List;
 import javax.imageio.ImageIO;
 
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.utils.PdfUtils;
 
 import org.apache.commons.logging.Log;
@@ -74,11 +74,11 @@ public enum ConversionServerUtils {
 	 * @return a stream representing a bitmap
 	 */
 	protected BufferedImage pdfToImg(MobileDeviceInfo deviceInfo, InputStream pdf) {
-		List<File> bitmaps = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.getResolutionDpi());
+		List<PdfImagePage> bitmaps = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.getResolutionDpi());
 		BufferedImage returnValue = null;
 		try {
 			if (bitmaps.size() >= 1) {
-				returnValue = ImageIO.read(bitmaps.get(0));
+				returnValue = ImageIO.read(bitmaps.get(0).getImageFile());
 			}
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
