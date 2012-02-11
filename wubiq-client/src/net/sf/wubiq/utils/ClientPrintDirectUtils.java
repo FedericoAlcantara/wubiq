@@ -18,8 +18,7 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
-
-import net.sf.wubiq.utils.PrintServiceUtils;
+import javax.print.attribute.standard.MediaPrintableArea;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,7 +40,7 @@ public final class ClientPrintDirectUtils {
 	 * @throws IOException if service is not found and no default service.
 	 */
 	public static void print(String jobId, PrintService printService, Collection<Attribute> printAttributes, 
-			InputStream printDocument, String serializedDocFlavor)  throws IOException {
+			InputStream printDocument, String serializedDocFlavor, float pageHeight, float pageWidth)  throws IOException {
 		try {
 			if (printService == null) {
 				throw new IOException(("error.print.noPrintDevice"));
@@ -49,6 +48,9 @@ public final class ClientPrintDirectUtils {
 			if (printDocument != null) {
 				// Set Document Attributes
 				DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
+				if (pageHeight > 0 && pageWidth > 0) {
+					attributes.add(new MediaPrintableArea(0, 0, pageHeight, pageWidth, MediaPrintableArea.INCH));
+				}
 				// Set Request Attributes
 				PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);
 				requestAttributes.add(new JobName(jobId, Locale.getDefault()));

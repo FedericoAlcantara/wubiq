@@ -16,10 +16,12 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
 import javax.print.PrintService;
+import javax.print.attribute.Attribute;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -160,28 +162,44 @@ public class LocalPrintManager implements Runnable {
 	 * @param jobId Id of the job to be printed.
 	 */
 	protected void processPendingJob(String jobId) throws ConnectException {
-		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
-			.append(ParameterKeys.PARAMETER_SEPARATOR)
-			.append(jobId);
+		String parameter = printJobPollString(jobId);
 		doLog("Process Pending Job:" + jobId);
 		InputStream stream = null;
 		try {
-			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
+			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
-			String serializedDocFlavor = askServer(CommandKeys.READ_DOC_FLAVOR, parameter.toString());
+			String serializedDocFlavor = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
 			doLog("Job(" + jobId + ") docFlavorClassName:" + serializedDocFlavor);
-			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter.toString());
+			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter);
 			doLog("Job(" + jobId + ") attributesData:" + attributesData);
-			Object data = pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
-			if (data != null) {
+			Object data = pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+			PrintService printService = getPrintServicesName().get(printServiceName);
+			Collection<Attribute> attributes = PrintServiceUtils.convertToAttributes(attributesData);
+			if (data != null && !(data instanceof String)) {
 				stream = (InputStream) data;
+				doLog("Job(" + jobId + ") print " + serializedDocFlavor);
+				ClientPrintDirectUtils.print(jobId, printService, attributes, stream, serializedDocFlavor, -1, -1);
+				doLog("Job(" + jobId + ") printed.");
+				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
+				doLog("Job(" + jobId + ") close print job.");
+			} else {
+				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
+				doLog("Job(" + jobId + ") close print job.");
+				if (data != null) {
+					for (String newJobId : ((String)data).split(ParameterKeys.CATEGORIES_SEPARATOR)) {
+						String newParameter = printJobPollString(newJobId);
+						float height = Float.parseFloat((String)pollServer(CommandKeys.READ_PRINT_JOB_HEIGHT, newParameter));
+						float width = Float.parseFloat((String)pollServer(CommandKeys.READ_PRINT_JOB_WIDTH, newParameter));
+						InputStream newStream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, newParameter);
+						doLog("Job(" + newJobId + ") print " + serializedDocFlavor);
+						ClientPrintDirectUtils.print(newJobId, printService, attributes, newStream, 
+								serializedDocFlavor, height, width);
+						doLog("Job(" + newJobId + ") printed.");
+						askServer(CommandKeys.CLOSE_PRINT_JOB, newParameter);
+						doLog("Job(" + newJobId + ") close print job.");
+					}
+				}
 			}
-			doLog("Job(" + jobId + ") stream:" + stream);
-			doLog("Job(" + jobId + ") print pdf");
-			ClientPrintDirectUtils.print(jobId, getPrintServicesName().get(printServiceName), PrintServiceUtils.convertToAttributes(attributesData), stream, serializedDocFlavor);
-			doLog("Job(" + jobId + ") printed.");
-			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
-			doLog("Job(" + jobId + ") close print job.");
 		} catch (ConnectException e) {
 			throw e;
 		} catch (IOException e) {
@@ -197,6 +215,17 @@ public class LocalPrintManager implements Runnable {
 		}
 	}
 	
+	/**
+	 * Creates the print job poll string.
+	 * @param jobId Id of the print job to pull from the server.
+	 * @return String (url) for polling the server.
+	 */
+	private String printJobPollString(String jobId) {
+		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
+		.append(ParameterKeys.PARAMETER_SEPARATOR)
+		.append(jobId);
+		return parameter.toString();
+	}
 	/**
 	 * Ask to the server for a list of all pending jobs for this client instance.
 	 * @return A list of pending jobs, or a zero element String array. Never null.
@@ -235,20 +264,42 @@ public class LocalPrintManager implements Runnable {
 	 * Registers all valid local print services to the remote server.
 	 */
 	protected void registerPrintServices() throws ConnectException {
-		registerComputerName();
-		// Gather printServices.
-		doLog("Register Print Services");
-		getPrintServicesName().clear();
+		Map<String, PrintService>newPrintServices = new HashMap<String, PrintService>();
+		boolean reload = false;
 		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
-			String printServiceName = PrintServiceUtils.serializeServiceName(printService, debugMode);
-			getPrintServicesName().put(printService.getName().replaceAll("\\\\", "/"), printService);
-			doLog("Print service:" + printServiceName);
-			StringBuffer printServiceRegister = new StringBuffer(printServiceName); 
-			StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, debugMode));
-			categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
-				.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
-			askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
-					PrintServiceUtils.serializeDocumentFlavors(printService, debugMode));
+			String printServiceName = printService.getName().replaceAll("\\\\", "/");
+			newPrintServices.put(printServiceName, printService);
+			if (!getPrintServicesName().containsKey(printServiceName)) {
+				reload = true;
+			}
+		}
+		if (newPrintServices.size() != getPrintServicesName().size()) {
+			reload = true;
+		}
+		if (!reload) {
+			try {
+				askServer(CommandKeys.IS_ACTIVE);
+			} catch (ConnectException e) {
+				getPrintServicesName().clear();
+				reload = true;
+			}
+		}
+		if (reload) {
+			registerComputerName();
+			// Gather printServices.
+			doLog("Register Print Services");
+			getPrintServicesName().clear();
+			for (PrintService printService: PrintServiceUtils.getPrintServices()) {
+				String printServiceName = PrintServiceUtils.serializeServiceName(printService, debugMode);
+				getPrintServicesName().put(printService.getName().replaceAll("\\\\", "/"), printService);
+				doLog("Print service:" + printServiceName);
+				StringBuffer printServiceRegister = new StringBuffer(printServiceName); 
+				StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, debugMode));
+				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
+					.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
+				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
+						PrintServiceUtils.serializeDocumentFlavors(printService, debugMode));
+			}
 		}
 	}
 
