@@ -295,6 +295,7 @@ public class LocalPrintManager implements Runnable {
 			} catch (ConnectException e) {
 				getPrintServicesName().clear();
 				reload = true;
+				return;
 			}
 		}
 		if (reload) {
