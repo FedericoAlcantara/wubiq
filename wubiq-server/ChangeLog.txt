@@ -1,4 +1,8 @@
 ======================
+Wubiq 0.9.121 (2012-02-12)
+======================
+- Fixed client print service refresh failure when disconnected from the host.
+======================
 Wubiq 0.9.119 (2012-02-11)
 ======================
 - Printing from windows old printer drivers fixed.
