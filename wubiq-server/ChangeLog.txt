@@ -1,5 +1,5 @@
 ======================
-Wubiq 0.9.124 (2012-02-14)
+Wubiq 0.9.127 (2012-02-14)
 ======================
 - Changed output to print services from pdf or png to pageable. Now is portable across operating systems.
 ======================
