@@ -18,7 +18,6 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
-import javax.print.attribute.standard.MediaPrintableArea;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,7 +39,7 @@ public final class ClientPrintDirectUtils {
 	 * @throws IOException if service is not found and no default service.
 	 */
 	public static void print(String jobId, PrintService printService, Collection<Attribute> printAttributes, 
-			InputStream printDocument, String serializedDocFlavor, float pageHeight, float pageWidth)  throws IOException {
+			InputStream printDocument)  throws IOException {
 		try {
 			if (printService == null) {
 				throw new IOException(("error.print.noPrintDevice"));
@@ -48,16 +47,13 @@ public final class ClientPrintDirectUtils {
 			if (printDocument != null) {
 				// Set Document Attributes
 				DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
-				if (pageHeight > 0 && pageWidth > 0) {
-					attributes.add(new MediaPrintableArea(0, 0, pageWidth, pageHeight, MediaPrintableArea.INCH));
-				}
 				// Set Request Attributes
 				PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);
 				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
 				
 				// Create doc and printJob
-				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(serializedDocFlavor);
-				Doc doc = new SimpleDoc(printDocument, docFlavor, attributes);
+				
+				Doc doc = new SimpleDoc(PdfUtils.INSTANCE.pdfToPageable(printDocument), DocFlavor.SERVICE_FORMATTED.PAGEABLE, attributes);
 				DocPrintJob printJob = printService.createPrintJob();
 	
 				printJob.print(doc, requestAttributes);

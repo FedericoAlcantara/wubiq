@@ -168,40 +168,15 @@ public class LocalPrintManager implements Runnable {
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
-			String serializedDocFlavor = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
-			doLog("Job(" + jobId + ") docFlavorClassName:" + serializedDocFlavor);
 			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter);
-			float height = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_HEIGHT, parameter));
-			float width = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_WIDTH, parameter));
 			doLog("Job(" + jobId + ") attributesData:" + attributesData);
-			Object data = pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 			PrintService printService = getPrintServicesName().get(printServiceName);
 			Collection<Attribute> attributes = PrintServiceUtils.convertToAttributes(attributesData);
-			if (data != null && !(data instanceof String)) {
-				stream = (InputStream) data;
-				doLog("Job(" + jobId + ") print " + serializedDocFlavor);
-				ClientPrintDirectUtils.print(jobId, printService, attributes, stream, serializedDocFlavor, height, width);
-				doLog("Job(" + jobId + ") printed.");
-				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-				doLog("Job(" + jobId + ") close print job.");
-			} else {
-				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-				doLog("Job(" + jobId + ") close print job.");
-				if (data != null) {
-					for (String newJobId : ((String)data).split(ParameterKeys.CATEGORIES_SEPARATOR)) {
-						String newParameter = printJobPollString(newJobId);
-						height = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_HEIGHT, newParameter));
-						width = numericValue((String)pollServer(CommandKeys.READ_PRINT_JOB_WIDTH, newParameter));
-						InputStream newStream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, newParameter);
-						doLog("Job(" + newJobId + ") print " + serializedDocFlavor);
-						ClientPrintDirectUtils.print(newJobId, printService, attributes, newStream, 
-								serializedDocFlavor, height, width);
-						doLog("Job(" + newJobId + ") printed.");
-						askServer(CommandKeys.CLOSE_PRINT_JOB, newParameter);
-						doLog("Job(" + newJobId + ") close print job.");
-					}
-				}
-			}
+			ClientPrintDirectUtils.print(jobId, printService, attributes, stream);
+			doLog("Job(" + jobId + ") printed.");
+			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
+			doLog("Job(" + jobId + ") closing print job.");
 		} catch (ConnectException e) {
 			throw e;
 		} catch (IOException e) {
@@ -229,16 +204,6 @@ public class LocalPrintManager implements Runnable {
 		return parameter.toString();
 	}
 	
-	private float numericValue(String input) throws ConnectException {
-		float returnValue = 0f;
-		try {
-			returnValue = Float.parseFloat(input);
-		} catch (NumberFormatException e) {
-			LOG.error(e.getMessage(), e);
-			throw new ConnectException(e.getMessage());
-		}
-		return returnValue;
-	}
 	/**
 	 * Ask to the server for a list of all pending jobs for this client instance.
 	 * @return A list of pending jobs, or a zero element String array. Never null.
@@ -467,7 +432,12 @@ public class LocalPrintManager implements Runnable {
 			url.append('&')
 					.append(parameterString);
 		}
-		return url.toString();
+		String returnValue = url.toString();
+		if (command.equals(CommandKeys.PRINT_TEST_PAGE) ||
+				command.equals(CommandKeys.SHOW_PRINT_SERVICES)) {
+			returnValue = returnValue.replace("wubiq.do", "wubiq-print-test.do");
+		}
+		return returnValue;
 	}
 	/**
 	 * Properly concatenates host, port, applicationName and servlet name.
