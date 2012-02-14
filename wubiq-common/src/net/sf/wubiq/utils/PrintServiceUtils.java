@@ -3,7 +3,6 @@ package net.sf.wubiq.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -36,7 +35,6 @@ import javax.print.attribute.standard.PageRanges;
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
 import net.sf.wubiq.common.ParameterKeys;
-import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
@@ -50,9 +48,8 @@ import org.apache.commons.logging.LogFactory;
 public class PrintServiceUtils {
 	private static final Log LOG = LogFactory.getLog(PrintServiceUtils.class);
 	public static boolean OUTPUT_LOG = false;
-	public static DocFlavor DEFAULT_DOC_FLAVOR = DocFlavor.INPUT_STREAM.AUTOSENSE;
-	private static String DEFAULT_DOC_FLAVOR_NAME = "INPUT_STREAM.AUTOSENSE";
-	private static int DEFAULT_RESOLUTION = 192;
+	public static DocFlavor DEFAULT_DOC_FLAVOR = DocFlavor.INPUT_STREAM.PDF;
+	private static String DEFAULT_DOC_FLAVOR_NAME = "INPUT_STREAM.PDF";
 	private static Map<String, String> compressionMap;
 	private static Map<DocFlavor, String> docFlavorConversionMap;
 	private static List<DocFlavor> implementedDocFlavors;
@@ -554,69 +551,6 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 
-	
-	/**
-	 * If necessary converts a pdf to another document flavor.
-	 * @param pdf Pdf to convert.
- 	 * @param docFlavor Expected document flavor.
-	 * @return InputStream in the proper format.
-	 * @throws IOException
-	 */
-	public static List<PdfImagePage> convertToProperStream(InputStream pdf, DocFlavor docFlavor) throws IOException {
-		List<PdfImagePage> returnValue = new ArrayList<PdfImagePage>();
-		if (!docFlavor.equals(DocFlavor.INPUT_STREAM.PDF) 
-				&& !docFlavor.equals(DocFlavor.INPUT_STREAM.AUTOSENSE)) {
-			returnValue.clear();
-			if (docFlavor.equals(DocFlavor.INPUT_STREAM.PNG)) {
-				returnValue = PdfUtils.INSTANCE.convertPdfToPng(pdf, DEFAULT_RESOLUTION);
-			}
-			if (docFlavor.equals(DocFlavor.INPUT_STREAM.JPEG)) {
-				returnValue = PdfUtils.INSTANCE.convertPdfToJpg(pdf, DEFAULT_RESOLUTION);
-			}
-		} else {
-			returnValue = null;
-		}
-		return returnValue;
-	}
-	
-	/**
-	 * Determines which is the best doc flavor for the given print service.
-	 * @param printService Print service to check.
-	 * @return Best DocFlavor for the Print Service.
-	 */
-	public static DocFlavor determineDocFlavor(PrintService printService) {
-		DocFlavor returnValue = DocFlavor.INPUT_STREAM.PDF;
-		if (!isDocFlavorSupported(printService, returnValue)) {
-			returnValue = DocFlavor.INPUT_STREAM.PNG;
-		}
-		if (!isDocFlavorSupported(printService, returnValue)) {
-			returnValue = DocFlavor.INPUT_STREAM.JPEG;
-		}
-		if (!isDocFlavorSupported(printService, returnValue)) {
-			returnValue = DocFlavor.INPUT_STREAM.TEXT_PLAIN_HOST;
-		}
-		if (!isDocFlavorSupported(printService, returnValue)) {
-			returnValue = DocFlavor.INPUT_STREAM.AUTOSENSE;
-		}
-		return returnValue;
-	}
-
-	/**
-	 * Returns true if the doc flavor is supported.
-	 * @param printService Print service to check.
-	 * @param docFlavor Document flavor to test.
-	 * @return True if supported, false otherwise.
-	 */
-	private static boolean isDocFlavorSupported(PrintService printService, DocFlavor docFlavor) {
-		boolean returnValue = false;
-		for (DocFlavor readDocFlavor : printService.getSupportedDocFlavors()) {
-			if (docFlavor.equals(readDocFlavor)) {
-				returnValue = true;
-				break;
-			}
-		}
-		return returnValue;
-	}
 	/**
 	 * Serializes a Doc flavor object.
 	 * @param docFlavor Doc flavor object to serialize.

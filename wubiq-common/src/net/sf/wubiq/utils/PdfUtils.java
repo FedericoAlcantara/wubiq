@@ -93,4 +93,18 @@ public enum PdfUtils {
 		return returnValue;
 	}
 	
+	/**
+	 * Pdf to pageable 
+	 * @param printDocument
+	 * @return
+	 */
+	public Pageable pdfToPageable(InputStream printDocument) {
+		PDDocument document = null;
+		try {
+			document = PDDocument.load(printDocument);
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		return (Pageable)document;
+	}
 }

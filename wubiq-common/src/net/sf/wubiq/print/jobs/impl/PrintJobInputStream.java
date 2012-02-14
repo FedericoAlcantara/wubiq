@@ -7,7 +7,6 @@ import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import javax.print.DocFlavor;
 import javax.print.attribute.Attribute;
 
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
@@ -24,20 +23,14 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	private InputStream printDocument;
 	private RemotePrintJobStatus status;
 	private String printServiceName;
-	private DocFlavor docFlavor;
-	private boolean converted;
-	private float pageHeight;
-	private float pageWidth;
 	
-	public PrintJobInputStream(String printServiceName, InputStream inputStream, Collection<Attribute>attributes,
-			DocFlavor docFlavor) {
+	public PrintJobInputStream(String printServiceName, InputStream inputStream, Collection<Attribute>attributes) {
 		if (attributes == null) {
 			attributes = new ArrayList<Attribute>();
 		}
 		this.printDocument = inputStream;
 		this.attributes = attributes;
 		this.printServiceName = printServiceName;
-		this.docFlavor = docFlavor;
 	}
 	
 	@Override
@@ -72,64 +65,6 @@ public class PrintJobInputStream implements IRemotePrintJob {
 	@Override
 	public void setStatus(RemotePrintJobStatus status) {
 		this.status = status;
-	}
-
-	/**
-	 * @return the docFlavor
-	 */
-	public DocFlavor getDocFlavor() {
-		return docFlavor;
-	}
-
-	/**
-	 * @param docFlavor the docFlavor to set
-	 */
-	public void setDocFlavor(DocFlavor docFlavor) {
-		this.docFlavor = docFlavor;
-	}
-
-	/**
-	 * @return the converted
-	 */
-	@Override
-	public boolean isConverted() {
-		return converted;
-	}
-
-	/**
-	 * @param converted the converted to set
-	 */
-	@Override
-	public void setConverted(boolean converted) {
-		this.converted = converted;
-	}
-
-	/**
-	 * @return the pageHeight
-	 */
-	public float getPageHeight() {
-		return pageHeight;
-	}
-
-	/**
-	 * @param pageHeight the pageHeight to set
-	 */
-	public void setPageHeight(float pageHeight) {
-		this.pageHeight = pageHeight;
-	}
-
-	/**
-	 * @return the pageWidth
-	 */
-	public float getPageWidth() {
-		return pageWidth;
-	}
-
-	/**
-	 * @param pageWidth the pageWidth to set
-	 */
-	public void setPageWidth(float pageWidth) {
-		this.pageWidth = pageWidth;
 	}
 
 }

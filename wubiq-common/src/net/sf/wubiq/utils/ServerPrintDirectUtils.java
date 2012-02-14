@@ -3,13 +3,11 @@
  */
 package net.sf.wubiq.utils;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.List;
 import java.util.Locale;
 
 import javax.print.Doc;
@@ -22,13 +20,11 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
-import javax.print.attribute.standard.MediaPrintableArea;
 
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import net.sf.wubiq.print.pdf.PdfImagePage;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -62,8 +58,7 @@ public enum ServerPrintDirectUtils {
 					Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
 					String remoteName = (String)getRemoteName.invoke(printService, new Object[]{});
 					String uuid = (String)getUuid.invoke(printService, new Object[]{});
-					DocFlavor docFlavor = PrintServiceUtils.determineDocFlavor(printService);
-					IRemotePrintJob remotePrintJob = new PrintJobInputStream(remoteName, printDocument, printAttributes, docFlavor);
+					IRemotePrintJob remotePrintJob = new PrintJobInputStream(remoteName, printDocument, printAttributes);
 					IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 					manager.addRemotePrintJob(uuid, remotePrintJob);
 				} catch (SecurityException e) {
@@ -85,26 +80,11 @@ public enum ServerPrintDirectUtils {
 				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
 				
 				// Create doc and printJob
-				DocFlavor docFlavor = PrintServiceUtils.determineDocFlavor(printService);
-				List<PdfImagePage> documentsToPrint = PrintServiceUtils.convertToProperStream(printDocument, docFlavor);
-				if (documentsToPrint != null) {
-					for (PdfImagePage pdfImagePage : documentsToPrint) {
-						InputStream documentToPrint = new FileInputStream(pdfImagePage.getImageFile());
-						DocAttributeSet newAttributes = attributes;
-						newAttributes.add(new MediaPrintableArea(0, 0, pdfImagePage.getPageWidth(), 
-								pdfImagePage.getPageHeight(), MediaPrintableArea.INCH));
-						Doc doc = new SimpleDoc(documentToPrint, docFlavor, newAttributes);
-						DocPrintJob printJob = printService.createPrintJob();
-						printJob.print(doc, requestAttributes);
-						documentToPrint.close();
-					}
-				} else {
-					DocAttributeSet newAttributes = attributes;
-					Doc doc = new SimpleDoc(printDocument, docFlavor, newAttributes);
-					DocPrintJob printJob = printService.createPrintJob();
-					printJob.print(doc, requestAttributes);
-					printDocument.close();
-				}
+				DocAttributeSet newAttributes = attributes;				
+				Doc doc = new SimpleDoc(PdfUtils.INSTANCE.pdfToPageable(printDocument), DocFlavor.SERVICE_FORMATTED.PAGEABLE, newAttributes);
+				DocPrintJob printJob = printService.createPrintJob();
+				printJob.print(doc, requestAttributes);
+				printDocument.close();
 			}
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
