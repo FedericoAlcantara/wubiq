@@ -1,4 +1,8 @@
 ======================
+Wubiq 0.9.124 (2012-02-14)
+======================
+- Changed output to print services from pdf or png to pageable. Now is portable across operating systems.
+======================
 Wubiq 0.9.121 (2012-02-12)
 ======================
 - Fixed client print service refresh failure when disconnected from the host.

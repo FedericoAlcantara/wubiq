@@ -3,13 +3,11 @@
  */
 package net.sf.wubiq.servlets;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
-import java.util.List;
 
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -28,7 +26,6 @@ import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 import net.sf.wubiq.remote.RemoteClientManager;
@@ -78,12 +75,6 @@ public class RemotePrintServlet extends HttpServlet {
 						getPendingJobsCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_SERVICE_NAME)) {
 						getPrintServiceNameCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
-						getDocFlavorCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB_HEIGHT)) {
-						getPrintJobHeightCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB_WIDTH)) {
-						getPrintJobWidthCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_ATTRIBUTES)) {
 						getPrintAttributesCommand(uuid, request, response);
 					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
@@ -359,57 +350,6 @@ public class RemotePrintServlet extends HttpServlet {
 	}
 	
 	/**
-	 * Returns the document flavor used to encode the document.
-	 * @param uuid Unique computer identification.
-	 * @param request Originating request.
-	 * @param response Destination response.
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	private void getDocFlavorCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
-		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
-		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		writer.print(PrintServiceUtils.serializeDocFlavor(printJob.getDocFlavor()));
-	}
-
-	/**
-	 * Returns document page height.
-	 * @param uuid Unique computer identification.
-	 * @param request Originating request.
-	 * @param response Destination response.
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	private void getPrintJobHeightCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
-		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
-		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		writer.print(Float.toString(printJob.getPageHeight()));
-	}
-
-	/**
-	 * Returns document page height.
-	 * @param uuid Unique computer identification.
-	 * @param request Originating request.
-	 * @param response Destination response.
-	 * @throws ServletException
-	 * @throws IOException
-	 */
-	private void getPrintJobWidthCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		response.setContentType("text/html");
-		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
-		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		writer.print(Float.toString(printJob.getPageWidth()));
-	}
-
-	/**
 	 * Returns the serialization of the attributes.
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
@@ -446,30 +386,7 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintDocument());
 		} else {
-			if (!printJob.isConverted()) {
-				List<PdfImagePage> pages = PrintServiceUtils.convertToProperStream(printJob.getPrintDocument(), printJob.getDocFlavor());
-				if (pages == null) {
-					input = printJob.getPrintDocument();
-				} else {
-					input = null;
-					if (pages.size() > 0) {
-						for (PdfImagePage readPage : pages) {
-							IRemotePrintJob remotePrintJob = new PrintJobInputStream(printJob.getPrintServiceName(), 
-									new FileInputStream(readPage.getImageFile()), null, printJob.getDocFlavor());
-							remotePrintJob.setConverted(true);
-							remotePrintJob.setPageHeight(readPage.getPageHeight());
-							remotePrintJob.setPageWidth(readPage.getPageWidth());
-							long newJobId = manager.addRemotePrintJob(uuid, remotePrintJob);
-							if (responseOutput.length() > 0) {
-								responseOutput.append(ParameterKeys.CATEGORIES_SEPARATOR);
-							}
-							responseOutput.append(newJobId);
-						}
-					}
-				}
-			} else {
-				input = printJob.getPrintDocument();
-			}
+			input = printJob.getPrintDocument();
 		}
 		if (input != null) {
 			OutputStream output = response.getOutputStream();
@@ -531,14 +448,9 @@ public class RemotePrintServlet extends HttpServlet {
 				if (printServiceName.contains(WebKeys.REMOTE_SERVICE_SEPARATOR)) {
 					printServiceName = printServiceName.substring(0, printServiceName.indexOf(WebKeys.REMOTE_SERVICE_SEPARATOR));
 				}
-				PrintService printService = RemotePrintServiceLookup.find(uuid, printServiceName);
-				DocFlavor docFlavor = PrintServiceUtils.DEFAULT_DOC_FLAVOR;
-				if (printService != null) {
-					docFlavor = PrintServiceUtils.determineDocFlavor(printService);
-				}
 				response.setContentType("text/html");				
 				IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-				IRemotePrintJob remotePrintJob = new PrintJobInputStream(printServiceName, input, null, docFlavor);
+				IRemotePrintJob remotePrintJob = new PrintJobInputStream(printServiceName, input, null);
 				manager.addRemotePrintJob(uuid, remotePrintJob);
 				response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
 			} else {
