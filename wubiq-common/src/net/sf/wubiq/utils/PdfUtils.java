@@ -94,9 +94,9 @@ public enum PdfUtils {
 	}
 	
 	/**
-	 * Pdf to pageable 
-	 * @param printDocument
-	 * @return
+	 * Pdf to pageable.
+	 * @param printDocument.
+	 * @return A pageable object. Null if an error occurs. 
 	 */
 	public Pageable pdfToPageable(InputStream printDocument) {
 		PDDocument document = null;
