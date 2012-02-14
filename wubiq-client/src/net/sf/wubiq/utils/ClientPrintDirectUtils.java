@@ -35,7 +35,6 @@ public final class ClientPrintDirectUtils {
 	 * @param jobId Identifying job id.
 	 * @param printAttributes Attributes to be set on the print service.
 	 * @param printDocument Document as input stream to sent to the print service.
-	 * @param serializedDocFlavor contains the expected docflavor for the document.
 	 * @throws IOException if service is not found and no default service.
 	 */
 	public static void print(String jobId, PrintService printService, Collection<Attribute> printAttributes, 
