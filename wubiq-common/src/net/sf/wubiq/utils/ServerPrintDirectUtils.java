@@ -80,7 +80,7 @@ public enum ServerPrintDirectUtils {
 				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
 				
 				// Create doc and printJob
-				DocAttributeSet newAttributes = attributes;				
+				DocAttributeSet newAttributes = attributes;
 				Doc doc = new SimpleDoc(PdfUtils.INSTANCE.pdfToPageable(printDocument), DocFlavor.SERVICE_FORMATTED.PAGEABLE, newAttributes);
 				DocPrintJob printJob = printService.createPrintJob();
 				printJob.print(doc, requestAttributes);

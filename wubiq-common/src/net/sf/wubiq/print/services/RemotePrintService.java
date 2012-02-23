@@ -20,6 +20,7 @@ import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.event.PrintServiceAttributeListener;
 
 import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.print.jobs.TransportablePrintJob;
 
 /**
  * Remote Print Services implementation.
@@ -52,7 +53,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public DocPrintJob createPrintJob() {
-		throw new UnsupportedOperationException();
+		return new TransportablePrintJob(this);
 	}
 
 	/**
