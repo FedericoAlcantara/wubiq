@@ -80,7 +80,7 @@ public class BluetoothPrintManager extends LocalPrintManager {
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
-			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter.toString());
+			String attributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter.toString());
 			doLog("Job(" + jobId + ") attributesData:" + attributesData);
 			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") stream:" + stream);
