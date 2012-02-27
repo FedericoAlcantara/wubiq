@@ -6,6 +6,7 @@ package net.sf.wubiq.print.managers.impl;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -15,11 +16,16 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 
-import javax.print.attribute.Attribute;
+import javax.print.Doc;
+import javax.print.DocFlavor;
+import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.SimpleDoc;
+import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
 
-import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
-import net.sf.wubiq.print.jobs.impl.PrintJobInputStream;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -64,9 +70,11 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 					JOB_ID_FIELD_NAME + " integer not null, " +
 					QUEUE_ID_FIELD_NAME + " varchar(32) default ' ' not null, " +
 					"PRINT_SERVICE_NAME varchar(255) not null," +
-					"ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
+					"DOC_ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
+					"PRINT_REQUEST_ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
+					"DOC_FLAVOR varchar(20), " +
 					"STATUS integer not null, " +
-					"PRINT_DOCUMENT binary(" + Integer.MAX_VALUE + ")," +
+					"PRINT_DATA binary(" + Integer.MAX_VALUE + ")," +
 					"primary key (ID))").executeUpdate();
 			connection.commit();
 		} catch (SQLException e) {
@@ -80,16 +88,19 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(java.lang.String, net.sf.wubiq.print.jobs.IRemotePrintJob)
 	 */
 	@Override
-	public long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
+	public long addRemotePrintJob(String queueId, RemotePrintJob remotePrintJob) {
 		Connection connection = null;
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
 		long returnValue = 0l;
 		try {
+			InputStream inputStream = remotePrintJob.getStreamForBytes();
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			int byteVal = -1;
-			while ((byteVal = remotePrintJob.getPrintDocument().read()) != -1) {
-				outputStream.write(byteVal);
+			if (inputStream != null) {
+				while((byteVal = inputStream.read()) != -1) {
+					outputStream.write(byteVal);
+				}
 			}
 			outputStream.close();
 			returnValue = getLastJobId() + 1;
@@ -98,15 +109,21 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			String query = "insert into PRINT_JOB (" +
 					JOB_ID_FIELD_NAME + "," +
 					QUEUE_ID_FIELD_NAME + "," +
-					"PRINT_SERVICE_NAME, ATTRIBUTES, STATUS, " +
-					"PRINT_DOCUMENT) values (?,?,?,?,?,?)";
+					"PRINT_SERVICE_NAME, " +
+					"DOC_ATTRIBUTES, " +
+					"PRINT_REQUEST_ATTRIBUTES, " +
+					"DOC_FLAVOR, " +
+					"STATUS, " +
+					"PRINT_DATA) values (?,?,?,?,?,?,?,?)";
 			stmt = connection.prepareStatement(query);
 			stmt.setLong(1, returnValue);
 			stmt.setString(2, queueId);
-			stmt.setString(3, remotePrintJob.getPrintServiceName());
-			stmt.setString(4, PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes()));
-			stmt.setInt(5, RemotePrintJobStatus.NOT_PRINTED.ordinal());
-			stmt.setBytes(6, outputStream.toByteArray());
+			stmt.setString(3, remotePrintJob.getPrintService().getName());
+			stmt.setString(4, PrintServiceUtils.serializeAttributes(remotePrintJob.getDocAttributeSet()));
+			stmt.setString(5, PrintServiceUtils.serializeAttributes(remotePrintJob.getPrintRequestAttributeSet()));
+			stmt.setString(6, PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor()));
+			stmt.setInt(7, RemotePrintJobStatus.NOT_PRINTED.ordinal());
+			stmt.setBytes(8, outputStream.toByteArray());
 			stmt.executeUpdate();
 			connection.commit();
 		} catch (SQLException e) {
@@ -143,8 +160,8 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getRemotePrintJob(long)
 	 */
 	@Override
-	public IRemotePrintJob getRemotePrintJob(long jobId) {
-		IRemotePrintJob returnValue = null;
+	public RemotePrintJob getRemotePrintJob(long jobId) {
+		RemotePrintJob returnValue = null;
 		Connection connection = null;
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
@@ -154,9 +171,21 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			rs = stmt.executeQuery();
 			while (rs.next()) {
 				String printServiceName = rs.getString("PRINT_SERVICE_NAME");
-				Collection<Attribute> attributes = PrintServiceUtils.convertToAttributes(rs.getString("ATTRIBUTES"));
-				ByteArrayInputStream inputStream = new ByteArrayInputStream(rs.getBytes("PRINT_DOCUMENT"));
-				returnValue = new PrintJobInputStream(printServiceName, inputStream, attributes);
+				DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(rs.getString("DOC_ATTRIBUTES"));
+				PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(rs.getString("PRINT_REQUEST_ATTRIBUTES"));
+				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(rs.getString("DOC_FLAVOR"));
+				ByteArrayInputStream inputStream = new ByteArrayInputStream(rs.getBytes("PRINT_DATA"));
+				PrintService printService = PrintServiceUtils.findPrinter(printServiceName);
+				if (printService != null) {
+					Doc doc = new SimpleDoc(inputStream, DocFlavor.INPUT_STREAM.AUTOSENSE, docAttributeSet);
+					returnValue = (RemotePrintJob) printService.createPrintJob();
+					try {
+						returnValue.update(doc, printRequestAttributeSet);
+						returnValue.setDocFlavor(docFlavor);
+					} catch (PrintException e) {
+						LOG.error(e.getMessage(), e);
+					}
+				}
 			}
 		} catch (SQLException e) {
 			LOG.error(e.getMessage(), e);

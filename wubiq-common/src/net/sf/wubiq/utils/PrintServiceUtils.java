@@ -8,6 +8,7 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,10 +18,13 @@ import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.Attribute;
+import javax.print.attribute.AttributeSet;
 import javax.print.attribute.DocAttribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashDocAttributeSet;
+import javax.print.attribute.HashPrintJobAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
+import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttribute;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Chromaticity;
@@ -35,6 +39,7 @@ import javax.print.attribute.standard.PageRanges;
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
@@ -49,10 +54,8 @@ public class PrintServiceUtils {
 	private static final Log LOG = LogFactory.getLog(PrintServiceUtils.class);
 	public static boolean OUTPUT_LOG = false;
 	public static DocFlavor DEFAULT_DOC_FLAVOR = DocFlavor.INPUT_STREAM.PDF;
-	private static String DEFAULT_DOC_FLAVOR_NAME = "INPUT_STREAM.PDF";
 	private static Map<String, String> compressionMap;
 	private static Map<DocFlavor, String> docFlavorConversionMap;
-	private static List<DocFlavor> implementedDocFlavors;
 	/**
 	 * Tries to refresh print services.
 	 */
@@ -106,6 +109,19 @@ public class PrintServiceUtils {
 			}
 		}
 		return printer;
+	}
+	
+	/**
+	 * Based on its name and uuid finds a printer.
+	 * @param name Name of the printer.
+	 * @param uuid Unique remote id.
+	 * @return A PrinterService or null;
+	 */
+	public static PrintService findPrinter(String name, String uuid) {
+		if (!Is.emptyString(uuid)) {
+			return findPrinter(name + WebKeys.REMOTE_SERVICE_SEPARATOR + uuid);
+		}
+		return findPrinter(name);
 	}
 	
 	/**
@@ -337,6 +353,18 @@ public class PrintServiceUtils {
 		}
 		return returnValue;
 	}
+	/**
+	 * Returns a serialization representation of the attributes.
+	 * @param attributeSet Attribute set to serialize.
+	 * @return Serialize attributes or blank. Never null.
+	 */
+	public static String serializeAttributes(AttributeSet attributeSet) {
+		Collection<Attribute>attributes = new HashSet<Attribute>();
+		for (Attribute attribute: attributeSet.toArray()) {
+			attributes.add(attribute);
+		}
+		return serializeAttributes(attributes);
+	}
 	
 	/**
 	 * Deserializes string into a collection of attributes.
@@ -365,6 +393,47 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 
+	/**
+	 * Deserializes string into an attribute set.
+	 * @param attributesData Serialized data.
+	 * @return AttributeSet object. Never null.
+	 */
+	public static DocAttributeSet convertToDocAttributeSet(String attributesData) {
+		DocAttributeSet returnValue = new HashDocAttributeSet();
+		convertAttributeSet(attributesData, returnValue);
+		return returnValue;
+	}
+
+	/**
+	 * Deserializes string into an attribute set.
+	 * @param attributesData Serialized data.
+	 * @return AttributeSet object. Never null.
+	 */
+	public static PrintRequestAttributeSet convertToPrintRequestAttributeSet(String attributesData) {
+		PrintRequestAttributeSet returnValue = new HashPrintRequestAttributeSet();
+		convertAttributeSet(attributesData, returnValue);
+		return returnValue;
+	}
+	
+	/**
+	 * Deserializes string into an attribute set.
+	 * @param attributesData Serialized data.
+	 * @return AttributeSet object. Never null.
+	 */
+	public static PrintJobAttributeSet convertToPrintJobAttributeSet(String attributesData) {
+		PrintJobAttributeSet returnValue = new HashPrintJobAttributeSet();
+		convertAttributeSet(attributesData, returnValue);
+		return returnValue;
+	}
+
+	private static void convertAttributeSet(String attributesData, AttributeSet attributeSet) {
+		Collection<Attribute>attributes = convertToAttributes(attributesData);
+		for (Attribute attribute : attributes) {
+			if (attribute != null) {
+				attributeSet.add(attribute);
+			}
+		}
+	}
 	/**
 	 * Returns true if print service is an instance of RemotePrintService.
 	 * However keep in mind that PrintService and RemotePrintService might be 
@@ -439,12 +508,10 @@ public class PrintServiceUtils {
 	public static String serializeDocumentFlavors(PrintService printService, boolean debugMode) {
 		StringBuffer docFlavors = new StringBuffer("");
 		for (DocFlavor docFlavor : printService.getSupportedDocFlavors()) {
-			if (getImplementedDocFlavors().contains(docFlavor)) {
-				if (docFlavors.length() > 0) {
-					docFlavors.append(ParameterKeys.CATEGORIES_SEPARATOR);
-				}
-				docFlavors.append(PrintServiceUtils.serializeDocFlavor(docFlavor));
+			if (docFlavors.length() > 0) {
+				docFlavors.append(ParameterKeys.CATEGORIES_SEPARATOR);
 			}
+			docFlavors.append(PrintServiceUtils.serializeDocFlavor(docFlavor));
 		}
 		docFlavors.insert(0, ParameterKeys.PARAMETER_SEPARATOR);
 		docFlavors.insert(0, ParameterKeys.PRINT_SERVICE_DOC_FLAVORS);
@@ -475,7 +542,7 @@ public class PrintServiceUtils {
 	public static String serializeServiceName(PrintService printService, boolean debugMode) {
 		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
 		.append(ParameterKeys.PARAMETER_SEPARATOR)
-		.append(printService.getName().replaceAll("\\\\", "/"));
+		.append(cleanPrintServiceName(printService));
 		return printServiceRegister.toString();
 	}
 	
@@ -559,7 +626,7 @@ public class PrintServiceUtils {
 	public static String serializeDocFlavor(DocFlavor docFlavor) {
 		String returnValue = getDocFlavorConversionMap().get(docFlavor);
 		if (returnValue == null) {
-			returnValue = DEFAULT_DOC_FLAVOR_NAME;
+			returnValue = getDocFlavorConversionMap().get(DEFAULT_DOC_FLAVOR);
 		}
 		return returnValue;
 	}
@@ -584,6 +651,24 @@ public class PrintServiceUtils {
 		}
 		return returnValue;
 	}
+	
+	/**
+	 * @param printService Returns a cleaned print service name.
+	 * @return A cleaned (no strange characters) print service name.
+	 */
+	public static String cleanPrintServiceName(PrintService printService) {
+		StringBuffer returnValue = new StringBuffer("");
+		for (int index = 0; index < printService.getName().length(); index++) {
+			char charAt = printService.getName().charAt(index);
+			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".indexOf(charAt) >= 0) {
+				returnValue.append(charAt);
+			} else {
+				returnValue.append("_");
+			}
+		}
+		return returnValue.toString();
+	}
+
 	
 	private static Map<String, String> getCompressionMap() {
 		if (compressionMap == null) {
@@ -614,27 +699,88 @@ public class PrintServiceUtils {
 		}
 		return compressionMap;
 	}
-	
+
 	private static Map<DocFlavor, String> getDocFlavorConversionMap() {
 		if (docFlavorConversionMap == null) {
 			docFlavorConversionMap = new HashMap<DocFlavor, String>();
+
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.AUTOSENSE, "B_A.AS");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.GIF, "B_A.GIF");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.JPEG, "B_A.JPEG");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.PCL, "B_A.PCL");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.PDF, "B_A.PDF");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.PNG, "B_A.PNG");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.POSTSCRIPT, "B_A.PS");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_HTML_HOST, "B_A.THH");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_HTML_US_ASCII, "B_A.THUA");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_HTML_UTF_16, "B_A.THU16");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_HTML_UTF_16BE, "B_A.THU16BE");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_HTML_UTF_16LE, "B_A.THU16LE");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_HTML_UTF_8, "B_A.THU8");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_PLAIN_HOST, "B_A.TPH");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_PLAIN_US_ASCII, "B_A.TPUA");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_PLAIN_UTF_16, "B_A.TPU16");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_PLAIN_UTF_16BE, "B_A.TPU16BE");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_PLAIN_UTF_16LE, "B_A.TPU16LE");
+			docFlavorConversionMap.put(DocFlavor.BYTE_ARRAY.TEXT_PLAIN_UTF_8, "B_A.TPU8");
+			
+			docFlavorConversionMap.put(DocFlavor.CHAR_ARRAY.TEXT_HTML, "C_A.TH");
+			docFlavorConversionMap.put(DocFlavor.CHAR_ARRAY.TEXT_PLAIN, "C_A.TP");
+			
+
 			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.AUTOSENSE, "I_S.AS");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.GIF, "I_S.GIF");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.JPEG, "I_S.JPEG");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.PCL, "I_S.PCL");
 			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.PDF, "I_S.PDF");
 			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.PNG, "I_S.PNG");
-			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.JPEG, "I_S.JPEG");
-			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_HOST, "I_S.TXT");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.POSTSCRIPT, "I_S.PS");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_HTML_HOST, "I_S.THH");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_HTML_US_ASCII, "I_S.THUA");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_HTML_UTF_16, "I_S.THU16");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_HTML_UTF_16BE, "I_S.THU16BE");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_HTML_UTF_16LE, "I_S.THU16LE");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_HTML_UTF_8, "I_S.THU8");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_HOST, "I_S.TPH");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_US_ASCII, "I_S.TPUA");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_UTF_16, "I_S.TPU16");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_UTF_16BE, "I_S.TPU16BE");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_UTF_16LE, "I_S.TPU16LE");
+			docFlavorConversionMap.put(DocFlavor.INPUT_STREAM.TEXT_PLAIN_UTF_8, "I_S.TPU8");
+
+			docFlavorConversionMap.put(DocFlavor.READER.TEXT_HTML, "R.TH");
+			docFlavorConversionMap.put(DocFlavor.READER.TEXT_PLAIN, "R.TP");
+
+			docFlavorConversionMap.put(DocFlavor.SERVICE_FORMATTED.PAGEABLE, "S_F.PA");
+			docFlavorConversionMap.put(DocFlavor.SERVICE_FORMATTED.PRINTABLE, "S_F.PR");
+			docFlavorConversionMap.put(DocFlavor.SERVICE_FORMATTED.RENDERABLE_IMAGE, "S_F.RI");
+
+			docFlavorConversionMap.put(DocFlavor.STRING.TEXT_HTML, "S.TH");
+			docFlavorConversionMap.put(DocFlavor.STRING.TEXT_PLAIN, "S.TP");
+			
+			docFlavorConversionMap.put(DocFlavor.URL.AUTOSENSE, "U.AS");
+			docFlavorConversionMap.put(DocFlavor.URL.GIF, "U.GIF");
+			docFlavorConversionMap.put(DocFlavor.URL.JPEG, "U.JPEG");
+			docFlavorConversionMap.put(DocFlavor.URL.PCL, "U.PCL");
+			docFlavorConversionMap.put(DocFlavor.URL.PDF, "U.PDF");
+			docFlavorConversionMap.put(DocFlavor.URL.PNG, "U.PNG");
+			docFlavorConversionMap.put(DocFlavor.URL.POSTSCRIPT, "U.PS");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_HTML_HOST, "U.THH");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_HTML_US_ASCII, "U.THUA");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_HTML_UTF_16, "U.THU16");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_HTML_UTF_16BE, "U.THU16BE");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_HTML_UTF_16LE, "U.THU16LE");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_HTML_UTF_8, "U.THU8");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_PLAIN_HOST, "U.TPH");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_PLAIN_US_ASCII, "U.TPUA");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_PLAIN_UTF_16, "U.TPU16");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_PLAIN_UTF_16BE, "U.TPU16BE");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_PLAIN_UTF_16LE, "U.TPU16LE");
+			docFlavorConversionMap.put(DocFlavor.URL.TEXT_PLAIN_UTF_8, "U.TPU8");
+
 		}
 		return docFlavorConversionMap;
 	}
 	
-	private static List<DocFlavor> getImplementedDocFlavors() {
-		if (implementedDocFlavors == null) {
-			implementedDocFlavors = new ArrayList<DocFlavor>();
-			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.AUTOSENSE);
-			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.PDF);
-			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.PNG);
-			implementedDocFlavors.add(DocFlavor.INPUT_STREAM.JPEG);
-		}
-		return implementedDocFlavors;
-	}
+
 }

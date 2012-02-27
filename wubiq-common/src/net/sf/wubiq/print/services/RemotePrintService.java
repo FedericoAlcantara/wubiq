@@ -3,10 +3,13 @@
  */
 package net.sf.wubiq.print.services;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
@@ -20,7 +23,11 @@ import javax.print.attribute.PrintServiceAttributeSet;
 import javax.print.event.PrintServiceAttributeListener;
 
 import net.sf.wubiq.common.WebKeys;
-import net.sf.wubiq.print.jobs.TransportablePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.utils.PrintServiceUtils;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Remote Print Services implementation.
@@ -31,6 +38,7 @@ import net.sf.wubiq.print.jobs.TransportablePrintJob;
  *
  */
 public class RemotePrintService implements PrintService {
+	private static Log LOG = LogFactory.getLog(RemotePrintService.class);
 	private String uuid;
 	private String remoteName;
 	private String remoteComputerName;
@@ -38,6 +46,48 @@ public class RemotePrintService implements PrintService {
 	private Map<String, Object> remoteAttributes;
 	private boolean mobile;
 	private DocFlavor[] supportedDocFlavors;
+	private Map<String, PrintServiceAttribute> attributesPerCategory;
+	private Map<String, Object> defaultAttributes;
+	
+	
+	public RemotePrintService() {
+		remoteCategories = new ArrayList<Class<?>>();
+		remoteAttributes = new HashMap<String, Object>();
+		supportedDocFlavors = new DocFlavor[]{};
+		attributesPerCategory = new HashMap<String, PrintServiceAttribute>();
+		defaultAttributes = new HashMap<String, Object>();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public RemotePrintService(PrintService printService) {
+		this();
+		remoteName = printService.getName();
+		uuid = UUID.randomUUID().toString();
+		supportedDocFlavors = printService.getSupportedDocFlavors();
+		for (Class<? extends Attribute> category : PrintServiceUtils.getCategories(printService)) {
+			remoteCategories.add(category);
+		}
+		for (Class<?> category : remoteCategories) {
+			for (Attribute attribute : PrintServiceUtils.getCategoryAttributes(printService, (Class<? extends Attribute>) category)) {
+				remoteAttributes.put(category.getName(), attribute);
+			}
+
+			if (category.isAssignableFrom(PrintServiceAttribute.class)) {
+				attributesPerCategory.put(category.getName(), 
+						printService.getAttribute((Class<? extends PrintServiceAttribute>)category));
+			}
+			
+			defaultAttributes.put(category.getName(), 
+					printService.getDefaultAttributeValue((Class<? extends PrintServiceAttribute>)category));
+		}
+		
+		try {
+			remoteComputerName = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			LOG.error(e.getMessage(), e);
+			throw new UnsupportedOperationException(e);
+		}
+	}
 	
 	/**
 	 * @see javax.print.PrintService#addPrintServiceAttributeListener(javax.print.event.PrintServiceAttributeListener)
@@ -53,16 +103,16 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public DocPrintJob createPrintJob() {
-		return new TransportablePrintJob(this);
+		return new RemotePrintJob(this);
 	}
 
 	/**
 	 * @see javax.print.PrintService#getAttribute(java.lang.Class)
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends PrintServiceAttribute> T getAttribute(Class<T> category) {
-		// TODO Auto-generated method stub
-		return null;
+		return (T) attributesPerCategory.get(category.getName());
 	}
 
 	/**
@@ -89,7 +139,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public Object getDefaultAttributeValue(Class<? extends Attribute> category) {
-		return null;
+		return defaultAttributes.get(category.getName());
 	}
 
 	/**
@@ -97,7 +147,7 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public String getName() {
-		return getRemoteName() + WebKeys.REMOTE_SERVICE_SEPARATOR + getRemoteComputerName();
+		return getRemoteName() + WebKeys.REMOTE_SERVICE_SEPARATOR + getUuid();
 	}
 
 	/**
@@ -140,8 +190,7 @@ public class RemotePrintService implements PrintService {
 	@Override
 	public AttributeSet getUnsupportedAttributes(DocFlavor flavor,
 			AttributeSet attributes) {
-		// TODO Auto-generated method stub
-		return null;
+		return null; // All are supported.
 	}
 
 	/**
@@ -167,7 +216,15 @@ public class RemotePrintService implements PrintService {
 	 */
 	@Override
 	public boolean isDocFlavorSupported(DocFlavor flavor) {
-		return true;
+		boolean returnValue = false;
+		for (DocFlavor readDocFlavor : supportedDocFlavors) {
+			if (readDocFlavor.equals(flavor)) {
+				returnValue = true;
+				break;
+			}
+		}
+
+		return returnValue;
 	}
 
 	/**
