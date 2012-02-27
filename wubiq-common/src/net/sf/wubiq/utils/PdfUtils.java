@@ -95,7 +95,7 @@ public enum PdfUtils {
 	
 	/**
 	 * Pdf to pageable.
-	 * @param printDocument.
+	 * @param printDocument Converts a pdf into a pageable.
 	 * @return A pageable object. Null if an error occurs. 
 	 */
 	public Pageable pdfToPageable(InputStream printDocument) {

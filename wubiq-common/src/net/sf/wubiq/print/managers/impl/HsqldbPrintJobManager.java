@@ -85,7 +85,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(java.lang.String, net.sf.wubiq.print.jobs.IRemotePrintJob)
+	 * Adds a remote print job to the queue.
 	 */
 	@Override
 	public long addRemotePrintJob(String queueId, RemotePrintJob remotePrintJob) {
