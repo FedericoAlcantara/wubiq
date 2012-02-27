@@ -125,7 +125,7 @@ public class ServerTest extends WubiqBaseTest {
 			.append(jobId);
 			InputStream input = null;
 			String printServiceName = manager.askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
-			String attributesData = manager.askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter.toString());
+			String attributesData = manager.askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter.toString());
 			input = (InputStream)manager.pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
 			assertFalse("Print service name should not be empty", Is.emptyString(printServiceName));
 			assertNotNull("Attributes data should not be null", attributesData);
