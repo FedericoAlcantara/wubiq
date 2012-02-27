@@ -37,8 +37,12 @@ public final class ClientPrintDirectUtils {
 	/**
 	 * Sends the input stream file with the given preferences to the print service.
 	 * @param jobId Identifying job id.
-	 * @param printAttributes Attributes to be set on the print service.
-	 * @param printDocument Document as input stream to sent to the print service.
+	 * @param printService PrintService to print to.
+	 * @param printRequestAttributeSet Attributes to be set on the print service.
+	 * @param printJobAttributeSet Attributes for the print job.
+	 * @param docAttributeSet Attributes for the document.
+	 * @param docFlavor Document flavor.
+	 * @param printData Document as input stream to sent to the print service.
 	 * @throws IOException if service is not found and no default service.
 	 */
 	public static void print(String jobId, PrintService printService, 
