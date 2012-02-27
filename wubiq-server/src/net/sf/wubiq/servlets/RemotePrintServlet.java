@@ -54,8 +54,12 @@ import org.apache.commons.logging.LogFactory;
 public class RemotePrintServlet extends HttpServlet {
 	private static final Log LOG = LogFactory.getLog(RemotePrintServlet.class);
 	private static final long serialVersionUID = 1L;
-	private static final long timeStamp = new Date().getTime();
+	private long timeStamp = -1l;
 
+	public RemotePrintServlet() {
+		timeStamp = new Date().getTime();
+	}
+	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String uuid = request.getParameter(ParameterKeys.UUID);
 		String command = request.getParameter(ParameterKeys.COMMAND);

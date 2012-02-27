@@ -1,5 +1,5 @@
 ======================
-Wubiq 1.0.135 (2012-02-27)
+Wubiq 1.0.136 (2012-02-27)
 ======================
 -Implemented Pageable and Printable direct printing.
 ======================
