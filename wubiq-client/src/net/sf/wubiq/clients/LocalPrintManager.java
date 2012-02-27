@@ -4,9 +4,9 @@
 package net.sf.wubiq.clients;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
@@ -16,12 +16,14 @@ import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.print.DocFlavor;
 import javax.print.PrintService;
-import javax.print.attribute.Attribute;
+import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.PrintJobAttributeSet;
+import javax.print.attribute.PrintRequestAttributeSet;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -66,6 +68,7 @@ public class LocalPrintManager implements Runnable {
 	private int connectionErrorCount = 0;
 	private boolean cancelManager = false;
 	private Map<String, PrintService>printServicesName;
+	private long lastServerTimestamp = -1;
 	
 	public LocalPrintManager() {
 	}
@@ -164,16 +167,26 @@ public class LocalPrintManager implements Runnable {
 	protected void processPendingJob(String jobId) throws ConnectException {
 		String parameter = printJobPollString(jobId);
 		doLog("Process Pending Job:" + jobId);
-		InputStream stream = null;
+		InputStream printData = null;
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
-			String attributesData = askServer(CommandKeys.READ_PRINT_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") attributesData:" + attributesData);
-			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+			String printRequestAttributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter);
+			doLog("Job(" + jobId + ") printRequestAttributes:" + printRequestAttributesData);
+			String printJobAttributesData = askServer(CommandKeys.READ_PRINT_JOB_ATTRIBUTES, parameter);
+			doLog("Job(" + jobId + ") printJobAttributes:" + printJobAttributesData);
+			String docAttributesData = askServer(CommandKeys.READ_DOC_ATTRIBUTES, parameter);
+			doLog("Job(" + jobId + ") docAttributes:" + docAttributesData);
+			String docFlavorData = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
+			doLog("Job(" + jobId + ") docFlavor:" + docFlavorData);
+			
+			printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 			PrintService printService = getPrintServicesName().get(printServiceName);
-			Collection<Attribute> attributes = PrintServiceUtils.convertToAttributes(attributesData);
-			ClientPrintDirectUtils.print(jobId, printService, attributes, stream);
+			PrintRequestAttributeSet printRequestAttributeSet = PrintServiceUtils.convertToPrintRequestAttributeSet(printRequestAttributesData);
+			PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(printJobAttributesData);
+			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
+			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
+			ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
 			doLog("Job(" + jobId + ") closing print job.");
@@ -183,8 +196,8 @@ public class LocalPrintManager implements Runnable {
 			LOG.error(e.getMessage(), e);
 		} finally {
 			try {
-				if (stream != null) {
-					stream.close();
+				if (printData != null) {
+					printData.close();
 				}
 			} catch (IOException e) {
 				doLog(e.getMessage());
@@ -244,15 +257,20 @@ public class LocalPrintManager implements Runnable {
 	protected void registerPrintServices() throws ConnectException {
 		Map<String, PrintService>newPrintServices = new HashMap<String, PrintService>();
 		boolean reload = false;
-		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
-			String printServiceName = printService.getName().replaceAll("\\\\", "/");
-			newPrintServices.put(printServiceName, printService);
-			if (!getPrintServicesName().containsKey(printServiceName)) {
+		long serverTimestamp = Long.parseLong(askServer(CommandKeys.SERVER_TIMESTAMP));
+		if (serverTimestamp != lastServerTimestamp) {
+			reload = true;
+		} else {
+			for (PrintService printService: PrintServiceUtils.getPrintServices()) {
+				String printServiceName = PrintServiceUtils.cleanPrintServiceName(printService);
+				newPrintServices.put(printServiceName, printService);
+				if (!getPrintServicesName().containsKey(printServiceName)) {
+					reload = true;
+				}
+			}
+			if (newPrintServices.size() != getPrintServicesName().size()) {
 				reload = true;
 			}
-		}
-		if (newPrintServices.size() != getPrintServicesName().size()) {
-			reload = true;
 		}
 		if (!reload) {
 			try {
@@ -270,7 +288,7 @@ public class LocalPrintManager implements Runnable {
 			getPrintServicesName().clear();
 			for (PrintService printService: PrintServiceUtils.getPrintServices()) {
 				String printServiceName = PrintServiceUtils.serializeServiceName(printService, debugMode);
-				getPrintServicesName().put(printService.getName().replaceAll("\\\\", "/"), printService);
+				getPrintServicesName().put(PrintServiceUtils.cleanPrintServiceName(printService), printService);
 				doLog("Print service:" + printServiceName);
 				StringBuffer printServiceRegister = new StringBuffer(printServiceName); 
 				StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, debugMode));
@@ -279,6 +297,7 @@ public class LocalPrintManager implements Runnable {
 				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
 						PrintServiceUtils.serializeDocumentFlavors(printService, debugMode));
 			}
+			lastServerTimestamp = serverTimestamp;
 		}
 	}
 
@@ -367,17 +386,21 @@ public class LocalPrintManager implements Runnable {
 			webUrl = new URL(url);
 			connection = (HttpURLConnection) webUrl.openConnection();
 			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+			connection.setRequestMethod("POST");
 			Object content = connection.getContent();
 			if (connection.getContentType() != null) {
 				if (connection.getContentType().equals("application/pdf")) {
 					returnValue = (InputStream)content;
 				} else if (connection.getContentType().equals("text/html")) {
-					reader = new BufferedReader(new InputStreamReader((InputStream)content));
-					StringBuffer value = new StringBuffer("");
-					while (reader.ready()) {
-						value.append(reader.readLine());
+					InputStream inputStream = (InputStream) content;
+					ByteArrayOutputStream output = new ByteArrayOutputStream();
+					int readByte;
+					while ((readByte = inputStream.read()) > -1) {
+						output.write(readByte);
 					}
-					returnValue = value.toString();
+					returnValue = new String(output.toByteArray());
+					output.close();
+					inputStream.close();
 				}
 			}
 		} catch (MalformedURLException e) {

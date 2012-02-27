@@ -5,7 +5,7 @@ package net.sf.wubiq.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.Collection;
+import java.io.ObjectInputStream;
 import java.util.Locale;
 
 import javax.print.Doc;
@@ -14,10 +14,14 @@ import javax.print.DocPrintJob;
 import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.SimpleDoc;
-import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
+
+import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.wrappers.PageableWrapper;
+import net.sf.wubiq.wrappers.PrintableWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,28 +41,42 @@ public final class ClientPrintDirectUtils {
 	 * @param printDocument Document as input stream to sent to the print service.
 	 * @throws IOException if service is not found and no default service.
 	 */
-	public static void print(String jobId, PrintService printService, Collection<Attribute> printAttributes, 
-			InputStream printDocument)  throws IOException {
+	public static void print(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			DocFlavor docFlavor,
+			InputStream printData)  throws IOException {
 		try {
 			if (printService == null) {
 				throw new IOException(("error.print.noPrintDevice"));
 			}
-			if (printDocument != null) {
-				// Set Document Attributes
-				DocAttributeSet attributes = PrintServiceUtils.createDocAttributes(printAttributes);
+			if (printData != null) {
+				Doc doc = null;
 				// Set Request Attributes
-				PrintRequestAttributeSet requestAttributes = PrintServiceUtils.createPrintRequestAttributes(printAttributes);
-				requestAttributes.add(new JobName(jobId, Locale.getDefault()));
-				
+				printRequestAttributeSet.add(new JobName(jobId, Locale.getDefault()));
 				// Create doc and printJob
-				
-				Doc doc = new SimpleDoc(PdfUtils.INSTANCE.pdfToPageable(printDocument), DocFlavor.SERVICE_FORMATTED.PAGEABLE, attributes);
+				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE)) {
+					ObjectInputStream input = new ObjectInputStream(printData);
+					PageableWrapper pageable = (PageableWrapper) input.readObject();
+					doc = new SimpleDoc(pageable, docFlavor, docAttributeSet);
+				} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
+					ObjectInputStream input = new ObjectInputStream(printData);
+					PrintableWrapper printable = (PrintableWrapper) input.readObject();
+					doc = new SimpleDoc(printable, docFlavor, docAttributeSet);
+				} else {
+					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
+				}
 				DocPrintJob printJob = printService.createPrintJob();
-	
-				printJob.print(doc, requestAttributes);
+				if (printJob instanceof RemotePrintJob) {
+					((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
+				}
+				printJob.print(doc, printRequestAttributeSet);
 			}
 				
 		} catch (PrintException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (ClassNotFoundException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
