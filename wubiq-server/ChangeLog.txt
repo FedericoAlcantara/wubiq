@@ -1,4 +1,8 @@
 ======================
+Wubiq 1.0.135 (2012-02-27)
+======================
+-Implemented Pageable and Printable direct printing.
+======================
 Wubiq 0.9.127 (2012-02-14)
 ======================
 - Changed output to print services from pdf or png to pageable. Now is portable across operating systems.
