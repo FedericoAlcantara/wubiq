@@ -257,7 +257,12 @@ public class LocalPrintManager implements Runnable {
 	protected void registerPrintServices() throws ConnectException {
 		Map<String, PrintService>newPrintServices = new HashMap<String, PrintService>();
 		boolean reload = false;
-		long serverTimestamp = Long.parseLong(askServer(CommandKeys.SERVER_TIMESTAMP));
+		long serverTimestamp = -2l;
+		try {
+			serverTimestamp = Long.parseLong(askServer(CommandKeys.SERVER_TIMESTAMP));
+		} catch (NumberFormatException e) {
+			serverTimestamp = -2l;
+		}
 		if (serverTimestamp != lastServerTimestamp) {
 			reload = true;
 		} else {
