@@ -23,11 +23,29 @@ public class PageableWrapper implements Pageable, Serializable {
 
 	public PageableWrapper(Pageable pageable) {
 		numberOfPages = pageable.getNumberOfPages();
-		pageFormats = new PageFormatWrapper[numberOfPages];
-		printables = new PrintableWrapper[numberOfPages];
-		for (int index = 0; index < numberOfPages; index++) {
-			pageFormats[index] = new PageFormatWrapper(pageable.getPageFormat(index));
-			printables[index] = new PrintableWrapper(pageable.getPrintable(index));
+		if (numberOfPages == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
+			int pageIndex = 0;
+			do {
+				try {
+					pageable.getPageFormat(pageIndex);
+					pageIndex++;
+				} catch (IndexOutOfBoundsException e) {
+					pageIndex = pageIndex - 1;
+					break;
+				}
+			} while (true);
+			numberOfPages = pageIndex;
+		}
+		if (numberOfPages > 0) {
+			pageFormats = new PageFormatWrapper[numberOfPages];
+			printables = new PrintableWrapper[numberOfPages];
+			for (int index = 0; index < numberOfPages; index++) {
+				pageFormats[index] = new PageFormatWrapper(pageable.getPageFormat(index));
+				printables[index] = new PrintableWrapper(pageable.getPrintable(index));
+			}
+		} else {
+			pageFormats = new PageFormatWrapper[]{};
+			printables = new PrintableWrapper[]{};
 		}
 	}
 
