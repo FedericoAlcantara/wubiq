@@ -23,7 +23,7 @@ public class PrinterJobHandler extends PrinterJob {
 	@SuppressWarnings("rawtypes")
 	public PrinterJobHandler() {
 		try {
-			Class printerJobClass = ClassLoader.getSystemClassLoader().loadClass("net.sf.wubiq.print.jobs.PrinterJobManager");
+			Class printerJobClass = Thread.currentThread().getContextClassLoader().loadClass("net.sf.wubiq.print.jobs.PrinterJobManager");
 			printerJobManager = (PrinterJob) printerJobClass.newInstance();
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();
