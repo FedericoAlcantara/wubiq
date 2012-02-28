@@ -6,5 +6,7 @@
 	<classpathentry kind="lib" path="lib-nondeploy/servlet-api.jar"/>
 	<classpathentry kind="lib" path="lib-nondeploy/hsqldb.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-client"/>
+	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-common"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

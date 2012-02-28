@@ -1,5 +1,5 @@
 ======================
-Wubiq 1.0.158 (2012-02-28)
+Wubiq 1.0.159 (2012-02-28)
 ======================
 -Implemented Pageable and Printable direct printing.
 -Solved compatibility with print service users which rely on PrinterName attribute.
