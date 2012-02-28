@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.servlets;
 
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -31,6 +33,7 @@ import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.data.RemoteClient;
+import net.sf.wubiq.print.jobs.PrinterJobManager;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
@@ -532,14 +535,22 @@ public class RemotePrintServlet extends HttpServlet {
 			Doc doc = null;
 			if (printService.isDocFlavorSupported(DocFlavor.INPUT_STREAM.PDF)) {
 				doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, attributes);
+				DocPrintJob printJob = printService.createPrintJob();
+				try {
+					printJob.print(doc, requestAttributes);
+				} catch (PrintException e) {
+					LOG.error(e.getMessage(), e);
+				}
 			} else {
-				doc = new SimpleDoc(PdfUtils.INSTANCE.pdfToPageable(input), DocFlavor.SERVICE_FORMATTED.PAGEABLE, attributes);
-			}
-			DocPrintJob printJob = printService.createPrintJob();
-			try {
-				printJob.print(doc, requestAttributes);
-			} catch (PrintException e) {
-				LOG.error(e.getMessage(), e);
+				PrinterJobManager.initializePrinterJobManager();
+				PrinterJob printerJob = PrinterJob.getPrinterJob();
+				printerJob.setPageable(PdfUtils.INSTANCE.pdfToPageable(input));
+				try {
+					printerJob.setPrintService(printService);
+					printerJob.print(requestAttributes);
+				} catch (PrinterException e) {
+					LOG.error(e.getMessage(), e);
+				}
 			}
 			input.close();
 			response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
