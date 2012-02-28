@@ -81,7 +81,6 @@ public class GraphicsRecorder extends Graphics2D {
 		this.clipBounds = originalGraphics.getClipBounds();
 		this.color = originalGraphics.getColor();
 		this.font = originalGraphics.getFont();
-		
 	}
 	
 	private void addToCommands(String command, GraphicParameter... parameters) {
