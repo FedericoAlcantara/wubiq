@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+
+<project name="wubiq-war" basedir="." default="create-wubiq-server-war">
+
+	<property name="project" value="wubiq-server" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="src" value="${basedir}/src" />
+	<property name="bin" value="${basedir}/bin" />
+	<property name="web" value="${basedir}/WebContent" />
+	<property name="lib" value="${web}/WEB-INF/lib" />
+	<property name="output.war" value="${dist}/${project}.war" />
+	<property name="war.build" value="${basedir}/build" />
+	
+	
+	<path id="project.classpath">
+		<pathelement path="${lib}"/>
+		<pathelement path="${bin}"/>
+		<pathelement path="${war.build}"/>
+		<fileset dir="${lib}"> 
+			<include name="**/*.jar"/> 
+		</fileset> 
+	</path>
+	
+	<path id="project.src">
+		<pathelement path="${src}"/>
+	</path>	
+		
+	<target name="create-wubiq-server-war" depends="clean, copy">
+		<war jarfile="${output.war}">
+			<fileset dir="${war.build}" />
+		</war>
+	</target>
+	
+	<target name="copy">
+		<copy todir="${war.build}">
+			<fileset dir="${web}" includes = "**/*" />
+		</copy>
+		<copy todir="${war.build}/WEB-INF/classes">		
+			<fileset dir="${bin}" includes = "**/*" />
+		</copy>
+	</target>
+	
+	<target name="clean">
+		<delete dir="${dist}" failonerror="false" />
+		<delete dir="${war.build}" failonerror="false" />
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${war.build}"/>
+		<mkdir dir="${war.build}/WEB-INF/classes"/>
+	</target>
+</project>
