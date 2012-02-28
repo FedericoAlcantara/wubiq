@@ -44,7 +44,7 @@ public class PrintableWrapper implements Printable, Serializable {
 			throws PrinterException {
 		if (graphicCommands == null) {
 			graphicCommands = new ArrayList<GraphicCommand>();
-			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands);
+			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, graphics);
 			width = new Double(pageFormat.getWidth()).intValue();
 			height = new Double(pageFormat.getHeight()).intValue();
 			graphicsRecorder.setBackground(Color.white);

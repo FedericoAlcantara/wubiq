@@ -24,17 +24,7 @@ public class PageableWrapper implements Pageable, Serializable {
 	public PageableWrapper(Pageable pageable) {
 		numberOfPages = pageable.getNumberOfPages();
 		if (numberOfPages == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-			int pageIndex = 0;
-			do {
-				try {
-					pageable.getPageFormat(pageIndex);
-					pageIndex++;
-				} catch (IndexOutOfBoundsException e) {
-					pageIndex = pageIndex - 1;
-					break;
-				}
-			} while (true);
-			numberOfPages = pageIndex;
+			numberOfPages = 1;
 		}
 		if (numberOfPages > 0) {
 			pageFormats = new PageFormatWrapper[numberOfPages];
