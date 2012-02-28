@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.servlets;
 
+import java.awt.print.Pageable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
@@ -48,6 +49,7 @@ import net.sf.wubiq.utils.ServerLabels;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.pdfbox.pdmodel.PDDocument;
 
 /**
  * Handles the communication between clients and server.
@@ -544,12 +546,17 @@ public class RemotePrintServlet extends HttpServlet {
 			} else {
 				PrinterJobManager.initializePrinterJobManager();
 				PrinterJob printerJob = PrinterJob.getPrinterJob();
-				printerJob.setPageable(PdfUtils.INSTANCE.pdfToPageable(input));
+				Pageable pageable = PdfUtils.INSTANCE.pdfToPageable(input);
+				printerJob.setPageable(pageable);
 				try {
 					printerJob.setPrintService(printService);
 					printerJob.print(requestAttributes);
 				} catch (PrinterException e) {
 					LOG.error(e.getMessage(), e);
+				} finally {
+					if (pageable != null && pageable instanceof PDDocument) {
+						((PDDocument)pageable).close();
+					}
 				}
 			}
 			input.close();
