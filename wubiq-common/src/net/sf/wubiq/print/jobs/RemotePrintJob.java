@@ -54,6 +54,7 @@ public class RemotePrintJob implements DocPrintJob {
 	private String printServiceName;
 	private RemotePrintJobStatus status;
 	private Object printData;
+	private PageFormat pageFormat;
 	
 	public RemotePrintJob() {
 	}
@@ -251,14 +252,8 @@ public class RemotePrintJob implements DocPrintJob {
 	private InputStream serializePrintable(Printable inputPrintable) {
 		InputStream returnValue = null;
 		PrintableWrapper printable = new PrintableWrapper(inputPrintable);
-		Paper paper = new Paper();
-		paper.setSize(612, 828);
-		paper.setImageableArea(0, 0, 612, 828);
-		PageFormatWrapper pageFormat = new PageFormatWrapper();
-		pageFormat.setOrientation(PageFormat.PORTRAIT);
-		pageFormat.setPaper(paper);
 		try {
-			printPrintable(printable, pageFormat, 0);
+			printPrintable(printable, new PageFormatWrapper(pageFormat), 0);
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			ObjectOutputStream output = new ObjectOutputStream(out);
 			output.writeObject(printable);
@@ -340,5 +335,27 @@ public class RemotePrintJob implements DocPrintJob {
 	 */
 	public void setStatus(RemotePrintJobStatus status) {
 		this.status = status;
+	}
+
+	/**
+	 * @return the pageFormat
+	 */
+	public PageFormat getPageFormat() {
+		if (pageFormat == null) {
+			Paper paper = new Paper();
+			paper.setSize(612, 828);
+			paper.setImageableArea(0, 0, 612, 828);
+			pageFormat = new PageFormat();
+			pageFormat.setOrientation(PageFormat.PORTRAIT);
+			pageFormat.setPaper(paper);
+		}
+		return pageFormat;
+	}
+
+	/**
+	 * @param pageFormat the pageFormat to set
+	 */
+	public void setPageFormat(PageFormat pageFormat) {
+		this.pageFormat = pageFormat;
 	}
 }
