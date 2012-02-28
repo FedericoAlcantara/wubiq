@@ -8,6 +8,7 @@ import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.UUID;
 
@@ -20,6 +21,7 @@ import javax.print.attribute.AttributeSet;
 import javax.print.attribute.HashPrintServiceAttributeSet;
 import javax.print.attribute.PrintServiceAttribute;
 import javax.print.attribute.PrintServiceAttributeSet;
+import javax.print.attribute.standard.PrinterName;
 import javax.print.event.PrintServiceAttributeListener;
 
 import net.sf.wubiq.common.WebKeys;
@@ -291,6 +293,8 @@ public class RemotePrintService implements PrintService {
 	 */
 	public void setRemoteName(String remoteName) {
 		this.remoteName = remoteName;
+		PrintServiceAttribute attribute = new PrinterName(getName(), Locale.getDefault());
+		attributesPerCategory.put(attribute.getCategory().getName(), attribute);
 	}
 
 	/**
