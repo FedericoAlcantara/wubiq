@@ -5,6 +5,8 @@ package net.sf.wubiq.print.jobs;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
@@ -28,6 +30,7 @@ import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.PrinterResolution;
 import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
@@ -226,11 +229,25 @@ public class RemotePrintJob implements DocPrintJob {
 	private InputStream serializePageable(Pageable inputPageable) {
 		InputStream returnValue = null;
 		PageableWrapper pageable = new PageableWrapper(inputPageable);
-		for (int pageIndex = 0; pageIndex < pageable.getNumberOfPages(); pageIndex++) {
-			PageFormat pageFormat = pageable.getPageFormat(pageIndex);
-			Printable printable = pageable.getPrintable(pageIndex);
-			printPrintable(printable, pageFormat, pageIndex);
-		}
+		int pageResult = Printable.PAGE_EXISTS;
+		int pageIndex = 0;
+		do {
+			try {
+				PageFormatWrapper pageFormat = new PageFormatWrapper(pageable.getOriginal().getPageFormat(pageIndex));
+				PrintableWrapper printable = new PrintableWrapper(pageable.getOriginal().getPrintable(pageIndex));
+				pageResult = printPrintable(printable, pageFormat, pageIndex);
+				if (pageResult == Printable.PAGE_EXISTS) {
+					pageable.addPageFormat(pageFormat);
+					pageable.addPrintable(printable);
+					pageIndex++;
+				}
+			} catch (IndexOutOfBoundsException e) {
+				LOG.debug("Reached end of printables");
+				break;
+			}
+		} while (pageResult == Printable.PAGE_EXISTS);
+		pageable.setNumberOfPages(pageIndex);
+		
 		ByteArrayOutputStream out = new ByteArrayOutputStream();
 		ObjectOutputStream output;
 		try {
@@ -271,20 +288,50 @@ public class RemotePrintJob implements DocPrintJob {
 	 * @param pageFormat Page format.
 	 * @param pageIndex Page to be printed.
 	 */
-	private void printPrintable(Printable printable, PageFormat pageFormat, int pageIndex) {
-		int width = new Double(pageFormat.getWidth()).intValue();
-		int height = new Double(pageFormat.getHeight()).intValue();
-		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+	private int printPrintable(Printable printable, PageFormat pageFormat, int pageIndex) {
+		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES; 
+		double xScale = getXResolution() / 72.0;
+		double yScale = getYResolution() / 72.0;
+		AffineTransform scaleTransform = new AffineTransform();
+		scaleTransform.scale(xScale, yScale);
+		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
-		graph.setBackground(Color.WHITE);
+		graph.setTransform(scaleTransform);
+		graph.setClip(new Rectangle2D.Double(pageFormat.getImageableX(),
+				pageFormat.getImageableY(),
+				pageFormat.getImageableWidth(), 
+				pageFormat.getImageableHeight()));
+		graph.setPaint(Color.black);
 		try {
-			printable.print(graph, pageFormat, pageIndex);
+			returnValue = printable.print(graph, pageFormat, pageIndex);
 			graph.dispose();
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 			throw new RuntimeException(e);
 		}
-		
+		return returnValue;
+	}
+	
+	private double getXResolution() {
+		double returnValue = 612;
+		if (printRequestAttributeSet != null) {
+			PrinterResolution printerResolution = (PrinterResolution) printRequestAttributeSet.get(PrinterResolution.class);
+			if (printerResolution != null) {
+				returnValue = printerResolution.getCrossFeedResolution(PrinterResolution.DPI);
+			}
+		}
+		return returnValue;
+	}
+	
+	private double getYResolution() {
+		double returnValue = 792;
+		if (printRequestAttributeSet != null) {
+			PrinterResolution printerResolution = (PrinterResolution) printRequestAttributeSet.get(PrinterResolution.class);
+			if (printerResolution != null) {
+				returnValue = printerResolution.getFeedResolution(PrinterResolution.DPI);
+			}
+		}
+		return returnValue;
 	}
 	
 	public void setDocFlavor(DocFlavor docFlavor){

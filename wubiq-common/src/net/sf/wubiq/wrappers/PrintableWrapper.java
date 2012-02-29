@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.awt.image.renderable.RenderableImage;
@@ -19,7 +20,6 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -29,8 +29,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	transient private Printable printable;
 	private List<GraphicCommand> graphicCommands;
 	private int returnValue = 0;
-	private int width;
-	private int height;
+	private Rectangle2D bounds;
 	public PrintableWrapper() {
 	}
 
@@ -45,15 +44,12 @@ public class PrintableWrapper implements Printable, Serializable {
 		if (graphicCommands == null) {
 			graphicCommands = new ArrayList<GraphicCommand>();
 			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, (Graphics2D)graphics);
-			width = new Double(pageFormat.getWidth()).intValue();
-			height = new Double(pageFormat.getHeight()).intValue();
-			graphicsRecorder.setBackground(Color.white);
-			graphicsRecorder.setColor(Color.BLACK);
-			graphicsRecorder.setFont(graphics.getFont());
-			graphicsRecorder.clearRect(0, 0, width, height);
+			bounds = graphics.getClipBounds();
 			returnValue = printable.print(graphicsRecorder, new PageFormatWrapper(pageFormat), pageIndex);
 		} else {
 			Graphics2D graph = (Graphics2D) graphics;
+			graph.setClip(bounds);
+			graph.setPaint(Color.black);
 			for (GraphicCommand graphicCommand : graphicCommands) {
 				executeMethod(graph, graphicCommand);
 			}

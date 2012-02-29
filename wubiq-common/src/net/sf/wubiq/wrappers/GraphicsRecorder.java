@@ -99,7 +99,15 @@ public class GraphicsRecorder extends Graphics2D {
 			
 		}
 		if (serializable) {
-			graphicCommands.add(new GraphicCommand(command, parameters));
+			if (command.startsWith("draw") ||
+					command.startsWith("fill") ||
+					command.equalsIgnoreCase("setFont") ||
+					command.equalsIgnoreCase("scale") ||
+					command.equalsIgnoreCase("setStroke") ||
+					command.equalsIgnoreCase("setColor") ||
+					command.equalsIgnoreCase("setBackground")) {
+				graphicCommands.add(new GraphicCommand(command, parameters));
+			}
 		} else {
 			fullCommand.insert(0, '(')
 				.insert(0, command)
@@ -177,7 +185,8 @@ public class GraphicsRecorder extends Graphics2D {
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, float x,
 			float y) {
-	}
+		addToCommands("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(float.class, x), 
+				new GraphicParameter(float.class, y));	}
 
 	@Override
 	public void fill(Shape s) {

@@ -7,6 +7,8 @@ import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Federico Alcantara
@@ -15,28 +17,20 @@ import java.io.Serializable;
 public class PageableWrapper implements Pageable, Serializable {
 	private static final long serialVersionUID = 1L;
 	private int numberOfPages;
-	private PageFormatWrapper[] pageFormats;
-	private PrintableWrapper[] printables;
+	private List<PageFormatWrapper> pageFormats;
+	private List<PrintableWrapper> printables;
+	private transient Pageable original;
 	
 	public PageableWrapper() {
+		pageFormats = new ArrayList<PageFormatWrapper>();
+		printables = new ArrayList<PrintableWrapper>();
+		numberOfPages = Pageable.UNKNOWN_NUMBER_OF_PAGES;
 	}
 
 	public PageableWrapper(Pageable pageable) {
+		this();
 		numberOfPages = pageable.getNumberOfPages();
-		if (numberOfPages == Pageable.UNKNOWN_NUMBER_OF_PAGES) {
-			numberOfPages = 1;
-		}
-		if (numberOfPages > 0) {
-			pageFormats = new PageFormatWrapper[numberOfPages];
-			printables = new PrintableWrapper[numberOfPages];
-			for (int index = 0; index < numberOfPages; index++) {
-				pageFormats[index] = new PageFormatWrapper(pageable.getPageFormat(index));
-				printables[index] = new PrintableWrapper(pageable.getPrintable(index));
-			}
-		} else {
-			pageFormats = new PageFormatWrapper[]{};
-			printables = new PrintableWrapper[]{};
-		}
+		this.original = pageable;
 	}
 
 	@Override
@@ -46,12 +40,27 @@ public class PageableWrapper implements Pageable, Serializable {
 
 	@Override
 	public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
-		return pageFormats[pageIndex];
+		return pageFormats.get(pageIndex);
 	}
 
 	@Override
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
-		return printables[pageIndex];
+		return printables.get(pageIndex);
 	}
 	
+	public void addPageFormat(PageFormatWrapper pageFormat) {
+		pageFormats.add(pageFormat);
+	}
+	
+	public void addPrintable(PrintableWrapper printable) {
+		printables.add(printable);
+	}
+	
+	public void setNumberOfPages(int numberOfPages) {
+		this.numberOfPages = numberOfPages;
+	}
+	
+	public Pageable getOriginal() {
+		return original;
+	}
 }
