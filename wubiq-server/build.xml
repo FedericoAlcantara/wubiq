@@ -37,7 +37,6 @@
 		</copy>
 		<copy todir="${war.build}/WEB-INF/classes">		
 			<fileset dir="${bin}" includes = "**/*" />
-			<fileset dir="${basedir}/i18n" includes = "*.properties" />
 		</copy>
 	</target>
 	

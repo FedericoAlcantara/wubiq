@@ -24,7 +24,6 @@ import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
-import javax.print.attribute.standard.PrinterResolution;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -535,7 +534,6 @@ public class RemotePrintServlet extends HttpServlet {
 			DocAttributeSet attributes = new HashDocAttributeSet();
 			PrintRequestAttributeSet requestAttributes = new HashPrintRequestAttributeSet();
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
-			requestAttributes.add(new PrinterResolution(72, 72, PrinterResolution.DPI));
 			Doc doc = null;
 			if (printService.isDocFlavorSupported(DocFlavor.INPUT_STREAM.PDF)) {
 				doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, attributes);
