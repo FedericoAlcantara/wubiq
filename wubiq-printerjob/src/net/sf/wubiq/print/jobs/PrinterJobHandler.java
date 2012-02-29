@@ -111,6 +111,12 @@ public class PrinterJobHandler extends PrinterJob {
 	public void print() throws PrinterException {
 		printerJobManager.print();
 	}
+	
+	@Override
+	public void print(PrintRequestAttributeSet attributes)
+			throws PrinterException {
+		printerJobManager.print(attributes);
+	}
 
 	/**
 	 * @see java.awt.print.PrinterJob#printDialog()
