@@ -3,7 +3,6 @@
     <wb-module deploy-name="wubiq-server">
         <wb-resource deploy-path="/" source-path="/WebContent"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
-        <wb-resource deploy-path="/WEB-INF/classes" source-path="/i18n"/>
         <dependent-module archiveName="wubiq-common.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/wubiq-common/wubiq-common">
             <dependency-type>uses</dependency-type>
         </dependent-module>
