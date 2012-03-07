@@ -11,14 +11,30 @@ import java.util.Arrays;
  * @author Federico Alcantara
  *
  */
-public class GraphicCommand implements Serializable {
+public class GraphicCommand implements Serializable, Comparable<GraphicCommand> {
 	private static final long serialVersionUID = 1L;
+	private int executionOrder;
 	private String methodName;
 	private GraphicParameter[] parameters;
 	
-	public GraphicCommand(String methodName, GraphicParameter...parameters) {
+	public GraphicCommand(int executionOrder, String methodName, GraphicParameter...parameters) {
+		this.executionOrder = executionOrder;
 		this.methodName = methodName;
 		this.parameters = parameters;
+	}
+
+	/**
+	 * @return the executionOrder
+	 */
+	public int getExecutionOrder() {
+		return executionOrder;
+	}
+
+	/**
+	 * @param executionOrder the executionOrder to set
+	 */
+	public void setExecutionOrder(int executionOrder) {
+		this.executionOrder = executionOrder;
 	}
 
 	/**
@@ -56,6 +72,18 @@ public class GraphicCommand implements Serializable {
 	public String toString() {
 		return "GraphicCommand [methodName=" + methodName + ", parameters="
 				+ Arrays.toString(parameters) + "]";
+	}
+
+	@Override
+	public int compareTo(GraphicCommand other) {
+		int returnValue = 0;
+		if (this.getExecutionOrder() < other.executionOrder) {
+			returnValue = -1;
+		}
+		if (this.getExecutionOrder() > other.executionOrder) {
+			returnValue = 1;
+		}
+		return returnValue;
 	}
 	
 }

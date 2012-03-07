@@ -3,10 +3,7 @@
  */
 package net.sf.wubiq.print.jobs;
 
-import java.awt.Color;
 import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
@@ -292,18 +289,13 @@ public class RemotePrintJob implements DocPrintJob {
 		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES; 
 		double xScale = getXResolution() / 72.0;
 		double yScale = getYResolution() / 72.0;
-		AffineTransform scaleTransform = new AffineTransform();
-		scaleTransform.scale(xScale, yScale);
-		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+		int width = new Double(pageFormat.getPaper().getImageableWidth() * xScale).intValue();
+		int height = new Double(pageFormat.getPaper().getImageableHeight() * yScale).intValue();
+
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
-		graph.setTransform(scaleTransform);
-		graph.setClip(new Rectangle2D.Double(pageFormat.getImageableX(),
-				pageFormat.getImageableY(),
-				pageFormat.getImageableWidth(), 
-				pageFormat.getImageableHeight()));
-		graph.setPaint(Color.black);
 		try {
-			returnValue = printable.print(graph, pageFormat, pageIndex);
+			returnValue = ((PrintableWrapper)printable).print(graph, pageFormat, pageIndex, xScale, yScale);
 			graph.dispose();
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
@@ -311,7 +303,7 @@ public class RemotePrintJob implements DocPrintJob {
 		}
 		return returnValue;
 	}
-	
+
 	private double getXResolution() {
 		double returnValue = 612;
 		if (printRequestAttributeSet != null) {

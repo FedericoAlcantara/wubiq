@@ -67,13 +67,13 @@ public class PrintServiceUtils {
 			method.setAccessible(true);
 			List lookupPrintServices = (List) method.invoke(null, new Object[]{});
 			for (Object object : lookupPrintServices) {
-				LOG.info("Trying to refresh:" + object.getClass());
+				LOG.debug("Trying to refresh:" + object.getClass());
 				Method refreshServices;
 				try {
 					refreshServices = object.getClass().getDeclaredMethod("refreshServices", new Class[]{});
 					refreshServices.setAccessible(true);
 					refreshServices.invoke(object, new Object[]{});
-					LOG.info("  refreshServices executed on:" + object.getClass());
+					LOG.debug("  refreshServices executed on:" + object.getClass());
 				} catch (Exception e) {
 					LOG.info("  Error trying refreshServices on:" + object.getClass() + " -> " + e.getMessage());
 				}

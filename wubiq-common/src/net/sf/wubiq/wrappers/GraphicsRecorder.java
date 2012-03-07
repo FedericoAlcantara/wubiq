@@ -12,6 +12,7 @@ import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.Image;
 import java.awt.Paint;
+import java.awt.Polygon;
 import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.RenderingHints.Key;
@@ -30,6 +31,8 @@ import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -40,47 +43,27 @@ import org.apache.commons.logging.LogFactory;
  */
 public class GraphicsRecorder extends Graphics2D {
 	private static final Log LOG = LogFactory.getLog(GraphicsRecorder.class);
-	private List<GraphicCommand> graphicCommands;
-	private List<String>unimplemented;
+	private Set<GraphicCommand> graphicCommands;
+	private List<String> unimplemented;
 	private transient Graphics2D originalGraphics;
-	private transient Color background;
-	private transient Composite composite;
-	private transient GraphicsConfiguration deviceConfiguration;
-	private transient FontRenderContext fontRenderContext;
-	private transient Paint paint;
 	private transient RenderingHints renderingHints;
-	private transient Stroke stroke;
-	private transient AffineTransform transform;
-	private transient Shape clip;
-	private transient Rectangle clipBounds;
-	private transient Color color;
-	private transient Font font;
+	private transient int currentExecutionOrder;
 
-	
 	public GraphicsRecorder() {
 		unimplemented = new ArrayList<String>();
+		currentExecutionOrder = 0;
 	}
 
-	public GraphicsRecorder(List<GraphicCommand> graphicCommands) {
+	public GraphicsRecorder(Set<GraphicCommand> graphicCommands) {
 		this();
 		this.graphicCommands = graphicCommands;
 	}
 	
-	public GraphicsRecorder(List<GraphicCommand> graphicCommands, Graphics2D originalGraphics) {
+	public GraphicsRecorder(Set<GraphicCommand> graphicCommands, Graphics2D originalGraphics) {
 		this(graphicCommands);
 		this.originalGraphics = originalGraphics;
-		this.background = originalGraphics.getBackground();
-		this.composite = originalGraphics.getComposite();
-		this.deviceConfiguration = originalGraphics.getDeviceConfiguration();
-		this.fontRenderContext = originalGraphics.getFontRenderContext();
-		this.paint = originalGraphics.getPaint();
+		this.graphicCommands = graphicCommands;
 		this.renderingHints = originalGraphics.getRenderingHints();
-		this.stroke = originalGraphics.getStroke();
-		this.transform = originalGraphics.getTransform();
-		this.clip = originalGraphics.getClip();
-		this.clipBounds = originalGraphics.getClipBounds();
-		this.color = originalGraphics.getColor();
-		this.font = originalGraphics.getFont();
 	}
 	
 	private void addToCommands(String command, GraphicParameter... parameters) {
@@ -98,16 +81,26 @@ public class GraphicsRecorder extends Graphics2D {
 			fullCommand.append(parameter.getParameterType().getSimpleName());
 			
 		}
-		if (serializable &&  
+		if (serializable 
+				/*&&  
 				(command.startsWith("draw") ||
 					command.startsWith("fill") ||
-					command.equalsIgnoreCase("setFont") ||
-					command.equalsIgnoreCase("scale") ||
-					command.equalsIgnoreCase("setStroke") ||
-					command.equalsIgnoreCase("setColor") ||
-					command.equalsIgnoreCase("setBackground") ||
-					command.equalsIgnoreCase("transform"))) {
-			graphicCommands.add(new GraphicCommand(command, parameters));
+					command.equals("setFont") ||
+					command.equals("scale") ||
+					command.equals("setStroke") ||
+					command.equals("setColor") ||
+					command.equals("setBackground") ||
+					command.equals("setClip") ||
+					command.equals("transform") ||
+					command.equals("translate") ||
+					command.equals("setTransform") ||
+					command.equals("clip") ||
+					command.equals("clipRect") ||
+					command.equals("setPaint") ||
+					command.equals("dispose")
+					)*/
+					) {
+			graphicCommands.add(new GraphicCommand(currentExecutionOrder++, command, parameters));
 		} else {
 			fullCommand.insert(0, '(')
 				.insert(0, command)
@@ -123,419 +116,556 @@ public class GraphicsRecorder extends Graphics2D {
 	public void addRenderingHints(Map <?, ?> hints) {
 		addToCommands("addRenderingHints", new GraphicParameter(Map.class, hints));
 		renderingHints.add((RenderingHints) hints);
+		originalGraphics.addRenderingHints(hints);
 	}
 
 	@Override
-	public void clip(Shape s) {
-		addToCommands("clip", new GraphicParameter(Shape.class, s));
+	public void clip(Shape shape) {
+		addToCommands("clip", shapeParameter(shape));
+		originalGraphics.clip(shape);
 	}
 
 	@Override
-	public void draw(Shape s) {
-		addToCommands("draw", new GraphicParameter(Shape.class, s));
-	}
-
-	@Override
-	public void drawGlyphVector(GlyphVector g, float x, float y) {
-		addToCommands("drawGlyphVector", new GraphicParameter(GlyphVector.class, g), new GraphicParameter(float.class, x), 
-			new GraphicParameter(float.class, y));
-	}
-
-	@Override
-	public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) {
-		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform), 
-				new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(obs)));
-		return true;
-	}
-
-	@Override
-	public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
-		addToCommands("drawImage", new GraphicParameter(BufferedImage.class, img), new GraphicParameter(BufferedImageOp.class, op), 
-			new GraphicParameter(int.class, x), new GraphicParameter(int.class, y));
-	}
-
-	@Override
-	public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
-		addToCommands("drawRenderableImage", new GraphicParameter(RenderableImageWrapper.class, new RenderableImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform));
-	}
-
-	@Override
-	public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
-		addToCommands("drawRenderedImage", new GraphicParameter(RenderedImage.class, img), new GraphicParameter(AffineTransform.class, xform));
-	}
-
-	@Override
-	public void drawString(String str, int x, int y) {
-		addToCommands("drawString", new GraphicParameter(String.class, str), new GraphicParameter(int.class, x), 
-			new GraphicParameter(int.class, y));
-	}
-
-	@Override
-	public void drawString(String str, float x, float y) {
-		addToCommands("drawString", new GraphicParameter(String.class, str), new GraphicParameter(float.class, x), 
-			new GraphicParameter(float.class, y));
-	}
-
-	@Override
-	public void drawString(AttributedCharacterIterator iterator, int x, int y) {
-		addToCommands("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(int.class, x), 
-			new GraphicParameter(int.class, y));
-	}
-
-	@Override
-	public void drawString(AttributedCharacterIterator iterator, float x,
-			float y) {
-		addToCommands("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(float.class, x), 
-				new GraphicParameter(float.class, y));	}
-
-	@Override
-	public void fill(Shape s) {
-		addToCommands("fill", new GraphicParameter(Shape.class, s));
-	}
-
-	@Override
-	public Color getBackground() {
-		return background;
-	}
-
-	@Override
-	public Composite getComposite() {
-		return composite;
-	}
-
-	@Override
-	public GraphicsConfiguration getDeviceConfiguration() {
-		return deviceConfiguration;
-	}
-
-	@Override
-	public FontRenderContext getFontRenderContext() {
-		return fontRenderContext;
-	}
-
-	@Override
-	public Paint getPaint() {
-		return paint;
-	}
-
-	@Override
-	public Object getRenderingHint(Key hintKey) {
-		return renderingHints.get(hintKey);
-	}
-
-	@Override
-	public RenderingHints getRenderingHints() {
-		return renderingHints;
-	}
-
-	@Override
-	public Stroke getStroke() {
-		return stroke;
-	}
-
-	@Override
-	public AffineTransform getTransform() {
-		return transform;
-	}
-
-	@Override
-	public boolean hit(Rectangle rect, Shape s, boolean onStroke) {
-		return false;
+	public boolean hit(Rectangle rect, Shape shape, boolean onStroke) {
+		addToCommands("hit", new GraphicParameter(Rectangle.class, rect), shapeParameter(shape), 
+				new GraphicParameter(boolean.class, onStroke));
+		return originalGraphics.hit(rect, shape, onStroke);
 	}
 
 	@Override
 	public void rotate(double theta) {
 		addToCommands("rotate", new GraphicParameter(double.class, theta));
+		originalGraphics.rotate(theta);
 	}
 
 	@Override
 	public void rotate(double theta, double x, double y) {
 		addToCommands("rotate", new GraphicParameter(double.class, theta), new GraphicParameter(double.class, x), 
 			new GraphicParameter(double.class, y));
+		originalGraphics.rotate(theta, x, y);
 	}
 
 	@Override
 	public void scale(double sx, double sy) {
 		addToCommands("scale", new GraphicParameter(double.class, sx), new GraphicParameter(double.class, sy));
-	}
-
-	@Override
-	public void setBackground(Color color) {
-		addToCommands("setBackground", new GraphicParameter(Color.class, color));
-		this.background = color;
-	}
-
-	@Override
-	public void setComposite(Composite comp) {
-		addToCommands("setComposite", new GraphicParameter(Composite.class, comp));
-		this.composite = comp;
-	}
-
-	@Override
-	public void setPaint(Paint paint) {
-		addToCommands("setPaint", new GraphicParameter(Paint.class, paint));
-	}
-
-	@Override
-	public void setRenderingHint(Key hintKey, Object hintValue) {
-		addToCommands("setRenderingHint", new GraphicParameter(Key.class, hintKey), new GraphicParameter(Object.class, hintValue));
-	}
-
-	@Override
-	public void setRenderingHints(Map <?, ?> hints) {
-		addToCommands("setRenderingHints", new GraphicParameter(Map.class, hints));
-	}
-
-	@Override
-	public void setStroke(Stroke s) {
-		addToCommands("setStroke", new GraphicParameter(Stroke.class, s));
-	}
-
-	@Override
-	public void setTransform(AffineTransform Tx) {
-		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, Tx));
+		originalGraphics.scale(sx, sy);
 	}
 
 	@Override
 	public void shear(double shx, double shy) {
 		addToCommands("shear", new GraphicParameter(double.class, shx), new GraphicParameter(double.class, shy));
+		originalGraphics.shear(shx, shy);
 	}
 
 	@Override
-	public void transform(AffineTransform Tx) {
-		addToCommands("transform", new GraphicParameter(AffineTransform.class, Tx));
+	public void transform(AffineTransform transform) {
+		addToCommands("transform", new GraphicParameter(AffineTransform.class, transform));
+		originalGraphics.transform(transform);
 	}
 
 	@Override
 	public void translate(int x, int y) {
 		addToCommands("translate", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y));
+		originalGraphics.translate(x, y);
 	}
 
 	@Override
 	public void translate(double tx, double ty) {
 		addToCommands("translate", new GraphicParameter(double.class, tx), new GraphicParameter(double.class, ty));
+		originalGraphics.translate(tx, ty);
 	}
 
 	@Override
-	public void clearRect(int arg0, int arg1, int arg2, int arg3) {
-		addToCommands("clearRect", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+	public void clearRect(int x, int y, int width, int height) {
+		addToCommands("clearRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
+		originalGraphics.clearRect(x, y, width, height);
 	}
 
 	@Override
-	public void clipRect(int arg0, int arg1, int arg2, int arg3) {
-		addToCommands("clipRect", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+	public void clipRect(int x, int y, int width, int height) {
+		addToCommands("clipRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
+		originalGraphics.clipRect(x, y, width, height);
 	}
 
 	@Override
-	public void copyArea(int arg0, int arg1, int arg2, int arg3, int arg4,
-			int arg5) {
-		addToCommands("copyArea", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-			new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5));
+	public void copyArea(int x, int y, int width, int height, int dx,
+			int dy) {
+		addToCommands("copyArea", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
+			new GraphicParameter(int.class, dx), new GraphicParameter(int.class, dy));
+		originalGraphics.copyArea(x, y, width, height, dx, dy);
 	}
 
 	@Override
 	public Graphics create() {
-		return null;
+		return originalGraphics.create();
 	}
 
 	@Override
 	public void dispose() {
 		addToCommands("dispose");
+		originalGraphics.dispose();
+	}
+	
+	@Override
+	public void draw(Shape s) {
+		addToCommands("draw", shapeParameter(s));
+		originalGraphics.draw(s);
 	}
 
 	@Override
-	public void drawArc(int arg0, int arg1, int arg2, int arg3, int arg4,
-			int arg5) {
-		addToCommands("drawArc", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-			new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5));
+	public void draw3DRect(int x, int y, int width, int height, boolean raised) {
+		addToCommands("draw3DRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height), 
+			new GraphicParameter(boolean.class, raised));
+		originalGraphics.draw3DRect(x, y, width, height, raised);
+	}
+	
+	@Override
+	public void drawArc(int x, int y, int width, int height, int startAngle,
+			int arcAngle) {
+		addToCommands("drawArc", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
+			new GraphicParameter(int.class, startAngle), new GraphicParameter(int.class, arcAngle));
+		originalGraphics.drawArc(x, y, width, height, startAngle, arcAngle);
 	}
 
 	@Override
-	public boolean drawImage(Image arg0, int arg1, int arg2, ImageObserver arg3) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(ImageObserver.class, arg3));
-		return true;
+	public void drawBytes(byte[] data, int offset, int length, int x, int y) {
+		addToCommands("drawBytes", new GraphicParameter(byte[].class, data), new GraphicParameter(int.class, offset),
+				new GraphicParameter(int.class, length), new GraphicParameter(int.class, x),
+				new GraphicParameter(int.class, y));
+		originalGraphics.drawBytes(data, offset, length, x, y);
+	}
+	
+	@Override
+	public void drawChars(char[] data, int offset, int length, int x, int y) {
+		addToCommands("drawChars", new GraphicParameter(byte[].class, data), new GraphicParameter(int.class, offset),
+				new GraphicParameter(int.class, length), new GraphicParameter(int.class, x),
+				new GraphicParameter(int.class, y));
+		originalGraphics.drawChars(data, offset, length, x, y);
 	}
 
 	@Override
-	public boolean drawImage(Image arg0, int arg1, int arg2, Color arg3,
-			ImageObserver arg4) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, arg0), new GraphicParameter(int.class, arg1), 
-				new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-				new GraphicParameter(ImageObserver.class, arg4));
-		return true;
+	public void drawGlyphVector(GlyphVector g, float x, float y) {
+		/*
+		Font font = g.getFont();
+		Shape s = g.getOutline(x, y);
+		addToCommands("setFont", new GraphicParameter(Font.class, font));
+		addToCommands("draw", shapeParameter(s));
+		*/
+		addToCommands("drawGlyphVector", new GraphicParameter(GlyphVectorWrapper.class, new GlyphVectorWrapper(g)),
+				new GraphicParameter(float.class, x), 
+				new GraphicParameter(float.class, y));
+		originalGraphics.drawGlyphVector(g, x, y);
 	}
 
 	@Override
-	public boolean drawImage(Image arg0, int arg1, int arg2, int arg3,
-			int arg4, ImageObserver arg5) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-			new GraphicParameter(int.class, arg4), new GraphicParameter(ImageObserver.class, arg5));
-		return true;
+	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
+		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+			new GraphicParameter(int.class, y), new GraphicParameter(ImageObserver.class, observer));
+		return originalGraphics.drawImage(img, x, y, observer);
 	}
 
 	@Override
-	public boolean drawImage(Image arg0, int arg1, int arg2, int arg3,
-			int arg4, Color arg5, ImageObserver arg6) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-			new GraphicParameter(int.class, arg4), new GraphicParameter(Color.class, arg5),
-			new GraphicParameter(ImageObserver.class, arg6));
-		return true;
+	public boolean drawImage(Image img, int x, int y, Color bgcolor,
+			ImageObserver observer) {
+		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+				new GraphicParameter(int.class, y), new GraphicParameter(Color.class, bgcolor),
+				new GraphicParameter(ImageObserver.class, observer));
+		return originalGraphics.drawImage(img, x, y, bgcolor, observer);
+	}
+
+
+	@Override
+	public boolean drawImage(Image img, int x, int y, int width, 
+			int height, ImageObserver observer) {
+		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+			new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
+			new GraphicParameter(int.class, height), new GraphicParameter(ImageObserver.class, observer));
+		return originalGraphics.drawImage(img, x, y, width, height, observer);
 	}
 
 	@Override
-	public boolean drawImage(Image arg0, int arg1, int arg2, int arg3,
-			int arg4, int arg5, int arg6, int arg7, int arg8, ImageObserver arg9) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-			new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5),
-			new GraphicParameter(int.class, arg6), new GraphicParameter(int.class, arg7),
-			new GraphicParameter(ImageObserver.class, arg9));
-		return true;
+	public boolean drawImage(Image img, int x, int y, int width, 
+			int height, Color bgcolor, ImageObserver observer) {
+		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+				new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
+				new GraphicParameter(int.class, height), new GraphicParameter(Color.class, bgcolor), 
+				new GraphicParameter(ImageObserver.class, observer));
+		return originalGraphics.drawImage(img, x, y, width, height, bgcolor, observer);
 	}
 
 	@Override
-	public boolean drawImage(Image arg0, int arg1, int arg2, int arg3,
-			int arg4, int arg5, int arg6, int arg7, int arg8, Color arg9,
-			ImageObserver arg10) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, arg0), new GraphicParameter(int.class, arg1), 
-				new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-				new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5),
-				new GraphicParameter(int.class, arg6), new GraphicParameter(int.class, arg7),
-				new GraphicParameter(Color.class, arg9), new GraphicParameter(ImageObserver.class, arg10));
-		return true;
+	public boolean drawImage(Image img, int dx1, int dy1, int dx2, 
+			int dy2, int sx1, int sy1, 
+			int sx2, int sy2, ImageObserver observer) {
+		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, dx1), 
+			new GraphicParameter(int.class, dy1), new GraphicParameter(int.class, dx2),
+			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
+			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
+			new GraphicParameter(int.class, sy2), new GraphicParameter(ImageObserver.class, observer));
+		return originalGraphics.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
 	}
 
 	@Override
-	public void drawLine(int arg0, int arg1, int arg2, int arg3) {
-		addToCommands("drawLine", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+	public boolean drawImage(Image img, int dx1, int dy1, int dx2, 
+			int dy2, int sx1, int sy1, 
+			int sx2, int sy2, Color bgcolor, ImageObserver observer) {
+		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, dx1), 
+			new GraphicParameter(int.class, dy1), new GraphicParameter(int.class, dx2),
+			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
+			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
+			new GraphicParameter(int.class, sy2), new GraphicParameter(Color.class, bgcolor), 
+			new GraphicParameter(ImageObserver.class, observer));
+		return originalGraphics.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+	}
+	
+	@Override
+	public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) {
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform), 
+				new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(obs)));
+		return originalGraphics.drawImage(img, xform, obs);
 	}
 
 	@Override
-	public void drawOval(int arg0, int arg1, int arg2, int arg3) {
-		addToCommands("drawOval", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+	public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
+		addToCommands("drawImage", new GraphicParameter(BufferedImage.class, img), new GraphicParameter(BufferedImageOp.class, op), 
+			new GraphicParameter(int.class, x), new GraphicParameter(int.class, y));
+		originalGraphics.drawImage(img, op, x, y);
 	}
 
 	@Override
-	public void drawPolygon(int[] arg0, int[] arg1, int arg2) {
-		addToCommands("drawPolygon", new GraphicParameter(int[].class, arg0), new GraphicParameter(int[].class, arg1), 
-			new GraphicParameter(int.class, arg2));
+	public void drawLine(int x1, int y1, int x2, int y2) {
+		addToCommands("drawLine", new GraphicParameter(int.class, x1), new GraphicParameter(int.class, y1), 
+			new GraphicParameter(int.class, x2), new GraphicParameter(int.class, y2));
+		originalGraphics.drawLine(x1, y1, x2, y2);
 	}
 
 	@Override
-	public void drawPolyline(int[] arg0, int[] arg1, int arg2) {
-		addToCommands("drawPolyline", new GraphicParameter(int[].class, arg0), new GraphicParameter(int[].class, arg1), 
-			new GraphicParameter(int.class, arg2));
+	public void drawOval(int x, int y, int width, int height) {
+		addToCommands("drawOval", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
+		originalGraphics.drawOval(x, y, width, height);
 	}
 
 	@Override
-	public void drawRoundRect(int arg0, int arg1, int arg2, int arg3, int arg4,
-			int arg5) {
-		addToCommands("drawRoundRect", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-				new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-				new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5));
+	public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
+		addToCommands("drawPolygon", new GraphicParameter(int[].class, xPoints), new GraphicParameter(int[].class, yPoints), 
+			new GraphicParameter(int.class, nPoints));
+		originalGraphics.drawPolygon(xPoints, yPoints, nPoints);
+	}
+	
+	@Override
+	public void drawPolygon(Polygon p) {
+		addToCommands("drawPolygon", new GraphicParameter(Polygon.class, p));
+		originalGraphics.drawPolygon(p);
 	}
 
 	@Override
-	public void fillArc(int arg0, int arg1, int arg2, int arg3, int arg4,
-			int arg5) {
-		addToCommands("fillArc", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-				new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-				new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5));
+	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
+		addToCommands("drawPolyline", new GraphicParameter(int[].class, xPoints), new GraphicParameter(int[].class, yPoints), 
+				new GraphicParameter(int.class, nPoints));
+		originalGraphics.drawPolyline(xPoints, yPoints, nPoints);
+	}
+	
+	@Override
+	public void drawRect(int x, int y, int width, int height) {
+		addToCommands("drawRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));;
+		originalGraphics.drawRect(x, y, width, height);
+	}
+	
+	@Override
+	public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
+		addToCommands("drawRenderableImage", new GraphicParameter(RenderableImageWrapper.class, new RenderableImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform));
+		originalGraphics.drawRenderableImage(img, xform);
 	}
 
 	@Override
-	public void fillOval(int arg0, int arg1, int arg2, int arg3) {
-		addToCommands("fillOval", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+	public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
+		addToCommands("drawRenderedImage", new GraphicParameter(RenderedImage.class, img), new GraphicParameter(AffineTransform.class, xform));
+		originalGraphics.drawRenderedImage(img, xform);
 	}
 
 	@Override
-	public void fillPolygon(int[] arg0, int[] arg1, int arg2) {
-		addToCommands("fillPolygon", new GraphicParameter(int[].class, arg0), new GraphicParameter(int[].class, arg1), 
-			new GraphicParameter(int.class, arg2));
+	public void drawRoundRect(int x, int y, int width, int height, int arcWidth,
+			int arcHeight) {
+		addToCommands("drawRoundRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
+				new GraphicParameter(int.class, arcWidth), new GraphicParameter(int.class, arcHeight));
+		originalGraphics.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
+	}
+
+
+	@Override
+	public void drawString(String str, int x, int y) {
+		addToCommands("drawString", new GraphicParameter(String.class, str), new GraphicParameter(int.class, x), 
+			new GraphicParameter(int.class, y));
+		originalGraphics.drawString(str, x, y);
 	}
 
 	@Override
-	public void fillRect(int arg0, int arg1, int arg2, int arg3) {
-		addToCommands("fillRect", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+	public void drawString(String str, float x, float y) {
+		addToCommands("drawString", new GraphicParameter(String.class, str), new GraphicParameter(float.class, x), 
+			new GraphicParameter(float.class, y));
+		originalGraphics.drawString(str, x, y);
 	}
 
 	@Override
-	public void fillRoundRect(int arg0, int arg1, int arg2, int arg3, int arg4,
-			int arg5) {
-		addToCommands("fillRoundRect", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
-				new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3),
-				new GraphicParameter(int.class, arg4), new GraphicParameter(int.class, arg5));
+	public void drawString(AttributedCharacterIterator iterator, int x, int y) {
+		addToCommands("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(int.class, x), 
+			new GraphicParameter(int.class, y));
+		originalGraphics.drawString(iterator, x, y);
+	}
+
+	@Override
+	public void drawString(AttributedCharacterIterator iterator, float x,
+			float y) {
+		addToCommands("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(float.class, x), 
+				new GraphicParameter(float.class, y));
+		originalGraphics.drawString(iterator, x, y);
+	}
+
+	@Override
+	public void fill(Shape s) {
+		addToCommands("fill", shapeParameter(s));
+		originalGraphics.fill(s);
+	}
+	
+	@Override
+	public void fill3DRect(int x, int y, int width, int height, boolean raised) {
+		addToCommands("fill3DRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height), 
+			new GraphicParameter(boolean.class, raised));
+		originalGraphics.fill3DRect(x, y, width, height, raised);
+	}
+
+	@Override
+	public void fillArc(int x, int y, int width, int height, int startAngle,
+			int arcAngle) {
+		addToCommands("fillArc", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
+				new GraphicParameter(int.class, startAngle), new GraphicParameter(int.class, arcAngle));
+		originalGraphics.fillArc(x, y, width, height, startAngle, arcAngle);
+	}
+
+	@Override
+	public void fillOval(int x, int y, int width, int height) {
+		addToCommands("fillOval", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
+		originalGraphics.fillOval(x, y, width, height);
+	}
+
+	@Override
+	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
+		addToCommands("fillPolygon", new GraphicParameter(int[].class, xPoints), new GraphicParameter(int[].class, yPoints), 
+				new GraphicParameter(int.class, nPoints));
+		originalGraphics.fillPolygon(xPoints, yPoints, nPoints);
+	}
+	
+	@Override
+	public void fillPolygon(Polygon p) {
+		addToCommands("fillPolygon", new GraphicParameter(Polygon.class, p));
+		originalGraphics.fillPolygon(p);
+	}
+
+	@Override
+	public void fillRect(int x, int y, int width, int height) {
+		addToCommands("fillRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));;
+		originalGraphics.fillRect(x, y, width, height);
+	}
+
+	@Override
+	public void fillRoundRect(int x, int y, int width, int height, int arcWidth,
+			int arcHeight) {
+		addToCommands("fillRoundRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
+				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
+				new GraphicParameter(int.class, arcWidth), new GraphicParameter(int.class, arcHeight));
+		originalGraphics.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
+	}
+
+	@Override
+	public Color getBackground() {
+		return originalGraphics.getBackground();
 	}
 
 	@Override
 	public Shape getClip() {
-		return clip;
+		return originalGraphics.getClip();
 	}
 
 	@Override
 	public Rectangle getClipBounds() {
-		return clipBounds;
+		return originalGraphics.getClipBounds();
 	}
 
 	@Override
+	public Rectangle getClipBounds(Rectangle r) {
+		return originalGraphics.getClipBounds(r);
+	}
+	
+	@SuppressWarnings("deprecation")
+	@Override
+	public Rectangle getClipRect() {
+		return originalGraphics.getClipRect();
+	}
+	
+	@Override
 	public Color getColor() {
-		return color;
+		return originalGraphics.getColor();
+	}
+
+	@Override
+	public Composite getComposite() {
+		return originalGraphics.getComposite();
+	}
+
+	@Override
+	public GraphicsConfiguration getDeviceConfiguration() {
+		return originalGraphics.getDeviceConfiguration();
 	}
 
 	@Override
 	public Font getFont() {
-		return font;
+		return originalGraphics.getFont();
 	}
 
 	@Override
-	public FontMetrics getFontMetrics(Font arg0) {
-		return originalGraphics.getFontMetrics(arg0);
+	public FontMetrics getFontMetrics(Font font) {
+		return originalGraphics.getFontMetrics(font);
+	}
+	
+	@Override
+	public FontMetrics getFontMetrics() {
+		return originalGraphics.getFontMetrics();
 	}
 
 	@Override
-	public void setClip(Shape arg0) {
-		addToCommands("setClip", new GraphicParameter(Shape.class, arg0));
-		clip = arg0;
+	public FontRenderContext getFontRenderContext() {
+		return originalGraphics.getFontRenderContext();
+	}
+
+	@Override
+	public Paint getPaint() {
+		return originalGraphics.getPaint();
+	}
+
+	@Override
+	public Object getRenderingHint(Key hintKey) {
+		return originalGraphics.getRenderingHint(hintKey);
+	}
+
+	@Override
+	public RenderingHints getRenderingHints() {
+		return originalGraphics.getRenderingHints();
+	}
+
+	@Override
+	public Stroke getStroke() {
+		return originalGraphics.getStroke();
+	}
+
+	@Override
+	public AffineTransform getTransform() {
+		return originalGraphics.getTransform();
+	}
+
+	@Override
+	public boolean hitClip(int x, int y, int width, int height) {
+		return originalGraphics.hitClip(x, y, width, height);
+	}
+	
+	@Override
+	public void setBackground(Color color) {
+		addToCommands("setBackground", new GraphicParameter(Color.class, color));
+		originalGraphics.setBackground(color);
+	}
+
+	@Override
+	public void setClip(Shape shape) {
+		addToCommands("setClip", shapeParameter(shape));
+		originalGraphics.setClip(shape);
 	}
 
 	@Override
 	public void setClip(int arg0, int arg1, int arg2, int arg3) {
 		addToCommands("setClip", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
 			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
+		originalGraphics.setClip(arg0, arg1, arg2, arg3);
 	}
 
 	@Override
-	public void setColor(Color arg0) {
-		addToCommands("setColor", new GraphicParameter(Color.class, arg0));
-		color = arg0;
+	public void setColor(Color color) {
+		addToCommands("setColor", new GraphicParameter(Color.class, color));
+		originalGraphics.setColor(color);
+	}
+	
+	@Override
+	public void setComposite(Composite comp) {
+		addToCommands("setComposite", new GraphicParameter(Composite.class, comp));
+		originalGraphics.setComposite(comp);
 	}
 
 	@Override
-	public void setFont(Font arg0) {
-		addToCommands("setFont", new GraphicParameter(Font.class, arg0));
-		font = arg0;
+	public void setFont(Font font) {
+		addToCommands("setFont", new GraphicParameter(Font.class, font));
+		originalGraphics.setFont(font);
 	}
 
 	@Override
 	public void setPaintMode() {
 		addToCommands("setPaintMode");
+		originalGraphics.setPaintMode();
 	}
 
 	@Override
 	public void setXORMode(Color arg0) {
 		addToCommands("setXORMode", new GraphicParameter(Color.class, arg0));
+		originalGraphics.setXORMode(arg0);
 	}
 	
+	@Override
+	public void setPaint(Paint paint) {
+		if (paint instanceof Color) {
+			addToCommands("setPaint", new GraphicParameter(Color.class, paint));
+		} else {
+			addToCommands("setPaint", new GraphicParameter(Paint.class, paint));
+		}
+		originalGraphics.setPaint(paint);
+	}
 
+	@Override
+	public void setRenderingHint(Key hintKey, Object hintValue) {
+		addToCommands("setRenderingHint", new GraphicParameter(RenderingHintWrapper.class, new RenderingHintWrapper(hintKey, hintValue)), new GraphicParameter(int.class, 0));
+		originalGraphics.setRenderingHint(hintKey, hintValue);
+	}
+
+	@Override
+	public void setRenderingHints(Map <?, ?> hints) {
+		for (Entry<?, ?> entry : hints.entrySet()) {
+			addToCommands("setRenderingHint", new GraphicParameter(RenderingHintWrapper.class, new RenderingHintWrapper((RenderingHints.Key) entry.getKey(), entry.getValue())), new GraphicParameter(int.class, 0));
+		}
+		originalGraphics.setRenderingHints(hints);
+	}
+
+	@Override
+	public void setStroke(Stroke s) {
+		addToCommands("setStroke", new GraphicParameter(Stroke.class, s));
+		originalGraphics.setStroke(s);
+	}
+
+	@Override
+	public void setTransform(AffineTransform transform) {
+		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, transform));
+		originalGraphics.setTransform(transform);
+	}
+	
+	private GraphicParameter shapeParameter(Shape shape) {
+		GraphicParameter returnValue = new GraphicParameter(ShapeWrapper.class, new ShapeWrapper(shape));
+		return returnValue;
+	}
 }

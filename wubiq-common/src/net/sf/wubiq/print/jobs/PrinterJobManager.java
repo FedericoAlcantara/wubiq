@@ -238,8 +238,13 @@ public class PrinterJobManager extends PrinterJob {
 		if (defaultPrinterJobClass == null) {
 			try {
 				String defaultClassName = System.getProperty("java.awt.printerjob", null);
+				if (defaultClassName.equals("net.sf.wubiq.print.jobs.PrinterJobHandler")) {
+					defaultClassName = System.getProperty("net.sf.wubiq.default.printerjob", null);
+				} else {
+					System.setProperty("net.sf.wubiq.default.printerjob", defaultClassName);
+					System.setProperty("java.awt.printerjob", "net.sf.wubiq.print.jobs.PrinterJobHandler");
+				}
 				defaultPrinterJobClass = Class.forName(defaultClassName);
-				System.setProperty("java.awt.printerjob", "net.sf.wubiq.print.jobs.PrinterJobHandler");
 			} catch (ClassNotFoundException e) {
 				LOG.error(e.getMessage(), e);
 			}
@@ -257,7 +262,9 @@ public class PrinterJobManager extends PrinterJob {
 		}
 		if (doc != null) {
 			DocPrintJob printJob = service.createPrintJob();
-			((RemotePrintJob)printJob).setPageFormat(pageFormat);
+			if (pageFormat != null) {
+				((RemotePrintJob)printJob).setPageFormat(pageFormat);
+			}
 			PrintRequestAttributeSet request = printRequestAttributeSet == null ? new HashPrintRequestAttributeSet() : printRequestAttributeSet;
 			try {
 				printJob.print(doc, request);
