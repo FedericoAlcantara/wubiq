@@ -1,8 +1,9 @@
 ======================
-Wubiq 1.0.173 (2012-03-10)
+Wubiq 1.0.175 (2012-03-10)
 ======================
 -Pageable and Printable printing completed.
 -Fixed scaling issues after serialization.
+-Fixed image rendering on client.
 ======================
 Wubiq 1.0.170 (2012-03-06)
 ======================
