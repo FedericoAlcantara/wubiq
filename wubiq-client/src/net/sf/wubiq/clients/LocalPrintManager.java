@@ -188,11 +188,12 @@ public class LocalPrintManager implements Runnable {
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
 			ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			doLog("Job(" + jobId + ") printed.");
-			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-			doLog("Job(" + jobId + ") closing print job.");
 		} catch (ConnectException e) {
+			LOG.error(e.getMessage(), e);
 			throw e;
 		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (Exception e) {
 			LOG.error(e.getMessage(), e);
 		} finally {
 			try {
@@ -201,6 +202,12 @@ public class LocalPrintManager implements Runnable {
 				}
 			} catch (IOException e) {
 				doLog(e.getMessage());
+			}
+			try {
+				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
+				doLog("Job(" + jobId + ") closing print job.");
+			} catch (Exception e) {
+				doLog(e.getMessage()); // this is not a desirable to show error
 			}
 		}
 	}
@@ -255,8 +262,19 @@ public class LocalPrintManager implements Runnable {
 	 * Registers all valid local print services to the remote server.
 	 */
 	protected void registerPrintServices() throws ConnectException {
-		Map<String, PrintService>newPrintServices = new HashMap<String, PrintService>();
 		boolean reload = false;
+		Map<String, PrintService>newPrintServices = new HashMap<String, PrintService>();
+		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
+			String printServiceName = PrintServiceUtils.cleanPrintServiceName(printService);
+			newPrintServices.put(printServiceName, printService);
+			if (!getPrintServicesName().containsKey(printServiceName)) {
+				reload = true;
+			}
+		}
+		if (newPrintServices.size() != getPrintServicesName().size()) {
+			reload = true;
+		}
+
 		long serverTimestamp = -2l;
 		try {
 			serverTimestamp = Long.parseLong(askServer(CommandKeys.SERVER_TIMESTAMP));
@@ -265,17 +283,6 @@ public class LocalPrintManager implements Runnable {
 		}
 		if (serverTimestamp != lastServerTimestamp) {
 			reload = true;
-		} else {
-			for (PrintService printService: PrintServiceUtils.getPrintServices()) {
-				String printServiceName = PrintServiceUtils.cleanPrintServiceName(printService);
-				newPrintServices.put(printServiceName, printService);
-				if (!getPrintServicesName().containsKey(printServiceName)) {
-					reload = true;
-				}
-			}
-			if (newPrintServices.size() != getPrintServicesName().size()) {
-				reload = true;
-			}
 		}
 		if (!reload) {
 			try {

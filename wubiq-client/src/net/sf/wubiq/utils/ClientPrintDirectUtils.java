@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.utils;
 
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -60,27 +62,35 @@ public final class ClientPrintDirectUtils {
 				// Set Request Attributes
 				printRequestAttributeSet.add(new JobName(jobId, Locale.getDefault()));
 				// Create doc and printJob
-				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE)) {
+				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
+						docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
 					ObjectInputStream input = new ObjectInputStream(printData);
-					PageableWrapper pageable = (PageableWrapper) input.readObject();
-					doc = new SimpleDoc(pageable, docFlavor, docAttributeSet);
-				} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
-					ObjectInputStream input = new ObjectInputStream(printData);
-					PrintableWrapper printable = (PrintableWrapper) input.readObject();
-					doc = new SimpleDoc(printable, docFlavor, docAttributeSet);
+					PrinterJob printerJob = PrinterJob.getPrinterJob();
+					printerJob.setJobName(jobId);
+					printerJob.setPrintService(printService);
+					if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE)) {
+						PageableWrapper pageable = (PageableWrapper) input.readObject();
+						printerJob.setPageable(pageable);
+					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
+						PrintableWrapper printable = (PrintableWrapper) input.readObject();
+						printerJob.setPrintable(printable);
+					}
+					printerJob.print(printRequestAttributeSet);
 				} else {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
+					DocPrintJob printJob = printService.createPrintJob();
+					if (printJob instanceof RemotePrintJob) {
+						((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
+					}
+					printJob.print(doc, printRequestAttributeSet);
 				}
-				DocPrintJob printJob = printService.createPrintJob();
-				if (printJob instanceof RemotePrintJob) {
-					((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
-				}
-				printJob.print(doc, printRequestAttributeSet);
 			}
 				
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (ClassNotFoundException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
