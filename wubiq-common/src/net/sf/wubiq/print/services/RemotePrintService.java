@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.print.services;
 
+import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
@@ -176,7 +177,17 @@ public class RemotePrintService implements PrintService {
 	public Object getSupportedAttributeValues(
 			Class<? extends Attribute> category, DocFlavor flavor,
 			AttributeSet attributes) {
-		return getRemoteAttributes().get(category.getName());
+		Object returnValue = getRemoteAttributes().get(category.getName());
+		if (returnValue instanceof Attribute[]) {
+			Attribute[] attributeArray = ((Attribute[])returnValue);
+			Object[] array = (Object[])Array.newInstance(category, attributeArray.length);
+			for (int index = 0; index < array.length; index++) {
+				Object value = attributeArray[index];
+				array[index] = value;
+			}
+			returnValue = array;
+		}
+		return returnValue;
 	}
 
 	/**

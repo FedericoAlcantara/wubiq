@@ -7,11 +7,12 @@ import java.awt.Image;
 import java.awt.Paint;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.Stroke;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.ImageObserver;
-import java.awt.image.renderable.RenderableImage;
+import java.awt.image.RenderedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -37,7 +38,8 @@ public class PrintableWrapper implements Printable, Serializable {
 	private int returnValue = 0;
 	private int width;
 	private int height;
-	private AffineTransform scaleTransform; 
+	private AffineTransform scaleTransform;
+	private int printed = 0;
 	
 	public PrintableWrapper() {
 	}
@@ -70,12 +72,17 @@ public class PrintableWrapper implements Printable, Serializable {
 			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, graph);
 			returnValue = printable.print(graphicsRecorder, new PageFormatWrapper(pageFormat), pageIndex);
 		} else {
-			AffineTransform newScale = new AffineTransform();
-			double x = graph.getDeviceConfiguration().getBounds().getWidth() / (pageFormat.getWidth() + 30); // Arbitrary
-			double y = graph.getDeviceConfiguration().getBounds().getHeight() / (pageFormat.getHeight());
-			newScale.scale(x, y);
-			graph.setTransform(newScale);
-			executeGraphics(graph, pageFormat, x, y);
+			if (printed <= 1) { // Normally a page rendering is called twice. One for peek graphics and the actual printing.
+				AffineTransform newScale = new AffineTransform();
+				double x = graph.getDeviceConfiguration().getBounds().getWidth() / (pageFormat.getWidth() + 30); // Arbitrary
+				double y = graph.getDeviceConfiguration().getBounds().getHeight() / (pageFormat.getHeight() + 30);
+				newScale.scale(x, y);
+				graph.setTransform(newScale);
+				executeGraphics(graph, pageFormat, x, y);
+				printed += 1;
+			} else {
+				returnValue = Printable.NO_SUCH_PAGE;
+			}
 		}
 		return returnValue;
 	}
@@ -121,12 +128,7 @@ public class PrintableWrapper implements Printable, Serializable {
 		Class[] parameterTypes = new Class[]{};
 		Object[] parameterValues = new Object[]{};
 		if (graphicCommand.getMethodName().equals("setTransform")) {
-			AffineTransform tr = (AffineTransform)graphicCommand.getParameters()[0].getParameterValue();
-			tr = new AffineTransform(
-					tr.getScaleX() * xScale, tr.getShearY() * yScale, 
-					tr.getShearX() * xScale, tr.getScaleY() * yScale,  
-					tr.getTranslateX() * xScale, tr.getTranslateY() * yScale);
-			graphicCommand.getParameters()[0].setParameterValue(tr);
+			return;
 		}
 		if (graphicCommand.getParameters().length > 0) {
 			parameterTypes = new Class[graphicCommand.getParameters().length];
@@ -136,26 +138,32 @@ public class PrintableWrapper implements Printable, Serializable {
 				GraphicParameter parameter = graphicCommand.getParameters()[index];
 				parameterValues[index] = parameter.getParameterValue();
 				parameterTypes[index] = parameter.getParameterType();
-					
 				if (parameterTypes[index].equals(ImageWrapper.class)) {
 					parameterValues[index] = 
-							 ((ImageWrapper)parameter.getParameterValue()).getImage();
+							 ((ImageWrapper)parameter.getParameterValue()).getImage(xScale, yScale);
 					parameterTypes[index] = Image.class;
+				} else if (parameterTypes[index].equals(RenderedImageWrapper.class)) {
+					parameterValues[index] = 
+							((RenderedImageWrapper)parameter.getParameterValue()).getRenderedImage(xScale, yScale);
+					parameterTypes[index] = RenderedImage.class;
 				} else if (parameterTypes[index].equals(RenderableImageWrapper.class)) {
 					parameterValues[index] = 
-							((RenderableImageWrapper)parameter.getParameterValue()).getRenderableImage();
-					parameterTypes[index] = RenderableImage.class;
+							((RenderableImageWrapper)parameter.getParameterValue()).getRenderedImage(xScale, yScale);
+					parameterTypes[index] = RenderedImage.class;
 				} else if (parameterTypes[index].equals(ImageObserverWrapper.class)) {
 					parameterValues[index] = null;
 					parameterTypes[index] = ImageObserver.class;
 				} else if (parameterTypes[index].equals(ShapeWrapper.class)) {
 					parameterTypes[index] = Shape.class;
+					parameterValues[index] = ((ShapeWrapper) parameterValues[index]).getShape();
 				} else if (parameterTypes[index].equals(Color.class)) {
 					if (graphicCommand.getMethodName().equals("setPaint")) {
 						parameterTypes[index] = Paint.class;
 					}
 				} else if (parameterTypes[index].equals(GlyphVectorWrapper.class)) {
 					parameterTypes[index] = GlyphVector.class;
+				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
+					parameterTypes[index] = Stroke.class;
 				} else if (parameterTypes[index].equals(RenderingHintWrapper.class)) {
 					RenderingHintWrapper hint = (RenderingHintWrapper)parameterValues[index];
 					parameterTypes[index] = RenderingHints.Key.class;
@@ -164,7 +172,7 @@ public class PrintableWrapper implements Printable, Serializable {
 				} else if (index > 0 && parameterTypes[index - 1].equals(RenderingHints.Key.class)) {
 					parameterTypes[index] = Object.class;
 					parameterValues[index] = renderingHintValue;
-				}
+				} 
 			}
 		}
 		method = findMethod(graph.getClass(), graphicCommand.getMethodName(), parameterTypes);

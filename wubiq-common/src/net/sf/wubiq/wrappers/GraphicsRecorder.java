@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.wrappers;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Composite;
 import java.awt.Font;
@@ -244,16 +245,6 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void drawGlyphVector(GlyphVector g, float x, float y) {
-		/*
-		Font font = g.getFont();
-		Shape s = g.getOutline(x, y);
-		Color color = getColor();
-		addToCommands("setFont", new GraphicParameter(Font.class, font));
-		addToCommands("setColor", new GraphicParameter(Color.class, getBackground()));
-		addToCommands("draw", shapeParameter(s));
-		addToCommands("setColor", new GraphicParameter(Color.class, color));
-		addToCommands("fill", shapeParameter(s));
-		*/
 		addToCommands("drawGlyphVector", new GraphicParameter(GlyphVectorWrapper.class, new GlyphVectorWrapper(g)),
 				new GraphicParameter(float.class, x), 
 				new GraphicParameter(float.class, y));
@@ -262,7 +253,7 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y), new GraphicParameter(ImageObserver.class, observer));
 		return originalGraphics.drawImage(img, x, y, observer);
 	}
@@ -270,7 +261,7 @@ public class GraphicsRecorder extends Graphics2D {
 	@Override
 	public boolean drawImage(Image img, int x, int y, Color bgcolor,
 			ImageObserver observer) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 				new GraphicParameter(int.class, y), new GraphicParameter(Color.class, bgcolor),
 				new GraphicParameter(ImageObserver.class, observer));
 		return originalGraphics.drawImage(img, x, y, bgcolor, observer);
@@ -280,7 +271,7 @@ public class GraphicsRecorder extends Graphics2D {
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, 
 			int height, ImageObserver observer) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
 			new GraphicParameter(int.class, height), new GraphicParameter(ImageObserver.class, observer));
 		return originalGraphics.drawImage(img, x, y, width, height, observer);
@@ -289,7 +280,7 @@ public class GraphicsRecorder extends Graphics2D {
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, 
 			int height, Color bgcolor, ImageObserver observer) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, x), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 				new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
 				new GraphicParameter(int.class, height), new GraphicParameter(Color.class, bgcolor), 
 				new GraphicParameter(ImageObserver.class, observer));
@@ -300,7 +291,7 @@ public class GraphicsRecorder extends Graphics2D {
 	public boolean drawImage(Image img, int dx1, int dy1, int dx2, 
 			int dy2, int sx1, int sy1, 
 			int sx2, int sy2, ImageObserver observer) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, dx1), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, dx1), 
 			new GraphicParameter(int.class, dy1), new GraphicParameter(int.class, dx2),
 			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
 			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
@@ -312,7 +303,7 @@ public class GraphicsRecorder extends Graphics2D {
 	public boolean drawImage(Image img, int dx1, int dy1, int dx2, 
 			int dy2, int sx1, int sy1, 
 			int sx2, int sy2, Color bgcolor, ImageObserver observer) {
-		addToCommands("drawImage", new GraphicParameter(Image.class, img), new GraphicParameter(int.class, dx1), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, dx1), 
 			new GraphicParameter(int.class, dy1), new GraphicParameter(int.class, dx2),
 			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
 			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
@@ -330,7 +321,7 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
-		addToCommands("drawImage", new GraphicParameter(BufferedImage.class, img), new GraphicParameter(BufferedImageOp.class, op), 
+		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(BufferedImageOp.class, op), 
 			new GraphicParameter(int.class, x), new GraphicParameter(int.class, y));
 		originalGraphics.drawImage(img, op, x, y);
 	}
@@ -384,7 +375,7 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
-		addToCommands("drawRenderedImage", new GraphicParameter(RenderedImage.class, img), new GraphicParameter(AffineTransform.class, xform));
+		addToCommands("drawRenderedImage", new GraphicParameter(RenderedImageWrapper.class, new RenderedImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform));
 		originalGraphics.drawRenderedImage(img, xform);
 	}
 
@@ -613,12 +604,8 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void setFont(Font font) {
-		Font newFont = font;
-		if (font.getName().toLowerCase().contains("draft")) {
-			//newFont = new Font("Courier new", font.getStyle(), font.getSize());
-		}
-		addToCommands("setFont", new GraphicParameter(Font.class, newFont));
-		originalGraphics.setFont(newFont);
+		addToCommands("setFont", new GraphicParameter(Font.class, font));
+		originalGraphics.setFont(font);
 	}
 
 	@Override
@@ -659,15 +646,16 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void setStroke(Stroke s) {
-		addToCommands("setStroke", new GraphicParameter(Stroke.class, s));
+		if (s instanceof BasicStroke) { // only add it if valid stroke type
+			addToCommands("setStroke", new GraphicParameter(StrokeWrapper.class, new StrokeWrapper(s)));
+		}
 		originalGraphics.setStroke(s);
 	}
 
 	@Override
 	public void setTransform(AffineTransform transform) {
-		AffineTransform newTransform = getTransform();
-		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, newTransform));
-		originalGraphics.setTransform(newTransform);
+		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, transform));
+		originalGraphics.setTransform(transform);
 	}
 	
 	private GraphicParameter shapeParameter(Shape shape) {

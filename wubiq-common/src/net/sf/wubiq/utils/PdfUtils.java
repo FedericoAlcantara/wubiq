@@ -107,4 +107,14 @@ public enum PdfUtils {
 		}
 		return (Pageable)document;
 	}
+	
+	public void closePageable(Pageable pageable) {
+		if (pageable != null && pageable instanceof PDDocument) {
+			try {
+				((PDDocument)pageable).close();
+			} catch (IOException e) {
+				LOG.error(e.getMessage());
+			}
+		}
+	}
 }

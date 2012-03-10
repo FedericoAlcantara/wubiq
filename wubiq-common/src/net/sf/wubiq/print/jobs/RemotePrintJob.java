@@ -194,7 +194,7 @@ public class RemotePrintJob implements DocPrintJob {
 		return printData;
 	}
 	
-	public InputStream getStreamForBytes() throws IOException {
+	public synchronized InputStream getStreamForBytes() throws IOException {
 		InputStream returnValue = null;
 		if (printData instanceof InputStream) {
 			returnValue = (InputStream)printData;
@@ -286,24 +286,10 @@ public class RemotePrintJob implements DocPrintJob {
 	 */
 	private int printPrintable(Printable printable, PageFormat pageFormat, int pageIndex) {
 		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES;
-		double rightMargin = (pageFormat.getWidth() - pageFormat.getPaper().getImageableWidth()
-				- pageFormat.getPaper().getImageableX() - 45) ;
-		double bottomMargin = (pageFormat.getHeight() - pageFormat.getPaper().getImageableHeight()
-				- pageFormat.getPaper().getImageableY() + 72);		
-		double xScale = (pageFormat.getImageableWidth() - rightMargin) / 72.0;
-		double yScale = (pageFormat.getImageableHeight() - bottomMargin)/ 72.0;
-		int width = (int) Math.rint(pageFormat.getImageableWidth() * xScale);
-		int height = (int) Math.rint(pageFormat.getImageableHeight() * xScale);
-		xScale = 1.0;
-		yScale = 1.0;
-		if (width % 4 > 0) {
-			width += 4 - (width % 4);
-		}
-		//pageFormat.getPaper().setImageableArea(0, 0, width, height); // reset to zero
-		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
 		try {
-			returnValue = ((PrintableWrapper)printable).print(graph, pageFormat, pageIndex, xScale, yScale);
+			returnValue = ((PrintableWrapper)printable).print(graph, pageFormat, pageIndex, 1.0, 1.0);
 			graph.dispose();
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);

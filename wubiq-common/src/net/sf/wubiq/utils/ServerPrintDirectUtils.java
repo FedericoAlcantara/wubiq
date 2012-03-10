@@ -5,8 +5,6 @@ package net.sf.wubiq.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Locale;
 
@@ -21,12 +19,9 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
 
-import net.sf.wubiq.print.jobs.RemotePrintJob;
-import net.sf.wubiq.print.managers.IRemotePrintJobManager;
-import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.pdfbox.pdmodel.PDDocument;
 
 /**
  * Prints the pdf file directly to print service.
@@ -65,30 +60,11 @@ public enum ServerPrintDirectUtils {
 			
 			// Create doc and printJob
 			DocAttributeSet newAttributes = attributes;
-			Doc doc = new SimpleDoc(PdfUtils.INSTANCE.pdfToPageable(printDocument), DocFlavor.SERVICE_FORMATTED.PAGEABLE, newAttributes);
+			PDDocument document = (PDDocument) PdfUtils.INSTANCE.pdfToPageable(printDocument);
+			Doc doc = new SimpleDoc(document, DocFlavor.SERVICE_FORMATTED.PAGEABLE, newAttributes);
 			DocPrintJob printJob = printService.createPrintJob();
 			printJob.print(doc, requestAttributes);
-			printDocument.close();
-			if (PrintServiceUtils.isRemotePrintService(printService)) {
-				try {
-					Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
-					String uuid = (String)getUuid.invoke(printService, new Object[]{});
-					IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-					manager.addRemotePrintJob(uuid, (RemotePrintJob)printJob);
-				} catch (SecurityException e) {
-					LOG.error(e.getMessage(), e);
-				} catch (NoSuchMethodException e) {
-					LOG.error(e.getMessage(), e);
-				} catch (IllegalArgumentException e) {
-					LOG.error(e.getMessage(), e);
-				} catch (IllegalAccessException e) {
-					LOG.error(e.getMessage(), e);
-				} catch (InvocationTargetException e) {
-					LOG.error(e.getMessage(), e);
-				}
-			} else {
-				// Set Document Attributes
-			}
+			document.close();
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		}

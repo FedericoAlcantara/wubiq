@@ -3,47 +3,21 @@
  */
 package net.sf.wubiq.wrappers;
 
-import java.awt.Image;
-import java.awt.image.BufferedImage;
 import java.awt.image.renderable.RenderableImage;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
-
-import javax.imageio.ImageIO;
 
 /**
  * @author Federico Alcantara
  *
  */
-public class RenderableImageWrapper implements Serializable {
+public class RenderableImageWrapper extends RenderedImageWrapper implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private byte[] imageData;
-	
 	public RenderableImageWrapper(){
-		
+		super();
 	}
 	
 	public RenderableImageWrapper(RenderableImage img){
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		try {
-			ImageIO.write((BufferedImage)img, "png", output);
-			imageData = output.toByteArray();
-			output.close();
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
+		super(img.createDefaultRendering());
 	}
-
-	public RenderableImage getRenderableImage() {
-		Image returnValue = null;
-		try {
-			returnValue = ImageIO.read(new ByteArrayInputStream(imageData));
-		} catch (IOException e) {
-			throw new RuntimeException(e);
-		}
-		return (RenderableImage)returnValue;
-	}
-
+	
 }

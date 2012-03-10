@@ -42,12 +42,10 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	}
 
 	public GlyphVectorWrapper(GlyphVector glyphVector) {
+		this();
 		if (glyphVector != null) {
 			glyphVector.performDefaultLayout();
 			this.font = glyphVector.getFont();
-			if (font.getName().toLowerCase().contains("draft")) {
-				//font = new Font("Courier new", font.getStyle(), font.getSize());
-			}
 			this.fontRenderContext = new FontRenderContextWrapper(glyphVector.getFontRenderContext());
 			this.layoutFlags = glyphVector.getLayoutFlags();
 			this.logicalBounds = new Rectangle2DWrapper(glyphVector.getLogicalBounds());
@@ -168,8 +166,10 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	 */
 	@Override
 	public Point2D getGlyphPosition(int glyphIndex) {
+		Point2D returnValue = null;
 		int index = glyphIndex * 2;
-		return new Point2D.Float(floatPositions[index], floatPositions[index + 1]);
+		returnValue = new Point2D.Float(floatPositions[index], floatPositions[index + 1]);
+		return returnValue;
 	}
 
 	/**
@@ -182,9 +182,10 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 			returnValue = new float[numEntries * 2];
 		}
 		for (int i = 0; i < numEntries; i++) {
-			int index = i * beginGlyphIndex;
-			returnValue[i] = floatPositions[index];
-			returnValue[i + 1] = floatPositions[index + 1];
+			int index = i * 2;
+			int glyphIndex = (beginGlyphIndex + i) * 2;
+			returnValue[index] = floatPositions[glyphIndex];
+			returnValue[index + 1] = floatPositions[glyphIndex + 1];
 		}
 		return returnValue;
 	}
@@ -279,12 +280,6 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	@Override
 	public void setGlyphTransform(int glyphIndex, AffineTransform transform) {
 		transforms[glyphIndex] = transform;
-	}
-
-	public void translateGlyphs(double x, double y) {
-		for (int glyphIndex = 0; glyphIndex < numGlyphs; glyphIndex++) {
-			AffineTransform transform = getGlyphTransform(glyphIndex);
-		}
 	}
 
 	public GlyphVector getGlyphVector(){
