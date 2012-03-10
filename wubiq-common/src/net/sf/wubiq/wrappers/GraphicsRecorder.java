@@ -48,6 +48,8 @@ public class GraphicsRecorder extends Graphics2D {
 	private transient Graphics2D originalGraphics;
 	private transient RenderingHints renderingHints;
 	private transient int currentExecutionOrder;
+	private transient DefaultDeviceConfiguration deviceConfiguration;
+	private transient GraphicCommand lastGraphicCommand;
 
 	public GraphicsRecorder() {
 		unimplemented = new ArrayList<String>();
@@ -62,7 +64,6 @@ public class GraphicsRecorder extends Graphics2D {
 	public GraphicsRecorder(Set<GraphicCommand> graphicCommands, Graphics2D originalGraphics) {
 		this(graphicCommands);
 		this.originalGraphics = originalGraphics;
-		this.graphicCommands = graphicCommands;
 		this.renderingHints = originalGraphics.getRenderingHints();
 	}
 	
@@ -81,26 +82,14 @@ public class GraphicsRecorder extends Graphics2D {
 			fullCommand.append(parameter.getParameterType().getSimpleName());
 			
 		}
-		if (serializable 
-				/*&&  
-				(command.startsWith("draw") ||
-					command.startsWith("fill") ||
-					command.equals("setFont") ||
-					command.equals("scale") ||
-					command.equals("setStroke") ||
-					command.equals("setColor") ||
-					command.equals("setBackground") ||
-					command.equals("setClip") ||
-					command.equals("transform") ||
-					command.equals("translate") ||
-					command.equals("setTransform") ||
-					command.equals("clip") ||
-					command.equals("clipRect") ||
-					command.equals("setPaint") ||
-					command.equals("dispose")
-					)*/
-					) {
-			graphicCommands.add(new GraphicCommand(currentExecutionOrder++, command, parameters));
+		if (serializable) {
+			GraphicCommand graphicCommand = new GraphicCommand(currentExecutionOrder++, command, parameters);
+			if (lastGraphicCommand == null || !graphicCommand.equals(lastGraphicCommand)) {
+				graphicCommands.add(graphicCommand);
+				lastGraphicCommand = graphicCommand;
+			} else {
+				currentExecutionOrder--;
+			}
 		} else {
 			fullCommand.insert(0, '(')
 				.insert(0, command)
@@ -202,6 +191,11 @@ public class GraphicsRecorder extends Graphics2D {
 	public Graphics create() {
 		return originalGraphics.create();
 	}
+	
+	@Override
+	public Graphics create(int x, int y, int width, int height) {
+		return originalGraphics.create(x, y, width, height);
+	}
 
 	@Override
 	public void dispose() {
@@ -253,8 +247,12 @@ public class GraphicsRecorder extends Graphics2D {
 		/*
 		Font font = g.getFont();
 		Shape s = g.getOutline(x, y);
+		Color color = getColor();
 		addToCommands("setFont", new GraphicParameter(Font.class, font));
+		addToCommands("setColor", new GraphicParameter(Color.class, getBackground()));
 		addToCommands("draw", shapeParameter(s));
+		addToCommands("setColor", new GraphicParameter(Color.class, color));
+		addToCommands("fill", shapeParameter(s));
 		*/
 		addToCommands("drawGlyphVector", new GraphicParameter(GlyphVectorWrapper.class, new GlyphVectorWrapper(g)),
 				new GraphicParameter(float.class, x), 
@@ -526,7 +524,10 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public GraphicsConfiguration getDeviceConfiguration() {
-		return originalGraphics.getDeviceConfiguration();
+		if (deviceConfiguration == null) {
+			deviceConfiguration = new DefaultDeviceConfiguration(originalGraphics.getDeviceConfiguration());
+		}
+		return deviceConfiguration;
 	}
 
 	@Override
@@ -612,8 +613,12 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void setFont(Font font) {
-		addToCommands("setFont", new GraphicParameter(Font.class, font));
-		originalGraphics.setFont(font);
+		Font newFont = font;
+		if (font.getName().toLowerCase().contains("draft")) {
+			//newFont = new Font("Courier new", font.getStyle(), font.getSize());
+		}
+		addToCommands("setFont", new GraphicParameter(Font.class, newFont));
+		originalGraphics.setFont(newFont);
 	}
 
 	@Override
@@ -660,12 +665,14 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void setTransform(AffineTransform transform) {
-		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, transform));
-		originalGraphics.setTransform(transform);
+		AffineTransform newTransform = getTransform();
+		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, newTransform));
+		originalGraphics.setTransform(newTransform);
 	}
 	
 	private GraphicParameter shapeParameter(Shape shape) {
 		GraphicParameter returnValue = new GraphicParameter(ShapeWrapper.class, new ShapeWrapper(shape));
 		return returnValue;
 	}
+
 }

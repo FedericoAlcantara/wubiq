@@ -85,5 +85,55 @@ public class GraphicCommand implements Serializable, Comparable<GraphicCommand> 
 		}
 		return returnValue;
 	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + executionOrder;
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof GraphicCommand)) {
+			return false;
+		}
+		GraphicCommand other = (GraphicCommand) obj;
+		if (!methodName.equals(other.methodName)) {
+			return false;
+		}
+		if (parameters.length != other.parameters.length) {
+			return false;
+		}
+		for (int index = 0; index < parameters.length; index++) {
+			if (!parameters[index].getParameterType().equals(other.parameters[index].getParameterType())) {
+				return false;
+			}
+			if (parameters[index].getParameterValue() == null && other.parameters[index].getParameterValue() != null) {
+				return false;
+			}
+			if (parameters[index].getParameterValue() != null && other.parameters[index].getParameterValue() == null) {
+				return false;
+			}
+			if (parameters[index].getParameterValue() != null && other.parameters[index].getParameterValue() != null &&
+					!parameters[index].getParameterValue().equals(other.parameters[index].getParameterValue())) {
+				return false;
+			}
+		}
+		return true;
+	}
 	
 }

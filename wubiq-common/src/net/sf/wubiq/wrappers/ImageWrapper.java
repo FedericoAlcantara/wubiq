@@ -5,6 +5,7 @@ package net.sf.wubiq.wrappers;
 
 import java.awt.Image;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
@@ -33,17 +34,14 @@ public class ImageWrapper implements Serializable {
 			throw new RuntimeException(e);
 		}
 	}
-	/**
-	 * @return the imageData
-	 */
-	public byte[] getImageData() {
-		return imageData;
-	}
-
-	/**
-	 * @param imageData the imageData to set
-	 */
-	public void setImageData(byte[] imageData) {
-		this.imageData = imageData;
+	
+	public Image getImage() {
+		Image returnValue = null;
+		try {
+			returnValue = ImageIO.read(new ByteArrayInputStream(imageData));
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+		return returnValue;
 	}
 }

@@ -29,7 +29,6 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	private ShapeWrapper[] glyphLogicalBounds;
 	private GlyphMetricsWrapper[] metrics;
 	private ShapeWrapper[] outlines;
-	private Point2DWrapper[] positions;
 	private float[] floatPositions;
 	private AffineTransform[] transforms;
 	private ShapeWrapper[] glyphVisualBounds;
@@ -46,6 +45,9 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 		if (glyphVector != null) {
 			glyphVector.performDefaultLayout();
 			this.font = glyphVector.getFont();
+			if (font.getName().toLowerCase().contains("draft")) {
+				//font = new Font("Courier new", font.getStyle(), font.getSize());
+			}
 			this.fontRenderContext = new FontRenderContextWrapper(glyphVector.getFontRenderContext());
 			this.layoutFlags = glyphVector.getLayoutFlags();
 			this.logicalBounds = new Rectangle2DWrapper(glyphVector.getLogicalBounds());
@@ -57,26 +59,23 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	}
 
 	private void initializeGlyphs(GlyphVector glyphVector) {
-		int numGlyphs = glyphVector.getNumGlyphs();
 		codes = new int[numGlyphs];
 		justificationInfos = new GlyphJustificationInfoWrapper[numGlyphs];
 		glyphLogicalBounds = new ShapeWrapper[numGlyphs];
 		metrics = new GlyphMetricsWrapper[numGlyphs];
 		outlines = new ShapeWrapper[numGlyphs];
-		positions = new Point2DWrapper[numGlyphs];
 		transforms = new AffineTransform[numGlyphs];
 		glyphVisualBounds = new ShapeWrapper[numGlyphs];
+		floatPositions = glyphVector.getGlyphPositions(0, numGlyphs + 1, null);
 		for (int glyphIndex = 0; glyphIndex < numGlyphs; glyphIndex++) {
 			codes[glyphIndex] = glyphVector.getGlyphCode(glyphIndex);
 			justificationInfos[glyphIndex] = new GlyphJustificationInfoWrapper(glyphVector.getGlyphJustificationInfo(glyphIndex));
 			glyphLogicalBounds[glyphIndex] = new ShapeWrapper(glyphVector.getGlyphLogicalBounds(glyphIndex));
 			metrics[glyphIndex] = new GlyphMetricsWrapper(glyphVector.getGlyphMetrics(glyphIndex));
 			outlines[glyphIndex] = new ShapeWrapper(glyphVector.getGlyphOutline(glyphIndex));
-			positions[glyphIndex] = new Point2DWrapper(glyphVector.getGlyphPosition(glyphIndex));
 			transforms[glyphIndex] = glyphVector.getGlyphTransform(glyphIndex);
 			glyphVisualBounds[glyphIndex] = new ShapeWrapper(glyphVector.getGlyphVisualBounds(glyphIndex));
 		}
-		floatPositions = glyphVector.getGlyphPositions(0, numGlyphs, null);
 	}
 	
 	/**
@@ -169,7 +168,8 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	 */
 	@Override
 	public Point2D getGlyphPosition(int glyphIndex) {
-		return positions[glyphIndex].getPoint2D();
+		int index = glyphIndex * 2;
+		return new Point2D.Float(floatPositions[index], floatPositions[index + 1]);
 	}
 
 	/**
@@ -179,10 +179,12 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	public float[] getGlyphPositions(int beginGlyphIndex, int numEntries, float[] positionReturn) {
 		float[] returnValue = positionReturn;
 		if (positionReturn == null) {
-			returnValue = new float[numEntries];
+			returnValue = new float[numEntries * 2];
 		}
 		for (int i = 0; i < numEntries; i++) {
-			returnValue[i] = floatPositions[i + beginGlyphIndex];
+			int index = i * beginGlyphIndex;
+			returnValue[i] = floatPositions[index];
+			returnValue[i + 1] = floatPositions[index + 1];
 		}
 		return returnValue;
 	}
@@ -266,7 +268,9 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	 */
 	@Override
 	public void setGlyphPosition(int glyphIndex, Point2D position) {
-		positions[glyphIndex] = new Point2DWrapper(position);
+		int index = glyphIndex * 2;
+		floatPositions[index] = (float) position.getX();
+		floatPositions[index + 1] = (float) position.getY();
 	}
 
 	/**
@@ -275,6 +279,12 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 	@Override
 	public void setGlyphTransform(int glyphIndex, AffineTransform transform) {
 		transforms[glyphIndex] = transform;
+	}
+
+	public void translateGlyphs(double x, double y) {
+		for (int glyphIndex = 0; glyphIndex < numGlyphs; glyphIndex++) {
+			AffineTransform transform = getGlyphTransform(glyphIndex);
+		}
 	}
 
 	public GlyphVector getGlyphVector(){

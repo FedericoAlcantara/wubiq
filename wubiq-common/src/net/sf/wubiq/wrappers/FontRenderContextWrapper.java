@@ -9,15 +9,15 @@ import java.awt.geom.AffineTransform;
 import java.io.Serializable;
 
 /**
- * Wraps a FontRenderContext object into a serializable one
+ * Wraps a FontRenderContext object into a serializable one.
  * @author Federico Alcantara
  *
  */
 public class FontRenderContextWrapper extends FontRenderContext 
 		implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private int antiAliasingHint;
-	private int fractionalMetricsHint;
+	private RenderingHintWrapper antiAliasingHint;
+	private RenderingHintWrapper fractionalMetricsHint;
 	private AffineTransform transform;
 	private int transformType;
 	private int hashCode;
@@ -31,8 +31,8 @@ public class FontRenderContextWrapper extends FontRenderContext
 	
 	public FontRenderContextWrapper(FontRenderContext ctx) {
 		if (ctx != null) {
-			determineAntiAliasing(ctx);
-			determineFractionalMetrics(ctx);
+			antiAliasingHint = new RenderingHintWrapper(RenderingHints.KEY_ANTIALIASING, ctx.getAntiAliasingHint());
+			fractionalMetricsHint = new RenderingHintWrapper(RenderingHints.KEY_FRACTIONALMETRICS, ctx.getFractionalMetricsHint());
 			transform = ctx.getTransform();
 			transformType = ctx.getTransformType();
 			hashCode = ctx.hashCode();
@@ -50,13 +50,7 @@ public class FontRenderContextWrapper extends FontRenderContext
 	 */
 	@Override
 	public Object getAntiAliasingHint() {
-		Object returnValue = RenderingHints.VALUE_ANTIALIAS_DEFAULT;
-		if (antiAliasingHint == 1) {
-			returnValue = RenderingHints.VALUE_ANTIALIAS_OFF;
-		} else {
-			returnValue = RenderingHints.VALUE_ANTIALIAS_ON;
-		}
-		return returnValue;
+		return antiAliasingHint.getValue();
 	}
 
 	/**
@@ -64,13 +58,7 @@ public class FontRenderContextWrapper extends FontRenderContext
 	 */
 	@Override
 	public Object getFractionalMetricsHint() {
-		Object returnValue = RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT;
-		if (fractionalMetricsHint == 1) {
-			returnValue = RenderingHints.VALUE_FRACTIONALMETRICS_OFF;
-		} else {
-			returnValue = RenderingHints.VALUE_FRACTIONALMETRICS_ON;
-		}
-		return returnValue;
+		return fractionalMetricsHint.getValue();
 	}
 
 	/**
@@ -125,25 +113,5 @@ public class FontRenderContextWrapper extends FontRenderContext
 			return null;
 		}
 		return new FontRenderContext(transform, antiAliased, usesFractionalMetrics);
-	}
-	
-	private void determineAntiAliasing(FontRenderContext ctx) {
-		if (ctx.getAntiAliasingHint().equals(RenderingHints.VALUE_ANTIALIAS_DEFAULT)) {
-			antiAliasingHint = 0;
-		} else if (ctx.getAntiAliasingHint().equals(RenderingHints.VALUE_ANTIALIAS_OFF)) {
-			antiAliasingHint = 1;
-		} else if (ctx.getAntiAliasingHint().equals(RenderingHints.VALUE_ANTIALIAS_ON)) {
-			antiAliasingHint = 2;
-		}
-	}
-	
-	private void determineFractionalMetrics(FontRenderContext ctx) {
-		if (ctx.getFractionalMetricsHint().equals(RenderingHints.VALUE_FRACTIONALMETRICS_DEFAULT)) {
-			fractionalMetricsHint = 0;
-		} else if (ctx.getFractionalMetricsHint().equals(RenderingHints.VALUE_FRACTIONALMETRICS_OFF)) {
-			fractionalMetricsHint = 1;
-		} else if (ctx.getFractionalMetricsHint().equals(RenderingHints.VALUE_FRACTIONALMETRICS_ON)) {
-			fractionalMetricsHint = 2;
-		}
 	}
 }

@@ -3,8 +3,11 @@
  */
 package net.sf.wubiq.wrappers;
 
+import java.awt.geom.Rectangle2D;
+import java.awt.geom.Rectangle2D.Double;
 import java.awt.print.Paper;
 import java.io.Serializable;
+import java.lang.reflect.Field;
 
 /**
  * @author Federico Alcantara
@@ -26,10 +29,11 @@ public class PaperWrapper extends Paper implements Serializable {
 	public PaperWrapper(Paper paper) {
 		width = paper.getWidth();
 		height = paper.getHeight();
-		imageableX = paper.getImageableX();
-		imageableY = paper.getImageableY();
-		imageableWidth = paper.getImageableWidth();
-		imageableHeight = paper.getImageableHeight();
+		Rectangle2D.Double bounds = getImageableBounds(paper);
+		imageableX = bounds.x;
+		imageableY = bounds.y;
+		imageableWidth = bounds.width;
+		imageableHeight = bounds.height;
 	}
 	
 	/**
@@ -92,5 +96,37 @@ public class PaperWrapper extends Paper implements Serializable {
 	public void setSize(double width, double height) {
 		this.width = width;
 		this.height = height;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private Rectangle2D.Double getImageableBounds(Paper paper) {
+		Rectangle2D.Double bounds = new Rectangle2D.Double(paper.getImageableX(), paper.getImageableY(), 
+				paper.getImageableWidth(), paper.getImageableHeight());
+		Field field = null;
+		Class paperClass = paper.getClass();
+		while (paperClass != null) {
+			try {
+				field = paper.getClass().getDeclaredField("mImageableArea");
+				break;
+			} catch (SecurityException e1) {
+				// Not implemented here.
+			} catch (NoSuchFieldException e1) {
+				// Not implemented here.
+		 	}
+			paperClass = paperClass.getSuperclass();
+		}
+		if (field != null) {
+			try {
+				field.setAccessible(true);
+				bounds = (Double) field.get(this);
+			} catch (SecurityException e) {
+				// Not implemented here.
+			} catch (IllegalArgumentException e) {
+				// Not implemented here
+			} catch (IllegalAccessException e) {
+				// Not implemented here
+			}
+		}
+		return bounds;
 	}
 }

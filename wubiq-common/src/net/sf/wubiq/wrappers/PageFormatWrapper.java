@@ -14,8 +14,6 @@ public class PageFormatWrapper extends PageFormat implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private double width;
 	private double height;
-	private double imageableX;
-	private double imageableY;
 	private double imageableWidth;
 	private double imageableHeight;
 	private double[] matrix;
@@ -28,8 +26,6 @@ public class PageFormatWrapper extends PageFormat implements Serializable {
 	public PageFormatWrapper(PageFormat pageFormat) {
 		width = pageFormat.getWidth();
 		height = pageFormat.getHeight();
-		imageableX = pageFormat.getImageableX();
-		imageableY = pageFormat.getImageableY();
 		imageableWidth = pageFormat.getImageableWidth();
 		imageableHeight = pageFormat.getImageableHeight();
 		matrix = pageFormat.getMatrix();
@@ -55,14 +51,14 @@ public class PageFormatWrapper extends PageFormat implements Serializable {
 	 * @return the imageableX
 	 */
 	public double getImageableX() {
-		return imageableX;
+		return paper.getImageableX();
 	}
 
 	/**
 	 * @return the imageableY
 	 */
 	public double getImageableY() {
-		return imageableY;
+		return paper.getImageableY();
 	}
 
 	/**

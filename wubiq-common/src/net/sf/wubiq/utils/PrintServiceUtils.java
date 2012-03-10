@@ -263,7 +263,13 @@ public class PrintServiceUtils {
 				addAttribute(returnValue, Chromaticity.MONOCHROME);
 				addAttribute(returnValue, Chromaticity.COLOR);
 			} else if (category.equals(MediaTray.class) || category.equals(MediaSizeName.class)) {
-				Attribute[] attributes = (Attribute[]) printService.getSupportedAttributeValues(Media.class, null, null);
+				Object attributeValue = printService.getSupportedAttributeValues(Media.class, null, null);
+				Attribute[] attributes = null;
+				if (attributeValue instanceof Attribute[]){
+					attributes = (Attribute[]) printService.getSupportedAttributeValues(Media.class, null, null);
+				} else {
+					attributes = new Attribute[]{(Attribute)attributeValue};
+				}
 				if (attributes != null) {
 					for (Attribute attribute : attributes) {
 						if ((attribute instanceof MediaTray && category.equals(MediaTray.class)) ||
@@ -582,7 +588,7 @@ public class PrintServiceUtils {
 									LOG.debug(e.getMessage());
 								}
 							}
-							remotePrintService.getRemoteAttributes().put(categoryName, values);
+							remotePrintService.getRemoteAttributes().put(categoryName, values.toArray(new Attribute[]{}));
 						} else {
 							try {
 								remotePrintService.getRemoteAttributes().put(categoryName, 
