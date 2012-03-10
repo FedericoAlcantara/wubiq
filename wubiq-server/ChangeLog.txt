@@ -1,9 +1,18 @@
 ======================
+Wubiq 1.0.173 (2012-03-10)
+======================
+-Pageable and Printable printing completed.
+-Fixed scaling issues after serialization.
+======================
+Wubiq 1.0.170 (2012-03-06)
+======================
+-Serialization of printable completed for most graphic commands.
+======================
 Wubiq 1.0.168 (2012-02-28)
 ======================
 -Implemented Pageable and Printable direct printing.
 -Solved compatibility with print service users which rely on PrinterName attribute.
--Included wubiq-printerjob to handle application that uses PrinterJob and pageable.
+-Included wubiq-printerjob to handle application that uses PrinterJob pageable or printable.
 ======================
 Wubiq 0.9.127 (2012-02-14)
 ======================

@@ -17,7 +17,7 @@
 		$.get(url, function(data) {
 			$("#output").html($(data).children());
 		});
-		location.reload(true);
+		//location.reload(true);
 	};
 </script>
 <%! 

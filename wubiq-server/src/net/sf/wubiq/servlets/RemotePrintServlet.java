@@ -13,14 +13,8 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Locale;
 
-import javax.print.Doc;
 import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
-import javax.print.PrintException;
 import javax.print.PrintService;
-import javax.print.SimpleDoc;
-import javax.print.attribute.DocAttributeSet;
-import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
@@ -531,32 +525,20 @@ public class RemotePrintServlet extends HttpServlet {
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
 		response.setContentType("text/html");				
 		if (printService != null) {
-			DocAttributeSet attributes = new HashDocAttributeSet();
 			PrintRequestAttributeSet requestAttributes = new HashPrintRequestAttributeSet();
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
-			Doc doc = null;
-			if (printService.isDocFlavorSupported(DocFlavor.INPUT_STREAM.PDF)) {
-				doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, attributes);
-				DocPrintJob printJob = printService.createPrintJob();
-				try {
-					printJob.print(doc, requestAttributes);
-				} catch (PrintException e) {
-					LOG.error(e.getMessage(), e);
-				}
-			} else {
-				PrinterJobManager.initializePrinterJobManager();
-				PrinterJob printerJob = PrinterJob.getPrinterJob();
-				Pageable pageable = PdfUtils.INSTANCE.pdfToPageable(input);
-				printerJob.setPageable(pageable);
-				try {
-					printerJob.setPrintService(printService);
-					printerJob.print(requestAttributes);
-				} catch (PrinterException e) {
-					LOG.error(e.getMessage(), e);
-				} finally {
-					if (pageable != null && pageable instanceof PDDocument) {
-						((PDDocument)pageable).close();
-					}
+			PrinterJobManager.initializePrinterJobManager();
+			PrinterJob printerJob = PrinterJob.getPrinterJob();
+			Pageable pageable = PdfUtils.INSTANCE.pdfToPageable(input);
+			printerJob.setPageable(pageable);
+			try {
+				printerJob.setPrintService(printService);
+				printerJob.print(requestAttributes);
+			} catch (PrinterException e) {
+				LOG.error(e.getMessage(), e);
+			} finally {
+				if (pageable != null && pageable instanceof PDDocument) {
+					((PDDocument)pageable).close();
 				}
 			}
 			input.close();
