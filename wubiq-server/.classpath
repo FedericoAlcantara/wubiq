@@ -7,5 +7,7 @@
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-client"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/wubiq-common"/>
+	<classpathentry kind="lib" path="lib-nondeploy/fontbox-1.6.0.jar"/>
+	<classpathentry kind="lib" path="lib-nondeploy/pdfbox-1.6.0.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
