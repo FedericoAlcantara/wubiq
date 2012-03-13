@@ -469,9 +469,9 @@ public class RemotePrintServlet extends HttpServlet {
 		InputStream input = null;
 		// If it is remote we must convert pdf to image and then scale it to print size
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
-			input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getStreamForBytes());
+			input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
 		} else {
-			input = printJob.getStreamForBytes();
+			input = printJob.getPrintData();
 		}
 		if (input != null) {
 			OutputStream output = response.getOutputStream();

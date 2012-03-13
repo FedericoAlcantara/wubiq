@@ -46,6 +46,16 @@
 		}		
 		return returnValue;
 	}
+	
+	private String fixServiceName(String serviceName) {
+		String returnValue = serviceName;
+		try {
+			returnValue = java.net.URLEncoder.encode(serviceName, "UTF-8");
+		} catch (java.io.UnsupportedEncodingException e) {
+			returnValue = serviceName;
+		}
+		return returnValue;
+	}
 %>   
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -144,7 +154,7 @@
 						.append('&')
 						.append(ParameterKeys.PRINT_SERVICE_NAME)
 						.append(ParameterKeys.PARAMETER_SEPARATOR)
-						.append(serviceData[0]);
+						.append(uuid.equals("") ? fixServiceName(serviceData[0]) : serviceData[0]);
 						if (!serviceData[2].isEmpty()) {
 							buffer.append('&')
 							.append(ParameterKeys.UUID)
