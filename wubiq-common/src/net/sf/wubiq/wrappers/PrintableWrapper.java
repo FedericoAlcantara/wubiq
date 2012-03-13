@@ -76,6 +76,12 @@ public class PrintableWrapper implements Printable, Serializable {
 				AffineTransform newScale = new AffineTransform();
 				double x = graph.getDeviceConfiguration().getBounds().getWidth() / (pageFormat.getWidth() + 30); // Arbitrary
 				double y = graph.getDeviceConfiguration().getBounds().getHeight() / (pageFormat.getHeight() + 30);
+				if (x <= 0) {
+					x = 1;
+				}
+				if (y <= 0) {
+					y = 1;
+				}
 				newScale.scale(x, y);
 				graph.setTransform(newScale);
 				executeGraphics(graph, pageFormat, x, y);
@@ -164,6 +170,9 @@ public class PrintableWrapper implements Printable, Serializable {
 					parameterTypes[index] = GlyphVector.class;
 				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
 					parameterTypes[index] = Stroke.class;
+				} else if (parameterTypes[index].equals(RenderingHintsWrapper.class)) {
+					parameterTypes[index] = RenderingHints.class;
+					parameterValues[index] = ((RenderingHintsWrapper)parameterValues[index]).getRenderingHints();
 				} else if (parameterTypes[index].equals(RenderingHintWrapper.class)) {
 					RenderingHintWrapper hint = (RenderingHintWrapper)parameterValues[index];
 					parameterTypes[index] = RenderingHints.Key.class;

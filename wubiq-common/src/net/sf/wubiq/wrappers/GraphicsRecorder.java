@@ -47,7 +47,6 @@ public class GraphicsRecorder extends Graphics2D {
 	private Set<GraphicCommand> graphicCommands;
 	private List<String> unimplemented;
 	private transient Graphics2D originalGraphics;
-	private transient RenderingHints renderingHints;
 	private transient int currentExecutionOrder;
 	private transient DefaultDeviceConfiguration deviceConfiguration;
 	private transient GraphicCommand lastGraphicCommand;
@@ -65,7 +64,12 @@ public class GraphicsRecorder extends Graphics2D {
 	public GraphicsRecorder(Set<GraphicCommand> graphicCommands, Graphics2D originalGraphics) {
 		this(graphicCommands);
 		this.originalGraphics = originalGraphics;
-		this.renderingHints = originalGraphics.getRenderingHints();
+		this.deviceConfiguration = new DefaultDeviceConfiguration(originalGraphics.getDeviceConfiguration());
+		addToCommands("transform", new GraphicParameter(AffineTransform.class, originalGraphics.getTransform()));
+		addToCommands("setBackground", new GraphicParameter(Color.class, originalGraphics.getBackground()));
+		addToCommands("setColor", new GraphicParameter(Color.class, originalGraphics.getColor()));
+		addToCommands("setClip", shapeParameter(originalGraphics.getClip()));
+		addToCommands("addRenderingHints", new GraphicParameter(RenderingHintsWrapper.class, new RenderingHintsWrapper(originalGraphics.getRenderingHints())));
 	}
 	
 	private void addToCommands(String command, GraphicParameter... parameters) {
@@ -104,8 +108,7 @@ public class GraphicsRecorder extends Graphics2D {
 	
 	@Override
 	public void addRenderingHints(Map <?, ?> hints) {
-		addToCommands("addRenderingHints", new GraphicParameter(Map.class, hints));
-		renderingHints.add((RenderingHints) hints);
+		addToCommands("addRenderingHints", new GraphicParameter(RenderingHintsWrapper.class, new RenderingHintsWrapper(hints)));
 		originalGraphics.addRenderingHints(hints);
 	}
 

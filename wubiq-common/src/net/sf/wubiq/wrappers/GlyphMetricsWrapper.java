@@ -130,4 +130,17 @@ public class GlyphMetricsWrapper implements Serializable {
 		}
 		return new GlyphMetrics(advance, bounds2D.getRectangle2D(), (byte) type);
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "GlyphMetricsWrapper [advance=" + advance + ", advanceX="
+				+ advanceX + ", advanceY=" + advanceY + ", bounds2D="
+				+ bounds2D + ", LSB=" + LSB + ", RSB=" + RSB + ", type=" + type
+				+ ", combining=" + combining + ", component=" + component
+				+ ", ligature=" + ligature + ", standard=" + standard
+				+ ", whitespace=" + whitespace + "]";
+	}
 }

@@ -114,4 +114,17 @@ public class FontRenderContextWrapper extends FontRenderContext
 		}
 		return new FontRenderContext(transform, antiAliased, usesFractionalMetrics);
 	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "FontRenderContextWrapper [antiAliasingHint=" + antiAliasingHint
+				+ ", fractionalMetricsHint=" + fractionalMetricsHint
+				+ ", transform=" + transform + ", transformType="
+				+ transformType + ", hashCode=" + hashCode + ", antiAliased="
+				+ antiAliased + ", transformed=" + transformed
+				+ ", usesFractionalMetrics=" + usesFractionalMetrics + "]";
+	}
 }

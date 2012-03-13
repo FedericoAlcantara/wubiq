@@ -15,6 +15,7 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * @author Federico Alcantara
@@ -284,5 +285,14 @@ public class GlyphVectorWrapper extends GlyphVector implements Serializable {
 
 	public GlyphVector getGlyphVector(){
 		return this;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "GlyphVectorWrapper [font=" + font + ", floatPositions="
+				+ Arrays.toString(floatPositions) + "]";
 	}
 }

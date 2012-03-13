@@ -304,4 +304,13 @@ public class RenderingHintWrapper implements Serializable {
 		return new Integer(valueValue);
 	}
 
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RenderingHintWrapper [keyValue=" + keyValue + ", valueValue="
+				+ valueValue + "]";
+	}
+
 }

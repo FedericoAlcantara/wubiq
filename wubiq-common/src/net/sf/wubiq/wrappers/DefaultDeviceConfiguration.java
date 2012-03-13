@@ -24,6 +24,7 @@ public class DefaultDeviceConfiguration extends GraphicsConfiguration {
 	
 	public DefaultDeviceConfiguration(GraphicsConfiguration conf) {
 		this.conf = conf;
+		this.device = new DefaultGraphicsDevice(conf.getDevice());
 	}
 	
 	@Override

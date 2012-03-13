@@ -94,7 +94,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		ResultSet rs = null;
 		long returnValue = 0l;
 		try {
-			InputStream inputStream = remotePrintJob.getStreamForBytes();
+			InputStream inputStream = remotePrintJob.getPrintData();
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			int byteVal = -1;
 			if (inputStream != null) {

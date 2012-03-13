@@ -55,4 +55,18 @@ public class GlyphJustificationInfoWrapper
 				shrinkAbsorb, shrinkPriority,
 				shrinkLeftLimit, shrinkRightLimit);
 	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "GlyphJustificationInfoWrapper [weight=" + weight
+				+ ", growAbsorb=" + growAbsorb + ", growPriority="
+				+ growPriority + ", growLeftLimit=" + growLeftLimit
+				+ ", growRightLimit=" + growRightLimit + ", shrinkAbsorb="
+				+ shrinkAbsorb + ", shrinkPriority=" + shrinkPriority
+				+ ", shrinkLeftLimit=" + shrinkLeftLimit
+				+ ", shrinkRightLimit=" + shrinkRightLimit + "]";
+	}
 }

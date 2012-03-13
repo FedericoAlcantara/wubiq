@@ -7,6 +7,7 @@ import java.awt.BasicStroke;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.io.Serializable;
+import java.util.Arrays;
 
 /**
  * @author Federico Alcantara
@@ -126,6 +127,16 @@ public class StrokeWrapper implements Stroke, Serializable {
 			return stroke.createStrokedShape(shape);
 		}
 		return null;
+	}
+
+	/* (non-Javadoc)
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "StrokeWrapper [width=" + width + ", cap=" + cap + ", join="
+				+ join + ", miterLimit=" + miterLimit + ", dash="
+				+ Arrays.toString(dash) + ", dashPhase=" + dashPhase + "]";
 	}
 	
 }

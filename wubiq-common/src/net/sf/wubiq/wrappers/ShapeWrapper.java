@@ -29,4 +29,16 @@ public class ShapeWrapper implements Serializable {
 	public Shape getShape() {
 		return generalPath;
 	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		if (generalPath != null) {
+			return "ShapeWrapper [generalPath=" + ((Shape)generalPath).getBounds() + "]";
+		} else {
+			return "ShapeWrapper [generalPath=null]";
+		}
+	}
 }

@@ -9,6 +9,9 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.util.Locale;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -19,8 +22,13 @@ import javax.print.SimpleDoc;
 import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.JobName;
 
+import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.wrappers.PageFormatWrapper;
+import net.sf.wubiq.wrappers.PageableWrapper;
+import net.sf.wubiq.wrappers.PrintableWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -269,6 +277,36 @@ public class PrinterJobManager extends PrinterJob {
 			try {
 				printJob.print(doc, request);
 			} catch (PrintException e) {
+				throw new PrinterException(e.getMessage());
+			}
+		}
+	}
+	
+	private void printLocalPrintJob(PrintRequestAttributeSet printRequestAttributeSet) throws PrinterException {
+		PrintRequestAttributeSet request = printRequestAttributeSet == null ? new HashPrintRequestAttributeSet() : printRequestAttributeSet;
+		request.add(new JobName("WubiqLocal", Locale.getDefault()));
+		Object printData = document != null ? document : painter;
+		if (printData != null) {
+			DocFlavor docFlavor = document != null ? DocFlavor.SERVICE_FORMATTED.PAGEABLE : DocFlavor.SERVICE_FORMATTED.PRINTABLE;
+			try {
+				InputStream data = PageableUtils.INSTANCE.getStreamForBytes(printData, docFlavor, pageFormat);
+				ObjectInputStream input = new ObjectInputStream(data);
+				if (document != null) {
+					PageableWrapper pageable = (PageableWrapper)input.readObject();
+					Printable printable = document.getPrintable(0);
+					PageFormat pageFormat = document.getPageFormat(0);
+					pageable.setNumberOfPages(1);
+					pageable.addPrintable(new PrintableWrapper(printable));
+					pageable.addPageFormat(new PageFormatWrapper(pageFormat));
+					defaultPrinterJob.setPageable(pageable);
+				} else {
+					PrintableWrapper printable = (PrintableWrapper)input.readObject();
+					defaultPrinterJob.setPrintable(printable);
+				}
+				defaultPrinterJob.setCopies(1);
+				defaultPrinterJob.print(request);
+			} catch (Exception e) {
+				LOG.error(e.getMessage(), e);
 				throw new PrinterException(e.getMessage());
 			}
 		}
