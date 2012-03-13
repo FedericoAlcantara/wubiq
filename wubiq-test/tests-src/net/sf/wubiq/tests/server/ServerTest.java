@@ -158,6 +158,6 @@ public class ServerTest extends WubiqBaseTest {
 			count++;
 		} while (value != -1);
 	
-		assertTrue("Size should be bigger than 20k and less than 25k (" + count + ")", count > 20000 && count < 30000);
+		assertTrue("Size should be bigger than 20k (" + count + ")", count > 20000);
 	}
 }
