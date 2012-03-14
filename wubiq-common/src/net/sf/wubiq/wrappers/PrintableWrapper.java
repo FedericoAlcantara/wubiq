@@ -1,6 +1,7 @@
 package net.sf.wubiq.wrappers;
 
 import java.awt.Color;
+import java.awt.Composite;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -10,7 +11,6 @@ import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.print.PageFormat;
@@ -19,6 +19,7 @@ import java.awt.print.PrinterException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -26,7 +27,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Wraps a printable into a serializable class
+ * Wraps a printable object into a serializable class.
+ * This object stores the commands sent to a graphic recorder.
+ * Because it is serialized, the commands can later be deserialized
+ * into this object.
+ * 
  * @author Federico Alcantara
  *
  */
@@ -36,10 +41,8 @@ public class PrintableWrapper implements Printable, Serializable {
 	private transient Printable printable;
 	private Set<GraphicCommand> graphicCommands;
 	private int returnValue = 0;
-	private int width;
-	private int height;
-	private AffineTransform scaleTransform;
 	private int printed = 0;
+	private transient boolean notSerialized = false;
 	
 	public PrintableWrapper() {
 	}
@@ -51,24 +54,23 @@ public class PrintableWrapper implements Printable, Serializable {
 	 */
 	public PrintableWrapper(Printable printable) {
 		this.printable = printable;
+		if (printable instanceof PrintableWrapper) {
+			this.notSerialized = ((PrintableWrapper)printable).notSerialized;
+		}
 	}
 	
-	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex, double xScale, double yScale) 
-			throws PrinterException {
-		this.width = new Double(pageFormat.getPaper().getImageableWidth() * xScale).intValue();
-		this.height = new Double(pageFormat.getPaper().getImageableHeight() * yScale).intValue();
-		this.scaleTransform = new AffineTransform();
-		scaleTransform.scale(xScale, yScale);
-		return print(graphics, pageFormat, pageIndex);
-	}
-
+	/**
+	 * This a two stage print method. 
+	 * First it records graphics command into itself by using a GraphicRecorder object.
+	 * After it is deserialized, then it sends the previously saved command to the
+	 * graphics provided by the local printer object.
+	 */
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
 		Graphics2D graph = (Graphics2D) graphics;
-		if (graphicCommands == null) {
+		if (notSerialized) {
 			graphicCommands = new TreeSet<GraphicCommand>();
-			setupGraphics(graph, pageFormat);
 			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, graph);
 			returnValue = printable.print(graphicsRecorder, new PageFormatWrapper(pageFormat), pageIndex);
 		} else {
@@ -76,13 +78,13 @@ public class PrintableWrapper implements Printable, Serializable {
 				AffineTransform newScale = new AffineTransform();
 				double x = graph.getDeviceConfiguration().getBounds().getWidth() / (pageFormat.getWidth() + 30); // Arbitrary
 				double y = graph.getDeviceConfiguration().getBounds().getHeight() / (pageFormat.getHeight() + 30);
-				if (x <= 0) {
-					x = 1;
+				// If we don't have a device information, we must scale based on page format / paper information.
+				if (x <= 0 && y <= 0) { 
+					x = pageFormat.getWidth() / (pageFormat.getImageableWidth());
+					y = pageFormat.getHeight() / (pageFormat.getImageableHeight());
+				} else {
+					newScale.scale(x, y);
 				}
-				if (y <= 0) {
-					y = 1;
-				}
-				newScale.scale(x, y);
 				graph.setTransform(newScale);
 				executeGraphics(graph, pageFormat, x, y);
 				printed += 1;
@@ -94,25 +96,11 @@ public class PrintableWrapper implements Printable, Serializable {
 	}
 	
 	/**
-	 * Sets the initial parameter for the graphics object.
-	 * @param graph Graphics2D object.
-	 * @param pageFormat Format of the page to be rendered.
-	 */
-	private void setupGraphics(Graphics2D graph, PageFormat pageFormat) {
-		graph.setTransform(scaleTransform);
-		graph.setClip(new Rectangle2D.Double(pageFormat.getImageableX(),
-				pageFormat.getImageableY(),
-				pageFormat.getImageableWidth(), 
-				pageFormat.getImageableHeight()));
-		graph.setBackground(Color.WHITE);
-		graph.clearRect(0, 0, width, height);
-	}
-
-
-	/**
 	 * Iterates through the previously serialized command set.
 	 * @param graph Graphics2D object receiving the commands.
 	 * @param pageFormat Format of the page to be rendered.
+	 * @param xScale new scale to apply horizontally wise.
+	 * @param yScale new scale to apply vertically wise.
 	 */
 	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale) {
 		Iterator<GraphicCommand> it = graphicCommands.iterator();
@@ -148,36 +136,51 @@ public class PrintableWrapper implements Printable, Serializable {
 					parameterValues[index] = 
 							 ((ImageWrapper)parameter.getParameterValue()).getImage(xScale, yScale);
 					parameterTypes[index] = Image.class;
+					
 				} else if (parameterTypes[index].equals(RenderedImageWrapper.class)) {
 					parameterValues[index] = 
 							((RenderedImageWrapper)parameter.getParameterValue()).getRenderedImage(xScale, yScale);
 					parameterTypes[index] = RenderedImage.class;
+					
 				} else if (parameterTypes[index].equals(RenderableImageWrapper.class)) {
 					parameterValues[index] = 
 							((RenderableImageWrapper)parameter.getParameterValue()).getRenderedImage(xScale, yScale);
 					parameterTypes[index] = RenderedImage.class;
+					
 				} else if (parameterTypes[index].equals(ImageObserverWrapper.class)) {
 					parameterValues[index] = null;
 					parameterTypes[index] = ImageObserver.class;
+					
 				} else if (parameterTypes[index].equals(ShapeWrapper.class)) {
 					parameterTypes[index] = Shape.class;
 					parameterValues[index] = ((ShapeWrapper) parameterValues[index]).getShape();
+					
 				} else if (parameterTypes[index].equals(Color.class)) {
 					if (graphicCommand.getMethodName().equals("setPaint")) {
 						parameterTypes[index] = Paint.class;
 					}
+					
 				} else if (parameterTypes[index].equals(GlyphVectorWrapper.class)) {
 					parameterTypes[index] = GlyphVector.class;
+					
 				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
 					parameterTypes[index] = Stroke.class;
+					parameterValues[index] = ((StrokeWrapper) parameterValues[index]).getStroke(xScale, yScale);
+					
+				} else if (parameterTypes[index].equals(CompositeWrapper.class)) {
+					parameterTypes[index] = Composite.class;
+					parameterValues[index] = ((CompositeWrapper) parameterValues[index]).getComposite();
+
 				} else if (parameterTypes[index].equals(RenderingHintsWrapper.class)) {
-					parameterTypes[index] = RenderingHints.class;
+					parameterTypes[index] = Map.class;
 					parameterValues[index] = ((RenderingHintsWrapper)parameterValues[index]).getRenderingHints();
+					
 				} else if (parameterTypes[index].equals(RenderingHintWrapper.class)) {
 					RenderingHintWrapper hint = (RenderingHintWrapper)parameterValues[index];
 					parameterTypes[index] = RenderingHints.Key.class;
 					parameterValues[index] = hint.getKey();
 					renderingHintValue = hint.getValue();
+					
 				} else if (index > 0 && parameterTypes[index - 1].equals(RenderingHints.Key.class)) {
 					parameterTypes[index] = Object.class;
 					parameterValues[index] = renderingHintValue;
@@ -228,6 +231,20 @@ public class PrintableWrapper implements Printable, Serializable {
 		}
 		
 		return method;
+	}
+
+	/**
+	 * @return the notSerialized
+	 */
+	public boolean isNotSerialized() {
+		return notSerialized;
+	}
+
+	/**
+	 * @param notSerialized the notSerialized to set
+	 */
+	public void setNotSerialized(boolean notSerialized) {
+		this.notSerialized = notSerialized;
 	}
 
 }

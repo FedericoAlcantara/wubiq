@@ -113,11 +113,15 @@ public class StrokeWrapper implements Stroke, Serializable {
 		this.dashPhase = dashPhase;
 	}
 	
-	public Stroke getStroke() {
+	public Stroke getStroke(double xScale, double yScale) {
 		if (!nullObject) {
-			return new BasicStroke(width, cap, join, miterLimit, dash, dashPhase);
+			return new BasicStroke(width, cap, join);
 		}
 		return null;
+	}
+
+	public Stroke getStroke() {
+		return getStroke(1, 1);
 	}
 
 	@Override
@@ -129,7 +133,7 @@ public class StrokeWrapper implements Stroke, Serializable {
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

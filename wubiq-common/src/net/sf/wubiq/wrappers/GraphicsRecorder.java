@@ -203,7 +203,7 @@ public class GraphicsRecorder extends Graphics2D {
 
 	@Override
 	public void dispose() {
-		addToCommands("dispose");
+	 	//addToCommands("dispose"); // NO!!! as this can occur any time and 
 		originalGraphics.dispose();
 	}
 	
@@ -601,7 +601,7 @@ public class GraphicsRecorder extends Graphics2D {
 	
 	@Override
 	public void setComposite(Composite comp) {
-		addToCommands("setComposite", new GraphicParameter(Composite.class, comp));
+		addToCommands("setComposite", new GraphicParameter(CompositeWrapper.class, new CompositeWrapper(comp)));
 		originalGraphics.setComposite(comp);
 	}
 

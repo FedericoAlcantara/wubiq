@@ -104,7 +104,7 @@ public class RemotePrintJob implements DocPrintJob {
 	 * @see javax.print.DocPrintJob#print(javax.print.Doc, javax.print.attribute.PrintRequestAttributeSet)
 	 */
 	@Override
-	public void print(Doc doc, PrintRequestAttributeSet printRequestAttributeSet)
+	public synchronized void print(Doc doc, PrintRequestAttributeSet printRequestAttributeSet)
 			throws PrintException {
 		update(doc, printRequestAttributeSet);
 		try {			
@@ -138,12 +138,12 @@ public class RemotePrintJob implements DocPrintJob {
 		this.docAttributeSet = doc.getAttributes();
 		this.docFlavor = doc.getDocFlavor();
 		try {
-			this.printData = doc.getPrintData();
-			printData = PageableUtils.INSTANCE.getStreamForBytes(printData, docFlavor, getPageFormat());
+			printData = doc.getPrintData();
+			InputStream transformed = PageableUtils.INSTANCE.getStreamForBytes(printData, docFlavor, getPageFormat());
+			printData = transformed;
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
-		
 	}
 
 	/**

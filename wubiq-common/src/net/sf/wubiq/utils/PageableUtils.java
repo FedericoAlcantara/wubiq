@@ -3,7 +3,10 @@
  */
 package net.sf.wubiq.utils;
 
+import java.awt.Color;
 import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
@@ -34,7 +37,7 @@ public enum PageableUtils {
 	
 	public static final Log LOG = LogFactory.getLog(PageableUtils.class);
 	
-	public synchronized InputStream getStreamForBytes(Object printData, DocFlavor docFlavor, 
+	public InputStream getStreamForBytes(Object printData, DocFlavor docFlavor, 
 			PageFormat pageFormat) throws IOException {
 		InputStream returnValue = null;
 		if (printData instanceof InputStream) {
@@ -70,8 +73,10 @@ public enum PageableUtils {
 		int pageIndex = 0;
 		do {
 			try {
-				PageFormatWrapper pageFormat = new PageFormatWrapper(pageable.getOriginal().getPageFormat(pageIndex));
+				PageFormat originalPageFormat = pageable.getOriginal().getPageFormat(pageIndex);
+				PageFormatWrapper pageFormat = new PageFormatWrapper(originalPageFormat);
 				PrintableWrapper printable = new PrintableWrapper(pageable.getOriginal().getPrintable(pageIndex));
+				printable.setNotSerialized(true);
 				pageResult = printPrintable(printable, pageFormat, pageIndex);
 				if (pageResult == Printable.PAGE_EXISTS) {
 					pageable.addPageFormat(pageFormat);
@@ -106,6 +111,7 @@ public enum PageableUtils {
 	private InputStream serializePrintable(Printable inputPrintable, PageFormat pageFormat) {
 		InputStream returnValue = null;
 		PrintableWrapper printable = new PrintableWrapper(inputPrintable);
+		printable.setNotSerialized(true);
 		try {
 			printPrintable(printable, new PageFormatWrapper(getPageFormat(pageFormat)), 0);
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
@@ -125,12 +131,24 @@ public enum PageableUtils {
 	 * @param pageFormat Page format.
 	 * @param pageIndex Page to be printed.
 	 */
-	private int printPrintable(Printable printable, PageFormat pageFormat, int pageIndex) {
+	private synchronized int printPrintable(Printable printable, PageFormat pageFormat, int pageIndex) {
 		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES;
 		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
 		try {
-			returnValue = ((PrintableWrapper)printable).print(graph, pageFormat, pageIndex, 1.0, 1.0);
+			AffineTransform scaleTransform = new AffineTransform();
+			scaleTransform.scale(1, 1);
+			graph.setTransform(scaleTransform);
+			graph.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+			graph.setClip(new Rectangle2D.Double(
+					0,
+					0,
+					pageFormat.getPaper().getImageableWidth(), 
+					pageFormat.getPaper().getImageableHeight()));
+			graph.setBackground(Color.WHITE);
+			graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
+					(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
+			returnValue = ((PrintableWrapper)printable).print(graph, pageFormat, pageIndex);
 			graph.dispose();
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);

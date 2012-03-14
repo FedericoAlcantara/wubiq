@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.print.services;
 
+import java.io.ByteArrayOutputStream;
+import java.io.OutputStream;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -17,6 +19,7 @@ import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
 import javax.print.PrintService;
 import javax.print.ServiceUIFactory;
+import javax.print.StreamPrintService;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.AttributeSet;
 import javax.print.attribute.HashPrintServiceAttributeSet;
@@ -41,7 +44,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class RemotePrintService implements PrintService {
+public class RemotePrintService extends StreamPrintService {
 	private static Log LOG = LogFactory.getLog(RemotePrintService.class);
 	private String uuid;
 	private String remoteName;
@@ -53,13 +56,17 @@ public class RemotePrintService implements PrintService {
 	private Map<String, PrintServiceAttribute> attributesPerCategory;
 	private Map<String, Object> defaultAttributes;
 	
-	
 	public RemotePrintService() {
+		super(new ByteArrayOutputStream());
 		remoteCategories = new ArrayList<Class<?>>();
 		remoteAttributes = new HashMap<String, Object>();
 		supportedDocFlavors = new DocFlavor[]{};
 		attributesPerCategory = new HashMap<String, PrintServiceAttribute>();
 		defaultAttributes = new HashMap<String, Object>();
+	}
+	
+	public RemotePrintService(OutputStream outputStream) {
+		super(outputStream);
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -351,6 +358,11 @@ public class RemotePrintService implements PrintService {
 	 */
 	public void setSupportedDocFlavors(DocFlavor[] supportedDocFlavors) {
 		this.supportedDocFlavors = supportedDocFlavors;
+	}
+
+	@Override
+	public String getOutputFormat() {
+		return "";
 	}
 
 }

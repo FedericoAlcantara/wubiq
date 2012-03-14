@@ -20,6 +20,7 @@ public class PageableWrapper implements Pageable, Serializable {
 	private List<PageFormatWrapper> pageFormats;
 	private List<PrintableWrapper> printables;
 	private transient Pageable original;
+	private transient boolean notSerialized = false;
 	
 	public PageableWrapper() {
 		pageFormats = new ArrayList<PageFormatWrapper>();
@@ -31,6 +32,9 @@ public class PageableWrapper implements Pageable, Serializable {
 		this();
 		numberOfPages = pageable.getNumberOfPages();
 		this.original = pageable;
+		if (pageable instanceof PageableWrapper) {
+			this.notSerialized = ((PageableWrapper)pageable).isNotSerialized();
+		}
 	}
 
 	@Override
@@ -53,6 +57,7 @@ public class PageableWrapper implements Pageable, Serializable {
 	}
 	
 	public void addPrintable(PrintableWrapper printable) {
+		printable.setNotSerialized(notSerialized);
 		printables.add(printable);
 	}
 	
@@ -62,5 +67,19 @@ public class PageableWrapper implements Pageable, Serializable {
 	
 	public Pageable getOriginal() {
 		return original;
+	}
+
+	/**
+	 * @return the notSerialized
+	 */
+	public boolean isNotSerialized() {
+		return notSerialized;
+	}
+
+	/**
+	 * @param notSerialized the notSerialized to set
+	 */
+	public void setNotSerialized(boolean notSerialized) {
+		this.notSerialized = notSerialized;
 	}
 }
