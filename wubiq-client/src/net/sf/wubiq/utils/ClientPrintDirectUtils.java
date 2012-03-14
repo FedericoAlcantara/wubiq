@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.utils;
 
+import java.awt.print.PageFormat;
+import java.awt.print.Paper;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
@@ -22,6 +24,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
 
 import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
 import net.sf.wubiq.wrappers.PrintableWrapper;
 
@@ -60,7 +63,7 @@ public final class ClientPrintDirectUtils {
 			if (printData != null) {
 				Doc doc = null;
 				// Set Request Attributes
-				printRequestAttributeSet.add(new JobName(jobId, Locale.getDefault()));
+				printRequestAttributeSet.add(new JobName("Remote Print:" + jobId, Locale.getDefault()));
 				// Create doc and printJob
 				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
 						docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
@@ -70,10 +73,30 @@ public final class ClientPrintDirectUtils {
 					printerJob.setPrintService(printService);
 					if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE)) {
 						PageableWrapper pageable = (PageableWrapper) input.readObject();
-						printerJob.setPageable(pageable);
+						PageableWrapper formattedPageable = new PageableWrapper();
+						formattedPageable.setNotSerialized(false);
+						for (int index = 0; index < pageable.getNumberOfPages(); index++) {
+							PrintableWrapper printable = (PrintableWrapper)pageable.getPrintable(index);
+							PageFormat originalPageFormat = pageable.getPageFormat(index);
+							Paper originalPaper = originalPageFormat.getPaper();
+							PageFormat newPageFormat = new PageFormat();
+							newPageFormat.setOrientation(originalPageFormat.getOrientation());
+							Paper newPaper = new Paper();
+							newPaper.setSize(originalPaper.getWidth(), originalPaper.getHeight());
+							newPaper.setImageableArea(originalPaper.getImageableX(), 
+									originalPaper.getImageableY(), 
+									originalPaper.getImageableWidth(), 
+									originalPaper.getHeight());
+							PageFormat formattedPageFormat = printerJob.defaultPage(newPageFormat);
+							formattedPageable.addPageFormat(new PageFormatWrapper(formattedPageFormat));
+							formattedPageable.addPrintable(printable);
+						}
+						formattedPageable.setNumberOfPages(pageable.getNumberOfPages());
+						printerJob.setPageable(formattedPageable);
 					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
+						PageFormat pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
-						printerJob.setPrintable(printable);
+						printerJob.setPrintable(printable, pageFormat);
 					}
 					printerJob.print(printRequestAttributeSet);
 				} else {
