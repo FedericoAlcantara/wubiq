@@ -1,5 +1,5 @@
 ======================
-Wubiq 1.0.182 (2012-03-14)
+Wubiq 1.0.183 (2012-03-14)
 ======================
 -Fixed issues with RenderingHints.
 -Fixed stroke issues.
