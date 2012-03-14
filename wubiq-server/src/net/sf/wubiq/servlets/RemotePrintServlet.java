@@ -17,7 +17,9 @@ import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.JobName;
+import javax.print.attribute.standard.MediaSizeName;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -527,18 +529,22 @@ public class RemotePrintServlet extends HttpServlet {
 		if (printService != null) {
 			PrintRequestAttributeSet requestAttributes = new HashPrintRequestAttributeSet();
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
+			requestAttributes.add(MediaSizeName.NA_LETTER);
+			requestAttributes.add(new Copies(1));
 			PrinterJobManager.initializePrinterJobManager();
 			PrinterJob printerJob = PrinterJob.getPrinterJob();
 			Pageable pageable = PdfUtils.INSTANCE.pdfToPageable(input);
-			printerJob.setPageable(pageable);
-			try {
-				printerJob.setPrintService(printService);
-				printerJob.print(requestAttributes);
-			} catch (PrinterException e) {
-				LOG.error(e.getMessage(), e);
-			} finally {
-				if (pageable != null && pageable instanceof PDDocument) {
-					((PDDocument)pageable).close();
+			synchronized(pageable) {
+				printerJob.setPageable(pageable);
+				try {
+					printerJob.setPrintService(printService);
+					printerJob.print(requestAttributes);
+				} catch (PrinterException e) {
+					LOG.error(e.getMessage(), e);
+				} finally {
+					if (pageable != null && pageable instanceof PDDocument) {
+						((PDDocument)pageable).close();
+					}
 				}
 			}
 			input.close();
