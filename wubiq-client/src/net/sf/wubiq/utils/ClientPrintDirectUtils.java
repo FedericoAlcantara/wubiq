@@ -87,14 +87,14 @@ public final class ClientPrintDirectUtils {
 									originalPaper.getImageableY(), 
 									originalPaper.getImageableWidth(), 
 									originalPaper.getHeight());
-							PageFormat formattedPageFormat = printerJob.defaultPage(newPageFormat);
+							PageFormat formattedPageFormat = PageableUtils.INSTANCE.getPageFormat(printerJob.defaultPage(newPageFormat), printRequestAttributeSet);
 							formattedPageable.addPageFormat(new PageFormatWrapper(formattedPageFormat));
 							formattedPageable.addPrintable(printable);
 						}
 						formattedPageable.setNumberOfPages(pageable.getNumberOfPages());
 						printerJob.setPageable(formattedPageable);
 					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
-						PageFormat pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
+						PageFormat pageFormat = PageableUtils.INSTANCE.getPageFormat(printerJob.getPageFormat(printRequestAttributeSet), printRequestAttributeSet);
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
 						printerJob.setPrintable(printable, pageFormat);
 					}
