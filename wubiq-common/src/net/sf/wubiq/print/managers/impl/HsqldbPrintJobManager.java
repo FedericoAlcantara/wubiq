@@ -22,6 +22,7 @@ import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.SimpleDoc;
 import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
 import net.sf.wubiq.print.jobs.RemotePrintJob;
@@ -72,6 +73,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 					"PRINT_SERVICE_NAME varchar(255) not null," +
 					"DOC_ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
 					"PRINT_REQUEST_ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
+					"PRINT_JOB_ATTRIBUTES varchar(" + Integer.MAX_VALUE + "), " +
 					"DOC_FLAVOR varchar(20), " +
 					"STATUS integer not null, " +
 					"PRINT_DATA binary(" + Integer.MAX_VALUE + ")," +
@@ -94,6 +96,10 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		ResultSet rs = null;
 		long returnValue = 0l;
 		try {
+			String docAttributeSet = PrintServiceUtils.serializeAttributes(remotePrintJob.getDocAttributeSet());
+			String printRequestAttributeSet = PrintServiceUtils.serializeAttributes(remotePrintJob.getPrintRequestAttributeSet());
+			String printJobAttributeSet = PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes());
+			String docFlavor = PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor());
 			InputStream inputStream = remotePrintJob.getPrintData();
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			int byteVal = -1;
@@ -112,18 +118,20 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 					"PRINT_SERVICE_NAME, " +
 					"DOC_ATTRIBUTES, " +
 					"PRINT_REQUEST_ATTRIBUTES, " +
+					"PRINT_JOB_ATTRIBUTES, " +
 					"DOC_FLAVOR, " +
 					"STATUS, " +
-					"PRINT_DATA) values (?,?,?,?,?,?,?,?)";
+					"PRINT_DATA) values (?,?,?,?,?,?,?,?,?)";
 			stmt = connection.prepareStatement(query);
 			stmt.setLong(1, returnValue);
 			stmt.setString(2, queueId);
 			stmt.setString(3, remotePrintJob.getPrintService().getName());
-			stmt.setString(4, PrintServiceUtils.serializeAttributes(remotePrintJob.getDocAttributeSet()));
-			stmt.setString(5, PrintServiceUtils.serializeAttributes(remotePrintJob.getPrintRequestAttributeSet()));
-			stmt.setString(6, PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor()));
-			stmt.setInt(7, RemotePrintJobStatus.NOT_PRINTED.ordinal());
-			stmt.setBytes(8, outputStream.toByteArray());
+			stmt.setString(4, docAttributeSet);
+			stmt.setString(5, printRequestAttributeSet);
+			stmt.setString(6, printJobAttributeSet);
+			stmt.setString(7, docFlavor);
+			stmt.setInt(8, RemotePrintJobStatus.NOT_PRINTED.ordinal());
+			stmt.setBytes(9, outputStream.toByteArray());
 			stmt.executeUpdate();
 			connection.commit();
 		} catch (SQLException e) {
@@ -173,6 +181,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 				String printServiceName = rs.getString("PRINT_SERVICE_NAME");
 				DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(rs.getString("DOC_ATTRIBUTES"));
 				PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(rs.getString("PRINT_REQUEST_ATTRIBUTES"));
+				PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(rs.getString("PRINT_JOB_ATTRIBUTES"));
 				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(rs.getString("DOC_FLAVOR"));
 				ByteArrayInputStream inputStream = new ByteArrayInputStream(rs.getBytes("PRINT_DATA"));
 				PrintService printService = PrintServiceUtils.findPrinter(printServiceName);
@@ -181,6 +190,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 					returnValue = (RemotePrintJob) printService.createPrintJob();
 					try {
 						returnValue.update(doc, printRequestAttributeSet);
+						returnValue.setAttributes(printJobAttributeSet);
 						returnValue.setDocFlavor(docFlavor);
 					} catch (PrintException e) {
 						LOG.error(e.getMessage(), e);

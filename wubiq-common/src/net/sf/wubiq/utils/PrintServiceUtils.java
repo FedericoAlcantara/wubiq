@@ -145,8 +145,9 @@ public class PrintServiceUtils {
 	 * @return a Copies instance or null.
 	 */
 	public static Copies findCopies(PrintService printService, Integer copiesCount) {
+		boolean supported = printService.isAttributeCategorySupported(Copies.class);
 		if (printService != null && copiesCount != null &&
-				printService.isAttributeCategorySupported(Copies.class)) {
+				supported) {
 			return new Copies(copiesCount);
 		} else {
 			return null;
@@ -353,6 +354,7 @@ public class PrintServiceUtils {
 		String returnValue = "";
 		try {
 			encoder.writeAttributes(attributes);
+			returnValue = stream.toString();
 		} catch (IOException e) {
 			returnValue = "";
 			LOG.error(e.getMessage(), e);
@@ -366,8 +368,10 @@ public class PrintServiceUtils {
 	 */
 	public static String serializeAttributes(AttributeSet attributeSet) {
 		Collection<Attribute>attributes = new HashSet<Attribute>();
-		for (Attribute attribute: attributeSet.toArray()) {
-			attributes.add(attribute);
+		if (attributeSet != null) {
+			for (Attribute attribute: attributeSet.toArray()) {
+				attributes.add(attribute);
+			}
 		}
 		return serializeAttributes(attributes);
 	}

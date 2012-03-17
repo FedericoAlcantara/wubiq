@@ -220,7 +220,8 @@ public class RemotePrintService extends StreamPrintService {
 	@Override
 	public boolean isAttributeCategorySupported(
 			Class<? extends Attribute> category) {
-		return getRemoteCategories().indexOf(category.getClass()) > -1;
+		int index = getRemoteCategories().indexOf(category);
+		return index > -1;
 	}
 
 	/**

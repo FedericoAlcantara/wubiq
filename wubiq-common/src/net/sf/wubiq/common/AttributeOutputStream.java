@@ -26,7 +26,6 @@ import org.apache.commons.logging.LogFactory;
  */
 public class AttributeOutputStream extends OutputStreamWriter {
 	private static final Log LOG = LogFactory.getLog(AttributeOutputStream.class);
-	
 	public AttributeOutputStream(OutputStream outputStream) {
 		super(outputStream);
 	}
@@ -38,7 +37,8 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	 */
 	public void writeAttribute(Attribute attribute) throws IOException {
 		StringBuffer data = convertAttributeToString(attribute); 
-		write(data.toString());
+		super.write(data.toString());
+		super.flush();
 	}
 
 	/** 
@@ -65,7 +65,8 @@ public class AttributeOutputStream extends OutputStreamWriter {
 				}
 			}
 		}
-		write(attributes.toString());
+		super.write(attributes.toString());
+		super.flush();
 	}
 	
 	/**

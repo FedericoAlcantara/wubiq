@@ -10,6 +10,7 @@ import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
+import java.awt.print.Paper;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.io.ByteArrayInputStream;
@@ -20,6 +21,12 @@ import java.io.ObjectOutputStream;
 import java.io.Reader;
 
 import javax.print.DocFlavor;
+import javax.print.attribute.Attribute;
+import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.OrientationRequested;
 
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
@@ -38,7 +45,7 @@ public enum PageableUtils {
 	public static final Log LOG = LogFactory.getLog(PageableUtils.class);
 	
 	public InputStream getStreamForBytes(Object printData, DocFlavor docFlavor, 
-			PageFormat pageFormat) throws IOException {
+			PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) throws IOException {
 		InputStream returnValue = null;
 		if (printData instanceof InputStream) {
 			returnValue = (InputStream)printData;
@@ -51,10 +58,10 @@ public enum PageableUtils {
 			returnValue = new ByteArrayInputStream(output.toByteArray());
 			output.close();
 		} else if (printData instanceof Pageable) {
-			returnValue = serializePageable((Pageable)printData);
+			returnValue = serializePageable((Pageable)printData, printRequestAttributes);
 			docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
 		} else if (printData instanceof Printable) {
-			returnValue = serializePrintable((Printable)printData, pageFormat);
+			returnValue = serializePrintable((Printable)printData, pageFormat, printRequestAttributes);
 			docFlavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
 		}
 		
@@ -66,14 +73,14 @@ public enum PageableUtils {
 	 * @param inputPageable Pageable to serialize.
 	 * @return Input stream representing the serialized pageable.
 	 */
-	private InputStream serializePageable(Pageable inputPageable) {
+	private InputStream serializePageable(Pageable inputPageable, PrintRequestAttributeSet printRequestAttributes) {
 		InputStream returnValue = null;
 		PageableWrapper pageable = new PageableWrapper(inputPageable);
 		int pageResult = Printable.PAGE_EXISTS;
 		int pageIndex = 0;
 		do {
 			try {
-				PageFormat originalPageFormat = pageable.getOriginal().getPageFormat(pageIndex);
+				PageFormat originalPageFormat = getPageFormat(pageable.getOriginal().getPageFormat(pageIndex), printRequestAttributes);
 				PageFormatWrapper pageFormat = new PageFormatWrapper(originalPageFormat);
 				PrintableWrapper printable = new PrintableWrapper(pageable.getOriginal().getPrintable(pageIndex));
 				printable.setNotSerialized(true);
@@ -108,12 +115,12 @@ public enum PageableUtils {
 	 * @param inputPageable Pageable to serialize.
 	 * @return Input stream representing the serialized pageable.
 	 */
-	private InputStream serializePrintable(Printable inputPrintable, PageFormat pageFormat) {
+	private InputStream serializePrintable(Printable inputPrintable, PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
 		InputStream returnValue = null;
 		PrintableWrapper printable = new PrintableWrapper(inputPrintable);
 		printable.setNotSerialized(true);
 		try {
-			printPrintable(printable, new PageFormatWrapper(getPageFormat(pageFormat)), 0);
+			printPrintable(printable, new PageFormatWrapper(getPageFormat(pageFormat, printRequestAttributes)), 0);
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			ObjectOutputStream output = new ObjectOutputStream(out);
 			output.writeObject(printable);
@@ -157,11 +164,83 @@ public enum PageableUtils {
 		return returnValue;
 	}
 
-	private PageFormat getPageFormat(PageFormat pageFormat) {
-		if (pageFormat != null) {
-			return pageFormat;
-		} else {
-			return new PageFormatWrapper(new PageFormat());
+	/**
+	 * Creates a pageformat according to the print request attributes.
+	 * @param printRequestAttributes Print requestAttributes
+	 * @return a new appropriate page format or null if print request does not contains enough information.
+	 */
+	public PageFormat getPageFormat(PrintRequestAttributeSet printRequestAttributes) {
+		PageFormat pageFormat = null; // Creates default page format.
+		if (printRequestAttributes != null) {
+			MediaSizeName mediaSizeName = null;
+			MediaPrintableArea mediaPrintableArea = null;
+			OrientationRequested orientation = null;
+			for (Attribute attribute : printRequestAttributes.toArray()) {
+				if (attribute instanceof MediaSizeName) {
+					mediaSizeName = (MediaSizeName)attribute;
+				} else if (attribute instanceof MediaPrintableArea) {
+					mediaPrintableArea = (MediaPrintableArea)attribute;
+				} else if (attribute instanceof OrientationRequested) {
+					orientation = (OrientationRequested)attribute;
+				}
+			}
+			if (mediaSizeName != null) {
+				if (orientation == null) {
+					orientation = OrientationRequested.PORTRAIT;
+				}
+				MediaSize mediaSize = MediaSize.getMediaSizeForName(mediaSizeName);
+				if (mediaSize != null) {
+					float width = mediaSize.getX(MediaSize.INCH);
+					float height = mediaSize.getY(MediaSize.INCH);
+					float x = 0;
+					float y = 0;
+					float printableWidth = width;
+					float printableHeight = height;
+					if (mediaPrintableArea != null) {
+						if (mediaPrintableArea.getX(MediaPrintableArea.INCH) + 
+								mediaPrintableArea.getWidth(MediaPrintableArea.INCH) <= width) {
+							x = mediaPrintableArea.getX(MediaPrintableArea.INCH);
+							printableWidth = mediaPrintableArea.getWidth(MediaPrintableArea.INCH);
+						}
+						if (mediaPrintableArea.getY(MediaPrintableArea.INCH) + 
+								mediaPrintableArea.getHeight(MediaPrintableArea.INCH) <= height) {
+							y = mediaPrintableArea.getY(MediaPrintableArea.INCH);
+							printableHeight = mediaPrintableArea.getHeight(MediaPrintableArea.INCH);
+						}
+					}
+					Paper paper = new Paper();
+					paper.setSize(width * 72, height * 72);
+					paper.setImageableArea(x * 72, y * 72, printableWidth * 72, printableHeight * 72);
+					pageFormat = new PageFormat();
+					pageFormat.setPaper(paper);
+					int pageOrientation = PageFormat.PORTRAIT;
+					if (orientation.equals(OrientationRequested.LANDSCAPE)) {
+						pageOrientation = PageFormat.LANDSCAPE;
+					} else if (orientation.equals(OrientationRequested.REVERSE_LANDSCAPE)) {
+						pageOrientation = PageFormat.REVERSE_LANDSCAPE;
+					}
+					pageFormat.setOrientation(pageOrientation);
+				}
+			}
 		}
+		return pageFormat;
 	}
+	
+	/**
+	 * Creates or return a page format.
+	 * @param pageFormat Page format to use as default.
+	 * @param printRequestAttributes Print request attributes.
+	 * @return A most appropriate page format. Never null.
+	 */
+	public PageFormat getPageFormat(PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
+		PageFormat returnValue = getPageFormat(printRequestAttributes);
+		if (returnValue == null) {
+			returnValue = pageFormat;
+		}
+		if (returnValue == null) {
+			returnValue = new PageFormat();
+		}
+		return returnValue;
+	}
+	
 }
