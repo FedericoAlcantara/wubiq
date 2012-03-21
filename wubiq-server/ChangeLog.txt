@@ -1,4 +1,8 @@
 ==========================
+Wubiq 1.0.188 (2012-03-21)
+==========================
+-Replace client printing engine with Doc instead of PrinterJob
+==========================
 Wubiq 1.0.186 (2012-03-16)
 ==========================
 -Fixed attributes to remotes.
