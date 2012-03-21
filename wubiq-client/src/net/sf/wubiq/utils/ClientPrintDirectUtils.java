@@ -5,8 +5,6 @@ package net.sf.wubiq.utils;
 
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
-import java.awt.print.PrinterException;
-import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -19,6 +17,7 @@ import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.SimpleDoc;
 import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
@@ -68,9 +67,6 @@ public final class ClientPrintDirectUtils {
 				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
 						docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
 					ObjectInputStream input = new ObjectInputStream(printData);
-					PrinterJob printerJob = PrinterJob.getPrinterJob();
-					printerJob.setJobName(jobId);
-					printerJob.setPrintService(printService);
 					if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE)) {
 						PageableWrapper pageable = (PageableWrapper) input.readObject();
 						PageableWrapper formattedPageable = new PageableWrapper();
@@ -87,33 +83,29 @@ public final class ClientPrintDirectUtils {
 									originalPaper.getImageableY(), 
 									originalPaper.getImageableWidth(), 
 									originalPaper.getHeight());
-							PageFormat formattedPageFormat = PageableUtils.INSTANCE.getPageFormat(printerJob.defaultPage(newPageFormat), printRequestAttributeSet);
+							PageFormat formattedPageFormat = PageableUtils.INSTANCE.getPageFormat(new PageFormat(), printRequestAttributeSet);
 							formattedPageable.addPageFormat(new PageFormatWrapper(formattedPageFormat));
 							formattedPageable.addPrintable(printable);
 						}
 						formattedPageable.setNumberOfPages(pageable.getNumberOfPages());
-						printerJob.setPageable(formattedPageable);
+						doc = new SimpleDoc(formattedPageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
-						PageFormat pageFormat = PageableUtils.INSTANCE.getPageFormat(printerJob.getPageFormat(printRequestAttributeSet), printRequestAttributeSet);
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
-						printerJob.setPrintable(printable, pageFormat);
+						doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
 					}
-					printerJob.print(printRequestAttributeSet);
 				} else {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
-					DocPrintJob printJob = printService.createPrintJob();
-					if (printJob instanceof RemotePrintJob) {
-						((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
-					}
-					printJob.print(doc, printRequestAttributeSet);
 				}
+				DocPrintJob printJob = printService.createPrintJob();
+				if (printJob instanceof RemotePrintJob) {
+					((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
+				}
+				printJob.print(doc, printRequestAttributeSet);
 			}
 				
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (ClassNotFoundException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
