@@ -30,6 +30,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.ColorSupported;
 import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.CopiesSupported;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaTray;
@@ -281,6 +282,9 @@ public class PrintServiceUtils {
 						}
 					}
 				}				
+			} else if (category.equals(Copies.class)) {
+				CopiesSupported copiesSupported = (CopiesSupported) printService.getSupportedAttributeValues(Copies.class, null, null);
+				addAttribute(returnValue, copiesSupported);
 			} else  {
 				Object attributeObject = printService.getSupportedAttributeValues(category, null, null);
 				if (attributeObject instanceof Attribute[]) {
@@ -679,6 +683,39 @@ public class PrintServiceUtils {
 		return returnValue.toString();
 	}
 
+	/**
+	 * Extract the copies count from the request attributes.
+	 * @param attributes Print request attributes.
+	 * @return Number of copies, at least 1.
+	 */
+	public static int getCopies(PrintRequestAttributeSet attributes) {
+		int returnValue = 1;
+		for (Attribute attribute : attributes.toArray()) {
+			if (attribute instanceof Copies) {
+				Copies copies = (Copies)attribute;
+				returnValue = copies.getValue();
+				if (returnValue < 1) {
+					returnValue = 1;
+				}
+			}
+		}
+		return returnValue;
+	}
+
+	/**
+	 * Removes the given category from the print request.
+	 * @param attributes Print request attributes.
+	 * @return a new Print request set of attributes without copies and related.
+	 */
+	public static PrintRequestAttributeSet removeCategoryAttribute(PrintRequestAttributeSet attributes, Class<? extends Attribute> category) {
+		PrintRequestAttributeSet returnValue = new HashPrintRequestAttributeSet();
+		for (Attribute attribute : attributes.toArray()) {
+			if (!attribute.getCategory().equals(category)) {
+				returnValue.add(attribute);
+			}
+		}
+		return returnValue;
+	}
 	
 	private static Map<String, String> getCompressionMap() {
 		if (compressionMap == null) {
@@ -792,5 +829,5 @@ public class PrintServiceUtils {
 		return docFlavorConversionMap;
 	}
 	
-
+	
 }

@@ -233,6 +233,14 @@ public class PrinterJobManager extends PrinterJob {
 		}
 	}
 
+	/**
+	 * Returns the JVM default printerjob instance that this 
+	 * one is replacing.
+	 * @return
+	 */
+	public PrinterJob getDefaultPrinterJob() {
+		return defaultPrinterJob;
+	}
 	
 	public static void initializePrinterJobManager() {
 		if (defaultPrinterJobClass == null) {

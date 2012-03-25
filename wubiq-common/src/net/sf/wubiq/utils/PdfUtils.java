@@ -12,8 +12,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.print.PrintException;
 
 import net.sf.wubiq.print.pdf.PdfImagePage;
+import net.sf.wubiq.print.pdf.PdfPageable;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -98,18 +100,34 @@ public enum PdfUtils {
 	 * @param printDocument Converts a pdf into a pageable.
 	 * @return A pageable object. Null if an error occurs. 
 	 */
-	public Pageable pdfToPageable(InputStream printDocument) {
-		PDDocument document = null;
+	public Pageable pdfToPageable(InputStream printDocument) throws PrintException {
+		Pageable pageable = null;
 		try {
-			document = PDDocument.load(printDocument);
+			PDDocument document = PDDocument.load(printDocument);
+			pageable = new PdfPageable(document);
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
 		}
-		return (Pageable)document;
+		return pageable;
 	}
 	
+	/**
+	 * Takes care of closing a PDDocument
+	 * @param document
+	 */
 	public void closePageable(Pageable pageable) {
-		if (pageable != null && pageable instanceof PDDocument) {
+		if (pageable instanceof PdfPageable) {
+			try {
+				((PdfPageable)pageable).close();
+			} catch (IOException e) {
+				LOG.error(e.getMessage());
+			}
+		}
+		if (pageable instanceof PDDocument) {
 			try {
 				((PDDocument)pageable).close();
 			} catch (IOException e) {
