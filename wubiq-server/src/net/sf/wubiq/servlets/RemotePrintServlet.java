@@ -14,6 +14,7 @@ import java.util.Date;
 import java.util.Locale;
 
 import javax.print.DocFlavor;
+import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
@@ -533,19 +534,25 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(new Copies(1));
 			PrinterJobManager.initializePrinterJobManager();
 			PrinterJob printerJob = PrinterJob.getPrinterJob();
-			Pageable pageable = PdfUtils.INSTANCE.pdfToPageable(input);
-			synchronized(pageable) {
-				printerJob.setPageable(pageable);
-				try {
-					printerJob.setPrintService(printService);
-					printerJob.print(requestAttributes);
-				} catch (PrinterException e) {
-					LOG.error(e.getMessage(), e);
-				} finally {
-					if (pageable != null && pageable instanceof PDDocument) {
-						((PDDocument)pageable).close();
+			Pageable pageable;
+			try {
+				pageable = PdfUtils.INSTANCE.pdfToPageable(input);
+				synchronized(pageable) {
+					printerJob.setPageable(pageable);
+					try {
+						printerJob.setPrintService(printService);
+						printerJob.print(requestAttributes);
+					} catch (PrinterException e) {
+						LOG.error(e.getMessage(), e);
+						throw new ServletException(e);
+					} finally {
+						if (pageable != null && pageable instanceof PDDocument) {
+							((PDDocument)pageable).close();
+						}
 					}
 				}
+			} catch (PrintException e) {
+				throw new ServletException(e);
 			}
 			input.close();
 			response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
