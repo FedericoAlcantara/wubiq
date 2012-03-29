@@ -1,7 +1,8 @@
 ==========================
-Wubiq 1.0.196 (2012-03-28)
+Wubiq 1.0.199 (2012-03-28)
 ==========================
 -TextPageable, to generate text reports that can be printed to anywhere easily
+-Version display.
 ==========================
 Wubiq 1.0.188 (2012-03-21)
 ==========================

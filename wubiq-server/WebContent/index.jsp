@@ -10,6 +10,7 @@
 <%@ page import="net.sf.wubiq.remote.RemoteClientManager" %>
 <%@ page import="net.sf.wubiq.utils.PrintServiceUtils" %>    
 <%@ page import="net.sf.wubiq.utils.ServerLabels" %>
+<%@ page import="net.sf.wubiq.utils.Labels" %>
 <script src="js/jquery.js"></script>
 <script src="js/deployJava.js"></script>
 <script>
@@ -67,6 +68,9 @@
 	<body>
 	<div align="center">
 		<table class="wubiq_header">
+			<tr>
+				<td align="center" colspan="3" ><%=ServerLabels.get("server.version", Labels.VERSION)%></td>
+			</tr>
 			<tr>
 				<td>
 					<form action="wubiq-android.apk">

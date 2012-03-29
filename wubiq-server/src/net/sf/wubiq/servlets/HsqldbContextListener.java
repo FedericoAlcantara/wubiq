@@ -10,6 +10,8 @@ import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.Labels;
+import net.sf.wubiq.utils.ServerLabels;
 import net.sf.wubiq.utils.ServerProperties;
 
 import org.hsqldb.Server;
@@ -37,6 +39,8 @@ public class HsqldbContextListener implements ServletContextListener {
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
 		Level level = getLevel("org");
+		Logger.getLogger(this.getClass().getName()).info(ServerLabels.get("server.version", Labels.VERSION));
+		Logger.getLogger(this.getClass().getName()).info("http://sourceforge.net/projects/wubiq\n");
 		hsqlServer = new Server();
 		hsqlServer.setDatabasePath(0, event.getServletContext().getRealPath("/WEB-INF/" + ServerProperties.getHsqldbDatabaseName()));
 		hsqlServer.setDatabaseName(0, ServerProperties.getHsqldbDbName());
