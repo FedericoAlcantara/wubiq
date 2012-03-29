@@ -42,6 +42,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	private Set<GraphicCommand> graphicCommands;
 	private int returnValue = 0;
 	private int printed = 0;
+	private boolean noScale = false;
 	private transient boolean notSerialized = false;
 	
 	public PrintableWrapper() {
@@ -54,6 +55,9 @@ public class PrintableWrapper implements Printable, Serializable {
 	 */
 	public PrintableWrapper(Printable printable) {
 		this.printable = printable;
+		if (printable.getClass().getName().endsWith(".TextPrintable")) {
+			noScale = true;
+		}
 		if (printable instanceof PrintableWrapper) {
 			this.notSerialized = ((PrintableWrapper)printable).notSerialized;
 		}
@@ -85,7 +89,9 @@ public class PrintableWrapper implements Printable, Serializable {
 				} else {
 					newScale.scale(x, y);
 				}
-				graph.setTransform(newScale);
+				if (!noScale) {
+					graph.setTransform(newScale);
+				}
 				executeGraphics(graph, pageFormat, x, y);
 				printed += 1;
 			} else {
