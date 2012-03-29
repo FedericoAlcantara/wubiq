@@ -31,6 +31,7 @@ import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientPrintDirectUtils;
 import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.cli.CommandLine;
@@ -681,6 +682,8 @@ public class LocalPrintManager implements Runnable {
 	 */
 	public static void main (String[] args) throws Exception {
 		LocalPrintManager manager = new LocalPrintManager();
+		System.out.println(ClientLabels.get("client.version", Labels.VERSION));
+		System.out.println("http://sourceforge.net/projects/wubiq\n");
 		Options options = new Options();
 		options.addOption("?", "help", false, ClientLabels.get("client.command_line_help"));
 		options.addOption("k", "kill", false, ClientLabels.get("client.command_line_kill"));
