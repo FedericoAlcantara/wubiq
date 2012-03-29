@@ -116,8 +116,8 @@ public enum PdfUtils {
 	}
 	
 	/**
-	 * Takes care of closing a PDDocument
-	 * @param document
+	 * Takes care of closing a PDDocument.
+	 * @param pageable Pageable (probably a PDDocument) to be closed.
 	 */
 	public void closePageable(Pageable pageable) {
 		if (pageable instanceof PdfPageable) {
