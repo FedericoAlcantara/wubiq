@@ -39,15 +39,17 @@ public class TextPrintable implements Printable {
 		Graphics2D graphics2D = (Graphics2D)graph;
 		graphics2D.setBackground(Color.WHITE);
 		graphics2D.setColor(Color.BLACK);
-		float xOffset = (float) (18f + format.getPaper().getImageableX());
-		float yOffset = (float) (30f + format.getPaper().getImageableY());
+		double xCurrentOffset = graphics2D.getTransform().getTranslateX();
+		double yCurrentOffset = graphics2D.getTransform().getTranslateY();
+		double xOffset = (18f + format.getPaper().getImageableX());
+		double yOffset = (30f + format.getPaper().getImageableY());
 		if (xOffset >= 36) {
 			xOffset -= 18f;
 		}
 		if (yOffset >= 60) {
 			yOffset -= 30;
 		}
-		graphics2D.translate(xOffset, yOffset);
+		graphics2D.translate(xOffset + xCurrentOffset, yOffset + yCurrentOffset);
 		for (TextField textField : textPageable.getTextLines()) {
 			if (textField.getPage() == pageIndex) {
 				oneFound = true;
