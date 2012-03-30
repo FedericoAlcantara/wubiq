@@ -1,4 +1,8 @@
 ==========================
+Wubiq 1.0.203 (2012-03-30)
+==========================
+-Text printing adjusted for taking into consideration printers' imageable area
+==========================
 Wubiq 1.0.201 (2012-03-28)
 ==========================
 -TextPageable, to generate text reports that can be printed to anywhere easily
