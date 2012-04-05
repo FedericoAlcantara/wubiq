@@ -1,4 +1,9 @@
 ==========================
+Wubiq 1.0.206 (2012-04-05)
+==========================
+-Improved performance in data transfer.
+-Added selectable font to TextPageable.
+==========================
 Wubiq 1.0.203 (2012-03-30)
 ==========================
 -Text printing adjusted for taking into consideration printers' imageable area
