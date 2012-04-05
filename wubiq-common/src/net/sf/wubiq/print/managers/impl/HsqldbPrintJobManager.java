@@ -28,6 +28,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerProperties;
@@ -102,12 +103,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			String docFlavor = PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor());
 			InputStream inputStream = remotePrintJob.getPrintData();
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			int byteVal = -1;
-			if (inputStream != null) {
-				while((byteVal = inputStream.read()) != -1) {
-					outputStream.write(byteVal);
-				}
-			}
+			IOUtils.INSTANCE.copy(inputStream, outputStream);
 			outputStream.close();
 			returnValue = getLastJobId() + 1;
 			connection = getConnection();

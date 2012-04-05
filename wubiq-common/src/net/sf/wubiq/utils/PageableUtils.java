@@ -51,10 +51,7 @@ public enum PageableUtils {
 			returnValue = (InputStream)printData;
 		} else if (printData instanceof Reader) {
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			int byteVal = -1;
-			while((byteVal = ((Reader)printData).read()) > -1) {
-				output.write(byteVal);
-			}
+			IOUtils.INSTANCE.copy(((Reader)printData), output);
 			returnValue = new ByteArrayInputStream(output.toByteArray());
 			output.close();
 		} else if (printData instanceof Pageable) {

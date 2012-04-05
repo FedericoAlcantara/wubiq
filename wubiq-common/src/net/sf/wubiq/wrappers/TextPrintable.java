@@ -68,7 +68,7 @@ public class TextPrintable implements Printable {
 	private void printField(Graphics2D graph, TextField textField) {
 		Map attributes = new HashMap();
 		float fontSize = textField.getFontSize() - 1f;
-		attributes.put(TextAttribute.FAMILY, Font.SANS_SERIF);
+		attributes.put(TextAttribute.FAMILY, textPageable.getDocumentFont());
 		attributes.put(TextAttribute.SIZE, fontSize);
 		attributes.put(TextAttribute.WEIGHT, TextAttribute.WEIGHT_EXTRA_LIGHT);
 		attributes.put(TextAttribute.WIDTH, TextAttribute.WIDTH_REGULAR);

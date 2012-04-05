@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.wrappers;
 
+import java.awt.Font;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Paper;
@@ -21,11 +22,12 @@ public class TextPageable implements Serializable, Pageable {
 	private int pageHeight;
 	private int top;
 	private int left;
+	private String documentFont;
 
 	private Set<TextField> textFields;
 
 	public TextPageable(){
-		
+		documentFont = Font.MONOSPACED;
 	}
 	
 	public TextPageable(Set<TextField> textFields) {
@@ -86,6 +88,20 @@ public class TextPageable implements Serializable, Pageable {
 	 */
 	public void setLeft(int left) {
 		this.left = left;
+	}
+
+	/**
+	 * @return the documentFont
+	 */
+	public String getDocumentFont() {
+		return documentFont;
+	}
+
+	/**
+	 * @param documentFont the documentFont to set
+	 */
+	public void setDocumentFont(String documentFont) {
+		this.documentFont = documentFont;
 	}
 
 	/**
