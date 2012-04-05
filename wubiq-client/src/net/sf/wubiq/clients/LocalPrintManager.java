@@ -30,6 +30,7 @@ import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientPrintDirectUtils;
 import net.sf.wubiq.utils.ClientProperties;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -407,10 +408,7 @@ public class LocalPrintManager implements Runnable {
 				} else if (connection.getContentType().equals("text/html")) {
 					InputStream inputStream = (InputStream) content;
 					ByteArrayOutputStream output = new ByteArrayOutputStream();
-					int readByte;
-					while ((readByte = inputStream.read()) > -1) {
-						output.write(readByte);
-					}
+					IOUtils.INSTANCE.copy(inputStream, output);
 					returnValue = new String(output.toByteArray());
 					output.close();
 					inputStream.close();
