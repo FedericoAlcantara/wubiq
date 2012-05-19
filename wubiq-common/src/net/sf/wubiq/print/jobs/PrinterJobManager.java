@@ -217,7 +217,11 @@ public class PrinterJobManager extends PrinterJob {
 	@Override
 	public void setPrintService(PrintService service) throws PrinterException {
 		this.service = service;
-		defaultPrinterJob.setPrintService(service);
+		try {
+			defaultPrinterJob.setPrintService(service);
+		} catch (Exception e) {
+			LOG.error(e.getMessage());
+		}
 	}
 
 
