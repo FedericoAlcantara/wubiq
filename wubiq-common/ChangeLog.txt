@@ -1,5 +1,5 @@
 ==========================
-Wubiq 1.0.213 (2012-05-19)
+Wubiq 1.0.220 (2012-05-19)
 ==========================
 -Fixed error in Android application.
 -Added support for new devices client development.
