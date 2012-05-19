@@ -13,9 +13,12 @@ import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Locale;
 
+import javax.print.Doc;
 import javax.print.DocFlavor;
+import javax.print.DocPrintJob;
 import javax.print.PrintException;
 import javax.print.PrintService;
+import javax.print.SimpleDoc;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
@@ -532,27 +535,38 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
-			PrinterJobManager.initializePrinterJobManager();
-			PrinterJob printerJob = PrinterJob.getPrinterJob();
-			Pageable pageable;
-			try {
-				pageable = PdfUtils.INSTANCE.pdfToPageable(input);
-				synchronized(pageable) {
-					printerJob.setPageable(pageable);
-					try {
-						printerJob.setPrintService(printService);
-						printerJob.print(requestAttributes);
-					} catch (PrinterException e) {
-						LOG.error(e.getMessage(), e);
-						throw new ServletException(e);
-					} finally {
-						if (pageable != null && pageable instanceof PDDocument) {
-							((PDDocument)pageable).close();
+			if ((printService instanceof RemotePrintService) &&
+					((RemotePrintService)printService).isMobile()) {
+				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
+				DocPrintJob printJob = printService.createPrintJob();
+				try {
+					printJob.print(doc, requestAttributes);
+				} catch (PrintException e) {
+					throw new ServletException(e);
+				}
+			} else {
+				PrinterJobManager.initializePrinterJobManager();
+				PrinterJob printerJob = PrinterJob.getPrinterJob();
+				Pageable pageable;
+				try {
+					pageable = PdfUtils.INSTANCE.pdfToPageable(input);
+					synchronized(pageable) {
+						printerJob.setPageable(pageable);
+						try {
+							printerJob.setPrintService(printService);
+							printerJob.print(requestAttributes);
+						} catch (PrinterException e) {
+							LOG.error(e.getMessage(), e);
+							throw new ServletException(e);
+						} finally {
+							if (pageable != null && pageable instanceof PDDocument) {
+								((PDDocument)pageable).close();
+							}
 						}
 					}
+				} catch (PrintException e) {
+					throw new ServletException(e);
 				}
-			} catch (PrintException e) {
-				throw new ServletException(e);
 			}
 			input.close();
 			response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
