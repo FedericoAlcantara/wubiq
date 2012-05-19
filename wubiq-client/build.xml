@@ -52,8 +52,8 @@
 	</target>
 	
 	<target name="create-common-jar" if="wubiq-common-exists">
-		<ant antfile="${basedir.common}/build.xml" dir="${basedir.common}" target="create-common-jar" 
-				inheritall="false" inheritrefs="false"/>
+		<!--  ant antfile="${basedir.common}/build.xml" dir="${basedir.common}" target="create-common-jar" 
+				inheritall="false" inheritrefs="false"/-->
 		<copy file="${basedir.common}/dist/wubiq-common.jar" todir="${lib}" />
 	</target>
 	
