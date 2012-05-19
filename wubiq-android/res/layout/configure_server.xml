@@ -36,8 +36,9 @@
         android:id="@+id/portField"
         android:layout_width="fill_parent"
         android:layout_height="wrap_content"
+        android:inputType="text"
         android:text="@string/server_port_default" >
-
+        
         <requestFocus />
     </EditText>
 
@@ -51,6 +52,7 @@
     <EditText
         android:id="@+id/clientUUIDField"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content" 
+        android:inputType="textCapCharacters" />
 
 </LinearLayout>

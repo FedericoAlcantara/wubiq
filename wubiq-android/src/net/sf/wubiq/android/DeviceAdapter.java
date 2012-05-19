@@ -73,9 +73,9 @@ public class DeviceAdapter extends BaseAdapter {
 	 */
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (position % 2 > 0) {
-			return spinners.get(new Integer(position / 2) + 1);
+			return spinners.get(Integer.valueOf(position / 2) + 1);
 		} else {
-			return texts.get(new Integer(position / 2));
+			return texts.get(Integer.valueOf(position / 2));
 		}
 	}
 

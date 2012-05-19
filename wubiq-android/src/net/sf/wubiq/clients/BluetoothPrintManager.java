@@ -28,7 +28,7 @@ import android.content.res.Resources;
  * @author Federico Alcantara
  *
  */
-public class BluetoothPrintManager extends LocalPrintManager {
+public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	SharedPreferences preferences;
 	Context context;
 	BluetoothAdapter bAdapter;
