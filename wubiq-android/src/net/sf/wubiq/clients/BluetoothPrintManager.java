@@ -17,6 +17,7 @@ import net.sf.wubiq.android.R;
 import net.sf.wubiq.android.WubiqActivity;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.utils.Labels;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -51,7 +52,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	protected void registerPrintServices() throws ConnectException {
 		registerComputerName();
 		// Gather printServices.
-		doLog("Register Print Services");
+		doLog("Register Print Services for Wubiq Android: " + Labels.VERSION);
 		if (bAdapter != null) {
 			for (BluetoothDevice device : bAdapter.getBondedDevices()) {
 				String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();

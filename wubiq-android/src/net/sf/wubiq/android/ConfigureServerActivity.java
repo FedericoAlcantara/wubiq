@@ -10,6 +10,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.os.Bundle;
 import android.widget.EditText;
+import android.widget.TableLayout;
 
 /**
  * Preferences for connecting to a wubiq-server
@@ -34,9 +35,10 @@ public class ConfigureServerActivity extends Activity {
 	 * Loads view with new or previously stored preferences.
 	 */
 	private void initialize() {
-		EditText host = (EditText) findViewById(R.id.hostField);
-		EditText port = (EditText) findViewById(R.id.portField);
-		EditText uuid = (EditText) findViewById(R.id.clientUUIDField);
+		TableLayout table = (TableLayout) findViewById(R.id.parametersTable);
+		EditText host = (EditText) table.findViewById(R.id.hostField);
+		EditText port = (EditText) table.findViewById(R.id.portField);
+		EditText uuid = (EditText) table.findViewById(R.id.clientUUIDField);
 		Resources resources = getResources();
 		host.setText(preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default)));
 		port.setText(preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default)));

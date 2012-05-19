@@ -1,13 +1,17 @@
 package net.sf.wubiq.android;
 
+import net.sf.wubiq.utils.Labels;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.ServiceConnection;
+import android.content.res.Resources;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.view.View;
+import android.widget.LinearLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 /**
@@ -43,6 +47,10 @@ public class WubiqActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
+        LinearLayout versionLayout = (LinearLayout) findViewById(R.id.versionLayout);
+		TextView version = (TextView) versionLayout.findViewById(R.id.version);
+		Resources resources = getResources();
+		version.setText(resources.getString(R.string.wubiq_version_title) + Labels.VERSION);
     }
     
     /**
