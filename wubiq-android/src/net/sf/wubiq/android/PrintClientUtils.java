@@ -53,7 +53,7 @@ public enum PrintClientUtils {
 					printStarMicronicsByteArray(deviceInfo, deviceAddress, printData);
 				}
 			}
-		} catch (IOException e) {
+		} catch (Exception e) {
 			e.printStackTrace();
 		}
 	}

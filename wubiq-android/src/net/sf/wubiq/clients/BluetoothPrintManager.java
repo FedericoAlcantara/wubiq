@@ -38,7 +38,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	public BluetoothPrintManager(Context context, SharedPreferences preferences) {
 		this.context = context;
 		this.preferences = preferences;
-		this.bAdapter = BluetoothAdapter.getDefaultAdapter();
+		this.bAdapter = getBAdapter();
 		setCheckPendingJobInterval(5000);
 		setPrintingJobInterval(1000);
 		setConnectionErrorRetries(3);
@@ -53,8 +53,8 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		registerComputerName();
 		// Gather printServices.
 		doLog("Register Print Services for Wubiq Android: " + Labels.VERSION);
-		if (bAdapter != null) {
-			for (BluetoothDevice device : bAdapter.getBondedDevices()) {
+		if (getBAdapter() != null) {
+			for (BluetoothDevice device : getBAdapter().getBondedDevices()) {
 				String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();
 				String selection = preferences.getString(deviceKey, null);
 				if (selection != null && !selection.equals("--")) {
@@ -90,8 +90,8 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") close print job.");
-		} catch (ConnectException e) {
-			throw e;
+		} catch (Exception e) {
+			e.printStackTrace();
 		} finally {
 			try {
 				if (stream != null) {
@@ -257,6 +257,18 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			compressionMap.put("sun.print.CustomMediaSizeName", "xSCMx");
 		}
 		return compressionMap;
+	}
+	
+	private BluetoothAdapter getBAdapter() {
+		if (bAdapter == null) {
+			try {
+				bAdapter = BluetoothAdapter.getDefaultAdapter();
+			} catch (Exception e) {
+				e.printStackTrace();
+				bAdapter = null;
+			}
+		}
+		return bAdapter;
 	}
 
 }
