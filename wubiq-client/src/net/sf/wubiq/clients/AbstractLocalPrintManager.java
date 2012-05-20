@@ -278,6 +278,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		} catch (IOException e) {
 			LOG.error(e.getMessage() + " " + url);
 			throw new ConnectException(e.getMessage());
+		} catch (Exception e) {
+			LOG.error(e.getMessage() + "->" + url);
 		} finally {			
 			if (reader != null) {
 				try {
