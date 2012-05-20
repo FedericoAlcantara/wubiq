@@ -448,6 +448,7 @@ public class PrintServiceUtils {
 			}
 		}
 	}
+	
 	/**
 	 * Returns true if print service is an instance of RemotePrintService.
 	 * However keep in mind that PrintService and RemotePrintService might be 
@@ -477,6 +478,34 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 	
+	/**
+	 * Returns true if print service is a Mobile Remote print service.
+	 * However keep in mind that PrintService and RemotePrintService might be 
+	 * loaded by different class loader thus not being registered as the
+	 * same instance.
+	 * @param printService PrintService to test.
+	 * @return True if the service is an instance of RemotePrintService. 
+	 */
+	public static boolean isMobilePrintService(PrintService printService) {
+		boolean returnValue = false;
+		try {
+			Method isMobileMethod = printService.getClass().getDeclaredMethod("isMobile", new Class[]{});
+			Boolean isMobile = ((Boolean) isMobileMethod.invoke(printService, new Object[]{}));
+			returnValue = isMobile;
+		} catch (SecurityException e) {
+			LOG.debug(e.getMessage());
+		} catch (NoSuchMethodException e) {
+			LOG.debug(e.getMessage());
+		} catch (IllegalArgumentException e) {
+			LOG.debug(e.getMessage());
+		} catch (IllegalAccessException e) {
+			LOG.debug(e.getMessage());
+		} catch (InvocationTargetException e) {
+			LOG.debug(e.getMessage());
+		}
+		
+		return returnValue;
+	}
 	/**
 	 * Serialize print service categories.
 	 * @param printService Print service to serialize
