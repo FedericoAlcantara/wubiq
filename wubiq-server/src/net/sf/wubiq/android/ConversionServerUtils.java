@@ -4,15 +4,13 @@
 package net.sf.wubiq.android;
 
 import java.awt.Color;
+import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.awt.image.PixelGrabber;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.List;
 
 import javax.imageio.ImageIO;
@@ -103,20 +101,47 @@ public enum ConversionServerUtils {
 			int maxHeight = new Double(img.getHeight() / rate).intValue();
 			returnValue = Scalr.resize(img, maxWidth, maxHeight);
 		}
-		OutputStream output;
-		try {
-			output = new FileOutputStream("/Users/federico/Desktop/Z-Borrame/image.png");
-			ImageIO.createImageOutputStream(output);
-		} catch (FileNotFoundException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		returnValue = bottomTrimmed(deviceInfo, returnValue);
 		return returnValue;
 	}
 
+	/**
+	 * Returns a trimmed at the bottom image.
+	 * @param img Image to be trimmed.
+	 * @return Trimmed image.
+	 */
+	protected BufferedImage bottomTrimmed(MobileDeviceInfo deviceInfo, BufferedImage img) {
+		int trimmedHeight = getTrimmedHeight(deviceInfo, img);
+		BufferedImage returnValue = new BufferedImage(img.getWidth(), 
+					trimmedHeight,
+                BufferedImage.TYPE_INT_RGB);
+		Graphics g = returnValue.createGraphics();
+        g.drawImage(img, 0, 0, null);
+        return returnValue;
+	}
+	
+	/**
+	 * Calculates the trimmed height of the image.
+	 * @param img Image to be calculated.
+	 * @return Actual minimun height.
+	 */
+	private int getTrimmedHeight(MobileDeviceInfo deviceInfo, BufferedImage img) {
+        int width = img.getWidth();
+        int height = img.getHeight();
+        int trimmedHeight = 0;
+        int bottomSpace = deviceInfo.getResolutionDpi() / 4;
+        for(int j = height - 1; j >= 0; j--) {
+            for(int i = 0; i < width; i++) {
+                if(img.getRGB(i, j) != Color.WHITE.getRGB() &&
+                        j > trimmedHeight) {
+                    trimmedHeight = j + 1;
+                    break;
+                }
+            }
+        }
+
+        return trimmedHeight + bottomSpace;
+    }
 	/**
 	 * Escape the image so that can be printed.
 	 * @param deviceInfo Target device.
