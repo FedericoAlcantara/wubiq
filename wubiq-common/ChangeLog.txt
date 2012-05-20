@@ -1,8 +1,9 @@
 ==========================
-Wubiq 1.0.220 (2012-05-19)
+Wubiq 1.0.236 (2012-05-19)
 ==========================
 -Fixed error in Android application.
 -Added support for new devices client development.
+-Implemented report bottom trimming for mobile devices.
 ==========================
 Wubiq 1.0.206 (2012-04-05)
 ==========================
