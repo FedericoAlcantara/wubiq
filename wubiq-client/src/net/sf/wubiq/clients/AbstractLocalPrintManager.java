@@ -453,6 +453,18 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	}
 
 	/**
+	 * @param checkPendingJobInterval the checkPendingJobInterval to set
+	 */
+	public void setCheckPendingJobInterval(String checkPendingJobIntervalStr) {
+		try {
+			this.checkPendingJobInterval = Long.parseLong(checkPendingJobIntervalStr);
+		}
+		catch (Exception e) {
+			doLog(e.getMessage());
+		}
+	}
+
+	/**
 	 * @return the printingJobInterval
 	 */
 	public long getPrintingJobInterval() {
@@ -464,6 +476,17 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	public void setPrintingJobInterval(long printingJobInterval) {
 		this.printingJobInterval = printingJobInterval;
+	}
+
+	/**
+	 * @param printingJobInterval the printingJobInterval to set
+	 */
+	public void setPrintingJobInterval(String printingJobIntervalStr) {
+		try {
+			this.printingJobInterval = Long.parseLong(printingJobIntervalStr);
+		} catch (Exception e) {
+			doLog(e.getMessage());
+		}
 	}
 
 	/**
