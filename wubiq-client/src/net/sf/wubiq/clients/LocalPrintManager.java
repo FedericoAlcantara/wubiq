@@ -206,8 +206,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		options.addOption("s", "servlet", true, ClientLabels.get("client.command_line_servlet"));
 		options.addOption("u", "uuid", true, ClientLabels.get("client.command_line_uuid"));
 		options.addOption("v", "verbose", false, ClientLabels.get("client.command_line_verbose"));
-		options.addOption("i", "interval", false, ClientLabels.get("client.command_line_interval"));
-		options.addOption("w", "wait", false, ClientLabels.get("client.command_line_wait"));
+		options.addOption("i", "interval", true, ClientLabels.get("client.command_line_interval"));
+		options.addOption("w", "wait", true, ClientLabels.get("client.command_line_wait"));
 		
 		initializeDefault(manager);
 		
