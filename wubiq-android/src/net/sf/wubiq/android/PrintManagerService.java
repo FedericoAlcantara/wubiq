@@ -9,6 +9,7 @@ import net.sf.wubiq.clients.BluetoothPrintManager;
 import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.Binder;
 import android.os.Handler;
 import android.os.IBinder;
@@ -24,6 +25,7 @@ public class PrintManagerService extends Service {
 
 	private static final String TAG = "PrintManagerService";
 	private Thread managerThread;
+	private Resources resources;
 	private SharedPreferences preferences;
 	private BluetoothPrintManager manager;
 	private boolean cancelManager;
@@ -53,6 +55,7 @@ public class PrintManagerService extends Service {
 	@Override
 	public void onCreate() {
 		super.onCreate();
+		resources = getResources();
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 		startPrintManager();
 	}
@@ -76,7 +79,7 @@ public class PrintManagerService extends Service {
 
 	private void startPrintManager() {
     	if (!cancelManager) {
-			manager = new BluetoothPrintManager(this, preferences);
+			manager = new BluetoothPrintManager(this, resources, preferences);
 	        managerThread = new Thread(manager);
 	        managerThread.start();
 			startTimer();

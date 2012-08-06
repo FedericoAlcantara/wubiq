@@ -30,18 +30,21 @@ import android.content.res.Resources;
  *
  */
 public class BluetoothPrintManager extends AbstractLocalPrintManager {
+	Resources resources;
 	SharedPreferences preferences;
 	Context context;
 	BluetoothAdapter bAdapter;
 	private Map<String, String> compressionMap;
 
-	public BluetoothPrintManager(Context context, SharedPreferences preferences) {
-		this.context = context;
+	public BluetoothPrintManager(Context context, Resources resources, SharedPreferences preferences) {
+		this.resources = resources;
 		this.preferences = preferences;
+		this.context = context;
 		this.bAdapter = getBAdapter();
-		setCheckPendingJobInterval(5000);
-		setPrintingJobInterval(1000);
-		setConnectionErrorRetries(3);
+
+		setCheckPendingJobInterval(preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default)));
+		setPrintingJobInterval(preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default)));
+		setConnectionErrorRetries(preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default)));
 		initializeDefault(this);
 	}
 	
@@ -74,8 +77,8 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	@Override
 	protected void processPendingJob(String jobId) throws ConnectException {
 		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
-		.append(ParameterKeys.PARAMETER_SEPARATOR)
-		.append(jobId);
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(jobId);
 		doLog("Process Pending Job:" + jobId);
 		InputStream stream = null;
 		try {
@@ -86,7 +89,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") stream:" + stream);
 			doLog("Job(" + jobId + ") print pdf");
-			PrintClientUtils.INSTANCE.print(context, printServiceName, stream);
+			PrintClientUtils.INSTANCE.print(context, printServiceName, stream, resources, preferences);
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") close print job.");

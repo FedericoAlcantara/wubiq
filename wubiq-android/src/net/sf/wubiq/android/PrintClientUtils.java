@@ -15,6 +15,8 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
 import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.util.Log;
 
 import com.starmicronics.stario.StarIOPort;
@@ -28,13 +30,18 @@ import com.starmicronics.stario.StarIOPortException;
 public enum PrintClientUtils {
 	INSTANCE;
 	private static final String TAG = "PrintClientUtils";
+	int printDelay = 500;
+	int printPause = 100; // Per each 1024 bytes
+	
 	/**
 	 * Prints the given input to the device, performing all required conversion steps.
 	 * @param context Android context.
 	 * @param deviceName Complete device name.
 	 * @param input Input data as a stream
 	 */
-	public void print(Context context, String deviceName, InputStream input) {
+	public void print(Context context, String deviceName, InputStream input, Resources resources, SharedPreferences preferences) {
+		printDelay = preferences.getInt(WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
+		printPause = preferences.getInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		String[] deviceData = deviceName.split(ParameterKeys.ATTRIBUTE_SET_SEPARATOR);
 		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2]);
@@ -50,7 +57,7 @@ public enum PrintClientUtils {
 				if (step.equals(MobileClientConversionStep.OUTPUT_BYTES)) {
 					printBytes(deviceInfo, deviceAddress, printData);
 				} else if (step.equals(MobileClientConversionStep.OUTPUT_SM_BYTES)) {
-					printStarMicronicsByteArray(deviceInfo, deviceAddress, printData);
+					printStarMicronicsByteArray(deviceInfo, deviceAddress, printData); // Does not print all the data
 				}
 			}
 		} catch (Exception e) {
@@ -73,7 +80,7 @@ public enum PrintClientUtils {
 			
 			try
 			{
-				Thread.sleep(500);
+				Thread.sleep(printDelay);
 			}
 			catch(InterruptedException e) {
 				e.printStackTrace();
@@ -81,7 +88,8 @@ public enum PrintClientUtils {
 			port.writePort(printData, 0, printData.length);
 			try
 			{
-				Thread.sleep(3000);
+				int sleepTime = (int) (printData.length / 1024.0 * printPause);
+				Thread.sleep(sleepTime);
 				return true;
 			}
 			catch(InterruptedException e) {
@@ -149,38 +157,50 @@ public enum PrintClientUtils {
 	        } catch (Exception e) {
 	        	Log.e(TAG, e.getMessage());
 	        	e.printStackTrace();
+	        	if (tmp != null) {
+	        		try {
+	        			tmp.close();
+	        		} catch(IOException ex) {
+	        			Log.d(TAG, ex.getMessage());
+	        		}
+	        	}
+	        	tmp = null;
 			}
 	        mmSocket = tmp;
 	    }
 	 
 	    public void run() {
-	        try {
-	            // Connect the device through the socket. This will block
-	            // until it succeeds or throws an exception
-	            mmSocket.connect();
-	        } catch (IOException connectException) {
-	            // Unable to connect; close the socket and get out
-	            try {
-	                mmSocket.close();
-	            } catch (IOException closeException) { 
-	            	Log.d(TAG, closeException.getMessage());
-	            }
-	            return;
-	        }
-	 
-	        // Do work to manage the connection (in a separate thread)
-	        ConnectedThread connectedThread = new ConnectedThread(mmSocket, printData);
-	        connectedThread.start();
+	    	if (mmSocket != null) {
+		    	try {
+		            // Connect the device through the socket. This will block
+		            // until it succeeds or throws an exception
+		            mmSocket.connect();
+		        } catch (IOException connectException) {
+		            // Unable to connect; close the socket and get out
+		            try {
+		                mmSocket.close();
+		            } catch (IOException closeException) { 
+		            	Log.d(TAG, closeException.getMessage());
+		            }
+		            return;
+		        }
+		 
+		        // Do work to manage the connection (in a separate thread)
+		        ConnectedThread connectedThread = new ConnectedThread(mmSocket, printData);
+		        connectedThread.start();
+	    	}
 	    }
 	 
 	}
 
 	private class ConnectedThread extends Thread {
+		private BluetoothSocket socket;
 	    private final OutputStream mmOutStream;
 	    private byte[] printData;
 	    
 	    public ConnectedThread(BluetoothSocket socket, byte[] printData) {
-	        this.printData = printData;
+	        this.socket = socket;
+	    	this.printData = printData;
 	        OutputStream tmpOut = null;
 	 
 	        // Get the input and output streams, using temp objects because
@@ -196,10 +216,40 @@ public enum PrintClientUtils {
 	 
 	    public void run() {
 	        try {
-	            mmOutStream.write(printData);
+	        	int start = 0;
+	        	int chunk = 4096;
+	        	while (start < printData.length) {
+	        		int count = (start + chunk) < printData.length ? chunk : printData.length - start;
+	        		mmOutStream.write(printData, start, count);
+	        		start += count;
+	    			try
+	    			{
+	    				Thread.sleep(printDelay);
+	    			}
+	    			catch(InterruptedException e) {
+	    				e.printStackTrace();
+	    			}
+	        	}
 	        } catch (IOException e) {
 	        	Log.e(TAG, e.getMessage());
 	        	e.printStackTrace();
+	        } finally {
+        		try {
+    				int sleepTime = (int) (printData.length / 1024.0 * printPause);
+					Thread.sleep(sleepTime);
+				} catch (InterruptedException e) {
+					Log.e(TAG, e.getMessage());
+				}
+	        	try {
+					mmOutStream.close();
+				} catch (IOException e) {
+					Log.d(TAG, e.getMessage());
+				}
+	        	try {
+					socket.close();
+				} catch (IOException e) {
+					Log.d(TAG, e.getMessage());
+				}
 	        }
 	    }
 	 

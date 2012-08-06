@@ -23,12 +23,18 @@ public class WubiqActivity extends Activity {
 	public static final String PREFERENCES = "WUBIQ_ANDROID";
 	public static final String HOST_KEY="server_host";
 	public static final String PORT_KEY="server_port";
+	public static final String PRINT_DELAY_KEY="print_delay";
+	public static final String PRINT_PAUSE_KEY="print_pause";
+	public static final String PRINT_POLL_INTERVAL_KEY="print_poll_interval";
+	public static final String PRINT_PAUSE_BETWEEN_JOBS_KEY="print_pause_between_jobs";
+	public static final String PRINT_CONNECTION_ERRORS_RETRY_KEY="print_error_retry";
 	public static final String UUID_KEY="client_uuid";
 	public static final String DEVICE_PREFIX = "wubiq-android-bt_";
 	
 	@SuppressWarnings("unused")
 	private PrintManagerService printManagerService;
 	private boolean printManagerServiceBound = false;
+	
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder binder) {
@@ -45,7 +51,8 @@ public class WubiqActivity extends Activity {
     /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
+        super.onCreate(savedInstanceState);		
+
         setContentView(R.layout.main);
         LinearLayout versionLayout = (LinearLayout) findViewById(R.id.versionLayout);
 		TextView version = (TextView) versionLayout.findViewById(R.id.version);
@@ -71,6 +78,11 @@ public class WubiqActivity extends Activity {
     	startActivity(intent);
     }
     
+    public void advancedConfiguration(View view) {
+    	Intent intent = new Intent(this, AdvancedConfigurationActivity.class);
+    	startActivity(intent);
+    }
+
     /**
      * Start print services.
      * @param view Calling view object.

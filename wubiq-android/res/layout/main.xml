@@ -31,6 +31,13 @@
         android:onClick="configureBluetooth"
         android:text="@string/configure_bluetooth" />
 
+    <Button
+        android:id="@+id/advancedConfiguration"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:onClick="advancedConfiguration"
+        android:text="@string/advanced_configuration" />
+
     <LinearLayout
         android:id="@+id/linearLayout1"
         android:layout_width="fill_parent"
