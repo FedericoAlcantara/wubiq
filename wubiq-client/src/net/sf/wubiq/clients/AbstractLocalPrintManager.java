@@ -56,9 +56,12 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	@Override
 	public void run() {
 		if (isKillManager()) {
+			LOG.info(ClientLabels.get("client.closing_local_manager"));
 			killManager();
-			System.out.println(ClientLabels.get("client.closing_local_manager"));
 		} else {
+			if (isActive()) {
+				killManager();
+			}
 			if (!isActive()) {
 				bringAlive();
 				setRefreshServices(true);
