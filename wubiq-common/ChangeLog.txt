@@ -1,7 +1,11 @@
 ==========================
+Wubiq 1.2 (2012-08-06)
+==========================
+-Android handles advanced settings.
+==========================
 Wubiq 1.1 (2012-07-19)
 ==========================
--Added interval and wait command line parameters
+-Added interval and wait command line parameters.
 ==========================
 Wubiq 1.0.236 (2012-05-19)
 ==========================
