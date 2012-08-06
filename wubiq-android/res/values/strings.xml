@@ -18,6 +18,7 @@
     <string name="service_stopped">Wubiq print services stopped</string>
     <string name="wubiq_version_title">Wubiq Android Version: </string>
     <string name="advanced_configuration">Advanced Configuration</string>
+    <string name="print_reset_default_values">Reset Default Values</string>
     <string name="print_delay">Print Delay(ms)</string>
     <string name="print_pause">Pause after Print(ms)</string>
     <string name="print_poll_interval">Print Jobs Poll Interval(ms)</string>
@@ -28,6 +29,5 @@
     <integer name="print_poll_interval_default">5000</integer>
     <integer name="print_pause_between_jobs_default">1000</integer>
     <integer name="print_connection_errors_retries_default">3</integer>
-    <string name="print_reset_default_values">Reset Default Values</string>
     
 </resources>
