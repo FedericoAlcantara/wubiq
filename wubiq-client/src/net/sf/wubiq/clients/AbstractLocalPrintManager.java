@@ -456,7 +456,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	}
 
 	/**
-	 * @param checkPendingJobInterval the checkPendingJobInterval to set
+	 * @param checkPendingJobIntervalStr the checkPendingJobInterval to set
 	 */
 	public void setCheckPendingJobInterval(String checkPendingJobIntervalStr) {
 		try {
@@ -482,7 +482,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	}
 
 	/**
-	 * @param printingJobInterval the printingJobInterval to set
+	 * @param printingJobIntervalStr the printingJobInterval to set
 	 */
 	public void setPrintingJobInterval(String printingJobIntervalStr) {
 		try {
