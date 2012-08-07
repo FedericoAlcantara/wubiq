@@ -131,7 +131,8 @@ public class RemotePrintServlet extends HttpServlet {
 		}
 		getRemoteClientManager(request).updateRemotes();
 		response.setContentType("text/html");
-		response.getWriter().print("killed");
+		
+		response.getWriter().print(backResponse(request, response, ServerLabels.get("server.client_killed", uuid)));
 	}
 	
 	/**
@@ -569,7 +570,8 @@ public class RemotePrintServlet extends HttpServlet {
 				}
 			}
 			input.close();
-			response.getWriter().print(ServerLabels.get("server.test_page_sent", printServiceName));
+			PrintWriter writer = response.getWriter();
+			writer.print(backResponse(request, response, ServerLabels.get("server.test_page_sent", printServiceName)));
 		} else {
 			response.setContentType("application/pdf");				
 			OutputStream output = response.getOutputStream();
@@ -612,4 +614,24 @@ public class RemotePrintServlet extends HttpServlet {
 		return RemoteClientManager.getRemoteClientManager(request);
 	}
 	
+	private String backResponse(HttpServletRequest request, HttpServletResponse response, String body) throws IOException {
+		StringBuffer returnValue = new StringBuffer("");
+		String protocol = request.getProtocol().substring(0, request.getProtocol().indexOf("/")).toLowerCase();
+		String address = request.getLocalName();
+		String port = Integer.toString(request.getLocalPort()).trim();
+		String context = request.getContextPath().substring(1);
+		String host = protocol + "://" + address;
+		
+		String url = host + ":" + port + "/" + context;
+		returnValue.append("<html>")
+			.append("<header>")
+			.append("<meta http-equiv=\"refresh\" content=\"3," + url + "\"/>")
+			.append("</header>")
+			.append("<body>")
+			.append(body)
+			.append("</body>")
+			.append("</html>");
+
+		return returnValue.toString();
+	}
 }

@@ -18,7 +18,8 @@
 		$.get(url, function(data) {
 			$("#output").html($(data).children());
 		});
-		//location.reload(true);
+		alert(url);
+		location.reload(true);
 	};
 </script>
 <%! 
@@ -112,8 +113,7 @@
 				continue;
 			}
 			boolean remote = remoteClient != null;
-			StringBuffer killClient = new StringBuffer("runServerCommand(")
-				.append('"')
+			StringBuffer killClient = new StringBuffer("")
 				.append(url)
 				.append('/')
 				.append("wubiq.do?")
@@ -123,16 +123,18 @@
 				.append('&')
 				.append(ParameterKeys.UUID)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(uuid)
-				.append('"')
-				.append(')');
+				.append(uuid);
 			%>
 			<table class="wubiq_s_table" id="wubiq_service_table_<%=clientCount%>">
 				<tr class="wubiq_s_table_tr" >
 					<th class="wubiq_s_table_th_title" colspan='<%=remote ? "1" : "3"%>' class="wubiq-client-title"><%=remote ? remoteClient.getComputerName() : ServerLabels.get("server.server_manager")%> </th>
 					<%if (remote) { %>
 						<th class="wubiq_s_table_th_uuid"><%=uuid%> </th>
-						<th class="wubiq_s_table_th_actions"><input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' /></th>
+						<th class="wubiq_s_table_th_actions">
+							<a href="<%=killClient.toString()%>">
+								<input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' />
+							</a>
+						</th>
 					<%}%>				 
 				</tr>
 				<tr class="wubiq_s_table_tr">
@@ -147,8 +149,7 @@
 			<%
 			int serviceCount = 0;
 			for (String[] serviceData : getPrintServices(uuid)) {
-				StringBuffer buffer = new StringBuffer("runServerCommand(")
-						.append('"')
+				StringBuffer buffer = new StringBuffer("")
 						.append(url)
 						.append('/')
 						.append("wubiq-print-test.do?")
@@ -165,16 +166,18 @@
 							.append(ParameterKeys.PARAMETER_SEPARATOR)
 							.append(serviceData[2]);
 						}
-						buffer.append('"')
-						.append(')');
 						
 				%>
 							<tr class="wubiq_sd_table_tr">
 								<td class="wubiq_sd_table_td_name"><%=serviceData[0]%></td>
 								<td class="wubiq_sd_table_td_remote"><%=serviceData[1]%></td>
-								<td class="wubiq_sd_table_td_actions"><input type="button" value='<%=ServerLabels.get("server.print_test_page")%>' 
-									onclick='<%=buffer.toString()%>' 
-									id='wubiq_testpage_button_<%=serviceCount++%>' /></td> 
+								<td class="wubiq_sd_table_td_actions">
+									<a href="<%=buffer.toString()%>">
+										<input style="width:100%" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
+											id='wubiq_testpage_button_<%=serviceCount++%>' />
+									</a>
+								</td>
+											 
 							</tr>
 				<%
 			}
