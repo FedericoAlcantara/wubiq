@@ -85,7 +85,21 @@ public enum PrintClientUtils {
 			catch(InterruptedException e) {
 				e.printStackTrace();
 			}
-			port.writePort(printData, 0, printData.length);
+        	int start = 0;
+        	int chunk = 4096;
+        	while (start < printData.length) {
+        		int count = (start + chunk) < printData.length ? chunk : printData.length - start;
+        		port.writePort(printData, start, count);
+        		start += count;
+    			try
+    			{
+    				Thread.sleep(printDelay);
+    			}
+    			catch(InterruptedException e) {
+    				e.printStackTrace();
+    			}
+        	}
+			
 			try
 			{
 				int sleepTime = (int) (printData.length / 1024.0 * printPause);
