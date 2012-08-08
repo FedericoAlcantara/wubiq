@@ -10,7 +10,7 @@ package net.sf.wubiq.common;
  */
 public final class WebKeys {
 	public static final String SHOW_SERVICES_TABLE_ID = "wubiq-print-services-table";
-	public static final String REMOTE_SERVICE_SEPARATOR = " @ ";
+	public static final String REMOTE_SERVICE_SEPARATOR = "@";
 	public static final String UUID_COOKIE_NAME = "wubiq-uuid-cookie";
 	public static final String REMOTE_CLIENT_MANAGER = "wubiq-remote-info-manager";
 	public static final String DEFAULT_APPLICATION_NAME="wubiq-server";

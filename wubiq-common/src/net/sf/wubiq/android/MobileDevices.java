@@ -53,21 +53,21 @@ public enum MobileDevices {
 	}
 
 	private void registerGenerics() {
-		devices.put("Generic - 2 in.", genericBw("2"));
-		devices.put("Generic - 3 in.", genericBw("3"));
-		devices.put("Generic - 4 in.", genericBw("4"));
+		devices.put("Generic 2 in", genericBw("2"));
+		devices.put("Generic 3 in", genericBw("3"));
+		devices.put("Generic 4 in", genericBw("4"));
 	}
 	
 	private void registerStarMicronics() {
-		devices.put("Star Micronics - 2 in.", starMicronics("2"));
-		devices.put("Star Micronics - 3 in.", starMicronics("3"));
-		devices.put("Star Micronics - 4 in.", starMicronics("4"));
+		devices.put("Star Micronics 2 in", starMicronics("2"));
+		devices.put("Star Micronics 3 in", starMicronics("3"));
+		devices.put("Star Micronics 4 in", starMicronics("4"));
 	}
 	
 	private void registerPortiS() {
-		devices.put("Porti-S - 2 in.", portiS("2"));
-		devices.put("Porti-S - 3 in.", portiS("3"));
-		devices.put("Porti-S - 4 in.", portiS("4"));
+		devices.put("Porti-S 2 in", portiS("2"));
+		devices.put("Porti-S 3 in", portiS("3"));
+		devices.put("Porti-S 4 in", portiS("4"));
 	}
 	
 	private MobileDeviceInfo genericBw(String width) {

@@ -700,9 +700,17 @@ public class PrintServiceUtils {
 	 * @return A cleaned (no strange characters) print service name.
 	 */
 	public static String cleanPrintServiceName(PrintService printService) {
+		return cleanPrintServiceName(printService.getName());
+	}
+
+	/**
+	 * @param printService Returns a cleaned print service name.
+	 * @return A cleaned (no strange characters) print service name.
+	 */
+	public static String cleanPrintServiceName(String printServiceName) {
 		StringBuffer returnValue = new StringBuffer("");
-		for (int index = 0; index < printService.getName().length(); index++) {
-			char charAt = printService.getName().charAt(index);
+		for (int index = 0; index < printServiceName.length(); index++) {
+			char charAt = printServiceName.charAt(index);
 			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".indexOf(charAt) >= 0) {
 				returnValue.append(charAt);
 			} else {

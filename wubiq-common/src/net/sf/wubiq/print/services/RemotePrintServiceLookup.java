@@ -47,7 +47,8 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 */
 	@Override
 	public PrintService[] getPrintServices() {
-		return getRemotePrintServices().toArray(new PrintService[getRemotePrintServices().size()]);
+		PrintService[] returnValue = getRemotePrintServices().toArray(new PrintService[getRemotePrintServices().size()]);
+		return returnValue;
 	}
 
 	/**
@@ -56,7 +57,8 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	@Override
 	public PrintService[] getPrintServices(DocFlavor flavor,
 			AttributeSet attributes) {
-		return getRemotePrintServices().toArray(new PrintService[getRemotePrintServices().size()]);
+		PrintService[] returnValue = getRemotePrintServices().toArray(new PrintService[getRemotePrintServices().size()]);
+		return returnValue;
 	}
 
 	/**

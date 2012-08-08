@@ -366,4 +366,12 @@ public class RemotePrintService extends StreamPrintService {
 		return "";
 	}
 
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "RemotePrintService [" + remoteName + WebKeys.REMOTE_SERVICE_SEPARATOR + uuid + "]";
+	}
+
 }
