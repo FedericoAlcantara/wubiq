@@ -704,7 +704,7 @@ public class PrintServiceUtils {
 	}
 
 	/**
-	 * @param printService Returns a cleaned print service name.
+	 * @param printServiceName Returns a cleaned print service name.
 	 * @return A cleaned (no strange characters) print service name.
 	 */
 	public static String cleanPrintServiceName(String printServiceName) {
