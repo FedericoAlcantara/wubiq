@@ -285,7 +285,9 @@ public class RemotePrintServlet extends HttpServlet {
 			remotePrintService.setRemoteName(serviceName);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
 			remotePrintService.setMobile(true);
-			remotePrintService.setSupportedDocFlavors(new DocFlavor[]{PrintServiceUtils.DEFAULT_DOC_FLAVOR});
+			remotePrintService.setSupportedDocFlavors(new DocFlavor[]{PrintServiceUtils.DEFAULT_DOC_FLAVOR, 
+					DocFlavor.SERVICE_FORMATTED.PAGEABLE, 
+					DocFlavor.SERVICE_FORMATTED.PRINTABLE});
 			getRemoteClientManager(request).validateRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
 			response.setContentType("text/html");

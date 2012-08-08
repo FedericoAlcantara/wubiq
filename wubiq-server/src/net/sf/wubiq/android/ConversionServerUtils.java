@@ -39,7 +39,7 @@ public enum ConversionServerUtils {
 		InputStream returnValue = null;
 		String[] deviceData = deviceName.split(ParameterKeys.ATTRIBUTE_SET_SEPARATOR);
 		Object convertedValue = pdf;
-		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2]); 
+		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2].replaceAll("_", " ")); 
 		for (MobileServerConversionStep step : deviceInfo.getServerSteps()) {
 			if (step.equals(MobileServerConversionStep.PDF_TO_IMAGE)) {
 				convertedValue = pdfToImg(deviceInfo, (InputStream)convertedValue);
@@ -92,7 +92,7 @@ public enum ConversionServerUtils {
 	 */
 	protected BufferedImage adjustToSize(MobileDeviceInfo deviceInfo,
 			BufferedImage img) {
-		BufferedImage returnValue = img;
+		BufferedImage returnValue = trimmed(deviceInfo, img);
 		int maxWidth = deviceInfo.getMaxHorPixels();
 		int width = img.getWidth();
 		// Let's resize it
@@ -101,7 +101,7 @@ public enum ConversionServerUtils {
 			int maxHeight = new Double(img.getHeight() / rate).intValue();
 			returnValue = Scalr.resize(img, maxWidth, maxHeight);
 		}
-		returnValue = bottomTrimmed(deviceInfo, returnValue);
+		//returnValue = trimmed(deviceInfo, returnValue);
 		return returnValue;
 	}
 
@@ -110,9 +110,10 @@ public enum ConversionServerUtils {
 	 * @param img Image to be trimmed.
 	 * @return Trimmed image.
 	 */
-	protected BufferedImage bottomTrimmed(MobileDeviceInfo deviceInfo, BufferedImage img) {
+	protected BufferedImage trimmed(MobileDeviceInfo deviceInfo, BufferedImage img) {
 		int trimmedHeight = getTrimmedHeight(deviceInfo, img);
-		BufferedImage returnValue = new BufferedImage(img.getWidth(), 
+		int trimmedWidth = getTrimmedWidth(deviceInfo, img, trimmedHeight);
+		BufferedImage returnValue = new BufferedImage(trimmedWidth, 
 					trimmedHeight,
                 BufferedImage.TYPE_INT_RGB);
 		Graphics g = returnValue.createGraphics();
@@ -130,18 +131,44 @@ public enum ConversionServerUtils {
         int height = img.getHeight();
         int trimmedHeight = 0;
         int bottomSpace = deviceInfo.getResolutionDpi() / 4;
+        outer:
         for(int j = height - 1; j >= 0; j--) {
             for(int i = 0; i < width; i++) {
                 if(img.getRGB(i, j) != Color.WHITE.getRGB() &&
                         j > trimmedHeight) {
                     trimmedHeight = j + 1;
-                    break;
+                    break outer;
                 }
             }
         }
 
         return trimmedHeight + bottomSpace;
     }
+
+	/**
+	 * Calculates the trimmed height of the image.
+	 * @param img Image to be calculated.
+	 * @return Actual minimun height.
+	 */
+	private int getTrimmedWidth(MobileDeviceInfo deviceInfo, BufferedImage img, int actualHeight) {
+        int width = img.getWidth();
+        int trimmedHeight = img.getHeight() > actualHeight ? actualHeight : img.getHeight();
+        int trimmedWidth = 0;
+        int rightSpace = deviceInfo.getResolutionDpi() / 4;
+        outer:
+        for(int j = width - 1; j >= 0; j--) {
+            for(int i = 0; i < trimmedHeight; i++) {
+                if(img.getRGB(j, i) != Color.WHITE.getRGB() &&
+                        j > trimmedWidth) {
+                    trimmedWidth = j + 1;
+                    break outer;
+                }
+            }
+        }
+
+        return trimmedWidth + rightSpace;
+    }
+
 	/**
 	 * Escape the image so that can be printed.
 	 * @param deviceInfo Target device.
