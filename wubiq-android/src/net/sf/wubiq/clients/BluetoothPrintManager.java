@@ -7,6 +7,7 @@ package net.sf.wubiq.clients;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -35,12 +36,15 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	Context context;
 	BluetoothAdapter bAdapter;
 	private Map<String, String> compressionMap;
+	private Map<String, BluetoothDevice> printServicesName;
+
 
 	public BluetoothPrintManager(Context context, Resources resources, SharedPreferences preferences) {
 		this.resources = resources;
 		this.preferences = preferences;
 		this.context = context;
 		this.bAdapter = getBAdapter();
+		printServicesName = new HashMap<String, BluetoothDevice>();
 
 		setCheckPendingJobInterval(preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default)));
 		setPrintingJobInterval(preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default)));
@@ -62,6 +66,9 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				String selection = preferences.getString(deviceKey, null);
 				if (selection != null && !selection.equals("--")) {
 					StringBuffer printServiceRegister = new StringBuffer(serializeServiceName(device, selection));
+					printServicesName.put(printServiceRegister.toString(), device);
+					printServiceRegister.insert(0, ParameterKeys.PARAMETER_SEPARATOR);
+					printServiceRegister.insert(0, ParameterKeys.PRINT_SERVICE_NAME);
 					StringBuffer categories = new StringBuffer(serializePrintServiceCategories(device));
 					categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 							.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
@@ -89,7 +96,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") stream:" + stream);
 			doLog("Job(" + jobId + ") print pdf");
-			PrintClientUtils.INSTANCE.print(context, printServiceName, stream, resources, preferences);
+			PrintClientUtils.INSTANCE.print(context, printServiceName, stream, resources, preferences, printServicesName);
 			doLog("Job(" + jobId + ") printed.");
 			askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 			doLog("Job(" + jobId + ") close print job.");
@@ -138,13 +145,12 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	}
 	
 	private String serializeServiceName(BluetoothDevice device, String selection) {
-		StringBuffer printServiceRegister = new StringBuffer(ParameterKeys.PRINT_SERVICE_NAME)
-			.append(ParameterKeys.PARAMETER_SEPARATOR)
-			.append(device.getName())
+		StringBuffer printServiceRegister = new StringBuffer("")
+			.append(cleanPrintServiceName(device.getName()))
 			.append(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)
 			.append(device.getAddress())
 			.append(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)
-			.append(selection);
+			.append(cleanPrintServiceName(selection));
 		return printServiceRegister.toString();
 	}
 	
@@ -273,5 +279,23 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		}
 		return bAdapter;
 	}
+	
+	/**
+	 * @param printService Returns a cleaned print service name.
+	 * @return A cleaned (no strange characters) print service name.
+	 */
+	private String cleanPrintServiceName(String printServiceName) {
+		StringBuffer returnValue = new StringBuffer("");
+		for (int index = 0; index < printServiceName.length(); index++) {
+			char charAt = printServiceName.charAt(index);
+			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".indexOf(charAt) >= 0) {
+				returnValue.append(charAt);
+			} else {
+				returnValue.append("_");
+			}
+		}
+		return returnValue.toString();
+	}
+
 
 }

@@ -8,9 +8,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.lang.reflect.Method;
+import java.util.Map;
 import java.util.UUID;
 
-import net.sf.wubiq.common.ParameterKeys;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.bluetooth.BluetoothSocket;
@@ -39,13 +39,16 @@ public enum PrintClientUtils {
 	 * @param deviceName Complete device name.
 	 * @param input Input data as a stream
 	 */
-	public void print(Context context, String deviceName, InputStream input, Resources resources, SharedPreferences preferences) {
+	public void print(Context context, String printServiceName, InputStream input, Resources resources, 
+			SharedPreferences preferences, Map<String, BluetoothDevice> printServicesName) {
 		printDelay = preferences.getInt(WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
 		printPause = preferences.getInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		String[] deviceData = deviceName.split(ParameterKeys.ATTRIBUTE_SET_SEPARATOR);
-		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2]);
-		String deviceAddress = deviceData[1];
+		BluetoothDevice device = printServicesName.get(printServiceName);
+		String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();
+		String selection = preferences.getString(deviceKey, null);
+		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(selection);
+		String deviceAddress = device.getAddress();
 		try {
 			byte[] b = new byte[16 * 1024];  
 			int read;  
