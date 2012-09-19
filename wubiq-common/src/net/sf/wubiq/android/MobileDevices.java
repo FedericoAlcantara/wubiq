@@ -31,9 +31,10 @@ public enum MobileDevices {
 		if (devices == null) {
 			devices = new LinkedHashMap<String, MobileDeviceInfo>();
 			registerBlank();
+			registerDataMax();
 			registerGenerics();
-			registerStarMicronics();
 			registerPortiS();
+			registerStarMicronics();
 		}
 		return devices;
 	}
@@ -52,22 +53,29 @@ public enum MobileDevices {
 		devices.put("--", device);
 	}
 
+	private void registerDataMax() {
+		devices.put("DataMax Apex 2 in", dataMax("2"));
+		devices.put("DataMax Apex 3 in", dataMax("3"));
+		devices.put("DataMax Apex 4 in", dataMax("4"));
+		devices.put("DataMax Andes 3 in", dataMax("3", "Andes"));
+	}
+	
 	private void registerGenerics() {
 		devices.put("Generic 2 in", genericBw("2"));
 		devices.put("Generic 3 in", genericBw("3"));
 		devices.put("Generic 4 in", genericBw("4"));
 	}
 	
-	private void registerStarMicronics() {
-		devices.put("Star Micronics 2 in", starMicronics("2"));
-		devices.put("Star Micronics 3 in", starMicronics("3"));
-		devices.put("Star Micronics 4 in", starMicronics("4"));
-	}
-	
 	private void registerPortiS() {
 		devices.put("Porti-S 2 in", portiS("2"));
 		devices.put("Porti-S 3 in", portiS("3"));
 		devices.put("Porti-S 4 in", portiS("4"));
+	}
+	
+	private void registerStarMicronics() {
+		devices.put("Star Micronics 2 in", starMicronics("2"));
+		devices.put("Star Micronics 3 in", starMicronics("3"));
+		devices.put("Star Micronics 4 in", starMicronics("4"));
 	}
 	
 	private MobileDeviceInfo genericBw(String width) {
@@ -134,4 +142,42 @@ public enum MobileDevices {
 		device.setCompatibleDevices(compatibleDevices);
 		return device;
 	}
+	
+	/**
+	 * Device definition for apex line of mobile printers.
+	 * @param width Width of the device.
+	 * @return A instance of Mobile device info.
+	 */
+	private MobileDeviceInfo dataMax(String width) {
+		return dataMax(width, "Apex");
+	}
+	
+	/**
+	 * Device definition for apex line of mobile printers.
+	 * @param width Width of the device.
+	 * @return A instance of Mobile device info.
+	 */
+	private MobileDeviceInfo dataMax(String width, String name) {
+		MobileDeviceInfo device = new MobileDeviceInfo();
+		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
+		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
+		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
+		Collection<String> compatibleDevices = new ArrayList<String>();
+		device.setName(name + " -" + width + " in.");
+		device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
+		device.setColorCapable(false);
+		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
+		serverSteps.add(MobileServerConversionStep.RESIZE);
+		serverSteps.add(MobileServerConversionStep.IMAGE_TO_BIT_LINE);
+		clientSteps.add(MobileClientConversionStep.OUTPUT_BYTES);
+		hints.put(MobileConversionHint.INITIALIZE_PRINTER, new byte[]{});
+		hints.put(MobileConversionHint.PRINT_DEFINED_BITMAP, new byte[]{0x1b, 0x56, 0x01, 0x00});
+		compatibleDevices.add(name + " -" + width + " in.");
+		device.setServerSteps(serverSteps);
+		device.setClientSteps(clientSteps);
+		device.setHints(hints);
+		device.setCompatibleDevices(compatibleDevices);
+		return device;
+	}
+
 }

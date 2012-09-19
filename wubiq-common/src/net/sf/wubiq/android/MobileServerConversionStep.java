@@ -10,5 +10,5 @@ package net.sf.wubiq.android;
  *
  */
 public enum MobileServerConversionStep {
-	PDF_TO_IMAGE, RESIZE, IMAGE_TO_ESCAPED;
+	PDF_TO_IMAGE, RESIZE, IMAGE_TO_ESCAPED, IMAGE_TO_BIT_LINE;
 }
