@@ -17,10 +17,18 @@ import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.starmicronics.stario.StarIOPort;
 import com.starmicronics.stario.StarIOPortException;
+import com.zebra.android.comm.BluetoothPrinterConnection;
+import com.zebra.android.comm.ZebraPrinterConnection;
+import com.zebra.android.comm.ZebraPrinterConnectionException;
+import com.zebra.android.printer.ZebraPrinter;
+import com.zebra.android.printer.ZebraPrinterFactory;
+import com.zebra.android.printer.ZebraPrinterLanguageUnknownException;
 
 /**
  * Handles the necessary steps for printing on the client.
@@ -61,6 +69,8 @@ public enum PrintClientUtils {
 					printBytes(deviceInfo, deviceAddress, printData);
 				} else if (step.equals(MobileClientConversionStep.OUTPUT_SM_BYTES)) {
 					printStarMicronicsByteArray(deviceInfo, deviceAddress, printData); // Does not print all the data
+				} else if (step.equals(MobileClientConversionStep.OUTPUT_ZEBRA_IMAGE)) {
+					printZebraImage(deviceInfo, deviceAddress, printData);
 				}
 			}
 		} catch (Exception e) {
@@ -269,6 +279,40 @@ public enum PrintClientUtils {
 				}
 	        }
 	    }
-	 
+	}
+	
+	/**
+	 * Prints an image to a zebra printer.
+	 * @param deviceInfo Device to be connected to.
+	 * @param deviceAddress Address of the device
+	 * @param printData Data to be printed.
+	 * @return true if printing was okey.
+	 */
+	private boolean printZebraImage(MobileDeviceInfo deviceInfo, String deviceAddress, byte[] printData) {
+		Bitmap bitmap = BitmapFactory.decodeByteArray(printData, 0, printData.length);
+		boolean returnValue = true;
+		ZebraPrinterConnection connection = null;
+		try {
+			connection = new BluetoothPrinterConnection(deviceAddress);
+			connection.open();
+            ZebraPrinter printer = ZebraPrinterFactory.getInstance(connection);
+            printer.getGraphicsUtil().printImage(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), false);
+		} catch (ZebraPrinterConnectionException e) {
+			returnValue = false;
+			e.printStackTrace();
+		} catch (ZebraPrinterLanguageUnknownException e) {
+			returnValue = false;
+			Log.e(TAG, e.getMessage());
+		} finally {
+			try {
+				if (connection != null) {
+					connection.close();
+				}
+			} catch (ZebraPrinterConnectionException e) {
+				Log.e(TAG, e.getMessage());
+			}
+		}
+		return returnValue;
+		
 	}
 }
