@@ -35,6 +35,7 @@ public enum MobileDevices {
 			registerGenerics();
 			registerPortiS();
 			registerStarMicronics();
+			registerZebra(); 
 		}
 		return devices;
 	}
@@ -76,6 +77,11 @@ public enum MobileDevices {
 		devices.put("Star Micronics 2 in", starMicronics("2"));
 		devices.put("Star Micronics 3 in", starMicronics("3"));
 		devices.put("Star Micronics 4 in", starMicronics("4"));
+	}
+
+	private void registerZebra() {
+		devices.put("Zebra MZ220 2 in", zebra("2", "Zebra MZ220"));
+		devices.put("Zebra MZ320 3 in", zebra("3", "Zebra MZ320"));
 	}
 	
 	private MobileDeviceInfo genericBw(String width) {
@@ -180,4 +186,39 @@ public enum MobileDevices {
 		return device;
 	}
 
+	/**
+	 * Device definition for zebra line of mobile printers.
+	 * @param width Width of the device.
+	 * @return A instance of Mobile device info.
+	 */
+	private MobileDeviceInfo zebra(String width, String name) {
+		MobileDeviceInfo device = new MobileDeviceInfo();
+		ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
+		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
+		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
+		Collection<String> compatibleDevices = new ArrayList<String>();
+		device.setName(name + " -" + width + " in.");
+		//device.setResolutionDpi(200);
+		device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
+		device.setColorCapable(false);
+		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
+		serverSteps.add(MobileServerConversionStep.RESIZE);
+		//serverSteps.add(MobileServerConversionStep.IMAGE_TO_BITMAP);
+		//clientSteps.add(MobileClientConversionStep.OUTPUT_ZEBRA_IMAGE);
+
+		
+		serverSteps.add(MobileServerConversionStep.IMAGE_TO_PCX);
+		clientSteps.add(MobileClientConversionStep.OUTPUT_ZEBRA_BYTES);
+		hints.put(MobileConversionHint.INITIALIZE_PRINTER, "! U1 setvar \"device.languages\" \"CPCL\"\r\n! 0 200 200 {height} 1\r\nPCX 0 0\r\n");
+		hints.put(MobileConversionHint.FINALIZE_PRINTER, "\r\nPRINT\r\n");
+		hints.put(MobileConversionHint.MAX_IMAGE_HEIGHT, 500);
+		
+		
+		compatibleDevices.add(name + " -" + width + " in.");
+		device.setServerSteps(serverSteps);
+		device.setClientSteps(clientSteps);
+		device.setHints(hints);
+		device.setCompatibleDevices(compatibleDevices);
+		return device;
+	}
 }

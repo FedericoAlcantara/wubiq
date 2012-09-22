@@ -1,4 +1,9 @@
 ==========================
+Wubiq 1.5 (2012-09-22)
+==========================
+-Android added support for bluetooth printers: Zebra MZ series, Datamax - O'Neil Apex/Andes Series.
+-Published in google play.
+==========================
 Wubiq 1.4 (2012-08-08)
 ==========================
 -Improved printing quality for mobile printer from Crystal Reports.
