@@ -34,6 +34,8 @@ public abstract class BaseImageConversion {
 	 * Escape sequence to initialize the printer.
 	 * @param deviceInfo Target device
 	 * @param printData Print data to be outputted.
+	 * @param width Width of the image.
+	 * @param height Height of the image.
 	 */
 	protected void initializePrinter(MobileDeviceInfo deviceInfo, ByteArrayOutputStream printData, int width, int height) {
 		Object initializePrinter = null;

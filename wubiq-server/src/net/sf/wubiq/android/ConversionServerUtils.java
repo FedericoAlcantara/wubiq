@@ -52,6 +52,15 @@ public enum ConversionServerUtils {
 			if (step.equals(MobileServerConversionStep.IMAGE_TO_BIT_LINE)) {
 				convertedValue = ImageToBitLine.convert(deviceInfo, (BufferedImage)convertedValue);
 			}
+			if (step.equals(MobileServerConversionStep.IMAGE_TO_BITMAP)) {
+				convertedValue = ImageToBitmap.convert(deviceInfo, (BufferedImage)convertedValue);
+			}
+			if (step.equals(MobileServerConversionStep.IMAGE_TO_HEX)) {
+				convertedValue = ImageToHex.convert(deviceInfo, (BufferedImage)convertedValue);
+			}
+			if (step.equals(MobileServerConversionStep.IMAGE_TO_PCX)) {
+				convertedValue = ImageToPcx.convert(deviceInfo, (BufferedImage)convertedValue);
+			}
 		}
 		if (convertedValue instanceof InputStream) {
 			returnValue = (InputStream)convertedValue;
@@ -96,14 +105,13 @@ public enum ConversionServerUtils {
 			BufferedImage img) {
 		BufferedImage returnValue = trimmed(deviceInfo, img);
 		int maxWidth = deviceInfo.getMaxHorPixels();
-		int width = img.getWidth();
+		int width = returnValue.getWidth();
 		// Let's resize it
 		if (width > maxWidth) {
 			double rate = new Double(width) / new Double(maxWidth);
 			int maxHeight = new Double(img.getHeight() / rate).intValue();
 			returnValue = Scalr.resize(img, maxWidth, maxHeight);
 		}
-		//returnValue = trimmed(deviceInfo, returnValue);
 		return returnValue;
 	}
 
@@ -126,13 +134,20 @@ public enum ConversionServerUtils {
 	/**
 	 * Calculates the trimmed height of the image.
 	 * @param img Image to be calculated.
-	 * @return Actual minimun height.
+	 * @return Actual minimum height.
 	 */
 	private int getTrimmedHeight(MobileDeviceInfo deviceInfo, BufferedImage img) {
         int width = img.getWidth();
         int height = img.getHeight();
         int trimmedHeight = 0;
-        int bottomSpace = deviceInfo.getResolutionDpi() / 4;
+        int bottomSpace = 0;
+        if (deviceInfo.getHints().containsKey(MobileConversionHint.BOTTOM_SPACE)) {
+        	try {
+        		bottomSpace = (Integer) deviceInfo.getHints().get(MobileConversionHint.BOTTOM_SPACE);
+        	} catch (Exception e) {
+        		LOG.error(e.getMessage(), e);
+        	}
+        }
         outer:
         for(int j = height - 1; j >= 0; j--) {
             for(int i = 0; i < width; i++) {
@@ -148,15 +163,22 @@ public enum ConversionServerUtils {
     }
 
 	/**
-	 * Calculates the trimmed height of the image.
+	 * Calculates the trimmed width of the image.
 	 * @param img Image to be calculated.
-	 * @return Actual minimun height.
+	 * @return Actual minimum width.
 	 */
 	private int getTrimmedWidth(MobileDeviceInfo deviceInfo, BufferedImage img, int actualHeight) {
         int width = img.getWidth();
         int trimmedHeight = img.getHeight() > actualHeight ? actualHeight : img.getHeight();
         int trimmedWidth = 0;
         int rightSpace = deviceInfo.getResolutionDpi() / 4;
+        if (deviceInfo.getHints().containsKey(MobileConversionHint.RIGHT_SPACE)) {
+        	try {
+        		rightSpace = (Integer) deviceInfo.getHints().get(MobileConversionHint.RIGHT_SPACE);
+        	} catch (Exception e) {
+        		LOG.error(e.getMessage(), e);
+        	}
+        }
         outer:
         for(int j = width - 1; j >= 0; j--) {
             for(int i = 0; i < trimmedHeight; i++) {

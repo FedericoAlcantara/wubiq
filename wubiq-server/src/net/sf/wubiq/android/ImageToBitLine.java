@@ -76,6 +76,7 @@ public class ImageToBitLine extends BaseImageConversion {
 		initializePrinter(deviceInfo, printData, width, height);
 		int cutWidth = cutWidth(deviceInfo, width);
 		int dataWidth = cutWidth;
+		int maxWidth = deviceInfo.getMaxHorPixels() / 8;
 		while (dataWidth % 8 != 0) {
 			dataWidth++;
 		}
@@ -100,6 +101,9 @@ public class ImageToBitLine extends BaseImageConversion {
 				} else {
 					byteCount++;
 				}
+			}
+			if (dataBlock.size() < maxWidth) {
+				writeData(dataBlock, new byte[maxWidth - dataBlock.size()]);
 			}
 			formatData(deviceInfo, printData, dataBlock);
 			dataBlock = new ByteArrayOutputStream();
