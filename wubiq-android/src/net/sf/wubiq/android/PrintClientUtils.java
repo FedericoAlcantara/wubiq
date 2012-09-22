@@ -26,9 +26,9 @@ import com.starmicronics.stario.StarIOPortException;
 import com.zebra.android.comm.BluetoothPrinterConnection;
 import com.zebra.android.comm.ZebraPrinterConnection;
 import com.zebra.android.comm.ZebraPrinterConnectionException;
+import com.zebra.android.printer.PrinterLanguage;
 import com.zebra.android.printer.ZebraPrinter;
 import com.zebra.android.printer.ZebraPrinterFactory;
-import com.zebra.android.printer.ZebraPrinterLanguageUnknownException;
 
 /**
  * Handles the necessary steps for printing on the client.
@@ -44,8 +44,11 @@ public enum PrintClientUtils {
 	/**
 	 * Prints the given input to the device, performing all required conversion steps.
 	 * @param context Android context.
-	 * @param deviceName Complete device name.
-	 * @param input Input data as a stream
+	 * @param printServiceName Complete device name.
+	 * @param input Input data as a stream.
+	 * @param resources Application resources.
+	 * @param preferences Shared preferences of the application.
+	 * @param printServicesName Available bluetooth devices.
 	 */
 	public void print(Context context, String printServiceName, InputStream input, Resources resources, 
 			SharedPreferences preferences, Map<String, BluetoothDevice> printServicesName) {
@@ -71,6 +74,8 @@ public enum PrintClientUtils {
 					printStarMicronicsByteArray(deviceInfo, deviceAddress, printData); // Does not print all the data
 				} else if (step.equals(MobileClientConversionStep.OUTPUT_ZEBRA_IMAGE)) {
 					printZebraImage(deviceInfo, deviceAddress, printData);
+				} else if (step.equals(MobileClientConversionStep.OUTPUT_ZEBRA_BYTES)) {
+					printZebraBytes(deviceInfo, deviceAddress, printData);
 				}
 			}
 		} catch (Exception e) {
@@ -282,37 +287,107 @@ public enum PrintClientUtils {
 	}
 	
 	/**
+	 * Prints directly to zebra.
+	 * @param deviceInfo Device to be connected to.
+	 * @param deviceAddress Address of the device
+	 * @param printData Data to be printed.
+	 * @return true if printing was okey. Always return true, 
+	 * so printing with this method will be considered okey regardless of any printing error.
+	 */
+	private boolean printZebraBytes(MobileDeviceInfo sentDeviceInfo, 
+			String sentDeviceAddress, byte[] sentPrintData) {
+		final String deviceAddress = sentDeviceAddress;
+		final byte[] printData = sentPrintData;
+		new Thread(new Runnable() {
+				public void run(){
+					ZebraPrinterConnection connection = null;
+					try {
+						connection = new BluetoothPrinterConnection(deviceAddress);
+						connection.open();
+						ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
+						int index = 0;
+						for (index = 0; index < printData.length; index++) {
+							byte byteVal = printData[index];
+							if (byteVal == 0x0D && (index + 1) < printData.length  
+									&& printData[index + 1] == 0x0A) { // Line feed
+								index++;
+								lineOut.write(new byte[]{0x0D, 0x0A});
+								connection.write(lineOut.toByteArray());
+								lineOut = new ByteArrayOutputStream();
+								Thread.sleep(printDelay);
+							} else {
+								lineOut.write(byteVal);
+							}
+						}
+						if (lineOut.size() > 0) {
+							connection.write(lineOut.toByteArray());
+							Thread.sleep(printDelay);
+						}
+						Thread.sleep(printPause * printData.length / 1024); 
+					} catch (ZebraPrinterConnectionException e) {
+						Log.e(TAG, e.getMessage(), e);
+					} catch (IOException e) {
+						Log.e(TAG, e.getMessage(), e);
+					} catch (InterruptedException e) {
+						Log.e(TAG, e.getMessage());
+					} catch (Exception e) {
+						Log.e(TAG, e.getMessage(), e);
+					} finally {
+						try {
+							if (connection != null) {
+								connection.close();
+							}
+						} catch (ZebraPrinterConnectionException e) {
+							Log.e(TAG, e.getMessage());
+						}
+					}
+				}
+			}
+		).start();
+		return true;
+	}
+	
+	/**
 	 * Prints an image to a zebra printer.
 	 * @param deviceInfo Device to be connected to.
 	 * @param deviceAddress Address of the device
 	 * @param printData Data to be printed.
 	 * @return true if printing was okey.
 	 */
-	private boolean printZebraImage(MobileDeviceInfo deviceInfo, String deviceAddress, byte[] printData) {
-		Bitmap bitmap = BitmapFactory.decodeByteArray(printData, 0, printData.length);
-		boolean returnValue = true;
-		ZebraPrinterConnection connection = null;
-		try {
-			connection = new BluetoothPrinterConnection(deviceAddress);
-			connection.open();
-            ZebraPrinter printer = ZebraPrinterFactory.getInstance(connection);
-            printer.getGraphicsUtil().printImage(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), false);
-		} catch (ZebraPrinterConnectionException e) {
-			returnValue = false;
-			e.printStackTrace();
-		} catch (ZebraPrinterLanguageUnknownException e) {
-			returnValue = false;
-			Log.e(TAG, e.getMessage());
-		} finally {
-			try {
-				if (connection != null) {
-					connection.close();
+	private boolean printZebraImage(MobileDeviceInfo sentDeviceInfo, String sentDeviceAddress, byte[] sentPrintData) {
+		final String deviceAddress = sentDeviceAddress;
+		final byte[] printData = sentPrintData;
+		new Thread(new Runnable() {
+			public void run() {
+				Bitmap bitmap = BitmapFactory.decodeByteArray(printData, 0, printData.length);
+				int connectionWaitTime = 5;
+				ZebraPrinterConnection connection = null;
+				ZebraPrinter printer = null;
+				try {
+					connection = new BluetoothPrinterConnection(deviceAddress);
+					connection.open();
+					do {
+						Thread.sleep(1000); // To wait until the connection is really established.
+					} while (connectionWaitTime-- > 0 || !connection.isConnected());
+		            printer = ZebraPrinterFactory.getInstance(PrinterLanguage.CPCL, connection);
+		            printer.getGraphicsUtil().printImage(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), false);
+				} catch (ZebraPrinterConnectionException e) {
+					Log.e(TAG, e.getMessage());
+				} catch (InterruptedException e) {
+					Log.e(TAG, e.getMessage());
+				} finally {
+					try {
+						if (connection != null) {
+							connection.close();
+						}
+					} catch (ZebraPrinterConnectionException e) {
+						Log.e(TAG, e.getMessage());
+					}
 				}
-			} catch (ZebraPrinterConnectionException e) {
-				Log.e(TAG, e.getMessage());
 			}
 		}
-		return returnValue;
+		).start();
+		return true;
 		
 	}
 }

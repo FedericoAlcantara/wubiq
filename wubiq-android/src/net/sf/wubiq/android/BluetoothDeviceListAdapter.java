@@ -68,30 +68,34 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		}
 	}
 	
-	/*
-	 * @see android.widget.Adapter#getCount()
+	/**
+	 * @see android.widget.BaseAdapter#getCount()
 	 */
+	@Override
 	public int getCount() {
 		return deviceCount * 2;
 	}
 
 	/**
-	 * @see android.widget.Adapter#getItem(int)
+	 * @see android.widget.BaseAdapter#getItem(int)
 	 */
+	@Override
 	public Object getItem(int position) {
 		return null;
 	}
 
 	/**
-	 * @see android.widget.Adapter#getItemId(int)
+	 * @see android.widget.BaseAdapter#getItemId(int)
 	 */
+	@Override
 	public long getItemId(int position) {
 		return 0;
 	}
 
 	/**
-	 * @see android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)
+	 * @see android.widget.BaseAdapter#getView(int, android.view.View, android.view.ViewGroup)
 	 */
+	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		View returnValue;
 		int index = position / 2;

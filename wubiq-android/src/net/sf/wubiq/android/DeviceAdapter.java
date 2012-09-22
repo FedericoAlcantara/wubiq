@@ -50,6 +50,7 @@ public class DeviceAdapter extends BaseAdapter {
 	/*
 	 * @see android.widget.Adapter#getCount()
 	 */
+	@Override
 	public int getCount() {
 		return deviceCount * 2;
 	}
@@ -57,6 +58,7 @@ public class DeviceAdapter extends BaseAdapter {
 	/**
 	 * @see android.widget.Adapter#getItem(int)
 	 */
+	@Override
 	public Object getItem(int position) {
 		return null;
 	}
@@ -64,6 +66,7 @@ public class DeviceAdapter extends BaseAdapter {
 	/**
 	 * @see android.widget.Adapter#getItemId(int)
 	 */
+	@Override
 	public long getItemId(int position) {
 		return 0;
 	}
@@ -71,6 +74,7 @@ public class DeviceAdapter extends BaseAdapter {
 	/**
 	 * @see android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)
 	 */
+	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
 		if (position % 2 > 0) {
 			return spinners.get(Integer.valueOf(position / 2) + 1);

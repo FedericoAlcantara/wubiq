@@ -25,6 +25,7 @@ public class BluetoothDeviceListListener implements OnItemSelectedListener {
 	/**
 	 * @see android.widget.AdapterView.OnItemSelectedListener#onItemSelected(android.widget.AdapterView, android.view.View, int, long)
 	 */
+	@Override
 	public void onItemSelected(AdapterView<?> parent, View view, int pos,
 			long id) {
 		SharedPreferences.Editor editor = preferences.edit();
@@ -35,6 +36,7 @@ public class BluetoothDeviceListListener implements OnItemSelectedListener {
 	/**
 	 * @see android.widget.AdapterView.OnItemSelectedListener#onNothingSelected(android.widget.AdapterView)
 	 */
+	@Override
 	public void onNothingSelected(AdapterView<?> parent) {
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.remove(deviceKey);
