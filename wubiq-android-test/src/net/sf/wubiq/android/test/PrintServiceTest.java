@@ -1,9 +1,10 @@
 package net.sf.wubiq.android.test;
 
-import org.xmlpull.v1.XmlPullParser;
-
 import net.sf.wubiq.android.PrintManagerService;
 import net.sf.wubiq.android.WubiqActivity;
+
+import org.xmlpull.v1.XmlPullParser;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;

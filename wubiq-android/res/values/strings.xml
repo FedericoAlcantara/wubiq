@@ -15,7 +15,6 @@
     <string name="stop_service">Stop Print Manager</string>
     <string name="error_cant_connect_to">Can\'t connect to host %0</string>
     <string name="service_started">Wubiq print services started</string>
-    <string name="service_stopped">Wubiq print services stopped</string>
     <string name="wubiq_version_title">Wubiq Android Version: </string>
     <string name="advanced_configuration">Advanced Configuration</string>
     <string name="print_reset_default_values">Reset Default Values</string>

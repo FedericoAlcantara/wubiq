@@ -39,7 +39,8 @@ public class WubiqActivity extends Activity {
 
 		public void onServiceConnected(ComponentName className, IBinder binder) {
 			printManagerService = ((PrintManagerService.PrintManagerBinder)binder).getService();
-			Toast.makeText(WubiqActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
+			Toast toast = Toast.makeText(WubiqActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
+			toast.show();
 		}
 
 		public void onServiceDisconnected(ComponentName name) {
