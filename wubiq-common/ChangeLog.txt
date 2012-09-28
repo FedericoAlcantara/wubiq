@@ -1,4 +1,9 @@
 ==========================
+Wubiq 1.5.1 (2012-09-28)
+==========================
+-Android Manifest updated to reflect supported API.
+-Fixed print test page mis-behavior when testing from an external web-browser.
+==========================
 Wubiq 1.5 (2012-09-22)
 ==========================
 -Android added support for bluetooth printers: Zebra MZ series, Datamax - O'Neil Apex/Andes Series.

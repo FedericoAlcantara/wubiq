@@ -95,13 +95,7 @@
 		</table>
 		<%
 		RemoteClientManager manager = RemoteClientManager.getRemoteClientManager(request);
-		String protocol = request.getProtocol().substring(0, request.getProtocol().indexOf("/")).toLowerCase();
-		String address = request.getLocalName();
-		String port = Integer.toString(request.getLocalPort()).trim();
-		String context = request.getContextPath().substring(1);
-		String host = protocol + "://" + address;
-		
-		String url = host + ":" + port + "/" + context;
+		String url = request.getContextPath();
 		manager.updateRemotes();
 		Collection<String>uuids = new ArrayList<String>();
 		uuids.add("");
