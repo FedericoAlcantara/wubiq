@@ -203,9 +203,6 @@ public enum MobileDevices {
 		device.setColorCapable(false);
 		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
 		serverSteps.add(MobileServerConversionStep.RESIZE);
-		//serverSteps.add(MobileServerConversionStep.IMAGE_TO_BITMAP);
-		//clientSteps.add(MobileClientConversionStep.OUTPUT_ZEBRA_IMAGE);
-
 		
 		serverSteps.add(MobileServerConversionStep.IMAGE_TO_PCX);
 		clientSteps.add(MobileClientConversionStep.OUTPUT_ZEBRA_BYTES);

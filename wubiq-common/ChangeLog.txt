@@ -1,4 +1,8 @@
 ==========================
+Wubiq 1.6.0 (2012-10-10)
+==========================
+-Android better communication support for bluetooth devices.
+==========================
 Wubiq 1.5.1 (2012-09-28)
 ==========================
 -Android Manifest updated to reflect supported API.

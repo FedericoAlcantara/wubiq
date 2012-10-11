@@ -10,5 +10,5 @@ package net.sf.wubiq.android;
  *
  */
 public enum MobileClientConversionStep {
-	OUTPUT_BYTES, OUTPUT_SM_BYTES, OUTPUT_ZEBRA_IMAGE, OUTPUT_ZEBRA_BYTES
+	OUTPUT_BYTES, OUTPUT_SM_BYTES, OUTPUT_ZEBRA_BYTES
 }
