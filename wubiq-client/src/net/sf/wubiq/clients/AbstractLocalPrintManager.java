@@ -5,6 +5,7 @@ package net.sf.wubiq.clients;
 
 import java.io.BufferedReader;
 import java.io.ByteArrayOutputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
@@ -277,6 +278,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		} catch (MalformedURLException e) {
 			LOG.error(e.getMessage() + "->" + url);
 		} catch (UnknownServiceException e) {
+			doLog(e.getMessage());
+		} catch (FileNotFoundException e) {
 			doLog(e.getMessage());
 		} catch (IOException e) {
 			LOG.error(e.getMessage() + " " + url);

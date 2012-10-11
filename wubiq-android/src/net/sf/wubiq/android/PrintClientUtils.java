@@ -4,18 +4,14 @@
 package net.sf.wubiq.android;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 import java.util.Map;
 
 import net.sf.wubiq.android.devices.BaseWubiqDevice;
 import net.sf.wubiq.android.devices.WubiqDeviceFactory;
 import net.sf.wubiq.android.enums.DeviceStatus;
 import net.sf.wubiq.android.enums.PrintingStatus;
-import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
@@ -28,10 +24,10 @@ import android.util.Log;
  */
 public enum PrintClientUtils {
 	INSTANCE;
-	private final String TAG = "PrintClientUtils";
 	private int printDelay = 500;
 	private int printPause = 100; // Per each 1024 bytes
 	private BaseWubiqDevice currentDevice = null;
+	private final String TAG = "PrintClientUtils";
 	
 	/**
 	 * Prints the given input to the device, performing all required conversion steps.
@@ -69,59 +65,28 @@ public enum PrintClientUtils {
 				}  
 				byte[] printData = output.toByteArray();
 				for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
-					DeviceStatus deviceStatus = deviceStatus(deviceAddress);
-					if (deviceStatus.equals(DeviceStatus.READY)) {
-						currentDevice = WubiqDeviceFactory.INSTANCE.getInstance(step);
-						if (currentDevice != null) {
-							currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause);
-							currentDevice.start();
+					currentDevice = WubiqDeviceFactory.INSTANCE.getInstance(step);
+					if (currentDevice != null) {
+						DeviceStatus deviceStatus = currentDevice.deviceStatus(deviceAddress);
+						try {
+							Thread.sleep(5000);
+						} catch (InterruptedException e) {
+							Log.e(TAG, e.getMessage());
 						}
-					} else if (deviceStatus.equals(DeviceStatus.CANT_CONNECT)) {
-						returnValue = false;
+						currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause);
+						if (deviceStatus.equals(DeviceStatus.READY)) {
+							currentDevice.start();
+						} else if (deviceStatus.equals(DeviceStatus.CANT_CONNECT)) {
+							returnValue = false;
+						}
 					}
 				}
 			} catch (Exception e) {
-				e.printStackTrace();
+				Log.e(TAG, e.getMessage());
 			}
 		}
 		return returnValue;
 	}
 	
-	/**
-	 * Indicates the connectivity of the device.
-	 * @param deviceAddress Device address.
-	 * @return Status, either not found, cant_connect, ready.
-	 */
-	private DeviceStatus deviceStatus (String deviceAddress) {
-		DeviceStatus returnValue = DeviceStatus.NOT_FOUND;
-		BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-		for (BluetoothDevice device : adapter.getBondedDevices()) {
-			if (device.getAddress().equals(deviceAddress)) {
-		        // Get a BluetoothSocket to connect with the given BluetoothDevice
-				BluetoothSocket mmSocket = null;
-				try {
-		            // MY_UUID is the app's UUID string, also used by the server code
-		        	Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
-		            mmSocket = (BluetoothSocket) m.invoke(device, 1);
-		            // Connect the device through the socket. This will block
-		            // until it succeeds or throws an exception
-		            mmSocket.connect();
-		            returnValue = DeviceStatus.READY;
-				} catch (Exception e) {
-					returnValue = DeviceStatus.CANT_CONNECT;
-					Log.e(TAG, e.getMessage());
-				} finally {
-					if (mmSocket != null) {
-						try {
-							mmSocket.close();
-						} catch (IOException e) {
-							Log.e(TAG, e.getMessage());
-						}
-					}
-				}
-				break;
-			}
-		}
-		return returnValue;
-	}
+
 }

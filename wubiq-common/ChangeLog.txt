@@ -1,4 +1,8 @@
 ==========================
+Wubiq 1.6.1 (2012-10-11)
+==========================
+-Fixed multiple document printing to android devices.
+==========================
 Wubiq 1.6.0 (2012-10-10)
 ==========================
 -Android better communication support for bluetooth devices.

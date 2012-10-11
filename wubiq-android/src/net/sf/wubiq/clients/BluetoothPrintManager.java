@@ -24,6 +24,7 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.util.Log;
 
 /**
  * Manage the document printing between the server and the client.
@@ -37,6 +38,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	BluetoothAdapter bAdapter;
 	private Map<String, String> compressionMap;
 	private Map<String, BluetoothDevice> printServicesName;
+	private final String TAG = "BluetoothPrintManager";
 
 
 	public BluetoothPrintManager(Context context, Resources resources, SharedPreferences preferences) {
@@ -90,19 +92,23 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		InputStream stream = null;
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
-			doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
-			String attributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter.toString());
-			doLog("Job(" + jobId + ") attributesData:" + attributesData);
-			stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
-			doLog("Job(" + jobId + ") stream:" + stream);
-			doLog("Job(" + jobId + ") print pdf");
-			if (PrintClientUtils.INSTANCE.print(context, printServiceName, stream, resources, preferences, printServicesName)) {
+			boolean closePrintJob = true;
+			if (printServiceName != null && !printServiceName.equals("")) {
+				doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
+				String attributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter.toString());
+				doLog("Job(" + jobId + ") attributesData:" + attributesData);
+				stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
+				doLog("Job(" + jobId + ") stream:" + stream);
+				doLog("Job(" + jobId + ") print pdf");
+				closePrintJob = PrintClientUtils.INSTANCE.print(context, printServiceName, stream, resources, preferences, printServicesName);
+			}
+			if (closePrintJob) {
 				doLog("Job(" + jobId + ") printed.");
 				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 				doLog("Job(" + jobId + ") close print job.");
 			}
 		} catch (Exception e) {
-			e.printStackTrace();
+			Log.e(TAG, e.getMessage());
 		} finally {
 			try {
 				if (stream != null) {
