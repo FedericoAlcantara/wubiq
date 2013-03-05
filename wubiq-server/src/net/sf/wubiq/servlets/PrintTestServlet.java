@@ -21,12 +21,14 @@ public class PrintTestServlet extends RemotePrintServlet {
 	private static final long serialVersionUID = 1L;
 
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String uuid = request.getParameter(ParameterKeys.UUID);
-		String command = request.getParameter(ParameterKeys.COMMAND);
-		if (command.equalsIgnoreCase(CommandKeys.PRINT_TEST_PAGE)) {
-			printTestPageCommand(uuid, request, response);
-		} else if (command.equalsIgnoreCase(CommandKeys.SHOW_PRINT_SERVICES)) {
-			showPrintServicesCommand("", request, response);
+		if (ServletsStatus.isReady()) {
+			String uuid = request.getParameter(ParameterKeys.UUID);
+			String command = request.getParameter(ParameterKeys.COMMAND);
+			if (command.equalsIgnoreCase(CommandKeys.PRINT_TEST_PAGE)) {
+				printTestPageCommand(uuid, request, response);
+			} else if (command.equalsIgnoreCase(CommandKeys.SHOW_PRINT_SERVICES)) {
+				showPrintServicesCommand("", request, response);
+			}
 		}
 	}
 			

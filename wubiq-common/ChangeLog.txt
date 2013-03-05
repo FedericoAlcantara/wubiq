@@ -1,4 +1,8 @@
 ==========================
+Wubiq 1.6.2 (2013-03-05)
+==========================
+-Prevents calls to db before it is completely initialized.
+==========================
 Wubiq 1.6.1 (2012-10-11)
 ==========================
 -Fixed multiple document printing to android devices.

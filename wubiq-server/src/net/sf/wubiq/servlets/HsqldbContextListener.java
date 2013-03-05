@@ -52,6 +52,7 @@ public class HsqldbContextListener implements ServletContextListener {
 		hsqlServer.start();
 		Logger.getLogger("org").setLevel(level);
 		Logger.getLogger("net").setLevel(level);
+		ServletsStatus.setReady();
 	}
 
 	/** 

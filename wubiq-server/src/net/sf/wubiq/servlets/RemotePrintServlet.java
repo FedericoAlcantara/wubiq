@@ -66,50 +66,52 @@ public class RemotePrintServlet extends HttpServlet {
 	}
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String uuid = request.getParameter(ParameterKeys.UUID);
-		String command = request.getParameter(ParameterKeys.COMMAND);
-		if (command.equalsIgnoreCase(CommandKeys.IS_ACTIVE)) {
-			isActiveCommand(uuid, request, response);
-		} else  {
-			notifyRemote(uuid, request);
-			if (!Is.emptyString(uuid)) {
-				LOG.debug("accesing:" + uuid);
-				if (!Is.emptyString(command)) {
-					LOG.debug("command:" + command);
-					if (command.equalsIgnoreCase(CommandKeys.KILL_MANAGER)) {
-						killManagerCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.IS_KILLED)) {
-						isKilledCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.IS_REFRESHED)) {
-						isRefreshedCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.BRING_ALIVE)) {
-						bringAliveCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.SERVER_TIMESTAMP)) {
-						serverTimestampCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_COMPUTER_NAME)) {
-						registerComputerNameCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_PRINT_SERVICE)) {
-						registerPrintServiceCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_MOBILE_PRINT_SERVICE)) {
-						registerMobilePrintServiceCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.PENDING_JOBS)) {
-						getPendingJobsCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_SERVICE_NAME)) {
-						getPrintServiceNameCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES)) {
-						getPrintRequestAttributesCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB_ATTRIBUTES)) {
-						getPrintJobAttributesCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_ATTRIBUTES)) {
-						getDocAttributesCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
-						getDocFlavorCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
-						getPrintJobCommand(uuid, request, response);
-					} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
-						closePrintJobCommand(uuid, request, response);
+		if (ServletsStatus.isReady()) {
+			String uuid = request.getParameter(ParameterKeys.UUID);
+			String command = request.getParameter(ParameterKeys.COMMAND);
+			if (command.equalsIgnoreCase(CommandKeys.IS_ACTIVE)) {
+				isActiveCommand(uuid, request, response);
+			} else  {
+				notifyRemote(uuid, request);
+				if (!Is.emptyString(uuid)) {
+					LOG.debug("accesing:" + uuid);
+					if (!Is.emptyString(command)) {
+						LOG.debug("command:" + command);
+						if (command.equalsIgnoreCase(CommandKeys.KILL_MANAGER)) {
+							killManagerCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.IS_KILLED)) {
+							isKilledCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.IS_REFRESHED)) {
+							isRefreshedCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.BRING_ALIVE)) {
+							bringAliveCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.SERVER_TIMESTAMP)) {
+							serverTimestampCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_COMPUTER_NAME)) {
+							registerComputerNameCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_PRINT_SERVICE)) {
+							registerPrintServiceCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_MOBILE_PRINT_SERVICE)) {
+							registerMobilePrintServiceCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.PENDING_JOBS)) {
+							getPendingJobsCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_SERVICE_NAME)) {
+							getPrintServiceNameCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES)) {
+							getPrintRequestAttributesCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB_ATTRIBUTES)) {
+							getPrintJobAttributesCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_ATTRIBUTES)) {
+							getDocAttributesCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
+							getDocFlavorCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
+							getPrintJobCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
+							closePrintJobCommand(uuid, request, response);
+						}
+						
 					}
-					
 				}
 			}
 		}
