@@ -554,7 +554,7 @@ public class RemotePrintServlet extends HttpServlet {
 				PrinterJob printerJob = PrinterJob.getPrinterJob();
 				Pageable pageable;
 				try {
-					pageable = PdfUtils.INSTANCE.pdfToPageable(input);
+					pageable = PdfUtils.INSTANCE.pdfToPageable(input, printerJob);
 					synchronized(pageable) {
 						printerJob.setPageable(pageable);
 						try {

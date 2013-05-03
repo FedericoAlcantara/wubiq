@@ -27,7 +27,7 @@
 	<target name="create-common-jar" depends="clean">
 		<echo message="Compiling common" />
 		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="buildsFailed" 
-				debug="true"> 
+				debug="true" target="1.6" source="1.6"> 
 			<src refid="project.src"/>
 			<classpath refid="project.classpath" /> 
 		</javac>

@@ -34,7 +34,7 @@
 		<available file="${basedir.common}" property="wubiq-common-exists" />
 		<antcall target="create-common-jar" />
 		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="builds.failed"
-				debug="true"> 
+				debug="true" target="1.6" source="1.6"> 
 			<src refid="project.src"/>
 			<classpath refid="project.classpath" /> 
 		</javac>

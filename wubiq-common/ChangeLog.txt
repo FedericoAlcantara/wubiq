@@ -1,4 +1,9 @@
 ==========================
+Wubiq 1.7.0 (2013-05-03)
+==========================
+-Improved printing on dot matrix printers.
+-Fixed different scales for same document on local and remote printers.
+==========================
 Wubiq 1.6.2 (2013-03-05)
 ==========================
 -Prevents calls to db before it is completely initialized.

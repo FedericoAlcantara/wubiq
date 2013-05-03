@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Set;
 
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -36,11 +37,13 @@ import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.standard.PrinterName;
 
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.print.services.RemotePrintService;
 
 import org.apache.commons.logging.Log;
@@ -57,6 +60,10 @@ public class PrintServiceUtils {
 	public static DocFlavor DEFAULT_DOC_FLAVOR = DocFlavor.INPUT_STREAM.PDF;
 	private static Map<String, String> compressionMap;
 	private static Map<DocFlavor, String> docFlavorConversionMap;
+	private static Set<String>photoPrinters;
+	private static Set<String>dotMatrixHqPrinters;
+	private static Set<String>dotMatrixPrinters;
+	
 	/**
 	 * Tries to refresh print services.
 	 */
@@ -738,7 +745,7 @@ public class PrintServiceUtils {
 		}
 		return returnValue;
 	}
-
+	
 	/**
 	 * Removes the given category from the print request.
 	 * @param attributes Print request attributes.
@@ -746,9 +753,125 @@ public class PrintServiceUtils {
 	 */
 	public static PrintRequestAttributeSet removeCategoryAttribute(PrintRequestAttributeSet attributes, Class<? extends Attribute> category) {
 		PrintRequestAttributeSet returnValue = new HashPrintRequestAttributeSet();
-		for (Attribute attribute : attributes.toArray()) {
-			if (!attribute.getCategory().equals(category)) {
-				returnValue.add(attribute);
+		if (attributes != null) {
+			for (Attribute attribute : attributes.toArray()) {
+				if (!attribute.getCategory().equals(category)) {
+					returnValue.add(attribute);
+				}
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Find a given attribute.
+	 * @param attributes Set of attributes.
+	 * @param category Category to get the attribute from.
+	 * @return Found attribute or null.
+	 */
+	public static Attribute findCategoryAttribute(AttributeSet attributes, Class<? extends Attribute> category) {
+		Attribute returnValue = null;
+		if (attributes != null) {
+			for (Attribute attribute : attributes.toArray()) {
+				if (attribute.getCategory().equals(category)) {
+					returnValue = attribute;
+					break;
+				}
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Returns the type of printers.
+	 * @param printService Print service associated with the printer.
+	 * @return Printer type.
+	 */
+	public static PrinterType printerType(PrintService printService) {
+		String printerName = printService.getName();
+		if (Is.emptyString(printerName)) {
+			// try to get it from category;
+			PrinterName printerNameAttr = printService.getAttribute(PrinterName.class);
+			if (printerNameAttr != null) {
+				printerName = printerNameAttr.getValue();
+			}
+		}
+		return printerType(printerName);
+ 	}
+	
+	/**
+	 * Returns the type of printers.
+	 * @param sentPrinterName Name of the printer.
+	 * @return Printer type.
+	 */
+	public static PrinterType printerType(String sentPrinterName) {
+		PrinterType returnValue = PrinterType.UNDEFINED;
+		String printerName = sentPrinterName.trim().toUpperCase();
+		if (photoPrinters == null) {
+			photoPrinters = printerTypeStrings("wubiq.printers.photo", "photo,jet,laser");
+		}
+		if (dotMatrixHqPrinters == null) {
+			dotMatrixHqPrinters = printerTypeStrings("wubiq.printers.dotmatrixhq", 
+					" LQ,24-pin,24 pin,KX-P,KXP");
+		}
+		if (dotMatrixPrinters == null) {
+			dotMatrixPrinters = printerTypeStrings("wubiq.printers.dotmatrix", 
+					" lx-, lx , fx-, fx , mx-, mx , rx-, rx , ml-42,9-pin,9 pin");
+		}
+		if (containsString(photoPrinters, printerName)) {
+			returnValue = PrinterType.LASER_INK_JET;
+		} else if (containsString(dotMatrixPrinters, printerName)) {
+			returnValue = PrinterType.DOT_MATRIX;
+		} else if (containsString(dotMatrixHqPrinters, printerName)) {
+			returnValue = PrinterType.DOT_MATRIX_HQ;
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Returns a list of printer names.
+	 * @param propertyName Name of the property to read additional list from.
+	 * @param defaultValues Default values.
+	 * @return a Set of printer names. Never null.
+	 */
+	private static Set<String> printerTypeStrings(String propertyName, String defaultValues) {
+		Set<String> returnValue = new HashSet<String>();
+		returnValue.addAll(parsePrinterTypeString(defaultValues));
+		String values = System.getProperty(propertyName, "");
+		returnValue.addAll(parsePrinterTypeString(values));
+		return returnValue;
+	}
+	
+	/**
+	 * Parse a comma separated list of printers IPP names.
+	 * @param printersList comma separated list.
+	 * @return A Set of printer names. Never null.
+	 */
+	private static Set<String> parsePrinterTypeString(String printersList) {
+		Set<String> returnValue = new HashSet<String>();
+		if (!Is.emptyString(printersList)) {
+			String[] values = printersList.toUpperCase().split(",");
+			for (String value : values) {
+				if (!Is.emptyString(value.trim())) {
+					returnValue.add(value);
+				}
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Finds out if the printer name has a match within the list.
+	 * @param printersList List of printers.
+	 * @param printerName Printer name.
+	 * @return True if the printer name is within the list.
+	 */
+	private static boolean containsString(Set<String> printersList, String printerName) {
+		boolean returnValue = false;
+		for (String printer : printersList) {
+			if (printerName.contains(printer)) {
+				returnValue = true;
+				break;
 			}
 		}
 		return returnValue;

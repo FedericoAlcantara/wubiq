@@ -2,6 +2,7 @@ package net.sf.wubiq.wrappers;
 
 import java.awt.Color;
 import java.awt.Composite;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
@@ -10,7 +11,7 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.font.GlyphVector;
-import java.awt.geom.AffineTransform;
+import java.awt.geom.Point2D;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.print.PageFormat;
@@ -22,6 +23,10 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+
+import net.sf.wubiq.enums.PrinterType;
+import net.sf.wubiq.utils.GraphicsUtils;
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,6 +49,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	private int printed = 0;
 	private boolean noScale = false;
 	private transient boolean notSerialized = false;
+	private PrinterType printerType;
 	
 	public PrintableWrapper() {
 	}
@@ -73,26 +79,16 @@ public class PrintableWrapper implements Printable, Serializable {
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
 		Graphics2D graph = (Graphics2D) graphics;
+
 		if (notSerialized) {
 			graphicCommands = new TreeSet<GraphicCommand>();
 			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, graph);
 			returnValue = printable.print(graphicsRecorder, new PageFormatWrapper(pageFormat), pageIndex);
 		} else {
 			if (printed <= 1) { // Normally a page rendering is called twice. One for peek graphics and the actual printing.
-				AffineTransform newScale = new AffineTransform();
-				double x = graph.getDeviceConfiguration().getBounds().getWidth() / (pageFormat.getWidth() + 30); // Arbitrary
-				double y = graph.getDeviceConfiguration().getBounds().getHeight() / (pageFormat.getHeight() + 30);
-				// If we don't have a device information, we must scale based on page format / paper information.
-				if (x <= 0 && y <= 0) { 
-					x = pageFormat.getWidth() / (pageFormat.getImageableWidth());
-					y = pageFormat.getHeight() / (pageFormat.getImageableHeight());
-				} else {
-					newScale.scale(x, y);
-				}
-				if (!noScale) {
-					graph.setTransform(newScale);
-				}
-				executeGraphics(graph, pageFormat, x, y);
+				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
+				Point2D scaleValue = GraphicsUtils.INSTANCE.scaleGraphics(graph, pageFormat, noScale);
+				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY());
 				printed += 1;
 			} else {
 				returnValue = Printable.NO_SUCH_PAGE;
@@ -112,6 +108,7 @@ public class PrintableWrapper implements Printable, Serializable {
 		Iterator<GraphicCommand> it = graphicCommands.iterator();
 		while (it.hasNext()) {
 			GraphicCommand graphicCommand = it.next();
+
 			executeMethod(graph, graphicCommand, xScale, yScale);
 		}
 	}
@@ -130,6 +127,13 @@ public class PrintableWrapper implements Printable, Serializable {
 		if (graphicCommand.getMethodName().equals("setTransform")) {
 			return;
 		}
+		
+		if ("setFont".equalsIgnoreCase(graphicCommand.getMethodName())) {
+			Font originalFont = (Font)graphicCommand.getParameters()[0].getParameterValue();
+			Font font = GraphicsUtils.INSTANCE.properFont(originalFont, printerType);
+			graphicCommand.setParameters(new GraphicParameter[]{new GraphicParameter(Font.class, font)});
+		}
+		
 		if (graphicCommand.getParameters().length > 0) {
 			parameterTypes = new Class[graphicCommand.getParameters().length];
 			parameterValues = new Object[graphicCommand.getParameters().length];

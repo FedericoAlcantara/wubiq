@@ -5,6 +5,8 @@ package net.sf.wubiq.utils;
 
 import java.awt.image.BufferedImage;
 import java.awt.print.Pageable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -13,7 +15,10 @@ import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.print.PrintException;
+import javax.print.PrintService;
+import javax.print.attribute.PrintRequestAttributeSet;
 
+import net.sf.wubiq.print.jobs.PdfPrinterJob;
 import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.print.pdf.PdfPageable;
 
@@ -98,8 +103,11 @@ public enum PdfUtils {
 	/**
 	 * Pdf to pageable.
 	 * @param printDocument Converts a pdf into a pageable.
-	 * @return A pageable object. Null if an error occurs. 
+	 * @return A pageable object. Null if an error occurs.
+	 * @deprecated Use pdfToPageable(InputStream, PrinterJob) or pdfToPageable(InputStream, PrintRequestAttributeSet)
+	 * as these create a properly formatted pdf. 
 	 */
+	@Deprecated
 	public Pageable pdfToPageable(InputStream printDocument) throws PrintException {
 		Pageable pageable = null;
 		try {
@@ -109,6 +117,52 @@ public enum PdfUtils {
 			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		}
+		return pageable;
+	}
+	
+	/**
+	 * Pdf to pageable.
+	 * @param printDocument Converts a pdf into a pageable.
+	 * @param printerJob Current printer job
+	 * @return A pageable object. Null if an error occurs. 
+	 */
+	public Pageable pdfToPageable(InputStream printDocument, PrinterJob printerJob) throws PrintException {
+		Pageable pageable = null;
+		try {
+			PDDocument document = PDDocument.load(printDocument);
+			pageable = new PdfPageable(document, printerJob);
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		}
+		return pageable;
+	}
+	
+	/**
+	 * Pdf to pageable.
+	 * @param printDocument Converts a pdf into a pageable.
+	 * @return A pageable object. Null if an error occurs. 
+	 */
+	public Pageable pdfToPageable(InputStream printDocument, PrintService printService, PrintRequestAttributeSet attributes) throws PrintException {
+		Pageable pageable = null;
+		try {
+			PDDocument document = PDDocument.load(printDocument);
+			PrinterJob printerJob = new PdfPrinterJob(attributes);
+			printerJob.setPrintService(printService);
+			pageable = new PdfPageable(document, printerJob);
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		}

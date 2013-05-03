@@ -9,6 +9,8 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -21,6 +23,8 @@ import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
 import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.wrappers.PageableDirectWrapper;
+import net.sf.wubiq.wrappers.PrintableDirectWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -128,20 +132,35 @@ public class PrinterJobManager extends PrinterJob {
 	 */
 	@Override
 	public void print() throws PrinterException {
-		if (PrintServiceUtils.isRemotePrintService(service)) {
-			registerRemotePrintJob(null);
-		} else {
-			defaultPrinterJob.print();
-		}
+		print(null);
 	}
 	
+	/**
+	 * Because some printer exhibit odd margin and fonts behavior.
+	 * this print action will trap the request and resets the 
+	 * top and left margin, but put it on the page format.
+	 */
 	@Override
 	public void print(PrintRequestAttributeSet attributes)
 			throws PrinterException {
 		if (PrintServiceUtils.isRemotePrintService(service)) {
 			registerRemotePrintJob(attributes);
 		} else {
-			defaultPrinterJob.print(attributes);
+			if (painter != null) {
+				if (pageFormat != null) {
+					defaultPrinterJob.setPrintable(new PrintableDirectWrapper(painter), pageFormat);
+				} else {
+					defaultPrinterJob.setPrintable(new PrintableDirectWrapper(painter));
+				}
+			}
+			if (document != null) {
+				defaultPrinterJob.setPageable(new PageableDirectWrapper(document));
+			}
+			if (attributes != null) {
+				defaultPrinterJob.print(attributes);
+			} else {
+				defaultPrinterJob.print();
+			}
 		}
 	}
 
@@ -275,7 +294,22 @@ public class PrinterJobManager extends PrinterJob {
 		if (doc != null) {
 			DocPrintJob printJob = service.createPrintJob();
 			if (pageFormat != null) {
-				((RemotePrintJob)printJob).setPageFormat(pageFormat);
+				// In this way since RemotePrintJob class might be loaded by different class loaders (wubiq-server, web application, etc).
+				try {
+					Method setPageFormat = printJob.getClass().getMethod("setPageFormat", PageFormat.class);
+					setPageFormat.setAccessible(true);
+					setPageFormat.invoke(printJob, pageFormat);
+				} catch (SecurityException e) {
+					LOG.error(e.getMessage(), e);
+				} catch (NoSuchMethodException e) {
+					LOG.error(e.getMessage(), e);
+				} catch (IllegalArgumentException e) {
+					LOG.error(e.getMessage(), e);
+				} catch (IllegalAccessException e) {
+					LOG.error(e.getMessage(), e);
+				} catch (InvocationTargetException e) {
+					LOG.error(e.getMessage(), e);
+				}
 			}
 			PrintRequestAttributeSet request = printRequestAttributeSet == null ? new HashPrintRequestAttributeSet() : printRequestAttributeSet;
 			try {
@@ -285,4 +319,5 @@ public class PrinterJobManager extends PrinterJob {
 			}
 		}
 	}
+	
 }

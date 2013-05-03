@@ -115,7 +115,7 @@ public class StrokeWrapper implements Stroke, Serializable {
 	
 	public Stroke getStroke(double xScale, double yScale) {
 		if (!nullObject) {
-			return new BasicStroke(width, cap, join);
+			return new BasicStroke((float)(width / xScale), cap, join);
 		}
 		return null;
 	}

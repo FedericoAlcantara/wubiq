@@ -18,12 +18,14 @@ import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.utils.PageableUtils;
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -239,9 +241,19 @@ public class RemotePrintJob implements DocPrintJob {
 	 */
 	public PageFormat getPageFormat() {
 		if (pageFormat == null) {
+			MediaPrintableArea printableArea = 
+					(MediaPrintableArea)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, MediaPrintableArea.class);
 			Paper paper = new Paper();
-			paper.setSize(612, 828);
-			paper.setImageableArea(0, 0, 612, 828);
+			if (printableArea != null) {
+				paper.setImageableArea(
+						printableArea.getX(MediaPrintableArea.INCH) * 72,
+						printableArea.getY(MediaPrintableArea.INCH) * 72,
+						printableArea.getWidth(MediaPrintableArea.INCH) * 72,
+						printableArea.getHeight(MediaPrintableArea.INCH) * 72);
+			} else {
+				paper.setSize(612, 828);
+				paper.setImageableArea(0, 0, 612, 828);
+			}
 			pageFormat = new PageFormat();
 			pageFormat.setOrientation(PageFormat.PORTRAIT);
 			pageFormat.setPaper(paper);

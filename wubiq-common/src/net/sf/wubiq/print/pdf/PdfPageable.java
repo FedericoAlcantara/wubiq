@@ -35,6 +35,7 @@ public class PdfPageable implements Pageable {
 	 * @param document Document to encapsulate.
 	 * @throws PrintException Thrown if errors on the printer job.
 	 */
+	@Deprecated
 	public PdfPageable(PDDocument document) throws PrintException {
 		this.document = document;
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
@@ -44,10 +45,22 @@ public class PdfPageable implements Pageable {
 		createPageable(document, printerJob);
 	}
 
+	/**
+	 * Creates a PDFPageable using defined PrinterJob
+	 * @param document Document to encapsulate.
+	 * @param printerJob Current printer job.
+	 * @throws PrintException
+	 */
 	public PdfPageable(PDDocument document, PrinterJob printerJob) throws PrintException {
 		createPageable(document, printerJob);
 	}
 	
+	/**
+	 * Creates a pageable document.
+	 * @param document PDF document.
+	 * @param printerJob Current printer job.
+	 * @throws PrintException
+	 */
 	private void createPageable(PDDocument document, PrinterJob printerJob) throws PrintException {
 		this.document = document;
 		try {
@@ -68,7 +81,8 @@ public class PdfPageable implements Pageable {
 
 	@Override
 	public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
-		return pageable.getPageFormat(pageIndex);
+		PageFormat pageFormat = pageable.getPrinterJob().defaultPage();
+		return pageFormat;
 	}
 
 	@Override
