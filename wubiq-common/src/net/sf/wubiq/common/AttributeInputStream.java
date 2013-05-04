@@ -12,8 +12,10 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Locale;
 
 import javax.print.attribute.Attribute;
+import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaPrintableArea;
 
 import net.sf.wubiq.utils.Is;
@@ -95,20 +97,16 @@ public class AttributeInputStream extends InputStreamReader {
 			if (objectDetails.length > 2) {
 				if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_SET_INTEGER_SYNTAX)) {
 					returnValue = readSetOfIntegerSyntax(objectDetails[0], objectDetails[2]);
-				} else {
-					if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_ENUM_SYNTAX)) {
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_ENUM_SYNTAX)) {
 						returnValue = readEnumSyntax(objectDetails[0], objectDetails[2]);
-					} else {
-						if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_INTEGER_SYNTAX)) {
-							returnValue = readIntegerSyntax(objectDetails[0], objectDetails[2]);
-						} else {
-							if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA)) {
-								returnValue = readMediaPrintableArea(objectDetails[0], objectDetails[2]);
-							} else {
-								throw new IOException("Attribute not recognized:" + deserialized);
-							}
-						}
-					}
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_INTEGER_SYNTAX)) {
+						returnValue = readIntegerSyntax(objectDetails[0], objectDetails[2]);
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA)) {
+						returnValue = readMediaPrintableArea(objectDetails[0], objectDetails[2]);
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_JOB_NAME)) {
+					returnValue = readJobName(objectDetails[0], objectDetails[2]);
+				} else {
+					throw new IOException("Attribute not recognized:" + deserialized);
 				}
 			}
 		}
@@ -237,5 +235,9 @@ public class AttributeInputStream extends InputStreamReader {
 			throw new IOException(e);
 		}
 		return returnValue;
+	}
+	
+	private Attribute readJobName(String className, String values) throws IOException {
+		return new JobName(values, Locale.getDefault());
 	}
 }

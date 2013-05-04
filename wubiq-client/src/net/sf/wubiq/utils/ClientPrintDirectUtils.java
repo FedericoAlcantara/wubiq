@@ -20,7 +20,6 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.JobName;
 
 import net.sf.wubiq.print.jobs.RemotePrintJob;
@@ -61,10 +60,19 @@ public final class ClientPrintDirectUtils {
 				throw new IOException(("error.print.noPrintDevice"));
 			}
 			if (printData != null) {
-				int replicatePrinting = PrintServiceUtils.getCopies(printRequestAttributeSet);
 				Doc doc = null;
 				// Set Request Attributes
-				printRequestAttributeSet.add(new JobName("Remote Print:" + jobId, Locale.getDefault()));
+				JobName jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, JobName.class);
+				if (jobName == null) {
+					jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printJobAttributeSet, JobName.class);
+				}
+				StringBuffer newJobName = new StringBuffer("Remote_")
+						.append(jobId);
+				if (jobName != null) {
+					newJobName.append('_')
+						.append(jobName.getValue());
+				}
+				printRequestAttributeSet.add(new JobName(newJobName.toString(), Locale.getDefault()));
 				// Create doc and printJob
 				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
 						docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
@@ -96,19 +104,14 @@ public final class ClientPrintDirectUtils {
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
 						doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
 					}
-					// Pageable does not support copies when printing using DocPrintJob
-					printRequestAttributeSet = PrintServiceUtils.removeCategoryAttribute(printRequestAttributeSet, Copies.class);
 				} else {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
 				}
-				// Printing section
-				for (int count = 0; count < replicatePrinting; count++) {
-					DocPrintJob printJob = printService.createPrintJob();
-					if (printJob instanceof RemotePrintJob) {
-						((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
-					}
-					printJob.print(doc, printRequestAttributeSet);
+				DocPrintJob printJob = printService.createPrintJob();
+				if (printJob instanceof RemotePrintJob) {
+					((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
 				}
+				printJob.print(doc, printRequestAttributeSet);
 			}
 				
 		} catch (PrintException e) {

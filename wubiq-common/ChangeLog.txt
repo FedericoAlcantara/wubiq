@@ -1,8 +1,10 @@
 ==========================
-Wubiq 1.7.0 (2013-05-03)
+Wubiq 1.7.1 (2013-05-04)
 ==========================
--Improved printing on dot matrix printers.
+-Improved printing compatibility for dot matrix printers.
 -Fixed different scales for same document on local and remote printers.
+-Copies now handled by javax.printing api.
+-Remote jobs name are correcly printed.
 ==========================
 Wubiq 1.6.2 (2013-03-05)
 ==========================

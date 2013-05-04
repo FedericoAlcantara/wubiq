@@ -12,6 +12,7 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.IntegerSyntax;
 import javax.print.attribute.SetOfIntegerSyntax;
+import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaPrintableArea;
 
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -106,25 +107,22 @@ public class AttributeOutputStream extends OutputStreamWriter {
 		if (attribute instanceof SetOfIntegerSyntax) {
 			data.append(ParameterKeys.ATTRIBUTE_TYPE_SET_INTEGER_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 			writeSetOfIntegerSyntax((SetOfIntegerSyntax)attribute, data);
+		} else if (attribute instanceof EnumSyntax) {
+			data.append(ParameterKeys.ATTRIBUTE_TYPE_ENUM_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+			writeEnumSyntax((EnumSyntax)attribute, data);
+		} else if (attribute instanceof IntegerSyntax) {
+			data.append(ParameterKeys.ATTRIBUTE_TYPE_INTEGER_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+			writeIntegerSyntax((IntegerSyntax)attribute, data);
+		} else if (attribute instanceof MediaPrintableArea) {
+			data.append(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+			writeMediaPrintableArea((MediaPrintableArea)attribute, data);
+		} else if (attribute instanceof JobName) {
+			data.append(ParameterKeys.ATTRIBUTE_TYPE_JOB_NAME).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+			writeJobName((JobName)attribute, data);
 		} else {
-			if (attribute instanceof EnumSyntax) {
-				data.append(ParameterKeys.ATTRIBUTE_TYPE_ENUM_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
-				writeEnumSyntax((EnumSyntax)attribute, data);
-			} else {
-				if (attribute instanceof IntegerSyntax) {
-					data.append(ParameterKeys.ATTRIBUTE_TYPE_INTEGER_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
-					writeIntegerSyntax((IntegerSyntax)attribute, data);
-				} else {
-					if (attribute instanceof MediaPrintableArea) {
-						data.append(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
-						writeMediaPrintableArea((MediaPrintableArea)attribute, data);
-					} else {
-						if (PrintServiceUtils.OUTPUT_LOG) {
-							LOG.info("Attribute not converted:" + attribute);
-							System.out.println(attribute);
-						}
-					}
-				}
+			if (PrintServiceUtils.OUTPUT_LOG) {
+				LOG.info("Attribute not converted:" + attribute);
+				System.out.println(attribute);
 			}
 		}
 		return data;
@@ -137,8 +135,7 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	 * @throws IOException
 	 */
 	private void writeEnumSyntax(EnumSyntax attribute, StringBuffer data) throws IOException {
-		String value = attribute.toString().toUpperCase().replaceAll("-", "_").replaceAll(" ", "_");
-		data.append(value);
+		writeStringData(attribute.toString().toUpperCase(), data);
 	}
 	
 	/**
@@ -152,7 +149,7 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	}
 	
 	/**
-	 * Serialize MediaPrintableArea attribute types.
+	 * Serializes MediaPrintableArea attribute types.
 	 * @param attribute Attribute to serialize.
 	 * @param data Buffered data to output.
 	 * @throws IOException
@@ -167,4 +164,23 @@ public class AttributeOutputStream extends OutputStreamWriter {
 			.append(attribute.getHeight(MediaPrintableArea.MM));
 	}
 
+	/**
+	 * Serializes JobName attribute types.
+	 * @param attribute Attribute to serialize.
+	 * @param data Buffered data to output.
+	 * @throws IOException
+	 */
+	private void writeJobName(JobName attribute, StringBuffer data) throws IOException {
+		data.append(attribute.getValue());
+	}
+	
+	/**
+	 * Serialize String data making it suitable for network transfer.
+	 * @param input String data to serialize.
+	 * @param data Buffered data to output.
+	 * @throws IOException
+	 */
+	private void writeStringData(String input, StringBuffer data) throws IOException {
+		data.append(input.replaceAll("-", "_").replaceAll(" ", "_"));
+	}
 }
