@@ -208,7 +208,7 @@ public enum MobileDevices {
 		clientSteps.add(MobileClientConversionStep.OUTPUT_ZEBRA_BYTES);
 		hints.put(MobileConversionHint.INITIALIZE_PRINTER, "! U1 setvar \"device.languages\" \"CPCL\"\r\n! 0 200 200 {height} 1\r\nPCX 0 0\r\n");
 		hints.put(MobileConversionHint.FINALIZE_PRINTER, "\r\nPRINT\r\n");
-		hints.put(MobileConversionHint.MAX_IMAGE_HEIGHT, 500);
+		hints.put(MobileConversionHint.MAX_IMAGE_HEIGHT, 2112); // 11 Inches
 		
 		
 		compatibleDevices.add(name + " -" + width + " in.");

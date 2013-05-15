@@ -35,15 +35,16 @@ public class ImageToPcx extends ImageToBitLine {
 	protected void createData(MobileDeviceInfo deviceInfo, ByteArrayOutputStream printData, int width, int height, int[] pixels)  {
 		int maxHeight = height;
 		if (deviceInfo.getHints().containsKey(MobileConversionHint.MAX_IMAGE_HEIGHT)) {
-			maxHeight = (Integer)deviceInfo.getHints().get(MobileConversionHint.MAX_IMAGE_HEIGHT);
-		} 
-		
-		for (int startY = 0; startY < height; startY += maxHeight) {
-			int printHeight = (height - startY);
-			if (printHeight > maxHeight) {
-				printHeight = maxHeight;
+			maxHeight = (Integer)deviceInfo.getHints().get(MobileConversionHint.MAX_IMAGE_HEIGHT); // will be ignored
+		}
+		int blockCount = (height + maxHeight - 1) / maxHeight;
+		for (int i = 0 ; i < blockCount; i++) {
+			int startY = (i * maxHeight);
+			int endY = ((i + 1) * maxHeight - 1);
+			if (endY >= height) {
+				endY = height - 1; 
 			}
-			int endY = startY + printHeight;
+			int printHeight = endY - startY + 1;
 			writeImageBlock(deviceInfo, printData, width, printHeight, pixels, startY, endY);
 		}
 	}
@@ -59,31 +60,41 @@ public class ImageToPcx extends ImageToBitLine {
 	 * @param endY Bottom of the block within the full image.
 	 */
 	private void writeImageBlock(MobileDeviceInfo deviceInfo, ByteArrayOutputStream printData, int width, int height, int[]pixels, int startY, int endY) {
-		initializePrinter(deviceInfo, printData, width, height);
-		
+		int bytesPerLine = (deviceInfo.getMaxHorPixels() + 7) / 8; // 8 bit boundary
+		int dataWidth = bytesPerLine * 8;
+		initializePrinter(deviceInfo, printData, dataWidth, height);
 		ByteArrayOutputStream pcx = new ByteArrayOutputStream();
-		writePcxHeader(deviceInfo, pcx, width, height);
-		int bytesPerLine = (width + 7) / 8; // 8 bit boundary
+		writePcxHeader(deviceInfo, pcx, deviceInfo.getMaxHorPixels(), height);
 		int byteBuffer = 0;
 		int byteCount = 0;
 		int lastByte = 0;
 		int blockCount = 1;
-		int dataWidth = bytesPerLine * 8;
+		int processedBits = 0;
+		boolean lastPixel = false;
 		// First read all data and convert to bytes.
-		for (int iy = startY; iy < endY; iy++) {
+		for (int iy = startY; iy <= endY; iy++) {
 			for (int ix = 0; ix < dataWidth; ix++) {
-				int pixel = (ix < width) ? pixels[pixelIndex(ix, iy, width)] : 255;
+				processedBits++;
+				lastPixel = (iy == endY && ix == (dataWidth -1));
+				int pixel = (ix < width) ? pixels[pixelIndex(ix, iy, width)] : 0;
 				if (pixelBrightness(pixel) >= 127) {
 					byteBuffer += Math.pow(2, (7 - byteCount));
 				}
-				if (byteCount == 7) {
-					if (blockCount == 63 || lastByte != byteBuffer 
-							|| (iy == (height - 1) && ix == (dataWidth -1)) ) {
-						writeData(pcx, new byte[]{(byte)(blockCount | 0xC0), (byte)lastByte});
+				if (byteCount == 7) {					
+					if (blockCount == 62 || lastByte != byteBuffer // change blockCount == 62 to allow real compression, 1 to no compression
+							|| lastPixel ) {
+						if (lastPixel && lastByte == byteBuffer) {
+							blockCount++;
+						}
+						writeCompressedPcxData(pcx, blockCount, lastByte);
+						if (lastPixel && lastByte != byteBuffer) {
+							writeCompressedPcxData(pcx, 1, byteBuffer);
+						}
 						blockCount = 1;
 					} else {
 						blockCount++;
 					}
+
 					lastByte = byteBuffer;
 					byteBuffer = 0;
 					byteCount = 0;
@@ -94,8 +105,22 @@ public class ImageToPcx extends ImageToBitLine {
 		}
 		
 		writeData(printData, pcx.toByteArray());
-		
 		finalizePrinter(deviceInfo, printData);
+		LOG.debug("Processed Bits:" + processedBits + ", Bytes:" + processedBits / 8 + ", Compressed Bytes:" + pcx.size());
+	}
+	
+	/**
+	 * Tries to use RLE compress for pcx image data.
+	 * @param pcx Holder of the pcx data.
+	 * @param blockCount Number of identical 'byteData' bytes found.
+	 * @param byteData Byte data to write.
+	 */
+	private void writeCompressedPcxData(ByteArrayOutputStream pcx, int blockCount, int byteData) {
+		if (blockCount == 1 && (byteData & 0xC0) != 0xC0 && byteData != 0x0A) { // To avoid 0x0D 0x0A sequence
+			writeData(pcx, new byte[]{(byte)byteData});
+		} else {
+			writeData(pcx, new byte[]{(byte)(blockCount | 0xC0), (byte)byteData});
+		}
 	}
 	
 	/**
@@ -112,7 +137,7 @@ public class ImageToPcx extends ImageToBitLine {
 		int dpi = deviceInfo.getResolutionDpi();
 		writeData(pcx, new byte[]{
 				0x0A, // Pcx file
-				0x05, // Version 5
+				0x03, // Version 2.8 w/o palette
 				0x01, // RLE encoding
 				0x01, // 1 bit per pixel
 				0x00, 0x00, // Left margin (x start position)

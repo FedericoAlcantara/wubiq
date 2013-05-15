@@ -20,42 +20,93 @@ public enum GraphicsUtils {
 	INSTANCE;
 	private final String[] FONT_STYLES = {"PLAIN", "BOLD", "ITALIC", "BOLDITALIC"};
 
-	private Boolean isWindows;
+	private String osName;
 	
+	/**
+	 * For dot matrix printer transforms the fonts to a more easily printable.
+	 * @param originalFont Sent font.
+	 * @param printerType Type of printer.
+	 * @return Original Font sent or a fixed font. 
+	 */
 	public Font properFont(Font originalFont, PrinterType printerType){
-		if (isWindows == null) {
-			String os = System.getProperty("os.name");
-			if (os.startsWith("Windows")) {
-				isWindows = true;
-			} else {
-				isWindows = false;
+		Font font = originalFont.deriveFont(originalFont.getStyle());
+		
+		if (osName == null) {
+			osName = System.getProperty("os.name");
+		}
+		if (printerType.equals(PrinterType.DOT_MATRIX) ||
+				printerType.equals(PrinterType.DOT_MATRIX_HQ)) {
+			if (osName.startsWith("Windows")) {
+				font = windowsProperFont(font, printerType);
+			} else if (osName.startsWith("Linux")) {
+				font = linuxProperFont(font, printerType);
+			} else if (osName.startsWith("MacOS") ||
+					osName.startsWith("Mac OS")) {
+				font = macOsProperFont(font, printerType);
 			}
 		}
-		if (isWindows) {
-			if (printerType.equals(PrinterType.DOT_MATRIX) ||
-					printerType.equals(PrinterType.DOT_MATRIX_HQ)) {
-				String fontName = originalFont.getName();
-				String style = FONT_STYLES [originalFont.getStyle()];
-				if (fontName.toLowerCase().contains("arial") ||
-						fontName.toLowerCase().contains("helvetica")) {
-					Font font = originalFont.deriveFont(originalFont.getStyle());
-					if ("arial bold".equalsIgnoreCase(fontName)
-						|| "arialMT".equalsIgnoreCase(originalFont.getFontName())
-						|| "helvetica-bold".equalsIgnoreCase(originalFont.getFontName())) {
-						fontName = "SansSerif";
-						style = FONT_STYLES[(originalFont.getStyle() | Font.BOLD)];
-					} else {
-						fontName = "SansSerif";
-					}
-					String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
-					font = Font.decode(decodeString);
-					return font;
-				}
-			}
-		}
-		return originalFont;
+		return font;
 	}
 	
+	/**
+	 * For dot matrix printer transforms the fonts to a more easily printable if the system is windows.
+	 * @param originalFont Sent font.
+	 * @param printerType Type of printer.
+	 * @return Original Font sent or a fixed font. 
+	 */
+	private Font windowsProperFont(Font originalFont, PrinterType printerType) {
+		Font font = originalFont.deriveFont(originalFont.getStyle());
+		String fontName = originalFont.getName();
+		String style = FONT_STYLES [originalFont.getStyle()];
+		if (fontName.toLowerCase().contains("arial") ||
+				fontName.toLowerCase().contains("helvetica")) {
+			if ("arial bold".equalsIgnoreCase(fontName)
+				|| "arialMT".equalsIgnoreCase(originalFont.getFontName())
+				|| "helvetica-bold".equalsIgnoreCase(originalFont.getFontName())) {
+				fontName = "SansSerif";
+				style = FONT_STYLES[(originalFont.getStyle() | Font.BOLD)];
+			} else {
+				fontName = "SansSerif";
+			}
+			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
+			font = Font.decode(decodeString);
+		}
+		return font;
+	}
+
+	/**
+	 * For dot matrix printer transforms the fonts to a more easily printable if the system is linux based.
+	 * @param originalFont Sent font.
+	 * @param printerType Type of printer.
+	 * @return Original Font sent or a fixed font. 
+	 */
+	private Font linuxProperFont(Font originalFont, PrinterType printerType) {
+		Font font = originalFont;
+		return font;
+	}
+	
+	/**
+	 * For dot matrix printer transforms the fonts to a more easily printable if the system is osx (Mac).
+	 * @param originalFont Sent font.
+	 * @param printerType Type of printer.
+	 * @return Original Font sent or a fixed font. 
+	 */
+	private Font macOsProperFont(Font originalFont, PrinterType printerType) {
+		Font font = originalFont;
+		String fontName = originalFont.getName();
+		String style = FONT_STYLES [originalFont.getStyle()];
+		if (fontName.toLowerCase().contains("helvetica")) {
+			if ("helvetica-bold".equalsIgnoreCase(originalFont.getFontName())) {
+				style = FONT_STYLES[(originalFont.getStyle() | Font.BOLD)];
+			} else if ("helvetica-light".equalsIgnoreCase(originalFont.getFontName())) {
+				style = FONT_STYLES[Font.PLAIN];
+			}
+			fontName = "Helvetica";
+			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
+			font = Font.decode(decodeString);
+		}
+		return font;
+	}	
 	/**
 	 * Creates a transformation with scaled graphics.
 	 * @param graph Graphics environment.

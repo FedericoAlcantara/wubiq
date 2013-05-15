@@ -109,8 +109,8 @@ public enum ConversionServerUtils {
 		// Let's resize it
 		if (width > maxWidth) {
 			double rate = new Double(width) / new Double(maxWidth);
-			int maxHeight = new Double(img.getHeight() / rate).intValue();
-			returnValue = Scalr.resize(img, maxWidth, maxHeight);
+			int maxHeight = new Double(returnValue.getHeight() / rate).intValue();
+			returnValue = Scalr.resize(returnValue, maxWidth, maxHeight);
 		}
 		return returnValue;
 	}
