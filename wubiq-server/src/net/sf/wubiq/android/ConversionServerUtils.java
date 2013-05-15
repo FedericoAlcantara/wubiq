@@ -4,7 +4,6 @@
 package net.sf.wubiq.android;
 
 import java.awt.Color;
-import java.awt.Graphics;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -123,12 +122,15 @@ public enum ConversionServerUtils {
 	protected BufferedImage trimmed(MobileDeviceInfo deviceInfo, BufferedImage img) {
 		int trimmedHeight = getTrimmedHeight(deviceInfo, img);
 		int trimmedWidth = getTrimmedWidth(deviceInfo, img, trimmedHeight);
-		BufferedImage returnValue = new BufferedImage(trimmedWidth, 
-					trimmedHeight,
-                BufferedImage.TYPE_INT_RGB);
-		Graphics g = returnValue.createGraphics();
-        g.drawImage(img, 0, 0, null);
-        return returnValue;
+		BufferedImage returnValue = img;
+		int actualTrimmedWidth = trimmedWidth < img.getWidth() ? trimmedWidth : img.getWidth();
+		int actualTrimmedHeight = trimmedHeight < img.getHeight() ? trimmedHeight : img.getHeight();
+		if (actualTrimmedWidth != img.getWidth() ||
+				actualTrimmedHeight != img.getHeight()) {
+			returnValue = Scalr.crop(img, trimmedWidth, trimmedHeight);
+		}
+
+		return returnValue;
 	}
 	
 	/**
@@ -171,7 +173,7 @@ public enum ConversionServerUtils {
         int width = img.getWidth();
         int trimmedHeight = img.getHeight() > actualHeight ? actualHeight : img.getHeight();
         int trimmedWidth = 0;
-        int rightSpace = deviceInfo.getResolutionDpi() / 4;
+        int rightSpace = 0;
         if (deviceInfo.getHints().containsKey(MobileConversionHint.RIGHT_SPACE)) {
         	try {
         		rightSpace = (Integer) deviceInfo.getHints().get(MobileConversionHint.RIGHT_SPACE);
