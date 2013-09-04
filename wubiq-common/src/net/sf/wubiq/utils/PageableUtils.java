@@ -20,7 +20,6 @@ import java.io.InputStream;
 import java.io.ObjectOutputStream;
 import java.io.Reader;
 
-import javax.print.DocFlavor;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.MediaPrintableArea;
@@ -44,7 +43,7 @@ public enum PageableUtils {
 	
 	public static final Log LOG = LogFactory.getLog(PageableUtils.class);
 	
-	public InputStream getStreamForBytes(Object printData, DocFlavor docFlavor, 
+	public InputStream getStreamForBytes(Object printData,
 			PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) throws IOException {
 		InputStream returnValue = null;
 		if (printData instanceof InputStream) {
@@ -56,10 +55,8 @@ public enum PageableUtils {
 			output.close();
 		} else if (printData instanceof Pageable) {
 			returnValue = serializePageable((Pageable)printData, printRequestAttributes);
-			docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
 		} else if (printData instanceof Printable) {
 			returnValue = serializePrintable((Printable)printData, pageFormat, printRequestAttributes);
-			docFlavor = DocFlavor.SERVICE_FORMATTED.PRINTABLE;
 		}
 		
 		return returnValue;
@@ -117,7 +114,13 @@ public enum PageableUtils {
 		PrintableWrapper printable = new PrintableWrapper(inputPrintable);
 		printable.setNotSerialized(true);
 		try {
-			printPrintable(printable, new PageFormatWrapper(getPageFormat(pageFormat, printRequestAttributes)), 0);
+			int result = Printable.PAGE_EXISTS;
+			int pageIndex = 0;
+			PageFormatWrapper printablePageFormat = new PageFormatWrapper(getPageFormat(pageFormat, printRequestAttributes));
+			do {
+				result = printPrintable(printable, printablePageFormat, pageIndex);
+				pageIndex++;
+			} while (result == Printable.PAGE_EXISTS);
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			ObjectOutputStream output = new ObjectOutputStream(out);
 			output.writeObject(printable);

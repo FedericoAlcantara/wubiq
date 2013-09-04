@@ -1,4 +1,13 @@
 ==========================
+Wubiq 1.7.4 (2013-09-04)
+==========================
+-Fixed error when printing images on Mac OSX.
+-Multiple pages Printable implemented for PrintRequestAttribute with PageRanges of more than one page.
+-GlyphVectorWrapper modified to be produced by Font classes.
+-Fixed NPE when printing on mobile devices.
+-Deprecated class ServerPrintDirectUtils removed.
+
+==========================
 Wubiq 1.7.3 (2013-05-15)
 ==========================
 -Fixed black strip while printing on mobile printers.

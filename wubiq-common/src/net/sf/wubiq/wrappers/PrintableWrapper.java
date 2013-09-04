@@ -19,6 +19,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.io.Serializable;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
@@ -44,9 +45,9 @@ public class PrintableWrapper implements Printable, Serializable {
 	private static final long serialVersionUID = 1L;
 	private static Log LOG = LogFactory.getLog(PrintableWrapper.class);
 	private transient Printable printable;
-	private Set<GraphicCommand> graphicCommands;
+	private Map<Integer, Set<GraphicCommand>> graphicCommandsList;
 	private int returnValue = 0;
-	private int printed = 0;
+	private Map<Integer, Integer> printedPages;
 	private boolean noScale = false;
 	private transient boolean notSerialized = false;
 	private PrinterType printerType;
@@ -60,6 +61,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param printable Printable object to be encapsulated.
 	 */
 	public PrintableWrapper(Printable printable) {
+		this();
 		this.printable = printable;
 		if (printable.getClass().getName().endsWith(".TextPrintable")) {
 			noScale = true;
@@ -81,15 +83,25 @@ public class PrintableWrapper implements Printable, Serializable {
 		Graphics2D graph = (Graphics2D) graphics;
 
 		if (notSerialized) {
-			graphicCommands = new TreeSet<GraphicCommand>();
+			Set<GraphicCommand> graphicCommands = createGraphicCommands(pageIndex);
 			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, graph);
 			returnValue = printable.print(graphicsRecorder, new PageFormatWrapper(pageFormat), pageIndex);
+			if (returnValue == Printable.PAGE_EXISTS) {
+				graphicCommandsList.put(pageIndex, graphicCommands);
+				if (printedPages == null) {
+					printedPages = new HashMap<Integer, Integer>();
+				}
+				printedPages.put(pageIndex, 0);
+			}
 		} else {
-			if (printed <= 1) { // Normally a page rendering is called twice. One for peek graphics and the actual printing.
+			Integer printed = printedPages.get(pageIndex);
+			if (printed != null && printed <= 1) { // Normally a page rendering is called twice. One for peek graphics and the actual printing.
+				returnValue = Printable.PAGE_EXISTS;
 				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
 				Point2D scaleValue = GraphicsUtils.INSTANCE.scaleGraphics(graph, pageFormat, noScale);
-				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY());
+				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY(), pageIndex);
 				printed += 1;
+				printedPages.put(pageIndex, printed);
 			} else {
 				returnValue = Printable.NO_SUCH_PAGE;
 			}
@@ -104,12 +116,15 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param xScale new scale to apply horizontally wise.
 	 * @param yScale new scale to apply vertically wise.
 	 */
-	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale) {
-		Iterator<GraphicCommand> it = graphicCommands.iterator();
-		while (it.hasNext()) {
-			GraphicCommand graphicCommand = it.next();
-
-			executeMethod(graph, graphicCommand, xScale, yScale);
+	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
+		Set<GraphicCommand> graphicCommands = getGraphicCommands(pageIndex);
+		if (graphicCommands != null) {
+			Iterator<GraphicCommand> it = graphicCommands.iterator();
+			while (it.hasNext()) {
+				GraphicCommand graphicCommand = it.next();
+	
+				executeMethod(graph, graphicCommand, xScale, yScale);
+			}
 		}
 	}
 	
@@ -172,6 +187,10 @@ public class PrintableWrapper implements Printable, Serializable {
 					
 				} else if (parameterTypes[index].equals(GlyphVectorWrapper.class)) {
 					parameterTypes[index] = GlyphVector.class;
+					GlyphVectorWrapper glyphVectorWrapper = (GlyphVectorWrapper)parameterValues[index];
+					GlyphVector glyphVector = glyphVectorWrapper.getFont().createGlyphVector(graph.getFontRenderContext(), 
+							glyphVectorWrapper.getCodes());
+					parameterValues[index] = glyphVector;
 					
 				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
 					parameterTypes[index] = Stroke.class;
@@ -257,4 +276,35 @@ public class PrintableWrapper implements Printable, Serializable {
 		this.notSerialized = notSerialized;
 	}
 
+	/**
+	 * Gets the graphic commands set by its page index.
+	 * @param pageIndex Page index to the graphic commands set.
+	 * @return Found instance or null if not found.
+	 */
+	private Set<GraphicCommand> getGraphicCommands(int pageIndex) {
+		Set<GraphicCommand> returnValue = null;
+		if (graphicCommandsList == null) {
+			graphicCommandsList = new HashMap<Integer, Set<GraphicCommand>>();
+		}
+
+		if (pageIndex < graphicCommandsList.size()) {
+			returnValue = graphicCommandsList.get(pageIndex);
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Finds or create a graphic commands set.
+	 * @param pageIndex Index of the graphicCommand.
+	 * @return An empty set of the graphic command. Never null.
+	 */
+	private Set<GraphicCommand> createGraphicCommands(int pageIndex) {
+		
+		Set<GraphicCommand> returnValue = getGraphicCommands(pageIndex);
+		if (returnValue == null) {
+			returnValue = new TreeSet<GraphicCommand>();
+		}
+		returnValue.clear();
+		return returnValue;
+	}
 }

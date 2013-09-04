@@ -141,7 +141,7 @@ public class RemotePrintJob implements DocPrintJob {
 		this.docFlavor = doc.getDocFlavor();
 		try {
 			printData = doc.getPrintData();
-			InputStream transformed = PageableUtils.INSTANCE.getStreamForBytes(printData, docFlavor, getPageFormat(), printRequestAttributeSet);
+			InputStream transformed = PageableUtils.INSTANCE.getStreamForBytes(printData, getPageFormat(), printRequestAttributeSet);
 			printData = transformed;
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);

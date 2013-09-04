@@ -509,6 +509,8 @@ public class PrintServiceUtils {
 			LOG.debug(e.getMessage());
 		} catch (InvocationTargetException e) {
 			LOG.debug(e.getMessage());
+		} catch (NullPointerException e) {
+			LOG.debug(e.getMessage());
 		}
 		
 		return returnValue;

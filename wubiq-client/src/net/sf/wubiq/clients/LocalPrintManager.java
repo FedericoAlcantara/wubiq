@@ -47,6 +47,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	private long lastServerTimestamp = -1;
 	
 	public LocalPrintManager() {
+		super();
 	}
 	
 	public LocalPrintManager(String host) {

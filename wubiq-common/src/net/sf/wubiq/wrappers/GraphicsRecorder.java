@@ -69,6 +69,7 @@ public class GraphicsRecorder extends Graphics2D {
 		addToCommands("setBackground", new GraphicParameter(Color.class, originalGraphics.getBackground()));
 		addToCommands("setColor", new GraphicParameter(Color.class, originalGraphics.getColor()));
 		addToCommands("setClip", shapeParameter(originalGraphics.getClip()));
+		addToCommands("setFont", new GraphicParameter(Font.class, originalGraphics.getFont()));
 		addToCommands("addRenderingHints", new GraphicParameter(RenderingHintsWrapper.class, new RenderingHintsWrapper(originalGraphics.getRenderingHints())));
 	}
 	
