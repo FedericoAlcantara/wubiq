@@ -287,9 +287,7 @@ public class PrintableWrapper implements Printable, Serializable {
 			graphicCommandsList = new HashMap<Integer, Set<GraphicCommand>>();
 		}
 
-		if (pageIndex < graphicCommandsList.size()) {
-			returnValue = graphicCommandsList.get(pageIndex);
-		}
+		returnValue = graphicCommandsList.get(pageIndex);
 		return returnValue;
 	}
 	

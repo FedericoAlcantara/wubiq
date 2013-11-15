@@ -1,4 +1,9 @@
 ==========================
+Wubiq 1.7.5 (2013-11-15)
+==========================
+-Fixed blank pages after first page.
+
+==========================
 Wubiq 1.7.4 (2013-09-04)
 ==========================
 -Fixed error when printing images on Mac OSX.
