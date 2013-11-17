@@ -65,7 +65,7 @@ public class GraphicsRecorder extends Graphics2D {
 		this(graphicCommands);
 		this.originalGraphics = originalGraphics;
 		this.deviceConfiguration = new DefaultDeviceConfiguration(originalGraphics.getDeviceConfiguration());
-		addToCommands("transform", new GraphicParameter(AffineTransform.class, originalGraphics.getTransform()));
+		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, originalGraphics.getTransform()));
 		addToCommands("setBackground", new GraphicParameter(Color.class, originalGraphics.getBackground()));
 		addToCommands("setColor", new GraphicParameter(Color.class, originalGraphics.getColor()));
 		addToCommands("setClip", shapeParameter(originalGraphics.getClip()));

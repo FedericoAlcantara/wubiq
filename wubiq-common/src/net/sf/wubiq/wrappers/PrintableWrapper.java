@@ -11,6 +11,7 @@ import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.font.GlyphVector;
+import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
@@ -51,6 +52,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	private boolean noScale = false;
 	private transient boolean notSerialized = false;
 	private PrinterType printerType;
+	private transient AffineTransform initialTransform;
 	
 	public PrintableWrapper() {
 	}
@@ -117,6 +119,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param yScale new scale to apply vertically wise.
 	 */
 	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
+		initialTransform = graph.getTransform();
 		Set<GraphicCommand> graphicCommands = getGraphicCommands(pageIndex);
 		if (graphicCommands != null) {
 			Iterator<GraphicCommand> it = graphicCommands.iterator();
@@ -140,6 +143,7 @@ public class PrintableWrapper implements Printable, Serializable {
 		Class[] parameterTypes = new Class[]{};
 		Object[] parameterValues = new Object[]{};
 		if (graphicCommand.getMethodName().equals("setTransform")) {
+			graph.setTransform(initialTransform);
 			return;
 		}
 		
