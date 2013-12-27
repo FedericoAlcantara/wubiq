@@ -50,17 +50,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		super();
 	}
 	
-	public LocalPrintManager(String host) {
-		setHost(host);
-	}
 	
-	public LocalPrintManager(String host, String port) {
-		this(host);
-		setPort(port);
-	}
-	
-	public LocalPrintManager(String host, String port, String applicationName) {
-		this(host, port);
+	public LocalPrintManager(String applicationName, String connections) {
 		setApplicationName(applicationName);
 	}
 		
@@ -203,6 +194,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		options.addOption("k", "kill", false, ClientLabels.get("client.command_line_kill"));
 		options.addOption("h", "host", true, ClientLabels.get("client.command_line_host"));
 		options.addOption("p", "port", true, ClientLabels.get("client.command_line_port"));
+		options.addOption("c", "connections", true, ClientLabels.get("client.command_line_connections"));
 		options.addOption("a", "app", true, ClientLabels.get("client.command_line_app"));
 		options.addOption("s", "servlet", true, ClientLabels.get("client.command_line_servlet"));
 		options.addOption("u", "uuid", true, ClientLabels.get("client.command_line_uuid"));
@@ -213,6 +205,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		initializeDefault(manager);
 		
 		CommandLineParser parser = new GnuParser();
+		String host = null;
+		String port = null;
+		String connectionsString = null;
 		try {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("help")) {
@@ -223,10 +218,13 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 					manager.setKillManager(true);
 				}
 				if (line.hasOption("host")) {
-					manager.setHost(line.getOptionValue("host"));
+					host = line.getOptionValue("host");
 				}
 				if (line.hasOption("port")) {
-					manager.setPort(line.getOptionValue("port"));
+					port = line.getOptionValue("port");
+				}
+				if (line.hasOption("connections")) {
+					connectionsString = line.getOptionValue("connections");
 				}
 				if (line.hasOption("app")) {
 					manager.setApplicationName(line.getOptionValue("app"));
@@ -249,6 +247,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				Thread r = new Thread(manager);
 				r.start();
 			}
+			addConnectionsString(manager, manager.hostPortConnection(host, port));
+			addConnectionsString(manager, connectionsString);
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();

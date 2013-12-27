@@ -28,10 +28,20 @@ public class ClientProperties {
 	private ClientProperties() {
 	}
 
+	/**
+	 * @deprecated Use the getConnections instead.
+	 * Returns the connection host.
+	 * @return the connection host.
+	 */
 	public static String getHost() {
 		return get("host", "http://localhost").trim();
 	}
 	
+	/**
+	 * @deprecated Use the getConnections instead.
+	 * Gets the connection port.
+	 * @return Connection port.
+	 */
 	public static String getPort() {
 		return get("port", "8080").trim();
 	}
@@ -46,6 +56,36 @@ public class ClientProperties {
 	
 	public static String getUuid() {
 		return get("uuid", UUID.randomUUID().toString()).trim();
+	}
+	
+	/**
+	 * Reads the possible connections from the client properties. This should be the preferred method.
+	 * @return A comma separated list of connections.
+	 */
+	public static String getConnections() {
+		StringBuffer returnValue = new StringBuffer("");
+		String host = get("host", "").trim();
+		String port = get("port", "").trim();
+		if (!Is.emptyString(host)) {
+			returnValue.append(host);
+			if (!Is.emptyString(port)) {
+				returnValue.append(':')
+					.append(port);
+			}
+		}
+		String connectionsString = get("connections", "").trim();
+		if (!Is.emptyString(connectionsString)) {
+			String [] connections = connectionsString.split("[,;]");
+			for (String connection : connections) {
+				if (!Is.emptyString(connection.trim())) {
+					if (returnValue.length() > 0) {
+						returnValue.append(',');
+					}
+					returnValue.append(connection.trim());
+				}
+			}
+		}
+		return returnValue.toString();
 	}
 	
 	private static String get(String key, String defaultValue) {

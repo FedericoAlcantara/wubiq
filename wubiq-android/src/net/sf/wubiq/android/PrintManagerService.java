@@ -99,7 +99,7 @@ public class PrintManagerService extends Service {
     public boolean checkPrintManagerStatus() {
     	boolean returnValue = false;
     	if (managerThread.getState().equals(State.TERMINATED)) {
-    		String message = getString(R.string.error_cant_connect_to).replaceAll("%0", manager.hostServletUrl());
+    		String message = getString(R.string.error_cant_connect_to);
     		Log.e(TAG, message);
     		startPrintManager();
     	} else {

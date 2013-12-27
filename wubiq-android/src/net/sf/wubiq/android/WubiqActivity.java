@@ -23,6 +23,7 @@ public class WubiqActivity extends Activity {
 	public static final String PREFERENCES = "WUBIQ_ANDROID";
 	public static final String HOST_KEY="server_host";
 	public static final String PORT_KEY="server_port";
+	public static final String CONNECTIONS_KEY="server_connections";
 	public static final String PRINT_DELAY_KEY="print_delay";
 	public static final String PRINT_PAUSE_KEY="print_pause";
 	public static final String PRINT_POLL_INTERVAL_KEY="print_poll_interval";

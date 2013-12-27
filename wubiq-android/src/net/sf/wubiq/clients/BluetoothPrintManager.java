@@ -16,6 +16,7 @@ import java.util.UUID;
 import net.sf.wubiq.android.PrintClientUtils;
 import net.sf.wubiq.android.R;
 import net.sf.wubiq.android.WubiqActivity;
+import net.sf.wubiq.android.utils.NotificationUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.utils.Labels;
@@ -52,6 +53,11 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		setPrintingJobInterval(preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default)));
 		setConnectionErrorRetries(preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default)));
 		initializeDefault(this);
+		String host = preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default));
+		String port = preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default));
+		String connectionsString = preferences.getString(WubiqActivity.CONNECTIONS_KEY, resources.getString(R.string.server_connection_default));
+		addConnectionsString(this, hostPortConnection(host, port));
+		addConnectionsString(this, connectionsString);
 	}
 	
 	/**
@@ -109,6 +115,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			}
 		} catch (Exception e) {
 			Log.e(TAG, e.getMessage());
+			NotificationUtils.INSTANCE.notifyException(context, e);
 		} finally {
 			try {
 				if (stream != null) {
@@ -119,24 +126,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			}
 		}
 	}
-	
-	@Override
-	public String hostServletUrl() {
-		return super.hostServletUrl();
-	}
-	
-	@Override
-	public String getHost() {
-		Resources resources = context.getResources();
-		return preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default));
-	}
-	
-	@Override
-	public String getPort() {
-		Resources resources = context.getResources();
-		return preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default));
-	}
-	
+		
 	@Override
 	public String getUuid() {
 		return preferences.getString(WubiqActivity.UUID_KEY, UUID.randomUUID().toString());

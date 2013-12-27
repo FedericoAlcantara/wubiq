@@ -13,10 +13,17 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -40,19 +47,25 @@ import org.apache.commons.logging.LogFactory;
  */
 public abstract class AbstractLocalPrintManager implements Runnable {
 	private static final Log LOG = LogFactory.getLog(AbstractLocalPrintManager.class);
-	private String host;
-	private String port;
 	private String applicationName;
 	private String servletName;
 	private String uuid;
 	private boolean killManager;
 	private boolean refreshServices;
 	private boolean debugMode;
-	private long checkPendingJobInterval = 10000;
-	private long printingJobInterval = 3000;
+	private long checkPendingJobInterval = 3000;
+	private long printingJobInterval = 1000;
 	private int connectionErrorRetries = -1;
 	private int connectionErrorCount = 0;
 	private boolean cancelManager = false;
+	private Set<String> connections;
+	private Set<URL> urls;
+	private URL preferredURL;
+
+	public AbstractLocalPrintManager() {
+		connections = new HashSet<String>();
+		preferredURL = null;
+	}
 	
 	@Override
 	public void run() {
@@ -66,6 +79,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			if (!isActive()) {
 				bringAlive();
 				setRefreshServices(true);
+				double nextCheckInterval = getCheckPendingJobInterval();
 				while (!isKilled()) {
 					try {
 						if (needsRefresh()) {
@@ -77,8 +91,13 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 						for (String pendingJob : pendingJobs) {
 							processPendingJob(pendingJob);
 							Thread.sleep(getPrintingJobInterval());
+							nextCheckInterval = fastReadingTime();
 						}
-						Thread.sleep(getCheckPendingJobInterval());
+						Thread.sleep((long)nextCheckInterval);
+						nextCheckInterval = nextCheckInterval * accelerationRate();
+						if (nextCheckInterval > getCheckPendingJobInterval()) {
+							nextCheckInterval = getCheckPendingJobInterval();
+						}
 					} catch (ConnectException e) {
 						if (getConnectionErrorRetries() >= 0) {
 							setConnectionErrorCount(getConnectionErrorCount() + 1);
@@ -106,6 +125,17 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		}
 	}
 	
+	//******************
+	// Throttle control.
+	private double fastReadingTime() {
+		return 10;
+	}
+	
+	private double accelerationRate() {
+		return 1.1; // This value must produce at least a value of one.
+	}
+	//******************
+
 	/**
 	 * Kills the manager.
 	 */
@@ -254,15 +284,34 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		String url = null;
 		URL webUrl = null;
 		HttpURLConnection connection = null;
+		Object content = null;
 		BufferedReader reader = null;
+		List<URL> actualURLs = new ArrayList<URL>();
+		if (preferredURL != null) {
+			actualURLs.add(preferredURL);
+		} else {
+			actualURLs.addAll(getUrls());
+		}
 		try {
-			url = getEncodedUrl(command, parameters);
-			doLog("URL:" + url);
-			webUrl = new URL(url);
-			connection = (HttpURLConnection) webUrl.openConnection();
-			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
-			connection.setRequestMethod("POST");
-			Object content = connection.getContent();
+			for (URL address : actualURLs) {
+				try {
+					url = getEncodedUrl(address, command, parameters);
+					doLog("URL:" + url);
+					webUrl = new URL(url);
+					connection = (HttpURLConnection) webUrl.openConnection();
+					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+					connection.setRequestMethod("POST");
+					content = connection.getContent();
+				} catch (IOException e) {
+					LOG.debug(e.getMessage() + ":" + address);
+					connection = null;
+				}
+			}
+			if (connection == null) {
+				url = null;
+				throw new IOException("Couldn't connect to any of the addresses");
+			}
+	
 			if (connection.getContentType() != null) {
 				if (connection.getContentType().equals("application/pdf")) {
 					returnValue = (InputStream)content;
@@ -276,15 +325,19 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				}
 			}
 		} catch (MalformedURLException e) {
+			preferredURL = null;
 			LOG.error(e.getMessage() + "->" + url);
 		} catch (UnknownServiceException e) {
+			preferredURL = null;
 			doLog(e.getMessage());
 		} catch (FileNotFoundException e) {
 			doLog(e.getMessage());
 		} catch (IOException e) {
-			LOG.error(e.getMessage() + " " + url);
+			preferredURL = null;
+			LOG.error(e.getMessage());
 			throw new ConnectException(e.getMessage());
 		} catch (Exception e) {
+			preferredURL = null;
 			LOG.error(e.getMessage() + "->" + url);
 		} finally {			
 			if (reader != null) {
@@ -298,55 +351,78 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return returnValue;
 	}
 	
+	private Set<URL> getUrls() {
+		if (urls == null) {
+			urls = new LinkedHashSet<URL>();
+			for (String connection : getConnections()) {
+				if (!Is.emptyString(connection.trim())) {
+					URL url = hostServletUrl(connection);
+					if (url != null) {
+						urls.add(url);
+					}
+				}
+			}
+		}
+		return urls;
+	}
 	/**
 	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
 	 * @param command Command to be encoded as part of the url.
 	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
 	 * @return Url string with parameterValues encoded.
 	 */
-	protected String getEncodedUrl(String command, String... parameters) {
-		StringBuffer url = new StringBuffer(hostServletUrl())
-			.append('?')
-			.append(ParameterKeys.UUID)
-			.append(ParameterKeys.PARAMETER_SEPARATOR)
-			.append(getUuid());
-		if (!Is.emptyString(command)) {
-			url.append('&')
-			.append(ParameterKeys.COMMAND)
-			.append(ParameterKeys.PARAMETER_SEPARATOR)
-			.append(command);
-		}
-		for (String parameter: parameters) {
-			String parameterString = parameter;
-			if (parameter.contains("=")) {
-				String parameterName = parameter.substring(0, parameter.indexOf("="));
-				String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
-				try {
-					parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
-					parameterString = parameterName + "=" + parameterValue;
-				} catch (UnsupportedEncodingException e) {
-					LOG.error(e.getMessage());
-				}
+	protected String getEncodedUrl(URL address, String command, String... parameters) {
+		StringBuffer parametersQuery = new StringBuffer("")
+				.append(ParameterKeys.UUID)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(getUuid());
+			if (!Is.emptyString(command)) {
+				parametersQuery.append('&')
+				.append(ParameterKeys.COMMAND)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(command);
 			}
-			url.append('&')
-					.append(parameterString);
+		
+			for (String parameter: parameters) {
+				String parameterString = parameter;
+				if (parameter.contains("=")) {
+					String parameterName = parameter.substring(0, parameter.indexOf("="));
+					String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
+					try {
+						parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
+						parameterString = parameterName + "=" + parameterValue;
+					} catch (UnsupportedEncodingException e) {
+						LOG.error(e.getMessage());
+					}
+				}
+				parametersQuery.append('&')
+						.append(parameterString);
+			}
+		String returnValue = "";
+		try {
+			URI uri = new URI(address.getProtocol(), address.getHost() + ":" + address.getPort(), address.getPath(), parametersQuery.toString(), null);
+			returnValue = uri.toASCIIString();
+		} catch (URISyntaxException e) {
+			LOG.error(e.getMessage(), e);
 		}
-		String returnValue = url.toString();
 		if (command.equals(CommandKeys.PRINT_TEST_PAGE) ||
 				command.equals(CommandKeys.SHOW_PRINT_SERVICES)) {
 			returnValue = returnValue.replace("wubiq.do", "wubiq-print-test.do");
 		}
+
 		return returnValue;
 	}
+	
 	/**
-	 * Properly concatenates host, port, applicationName and servlet name.
-	 * @return Concatenated strings.
+	 * Creates a valid url with the given connection.
+	 * @param connection Connection to encapsulate.
+	 * @return Valid URL or null.
 	 */
-	protected String hostServletUrl() {
-		StringBuffer buffer = new StringBuffer(getHost());
-		if (!Is.emptyString(getPort())) {
-			buffer.append(':')
-					.append(getPort());
+	private URL hostServletUrl(String connection) {
+		URL returnValue = null;
+		StringBuffer buffer = new StringBuffer("");
+		if (!Is.emptyString(connection)) {
+			buffer.append(connection);
 		}
 		if (!Is.emptyString(getApplicationName())) {
 			appendWebChar(buffer, '/')
@@ -356,37 +432,36 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			appendWebChar(buffer, '/')
 					.append(getServletName());
 		}
-		return buffer.toString();
+		if (buffer.length() > 0) {
+			try {
+				returnValue = new URL(buffer.toString());
+			} catch (MalformedURLException e) {
+				LOG.error(e.getMessage());
+			}
+		}
+		return returnValue;
 	}
 	
 	/**
-	 * @param host the host to set
+	 * Creates a connection based on host, port. Will be annotated as deprecated soon.
+	 * @param host Host.
+	 * @param port Port.
+	 * @return String containing the equivalent connection. Might be blank, never null.
 	 */
-	protected void setHost(String host) {
-		this.host = host;
+	protected String hostPortConnection(String host, String port) {
+		StringBuffer connection = new StringBuffer("");
+		if (host != null) {
+			if (!Is.emptyString(host.trim())) {
+				connection.append(host.trim());
+				if (port != null && !Is.emptyString(port.trim())) {
+					connection.append(':')
+						.append(port.trim());
+				}
+			}
+		}
+		return connection.toString();
 	}
-
-	/**
-	 * @return the host
-	 */
-	public String getHost() {
-		return host;
-	}
-
-	/**
-	 * @param port the port to set
-	 */
-	protected void setPort(String port) {
-		this.port = port;
-	}
-
-	/**
-	 * @return the port
-	 */
-	public String getPort() {
-		return port.trim();
-	}
-
+	
 	/**
 	 * @param applicationName the applicationName to set
 	 */
@@ -429,6 +504,13 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return uuid.trim();
 	}
 		
+
+	/**
+	 * @return the connections
+	 */
+	public Set<String> getConnections() {
+		return connections;
+	}
 
 	/**
 	 * @param debugMode the debugMode to set
@@ -546,13 +628,32 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		}
 	}
 	
+	/**
+	 * Initializes the remote connection manager. Tries to set the list of possible connections.
+	 * @param manager Manager to configure.
+	 */
 	protected static void initializeDefault(AbstractLocalPrintManager manager) {
 		// Set values based on wubiq-client.properties
-		manager.setHost(ClientProperties.getHost());
-		manager.setPort(ClientProperties.getPort());
 		manager.setApplicationName(ClientProperties.getApplicationName());
 		manager.setServletName(ClientProperties.getServletName());
 		manager.setUuid(ClientProperties.getUuid());
+		String connectionsString = ClientProperties.getConnections();
+		addConnectionsString(manager, connectionsString);
+	}
+	
+	/**
+	 * Adds a list of comma separated connections to the connections available.
+	 * @param manager Manager containing the connections.
+	 * @param connectionsString Comma separated list of connections.
+	 */
+	protected static void addConnectionsString(AbstractLocalPrintManager manager, String connectionsString) {
+		if (!Is.emptyString(connectionsString)) {
+			for (String connection : connectionsString.split("[,;\n]")) {
+				if (!Is.emptyString(connection.trim())) {
+					manager.getConnections().add(connection);
+				}
+			}
+		}
 	}
 
 	/**
