@@ -5,6 +5,7 @@ package net.sf.wubiq.print.managers.impl;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.sql.Connection;
@@ -50,6 +51,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	private final String DELETE_JOB = "delete from " + TABLE_NAME + " where " + JOB_ID_FIELD_NAME + " = ?";
 	private final String LOOK_UP_PENDING = "select " + JOB_ID_FIELD_NAME + " from " + TABLE_NAME + " where " + QUEUE_ID_FIELD_NAME + " = ? order by "
 			 + JOB_ID_FIELD_NAME;
+	private File hostFolder;
 	
 	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
@@ -243,14 +245,37 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		} catch (ClassNotFoundException e) {
 			throw new SQLException (e.getMessage());
 		}
-		StringBuffer buffer = new StringBuffer("jdbc:hsqldb:")
-			.append(ServerProperties.getHsqldbHost());
-		if (!Is.emptyString(ServerProperties.getHsqldbPort())) {
-			buffer.append(':')
-			.append(ServerProperties.getHsqldbPort());
+		StringBuffer buffer = new StringBuffer("jdbc:hsqldb:");
+		if ("file:".equals(ServerProperties.getHsqldbHost())) {
+			if (hostFolder == null ||
+					!hostFolder.exists()) {
+				try {
+					hostFolder = File.createTempFile("wubiq", "");
+					hostFolder.delete();
+					hostFolder.mkdirs();
+				} catch (IOException e) {
+					LOG.error(e.getMessage());
+					hostFolder = null;
+				}
+			}
+			if (hostFolder != null) {
+				buffer.append("file:")
+				    .append(hostFolder.getPath());
+			}
+		} 
+		if (hostFolder == null) {
+			if ("file:".equals(ServerProperties.getHsqldbHost())) {
+				buffer.append("hsql://localhost"); // because it failed to create a temp file
+			} else {
+				buffer.append(ServerProperties.getHsqldbHost());
+			}
+			if (!Is.emptyString(ServerProperties.getHsqldbPort())) {
+				buffer.append(':')
+				.append(ServerProperties.getHsqldbPort());
+			}
 		}
 		buffer.append('/')
-			.append(ServerProperties.getHsqldbDbName());
+				.append(ServerProperties.getHsqldbDbName());
         returnValue = DriverManager.getConnection(buffer.toString(), "SA", "");
 	    return returnValue;
 	}

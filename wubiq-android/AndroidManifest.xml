@@ -1,14 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="net.sf.wubiq.android"
-    android:versionCode="12"
-    android:versionName="1.7.6" >
+    android:versionCode="13"
+    android:versionName="1.8.0" >
 
     <uses-sdk android:minSdkVersion="7" android:targetSdkVersion="10"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <application
         android:icon="@drawable/ic_launcher"
@@ -31,6 +32,9 @@
             </intent-filter>
         </receiver>
         <service android:name="PrintManagerService" android:label="@string/print_manager_service"></service>
+        <activity android:name="CancelConnectionNotificationActivity"></activity>
+        <activity android:name="CancelPrintingErrorNotificationActivity"></activity>
+        <activity android:name="CancelPrintingInfoNotificationActivity"></activity>
         </application>
 
 </manifest>

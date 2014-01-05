@@ -253,9 +253,9 @@ public class RemotePrintServlet extends HttpServlet {
 	private void registerPrintServiceCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		if (client != null) {
-			String serviceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
-			String categoriesString = request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES);
-			String docFlavors = request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS);
+			String serviceName = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
+			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
+			String docFlavors = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
@@ -280,8 +280,8 @@ public class RemotePrintServlet extends HttpServlet {
 	private void registerMobilePrintServiceCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		if (client != null) {
-			String serviceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
-			String categoriesString = request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES);
+			String serviceName = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
+			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);

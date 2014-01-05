@@ -4,10 +4,11 @@
     <string name="app_name">Wubiq Configurador de Adm. Impresión</string>
     <string name="print_manager_service">Servicios de Impresión Wubiq</string>
     <string name="configure_bluetooth">Configurar Dispositivos Bluetooth</string>
-	<string name="select_driver">Seleccione Controlador</string>
+    <string name="suppress_notifications">Suprimir Notificaciones</string>
+    <string name="select_driver">Seleccione Controlador</string>
     <string name="configure_server">Configurar Conexión a Servidor</string>
     <string name="connections">Conexiones</string>
-    <string name="compatibility">Compatibilidad</string>
+    <string name="compatibility">\nCompatibilidad</string>
     <string name="server_host">Host</string>
     <string name="server_port">Puerto</string>
     <string name="server_port_default">8080</string>
@@ -16,7 +17,8 @@
     <string name="client_uuid">UUID</string>
     <string name="start_service">Iniciar Servicios Impresión</string>
     <string name="stop_service">Detener Servicios Impresión</string>
-	<string name="error_cant_connect_to">No se ha podido conectar a ninguna conexión válida</string>
+	<string name="error_cant_connect_to">Conexion: No se ha podido conectar</string>
+    <string name="error_bluetooth">Bluetooth: verifique impresora</string>
 	<string name="service_started">Servicios de Impresión Wubiq Iniciados</string>
     <string name="wubiq_version_title">Wubiq Android Version: </string>
     <string name="advanced_configuration">Configuración Avanzada</string>
@@ -26,6 +28,7 @@
     <string name="print_poll_interval">Intervalo a Servidor(ms)</string>
     <string name="pause_between_jobs">Pausa entre Impresiones(ms)</string>
     <string name="print_connection_errors_retries"># Intentos Errores</string>
+    <string name="info_printing">Imprimiendo&#8230;</string>
     <integer name="print_delay_default">500</integer>
     <integer name="print_pause_default">200</integer>
     <integer name="print_poll_interval_default">5000</integer>

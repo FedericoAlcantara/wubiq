@@ -28,7 +28,7 @@ public class ServerProperties {
 	}
 
 	public static String getHsqldbHost() {
-		return get("host", "hsql://localhost");
+		return get("host", "file:");
 	}
 	
 	public static String getHsqldbPort() {

@@ -160,7 +160,7 @@
         android:layout_height="wrap_content" >
 
         <Button
-            android:id="@+id/button1"
+            android:id="@+id/ConfigureNotifications"
             android:layout_width="fill_parent"
             android:layout_height="wrap_content"
             android:onClick="setDefaultValues"

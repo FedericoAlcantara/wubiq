@@ -14,8 +14,10 @@ import java.util.Map.Entry;
 import java.util.UUID;
 
 import net.sf.wubiq.android.PrintClientUtils;
+import net.sf.wubiq.android.PrintManagerService;
 import net.sf.wubiq.android.R;
 import net.sf.wubiq.android.WubiqActivity;
+import net.sf.wubiq.android.enums.NotificationIds;
 import net.sf.wubiq.android.utils.NotificationUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -40,8 +42,15 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	private Map<String, String> compressionMap;
 	private Map<String, BluetoothDevice> printServicesName;
 	private final String TAG = "BluetoothPrintManager";
+	private int bluetoothErrors = 0;
 
 
+	/**
+	 * Create a new instance of the bluetooth print manager.
+	 * @param context Context.
+	 * @param resources Resources.
+	 * @param preferences Preferences.
+	 */
 	public BluetoothPrintManager(Context context, Resources resources, SharedPreferences preferences) {
 		this.resources = resources;
 		this.preferences = preferences;
@@ -87,6 +96,25 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	}
 	
 	/**
+	 * @see net.sf.wubiq.clients.AbstractLocalPrintManager#getPendingJobs()
+	 */
+	@Override
+	protected String[] getPendingJobs() throws ConnectException {
+		String[] returnValue = super.getPendingJobs();
+		NotificationUtils.INSTANCE.cancelNotification(context,
+				NotificationIds.CONNECTION_ERROR_ID);
+		PrintManagerService.connectionErrors = 0;
+		if (returnValue != null && returnValue.length > 0) {
+			NotificationUtils.INSTANCE.notify(context, NotificationIds.PRINTING_INFO_ID,
+					returnValue.length,
+					context.getString(R.string.info_printing));
+		} else {
+			NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
+		}
+		return returnValue;
+	}
+	
+	/**
 	 * Print pending jobs to the client.
 	 */
 	@Override
@@ -112,10 +140,17 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				doLog("Job(" + jobId + ") printed.");
 				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 				doLog("Job(" + jobId + ") close print job.");
+			} else {
+				NotificationUtils.INSTANCE.notify(context, 
+						NotificationIds.BLUETOOTH_ERROR_ID, 0,
+						context.getString(R.string.error_bluetooth));
 			}
+			
 		} catch (Exception e) {
 			Log.e(TAG, e.getMessage());
-			NotificationUtils.INSTANCE.notifyException(context, e);
+			NotificationUtils.INSTANCE.notify(context, 
+					NotificationIds.PRINTING_ERROR_ID, 0,
+					e.getMessage());
 		} finally {
 			try {
 				if (stream != null) {
@@ -265,12 +300,25 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		return compressionMap;
 	}
 	
+	/**
+	 * Gets the bluetooth adapter.
+	 * @return Bluetooth adapter or null if an errors occurs.
+	 */
 	private BluetoothAdapter getBAdapter() {
 		if (bAdapter == null) {
 			try {
 				bAdapter = BluetoothAdapter.getDefaultAdapter();
+				NotificationUtils.INSTANCE.cancelNotification(context,
+						NotificationIds.BLUETOOTH_ERROR_ID);
+				bluetoothErrors = 0;
 			} catch (Exception e) {
-				e.printStackTrace();
+				bluetoothErrors++;
+	    		String message = context.getString(R.string.error_bluetooth);
+	    		Log.e(TAG, message);
+	    		NotificationUtils.INSTANCE.notify(context, 
+	    				NotificationIds.BLUETOOTH_ERROR_ID,
+	    				bluetoothErrors,
+	    				message);				
 				bAdapter = null;
 			}
 		}
