@@ -31,6 +31,7 @@ public class WubiqActivity extends Activity {
 	public static final String PRINT_CONNECTION_ERRORS_RETRY_KEY="print_error_retry";
 	public static final String UUID_KEY="client_uuid";
 	public static final String DEVICE_PREFIX = "wubiq-android-bt_";
+	public static final String SUPPRESS_NOTIFICATIONS_KEY="suppress_notifications";
 	
 	@SuppressWarnings("unused")
 	private PrintManagerService printManagerService;

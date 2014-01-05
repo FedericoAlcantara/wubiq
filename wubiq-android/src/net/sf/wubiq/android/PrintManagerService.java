@@ -5,6 +5,8 @@ package net.sf.wubiq.android;
 
 import java.lang.Thread.State;
 
+import net.sf.wubiq.android.enums.NotificationIds;
+import net.sf.wubiq.android.utils.NotificationUtils;
 import net.sf.wubiq.clients.BluetoothPrintManager;
 import android.app.Service;
 import android.content.Intent;
@@ -24,6 +26,7 @@ import android.util.Log;
 public class PrintManagerService extends Service {
 
 	private static final String TAG = "PrintManagerService";
+	public static int connectionErrors = 0;
 	private Thread managerThread;
 	private Resources resources;
 	private SharedPreferences preferences;
@@ -101,6 +104,11 @@ public class PrintManagerService extends Service {
     	if (managerThread.getState().equals(State.TERMINATED)) {
     		String message = getString(R.string.error_cant_connect_to);
     		Log.e(TAG, message);
+    		connectionErrors++;
+    		NotificationUtils.INSTANCE.notify(getApplicationContext(), 
+    				NotificationIds.CONNECTION_ERROR_ID, 
+    				connectionErrors,
+    				message);
     		startPrintManager();
     	} else {
     		if (cancelManager) {
@@ -110,14 +118,6 @@ public class PrintManagerService extends Service {
     		}
     	}
     	return returnValue;
-    }
-
-    /**
-     * @return Status of the manager.
-     * @throws Exception
-     */
-    public String checkKilledStatus() throws Exception {
-    	return manager.askServer("isKilled");
     }
     
 }
