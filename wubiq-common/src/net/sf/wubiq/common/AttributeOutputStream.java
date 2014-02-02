@@ -14,6 +14,9 @@ import javax.print.attribute.IntegerSyntax;
 import javax.print.attribute.SetOfIntegerSyntax;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.MediaTray;
 
 import net.sf.wubiq.utils.PrintServiceUtils;
 
@@ -103,10 +106,14 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	 */
 	private StringBuffer convertAttributeToString(Attribute attribute) throws IOException {
 		StringBuffer data = new StringBuffer(attribute.getClass().getName())
-		.append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+				.append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 		if (attribute instanceof SetOfIntegerSyntax) {
 			data.append(ParameterKeys.ATTRIBUTE_TYPE_SET_INTEGER_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 			writeSetOfIntegerSyntax((SetOfIntegerSyntax)attribute, data);
+		} else if (attribute instanceof MediaSizeName) {
+			writeMediaSizeNameSyntax((MediaSizeName)attribute, data);
+		} else if (attribute instanceof MediaTray) {
+			writeMediaTraySyntax((MediaTray)attribute, data);
 		} else if (attribute instanceof EnumSyntax) {
 			data.append(ParameterKeys.ATTRIBUTE_TYPE_ENUM_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 			writeEnumSyntax((EnumSyntax)attribute, data);
@@ -126,6 +133,37 @@ public class AttributeOutputStream extends OutputStreamWriter {
 			}
 		}
 		return data;
+	}
+	
+	/**
+	 * Writes media information.
+	 * @param mediaSize Size of the media.
+	 * @param data Buffer containing the output.
+	 * @throws IOException
+	 */
+	private void writeMediaSizeNameSyntax(MediaSizeName mediaSizeName, StringBuffer data) throws IOException {
+		MediaSize mediaSize = MediaSize.getMediaSizeForName(mediaSizeName);
+		if (mediaSize != null) {
+			data.append(ParameterKeys.ATTRIBUTE_TYPE_MEDIA).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR)
+					.append(mediaSize.getX(MediaSize.MM))
+					.append(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR)
+					.append(mediaSize.getY(MediaSize.MM))
+					.append(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR)
+					.append(mediaSizeName.toString())
+					;
+		}
+	}
+	
+	/**
+	 * Attribute tray syntax writer.
+	 * @param attribute Attribute of type media tray to store.
+	 * @param data Data containing the attributes description.
+	 * @throws IOException
+	 */
+	private void writeMediaTraySyntax(MediaTray attribute, StringBuffer data) throws IOException {
+		data.append(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_TRAY).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR)
+				.append(attribute.getValue());
+		
 	}
 	
 	/**

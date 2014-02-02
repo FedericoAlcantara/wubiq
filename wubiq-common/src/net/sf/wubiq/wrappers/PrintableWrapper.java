@@ -53,6 +53,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	private transient boolean notSerialized = false;
 	private PrinterType printerType;
 	private transient AffineTransform initialTransform;
+	private boolean initialTransformApplied = false;
 	
 	public PrintableWrapper() {
 	}
@@ -120,6 +121,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 */
 	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
 		initialTransform = graph.getTransform();
+		initialTransformApplied = false;
 		Set<GraphicCommand> graphicCommands = getGraphicCommands(pageIndex);
 		if (graphicCommands != null) {
 			Iterator<GraphicCommand> it = graphicCommands.iterator();
@@ -143,7 +145,10 @@ public class PrintableWrapper implements Printable, Serializable {
 		Class[] parameterTypes = new Class[]{};
 		Object[] parameterValues = new Object[]{};
 		if (graphicCommand.getMethodName().equals("setTransform")) {
-			graph.setTransform(initialTransform);
+			if (!initialTransformApplied) {
+				graph.setTransform(initialTransform);
+				initialTransformApplied = true;
+			}
 			return;
 		}
 		

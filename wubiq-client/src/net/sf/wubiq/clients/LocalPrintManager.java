@@ -244,11 +244,11 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				if (line.hasOption("wait")) {
 					manager.setPrintingJobInterval(line.getOptionValue("interval"));
 				}
-				Thread r = new Thread(manager);
-				r.start();
 			}
 			addConnectionsString(manager, manager.hostPortConnection(host, port));
 			addConnectionsString(manager, connectionsString);
+			Thread r = new Thread(manager);
+			r.start();
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());
 			HelpFormatter formatter = new HelpFormatter();

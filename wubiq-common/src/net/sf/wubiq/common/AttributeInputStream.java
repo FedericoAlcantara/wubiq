@@ -17,7 +17,10 @@ import java.util.Locale;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSize;
 
+import net.sf.wubiq.print.attribute.GenericMediaSizeName;
+import net.sf.wubiq.print.attribute.GenericMediaTray;
 import net.sf.wubiq.utils.Is;
 
 import org.apache.commons.logging.Log;
@@ -97,12 +100,16 @@ public class AttributeInputStream extends InputStreamReader {
 			if (objectDetails.length > 2) {
 				if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_SET_INTEGER_SYNTAX)) {
 					returnValue = readSetOfIntegerSyntax(objectDetails[0], objectDetails[2]);
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA)) {
+					returnValue = readMediaSyntax(objectDetails[2]);
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_TRAY)) {
+					returnValue = readMediaTraySyntax(objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_ENUM_SYNTAX)) {
-						returnValue = readEnumSyntax(objectDetails[0], objectDetails[2]);
+					returnValue = readEnumSyntax(objectDetails[0], objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_INTEGER_SYNTAX)) {
-						returnValue = readIntegerSyntax(objectDetails[0], objectDetails[2]);
+					returnValue = readIntegerSyntax(objectDetails[0], objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA)) {
-						returnValue = readMediaPrintableArea(objectDetails[0], objectDetails[2]);
+					returnValue = readMediaPrintableArea(objectDetails[0], objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_JOB_NAME)) {
 					returnValue = readJobName(objectDetails[0], objectDetails[2]);
 				} else {
@@ -151,21 +158,103 @@ public class AttributeInputStream extends InputStreamReader {
 		return returnValue;
 	}
 	
-	@SuppressWarnings({ "rawtypes" })
+	/**
+	 * Reads and convert a attribute with enum syntax into a standard attribute.
+	 * @param className Name of the class.
+	 * @param values Current enum value.
+	 * @return Converted attribute if no platform compatible attribute is found.
+	 * @throws IOException
+	 */
+	@SuppressWarnings("rawtypes")
 	private Attribute readEnumSyntax(String className, String values) throws IOException {
 		Attribute returnValue = null;
 		try {
-			if (!Is.emptyString(values)) {
-				Class clazz = Class.forName(className);
-				Field field = clazz.getDeclaredField(values);
-				returnValue = (Attribute) field.get(null);
-			}
+			Class clazz = Class.forName(className);
+			returnValue = findEnumSyntax(clazz, values);
 		} catch (Exception e) {
 			LOG.error(e.getMessage());
-			returnValue = null;
 		}
 		return returnValue;
 	}
+	
+	/**
+	 * Reads and convert a attribute with enum syntax into a standard attribute.
+	 * @param values Dimension value.
+	 * @return Attribute found or null if no suitable attribute is found.
+	 * @throws IOException
+	 */
+	private Attribute readMediaSyntax(String values) throws IOException {
+		Attribute returnValue = null;
+		if (!Is.emptyString(values)) {
+			String[] xyName = values.split(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR);
+			if (xyName.length >= 3) {
+				try {
+					float x = Float.parseFloat(xyName[0]);
+					float y = Float.parseFloat(xyName[1]);
+					returnValue = MediaSize.findMedia(x, y, MediaSize.MM);
+					if (returnValue == null) {
+						new MediaSize(x, y, MediaSize.MM, new GenericMediaSizeName(xyName[2]));
+						returnValue = MediaSize.findMedia(x, y, MediaSize.MM);
+					}
+				} catch (NumberFormatException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Converts a value to a tray representation.
+	 * @param values Value to be converted.
+	 * @return Tray representation or null if no suitable found.
+	 * @throws IOException
+	 */
+	private Attribute readMediaTraySyntax(String values) throws IOException {
+		GenericMediaTray mediaTray = new GenericMediaTray(0);
+		Attribute returnValue = null;
+		try {
+			int index = Integer.parseInt(values);
+			if (index < mediaTray.getEnumValueTable().length) {
+				returnValue = (Attribute) mediaTray.getEnumValueTable()[index];
+			}
+		} catch (NumberFormatException e) {
+			LOG.error(e.getMessage());
+		}
+		return returnValue;
+	}
+	
+	
+	/**
+	 * Reads and convert a attribute with enum syntax into a standard attribute.
+	 * @param clazz Name Class to be examined.
+	 * @param values Enum value.
+	 * @return Attribute found or null if no suitable attribute is found.
+	 * @throws IOException
+	 */
+	@SuppressWarnings("rawtypes")
+	private Attribute findEnumSyntax(Class clazz, String values) throws IOException {
+		Attribute returnValue = null;
+		if (!Is.emptyString(values)) {
+			try {
+				Field foundField = null;
+				for (Field field : clazz.getDeclaredFields()) {
+					if (field.getName().equals(values)) {
+						foundField = field;
+						break;
+					}
+				}
+				if (foundField != null) {
+						returnValue = (Attribute) foundField.get(null);
+				}
+			} catch (Exception e) {
+				LOG.error(e.getMessage());
+				returnValue = null;
+			}
+		}
+		return returnValue;
+	}
+
 	
 	/**
 	 * Deserialize attribute of type IntegerSyntax.

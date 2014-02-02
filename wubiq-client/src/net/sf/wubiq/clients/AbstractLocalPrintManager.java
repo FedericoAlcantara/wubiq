@@ -172,6 +172,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	protected String[] getPendingJobs() throws ConnectException {
 		doLog("Get Pending Jobs");
+		
 		String[]returnValue = new String[]{};
 		String pendingJobResponse = askServer(CommandKeys.PENDING_JOBS);
 		if (!Is.emptyString(pendingJobResponse)
@@ -309,7 +310,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 			if (connection == null) {
 				url = null;
-				throw new IOException("Couldn't connect to any of the addresses");
+				throw new IOException("Couldn't connect to any of the addresses:" + getUrls());
 			}
 	
 			if (connection.getContentType() != null) {
@@ -351,7 +352,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return returnValue;
 	}
 	
-	private Set<URL> getUrls() {
+	protected Set<URL> getUrls() {
 		if (urls == null) {
 			urls = new LinkedHashSet<URL>();
 			for (String connection : getConnections()) {

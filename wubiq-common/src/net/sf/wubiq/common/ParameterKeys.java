@@ -29,6 +29,8 @@ public final class ParameterKeys {
 	public static final String ATTRIBUTE_TYPE_INTEGER_SYNTAX = "I";
 	public static final String ATTRIBUTE_TYPE_MEDIA_PRINTABLE_AREA = "A";
 	public static final String ATTRIBUTE_TYPE_JOB_NAME = "J";
+	public static final String ATTRIBUTE_TYPE_MEDIA = "M";
+	public static final String ATTRIBUTE_TYPE_MEDIA_TRAY = "T";
 	public static final String PENDING_JOB_SIGNATURE = "pending_jobs";
 	public static final String PRINT_JOB_ID = "printJob";
 }

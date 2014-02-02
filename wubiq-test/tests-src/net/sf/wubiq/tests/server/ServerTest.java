@@ -4,12 +4,12 @@
 package net.sf.wubiq.tests.server;
 
 import java.io.InputStream;
+import java.net.URL;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.tests.WubiqBaseTest;
-import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.ServerLabels;
 import net.sf.wubiq.wrappers.ClientManagerTestWrapper;
@@ -33,11 +33,7 @@ public class ServerTest extends WubiqBaseTest {
 	public void setUp() throws Exception {
 		super.setUp();
 		manager = new ClientManagerTestWrapper();
-		manager.setHost(ClientProperties.getHost());
-		manager.setPort(ClientProperties.getPort());
-		manager.setApplicationName(ClientProperties.getApplicationName());
-		manager.setServletName(ClientProperties.getServletName());
-		manager.setUuid(ClientProperties.getUuid());
+		manager.initializeDefaults();
 	}
 	
 	/**
@@ -114,7 +110,7 @@ public class ServerTest extends WubiqBaseTest {
 				.append(cellValue);
 		int jobCount = manager.getPendingJobs().length;
 		String response = manager.askServer(CommandKeys.PRINT_TEST_PAGE, buffer.toString());
-		assertEquals("Response ", ServerLabels.get("server.test_page_sent", cellValue), response);
+		assertTrue("Response ", response != null && response.contains(ServerLabels.get("server.test_page_sent", cellValue)));
 		// Validate job count
 		int newJobCount = manager.getPendingJobs().length;
 		assertTrue("At least one more pending job should have be created", newJobCount > jobCount);
@@ -142,7 +138,10 @@ public class ServerTest extends WubiqBaseTest {
 	 * @throws Exception
 	 */
 	private Object getNewPage(String command) throws Exception {
-		return getPage(manager.getEncodedUrl(command));
+		for (URL url : manager.getUrls()) {
+			return getPage(manager.getEncodedUrl(url, command));
+		}
+		return null;
 	}
 	
 	/**
@@ -158,6 +157,7 @@ public class ServerTest extends WubiqBaseTest {
 			count++;
 		} while (value != -1);
 	
-		assertTrue("Size should be bigger than 20k (" + count + ")", count > 20000);
+		assertTrue("Size should be bigger than " + TestClientProperties.get("minimum_file_size", "20000") + " (" + count + ")", 
+				count > TestClientProperties.getInt("minimum_file_size", 20000));
 	}
 }

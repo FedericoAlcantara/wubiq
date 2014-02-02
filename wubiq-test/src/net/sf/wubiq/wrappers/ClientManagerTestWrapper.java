@@ -1,7 +1,10 @@
 package net.sf.wubiq.wrappers;
 
 import java.net.ConnectException;
+import java.net.URL;
+import java.util.Set;
 
+import net.sf.wubiq.clients.AbstractLocalPrintManager;
 import net.sf.wubiq.clients.LocalPrintManager;
 
 public class ClientManagerTestWrapper extends LocalPrintManager {
@@ -44,21 +47,6 @@ public class ClientManagerTestWrapper extends LocalPrintManager {
 	}
 	
 	@Override
-	public String getEncodedUrl(String command, String... parameters) {
-		return super.getEncodedUrl(command, parameters);
-	}
-	
-	@Override
-	public void setHost(String host) {
-		super.setHost(host);
-	}
-	
-	@Override
-	public void setPort(String port) {
-		super.setPort(port);
-	}
-	
-	@Override
 	public void setApplicationName(String applicationName) {
 		super.setApplicationName(applicationName);
 	}
@@ -71,5 +59,31 @@ public class ClientManagerTestWrapper extends LocalPrintManager {
 	@Override
 	public void setUuid(String uuid) {
 		super.setUuid(uuid);
+	}
+	
+	/**
+	 * Adds connections to this test manager.
+	 * @param connectionsString
+	 */
+	public void addConnections(String connectionsString) {
+		AbstractLocalPrintManager.addConnectionsString(this, connectionsString);
+	}
+	
+	/**
+	 * Initializes
+	 */
+	public void initializeDefaults() {
+		AbstractLocalPrintManager.initializeDefault(this);
+	}
+	
+	@Override
+	public Set<URL> getUrls() {
+		return super.getUrls();
+	}
+	
+	@Override
+	public String getEncodedUrl(URL address, String command,
+			String... parameters) {
+		return super.getEncodedUrl(address, command, parameters);
 	}
 }

@@ -30,4 +30,5 @@ public final class CommandKeys {
 	public static final String CLOSE_PRINT_JOB = "j2";
 	public static final String PRINT_TEST_PAGE = "t1";
 	public static final String SERVER_TIMESTAMP = "STS";
+	public static final String PRINT_SERVICE_PENDING_JOBS = "j3";
 }

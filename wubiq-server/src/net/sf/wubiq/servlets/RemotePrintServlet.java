@@ -95,6 +95,8 @@ public class RemotePrintServlet extends HttpServlet {
 							registerMobilePrintServiceCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.PENDING_JOBS)) {
 							getPendingJobsCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.PRINT_SERVICE_PENDING_JOBS)) {
+							getPrintServicePendingJobsCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_SERVICE_NAME)) {
 							getPrintServiceNameCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES)) {
@@ -352,6 +354,7 @@ public class RemotePrintServlet extends HttpServlet {
 		buffer.append("</table");
 		writer.print(buffer.toString());
 	}
+
 	/**
 	 * Returns a list of pending jobs.
 	 * @param uuid Unique computer identification.
@@ -374,6 +377,37 @@ public class RemotePrintServlet extends HttpServlet {
 		if (buffer.length() > 0) {
 			buffer.insert(0, ParameterKeys.PENDING_JOB_SIGNATURE);
 		}
+		writer.print(buffer);
+	}
+
+	/**
+	 * Returns a list of pending jobs for the print service.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void getPrintServicePendingJobsCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		response.setContentType("text/html");
+		PrintWriter writer = response.getWriter();
+		Integer count = 0;
+		StringBuffer buffer = new StringBuffer("");
+		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
+		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
+		if (printService != null) {
+			IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
+			for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
+				RemotePrintJob remotePrintJob = manager.getRemotePrintJob(printJobId);
+				if (remotePrintJob != null) {
+					if (printService.getName().equals(remotePrintJob.getPrintService().getName())) {
+						count++;
+					}
+				}
+
+			}
+		}
+		buffer.append(count.toString());
 		writer.print(buffer);
 	}
 	

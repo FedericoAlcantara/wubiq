@@ -25,7 +25,7 @@ public class ClientProperties {
 	private static final Log LOG = LogFactory.getLog(ClientProperties.class);
 	private static Properties properties;
 	
-	private ClientProperties() {
+	protected ClientProperties() {
 	}
 
 	/**
@@ -88,7 +88,13 @@ public class ClientProperties {
 		return returnValue.toString();
 	}
 	
-	private static String get(String key, String defaultValue) {
+	/**
+	 * Gets a value from properties file.
+	 * @param key Key to search for.
+	 * @param defaultValue Value to return in case key is not found in properties.
+	 * @return Found value or default value.
+	 */
+	protected static String get(String key, String defaultValue) {
 		String returnValue = getProperties().getProperty(key);
 		if (returnValue == null) {
 			returnValue = defaultValue;
@@ -99,7 +105,7 @@ public class ClientProperties {
 	/**
 	 * @return the properties
 	 */
-	private static Properties getProperties() {
+	protected static Properties getProperties() {
 		if (properties == null) {
 			try {
 				properties = new Properties();

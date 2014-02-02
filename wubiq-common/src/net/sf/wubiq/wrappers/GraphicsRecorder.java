@@ -51,12 +51,12 @@ public class GraphicsRecorder extends Graphics2D {
 	private transient DefaultDeviceConfiguration deviceConfiguration;
 	private transient GraphicCommand lastGraphicCommand;
 
-	public GraphicsRecorder() {
+	private GraphicsRecorder() {
 		unimplemented = new ArrayList<String>();
 		currentExecutionOrder = 0;
 	}
 
-	public GraphicsRecorder(Set<GraphicCommand> graphicCommands) {
+	private GraphicsRecorder(Set<GraphicCommand> graphicCommands) {
 		this();
 		this.graphicCommands = graphicCommands;
 	}

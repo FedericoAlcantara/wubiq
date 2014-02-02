@@ -1,4 +1,11 @@
 ==========================
+Wubiq 1.8 (2014-02-01)
+==========================
+-Improved media handling when clients and server are running different jvm implementations.
+-Added option: connections that allows several connections for different clients.
+-Wubiq android: Added notifications of the status of the connection.
+
+==========================
 Wubiq 1.7.6 (2013-11-17)
 ==========================
 -Fixed pages printed in a wrong format when receiving multiple transformation commands. 

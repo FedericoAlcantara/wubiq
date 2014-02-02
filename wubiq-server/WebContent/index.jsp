@@ -35,16 +35,16 @@
 					printServiceData[0] = remotePrintService.getRemoteName();
 					printServiceData[1] = ServerLabels.get("server.remote_yes");
 					printServiceData[2] = remotePrintService.getUuid();
-					returnValue.add(printServiceData);
 				}
 			} else {
 				if (uuid.isEmpty()) {
 					printServiceData[0] = printService.getName();
 					printServiceData[1] = ServerLabels.get("server.remote_no");
 					printServiceData[2] = "";
-					returnValue.add(printServiceData);
 				}
 			}
+			
+			returnValue.add(printServiceData);
 		}		
 		return returnValue;
 	}
@@ -128,7 +128,7 @@
 							<a href="<%=killClient.toString()%>">
 								<input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' />
 							</a>
-						</th>
+						</th>						
 					<%}%>				 
 				</tr>
 				<tr class="wubiq_s_table_tr">
@@ -138,11 +138,17 @@
 								<th class="wubiq_sd_table_th_name"><%=ServerLabels.get("server.service_name")%></th>
 								<th class="wubiq_sd_table_th_remote"><%=ServerLabels.get("server.remote")%></th>
 								<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.actions")%></th>
+								<th class="wubiq_sd_table_th_jobs"><%=ServerLabels.get("server.jobs")%></th>
 							</tr>
 			
 			<%
 			int serviceCount = 0;
 			for (String[] serviceData : getPrintServices(uuid)) {
+				if (serviceData[0] == null) {
+					continue;
+				}
+				String serviceName = !uuid.equals("") ? fixServiceName(serviceData[0]) : serviceData[0];
+				String serviceUUID = serviceData[2];
 				StringBuffer buffer = new StringBuffer("")
 						.append(url)
 						.append('/')
@@ -153,13 +159,15 @@
 						.append('&')
 						.append(ParameterKeys.PRINT_SERVICE_NAME)
 						.append(ParameterKeys.PARAMETER_SEPARATOR)
-						.append(uuid.equals("") ? fixServiceName(serviceData[0]) : serviceData[0]);
+						.append(serviceName);
 						if (!serviceData[2].isEmpty()) {
 							buffer.append('&')
 							.append(ParameterKeys.UUID)
 							.append(ParameterKeys.PARAMETER_SEPARATOR)
 							.append(serviceData[2]);
 						}
+				StringBuffer pendingJobPage = new StringBuffer("")
+						.append("wubiq.do");
 						
 				%>
 							<tr class="wubiq_sd_table_tr">
@@ -171,7 +179,17 @@
 											id='wubiq_testpage_button_<%=serviceCount++%>' />
 									</a>
 								</td>
-											 
+								<td class="wubiq_sd_table_td_jobs">
+									<%if (serviceUUID != null && !"".equals(serviceUUID)) {%>
+										<jsp:include page="<%=pendingJobPage.toString()%>" flush="true">
+											<jsp:param name="command" value="<%=CommandKeys.PRINT_SERVICE_PENDING_JOBS%>"/>
+											<jsp:param name="printServiceName" value="<%=serviceName%>"/>
+											<jsp:param name="uuid" value="<%=serviceUUID %>" />
+										</jsp:include>
+									<%} else { %>
+										&nbsp;
+									<%}%>				
+								</td>			 
 							</tr>
 				<%
 			}
