@@ -44,7 +44,6 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	private final String TAG = "BluetoothPrintManager";
 	private int bluetoothErrors = 0;
 
-
 	/**
 	 * Create a new instance of the bluetooth print manager.
 	 * @param context Context.
@@ -141,13 +140,16 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 				doLog("Job(" + jobId + ") close print job.");
 			} else {
+				NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
 				NotificationUtils.INSTANCE.notify(context, 
 						NotificationIds.BLUETOOTH_ERROR_ID, 0,
 						context.getString(R.string.error_bluetooth));
 			}
 			
 		} catch (Exception e) {
-			Log.e(TAG, e.getMessage());
+			Log.e(TAG, e.getMessage() != null ? e.getMessage() : "Unspecified error:" + e);
+			NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
+
 			NotificationUtils.INSTANCE.notify(context, 
 					NotificationIds.PRINTING_ERROR_ID, 0,
 					e.getMessage());

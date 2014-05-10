@@ -424,8 +424,12 @@ public class RemotePrintServlet extends HttpServlet {
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		PrintWriter writer = response.getWriter();
 		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
-		writer.print(printJob.getPrintServiceName());
+		if (manager != null) {
+			RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+			if (printJob != null) {
+				writer.print(printJob.getPrintServiceName());
+			}
+		}
 	}
 	
 	/**

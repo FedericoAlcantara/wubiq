@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.android.enums;
 
+import net.sf.wubiq.android.CallBluetoothSettingsNotificationActivity;
 import net.sf.wubiq.android.CancelConnectionNotificationActivity;
 import net.sf.wubiq.android.CancelPrintingErrorNotificationActivity;
 import net.sf.wubiq.android.CancelPrintingInfoNotificationActivity;
@@ -40,8 +41,7 @@ public enum NotificationIds {
 		
 		switch (this) {
 			case BLUETOOTH_ERROR_ID:
-				returnValue = new Intent();
-				returnValue.setAction(android.provider.Settings.ACTION_BLUETOOTH_SETTINGS);
+				returnValue = new Intent(ctx,  CallBluetoothSettingsNotificationActivity.class);
 				break;
 			case PRINTING_ERROR_ID:
 				returnValue = new Intent(ctx,  CancelPrintingErrorNotificationActivity.class);

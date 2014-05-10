@@ -76,13 +76,14 @@ public enum PrintClientUtils {
 						currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause);
 						if (deviceStatus.equals(DeviceStatus.READY)) {
 							currentDevice.start();
-						} else if (deviceStatus.equals(DeviceStatus.CANT_CONNECT)) {
+						} else {
 							returnValue = false;
 						}
 					}
 				}
 			} catch (Exception e) {
 				Log.e(TAG, e.getMessage());
+				returnValue = false;
 			}
 		}
 		return returnValue;

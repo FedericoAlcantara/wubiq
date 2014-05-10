@@ -35,6 +35,7 @@
         <activity android:name="CancelConnectionNotificationActivity"></activity>
         <activity android:name="CancelPrintingErrorNotificationActivity"></activity>
         <activity android:name="CancelPrintingInfoNotificationActivity"></activity>
+        <activity android:name="CallBluetoothSettingsNotificationActivity"></activity>
         </application>
 
 </manifest>

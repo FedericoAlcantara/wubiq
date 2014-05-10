@@ -11,6 +11,7 @@
 <%@ page import="net.sf.wubiq.utils.PrintServiceUtils" %>    
 <%@ page import="net.sf.wubiq.utils.ServerLabels" %>
 <%@ page import="net.sf.wubiq.utils.Labels" %>
+<jsp:useBean id="jspUtils" class="net.sf.wubiq.servlets.JspUtils" scope="request"/>
 <script src="js/jquery.js"></script>
 <script src="js/deployJava.js"></script>
 <script>
@@ -166,7 +167,8 @@
 							.append(ParameterKeys.PARAMETER_SEPARATOR)
 							.append(serviceData[2]);
 						}
-				StringBuffer pendingJobPage = new StringBuffer("")
+				StringBuffer pendingJobPage = new StringBuffer(request.getContextPath())
+						.append('/')
 						.append("wubiq.do");
 						
 				%>
@@ -179,13 +181,9 @@
 											id='wubiq_testpage_button_<%=serviceCount++%>' />
 									</a>
 								</td>
-								<td class="wubiq_sd_table_td_jobs">
+								<td class="wubiq_sd_table_td_jobs" style="text-align:center">
 									<%if (serviceUUID != null && !"".equals(serviceUUID)) {%>
-										<jsp:include page="<%=pendingJobPage.toString()%>" flush="true">
-											<jsp:param name="command" value="<%=CommandKeys.PRINT_SERVICE_PENDING_JOBS%>"/>
-											<jsp:param name="printServiceName" value="<%=serviceName%>"/>
-											<jsp:param name="uuid" value="<%=serviceUUID %>" />
-										</jsp:include>
+										<%=jspUtils.getPendingJob(serviceUUID) %>
 									<%} else { %>
 										&nbsp;
 									<%}%>				
