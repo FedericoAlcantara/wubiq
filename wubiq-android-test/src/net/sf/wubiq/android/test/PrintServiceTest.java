@@ -43,7 +43,7 @@ public class PrintServiceTest extends ServiceTestCase<PrintManagerService> {
 		startService(intent);
 		service = getService();
 		assertTrue("Must be true", service.checkPrintManagerStatus());
-		assertEquals("Should be 0", "0", service.checkKilledStatus());
+		//assertEquals("Should be 0", "0", service.checkKilledStatus());
 	}
 
     /**

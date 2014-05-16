@@ -70,6 +70,14 @@ public enum GraphicsUtils {
 			}
 			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
 			font = Font.decode(decodeString);
+		} else if (fontName.toLowerCase().contains("times")) {
+			fontName = "Serif";
+			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
+			font = Font.decode(decodeString);
+		} else if (fontName.toLowerCase().contains("courier new")) {
+			fontName = "Monospaced";
+			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
+			font = Font.decode(decodeString);
 		}
 		return font;
 	}

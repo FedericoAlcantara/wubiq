@@ -367,6 +367,11 @@ public class PrintServiceUtils {
 			encoder.writeAttributes(attributes);
 			returnValue = stream.toString();
 		} catch (IOException e) {
+			try {
+				encoder.close();
+			} catch (IOException e1) {
+				LOG.debug(e1.getMessage());
+			}
 			returnValue = "";
 			LOG.error(e.getMessage(), e);
 		}
@@ -404,8 +409,13 @@ public class PrintServiceUtils {
 			} finally {
 				try {
 					stream.close();
-				} catch (IOException e) {
-					LOG.debug(e.getMessage());
+				} catch (IOException e1) {
+					LOG.debug(e1.getMessage());
+				}
+				try {
+					decoder.close();
+				} catch(IOException e1) {
+					LOG.debug(e1.getMessage());
 				}
 				stream = null;
 				decoder = null;
@@ -648,16 +658,26 @@ public class PrintServiceUtils {
 						if (attributeValues.length > 0) {
 							List<Attribute> values = new ArrayList<Attribute>(); 
 							for (String attributeValue : attributeValues) {
+								AttributeInputStream input = null;
 								try {
 									ByteArrayInputStream stream = new ByteArrayInputStream(attributeValue.getBytes());
-									AttributeInputStream input = new AttributeInputStream(stream);
+									input = new AttributeInputStream(stream);
 									Attribute attribute = input.readAttribute();
 									if (attribute != null) {
 										values.add(attribute);
 									}
 								} catch (Exception e) {
 									LOG.debug(e.getMessage());
+								} finally {
+									try {
+										if (input != null) {
+											input.close();
+										}
+									} catch (IOException e1) {
+										LOG.debug(e1.getMessage());
+									}
 								}
+								
 							}
 							remotePrintService.getRemoteAttributes().put(categoryName, values.toArray(new Attribute[]{}));
 						} else {
