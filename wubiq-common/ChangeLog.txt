@@ -1,4 +1,9 @@
 ==========================
+Wubiq 1.8.1 (2014-05-25)
+==========================
+-Improved font handling for dot matrix printing
+
+==========================
 Wubiq 1.8.0 (2014-02-01)
 ==========================
 -Improved media handling when clients and server are running different jvm implementations.

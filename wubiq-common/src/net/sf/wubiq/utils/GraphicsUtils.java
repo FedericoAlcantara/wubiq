@@ -21,6 +21,8 @@ public enum GraphicsUtils {
 	private final String[] FONT_STYLES = {"PLAIN", "BOLD", "ITALIC", "BOLDITALIC"};
 
 	private String osName;
+	private String defaultDotMatrixFont;
+	private Boolean dotMatrixUseLogicalFonts;
 	
 	/**
 	 * For dot matrix printer transforms the fonts to a more easily printable.
@@ -34,17 +36,66 @@ public enum GraphicsUtils {
 		if (osName == null) {
 			osName = System.getProperty("os.name");
 		}
-		if (printerType.equals(PrinterType.DOT_MATRIX) ||
-				printerType.equals(PrinterType.DOT_MATRIX_HQ)) {
-			if (osName.startsWith("Windows")) {
-				font = windowsProperFont(font, printerType);
-			} else if (osName.startsWith("Linux")) {
-				font = linuxProperFont(font, printerType);
-			} else if (osName.startsWith("MacOS") ||
-					osName.startsWith("Mac OS")) {
-				font = macOsProperFont(font, printerType);
+		if (defaultDotMatrixFont == null) {
+			defaultDotMatrixFont = System.getProperty("wubiq.fonts.dotmatrix.default");
+			if (Is.emptyString(defaultDotMatrixFont)) {
+				defaultDotMatrixFont = "Serif";
 			}
 		}
+		if (dotMatrixUseLogicalFonts == null) {
+			dotMatrixUseLogicalFonts = "TRUE".equalsIgnoreCase(System.getProperty("wubiq.fonts.dotmatrix.forcelogical"));
+		}
+		if (printerType.equals(PrinterType.DOT_MATRIX) ||
+				printerType.equals(PrinterType.DOT_MATRIX_HQ)) {
+			if (dotMatrixUseLogicalFonts) {
+				font = useDefaultFonts(font);
+			} else {
+				if (osName.startsWith("Windows")) {
+					font = windowsProperFont(font, printerType);
+				} else if (osName.startsWith("Linux")) {
+					font = linuxProperFont(font, printerType);
+				} else if (osName.startsWith("MacOS") ||
+						osName.startsWith("Mac OS")) {
+					font = macOsProperFont(font, printerType);
+				}
+			}
+		}
+		return font;
+	}
+	
+	/**
+	 * Forces the use of a java default font.
+	 * @param originalFont Original font.
+	 * @return Replaced font, will always be SansSerif, Serif or Monospaced.
+	 */
+	private Font useDefaultFonts(Font originalFont) {
+		Font font = originalFont.deriveFont(originalFont.getStyle());
+		String fontName = originalFont.getName();
+		String style = determineStyle(originalFont);
+
+		// Determine font name
+		if (fontName.toLowerCase().contains("arial") ||
+				fontName.toLowerCase().contains("helvetica")) {
+			fontName = "SansSerif";
+			if ("arial bold".equalsIgnoreCase(fontName)
+				|| "arialMT".equalsIgnoreCase(originalFont.getFontName())
+				|| "helvetica-bold".equalsIgnoreCase(originalFont.getFontName())) {
+				style = FONT_STYLES[(originalFont.getStyle() | Font.BOLD)];
+			}
+		} else if (fontName.toLowerCase().contains("times") ||
+				fontName.toLowerCase().contains("georgia")) {
+			fontName = "Serif";
+		} else if (fontName.toLowerCase().contains("courier new")) {
+			fontName = "Monospaced";
+		} else if (fontName.toLowerCase().contains("comic sans") ||
+				fontName.toLowerCase().contains("tahoma") ||
+				fontName.toLowerCase().contains("verdana")) {
+			fontName = "SansSerif";
+		} else {
+			fontName = defaultDotMatrixFont;
+		}
+		String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
+		font = Font.decode(decodeString);
 		return font;
 	}
 	
@@ -57,7 +108,8 @@ public enum GraphicsUtils {
 	private Font windowsProperFont(Font originalFont, PrinterType printerType) {
 		Font font = originalFont.deriveFont(originalFont.getStyle());
 		String fontName = originalFont.getName();
-		String style = FONT_STYLES [originalFont.getStyle()];
+		String style = determineStyle(originalFont);
+		
 		if (fontName.toLowerCase().contains("arial") ||
 				fontName.toLowerCase().contains("helvetica")) {
 			if ("arial bold".equalsIgnoreCase(fontName)
@@ -142,5 +194,26 @@ public enum GraphicsUtils {
 			graph.setTransform(newScale);
 		}
 		return new Point2D.Double(x, y);
+	}
+	
+	/**
+	 * Determine the font style.
+	 * @param originalFont Original font.
+	 * @return Style of the original font.
+	 */
+	private String determineStyle(Font originalFont) {
+		String fontName = originalFont.getName();
+		String style = FONT_STYLES[originalFont.getStyle()];
+		// Determine style
+		if (fontName.toLowerCase().contains("bold")) {
+			if (fontName.toLowerCase().contains("italic")) {
+				style = FONT_STYLES[3];
+			} else {
+				style = FONT_STYLES[1];
+			}
+		} else if (fontName.toLowerCase().contains("italic")) {
+			style = FONT_STYLES[2];
+		}
+		return style;
 	}
 }

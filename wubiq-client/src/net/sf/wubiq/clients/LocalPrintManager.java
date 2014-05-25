@@ -17,6 +17,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientPrintDirectUtils;
 import net.sf.wubiq.utils.Labels;
@@ -169,6 +170,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 					.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
 				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
 						PrintServiceUtils.serializeDocumentFlavors(printService, isDebugMode()));
+				PrinterType printerType = PrintServiceUtils.printerType(printService);
+				LOG.info(printServiceName + " -> " + printerType);
 			}
 			lastServerTimestamp = serverTimestamp;
 		}
@@ -212,38 +215,44 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			CommandLine line = parser.parse(options, args);
 			if (line.hasOption("help")) {
 				HelpFormatter formatter = new HelpFormatter();
-				formatter.printHelp("java -jar wubiq-client.jar", options, true);
-			} else {
-				if (line.hasOption("kill")) {
-					manager.setKillManager(true);
-				}
-				if (line.hasOption("host")) {
-					host = line.getOptionValue("host");
-				}
-				if (line.hasOption("port")) {
-					port = line.getOptionValue("port");
-				}
-				if (line.hasOption("connections")) {
-					connectionsString = line.getOptionValue("connections");
-				}
-				if (line.hasOption("app")) {
-					manager.setApplicationName(line.getOptionValue("app"));
-				}
-				if (line.hasOption("servlet")) {
-					manager.setServletName(line.getOptionValue("servlet"));
-				}
-				if (line.hasOption("uuid")) {
-					manager.setUuid(line.getOptionValue("uuid"));
-				}
-				if (line.hasOption("verbose")) {
-					manager.setDebugMode(true);
-				}
-				if (line.hasOption("interval")) {
-					manager.setCheckPendingJobInterval(line.getOptionValue("interval"));
-				}
-				if (line.hasOption("wait")) {
-					manager.setPrintingJobInterval(line.getOptionValue("interval"));
-				}
+				formatter.printHelp("java -jar wubiq-client.jar", "java properties:\n"
+						+ "-Dwubiq.printers.photo For specifying laser or photo capable printers\n"
+						+ "-Dwubiq.printers.dotmatrixhq For high quality dot matrix printers (24pin) \n"
+						+ "-Dwubiq.printers.dotmatrix For normal quality dot matrix printers (9pin) \n"
+						+ "-Dwubiq.fonts.dotmatrix.default Specify default fonts for dot matrix printers\n"
+						+ "-Dwubiq.fonts.dotmatrix.forcelogical If true printing on dot matrix will only be done with java's logical fonts.\n"
+						+ "."
+						+ "", options, "\n For more information visit wubiq's site: http://sourceforge.net/projects/wubiq", true);
+			}
+			if (line.hasOption("kill")) {
+				manager.setKillManager(true);
+			}
+			if (line.hasOption("host")) {
+				host = line.getOptionValue("host");
+			}
+			if (line.hasOption("port")) {
+				port = line.getOptionValue("port");
+			}
+			if (line.hasOption("connections")) {
+				connectionsString = line.getOptionValue("connections");
+			}
+			if (line.hasOption("app")) {
+				manager.setApplicationName(line.getOptionValue("app"));
+			}
+			if (line.hasOption("servlet")) {
+				manager.setServletName(line.getOptionValue("servlet"));
+			}
+			if (line.hasOption("uuid")) {
+				manager.setUuid(line.getOptionValue("uuid"));
+			}
+			if (line.hasOption("verbose")) {
+				manager.setDebugMode(true);
+			}
+			if (line.hasOption("interval")) {
+				manager.setCheckPendingJobInterval(line.getOptionValue("interval"));
+			}
+			if (line.hasOption("wait")) {
+				manager.setPrintingJobInterval(line.getOptionValue("interval"));
 			}
 			addConnectionsString(manager, manager.hostPortConnection(host, port));
 			addConnectionsString(manager, connectionsString);

@@ -15,7 +15,7 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class Labels {
-	public static final String VERSION = "1.8.0";
+	public static final String VERSION = "1.8.1";
 	private static final Log LOG = LogFactory.getLog(Labels.class);
 	private ResourceBundle bundle;
 	private String labelFile;
