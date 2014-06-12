@@ -48,7 +48,7 @@ public class GraphicParameter implements Serializable{
 		this.parameterValue = parameterValue;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

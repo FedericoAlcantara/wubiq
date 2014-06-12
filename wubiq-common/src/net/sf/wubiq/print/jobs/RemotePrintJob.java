@@ -4,7 +4,6 @@
 package net.sf.wubiq.print.jobs;
 
 import java.awt.print.PageFormat;
-import java.awt.print.Paper;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -18,14 +17,15 @@ import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
-import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.managers.RemotePrintJobManagerType;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
-import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.utils.PdfUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -108,26 +108,79 @@ public class RemotePrintJob implements DocPrintJob {
 	@Override
 	public synchronized void print(Doc doc, PrintRequestAttributeSet printRequestAttributeSet)
 			throws PrintException {
-		update(doc, printRequestAttributeSet);
-		try {			
+		boolean isDirectCommunicationEnabled = false;
+		try {
+			Method isDirectCommunicationEnabledMethod = printService.getClass().getDeclaredMethod("isDirectCommunicationEnabled", new Class[]{});
+			isDirectCommunicationEnabled = (Boolean)isDirectCommunicationEnabledMethod.invoke(printService, new Object[]{});
+		} catch (Exception e) {
+			isDirectCommunicationEnabled = false;
+		}
+		
+		String uuid = null;
+		try {
 			Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
-			String uuid = (String)getUuid.invoke(printService, new Object[]{});
-			
-			IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-			manager.addRemotePrintJob(uuid, this);
-		} catch (SecurityException e) {
+			uuid = (String)getUuid.invoke(printService, new Object[]{});
+		} catch (Exception e) {
 			LOG.error(e.getMessage(), e);
-		} catch (NoSuchMethodException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (IllegalArgumentException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (IllegalAccessException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (InvocationTargetException e) {
-			LOG.error(e.getMessage(), e);
+		}
+		if (!Is.emptyString(uuid)) {
+			if (isDirectCommunicationEnabled) {
+				printRemote(uuid, doc, printRequestAttributeSet);
+			} else {
+				printSerialized(uuid, doc, printRequestAttributeSet);
+			}
 		}
 	}
 
+	private void printRemote(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet) 
+			throws PrintException {
+		try {
+			IRemotePrintJobManager manager = null;
+			this.printRequestAttributeSet = printRequestAttributeSet;
+			this.docAttributeSet = doc.getAttributes();
+			this.docFlavor = doc.getDocFlavor();
+			printData = doc.getPrintData();
+			if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor)) {
+				docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
+				printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)doc.getPrintData(), printService, printRequestAttributeSet);
+			}
+			manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid, RemotePrintJobManagerType.DIRECT_CONNECT);
+			manager.addRemotePrintJob(uuid, this);
+		} catch (IOException e) {
+			throw new PrintException(e);
+		} finally {
+			
+		}
+	}
+	
+	
+	/**
+	 * Print serialized. This is for compatibility with OLD clients.
+	 * @param doc
+	 * @param printRequestAttributeSet
+	 * @throws PrintException
+	 */
+	private void printSerialized(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet) 
+			throws PrintException {
+		LOG.warn("You are connecting with an OLD client, please update the client to ensure optimal performance");
+		try {			
+			IRemotePrintJobManager manager = null;
+			this.printRequestAttributeSet = printRequestAttributeSet;
+			this.docAttributeSet = doc.getAttributes();
+			this.docFlavor = doc.getDocFlavor();
+			printData = doc.getPrintData();
+			update(doc, printRequestAttributeSet);
+			manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid, RemotePrintJobManagerType.SERIALIZED);
+			manager.addRemotePrintJob(uuid, this);
+		} catch (SecurityException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+	}
+	
 	/**
 	 * Updates this element with the doc information.
 	 * @param doc Document to be printed
@@ -179,6 +232,14 @@ public class RemotePrintJob implements DocPrintJob {
 	 */
 	public InputStream getPrintData() throws IOException {
 		return (InputStream)printData;
+	}
+	
+	/**
+	 * Just the previously saved object.
+	 * @return Print data object.
+	 */
+	public Object getPrintDataObject() {
+		return printData;
 	}
 	
 
@@ -241,6 +302,8 @@ public class RemotePrintJob implements DocPrintJob {
 	 */
 	public PageFormat getPageFormat() {
 		if (pageFormat == null) {
+			pageFormat = PageableUtils.INSTANCE.getPageFormat(printRequestAttributeSet);
+			/*
 			MediaPrintableArea printableArea = 
 					(MediaPrintableArea)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, MediaPrintableArea.class);
 			Paper paper = new Paper();
@@ -257,6 +320,7 @@ public class RemotePrintJob implements DocPrintJob {
 			pageFormat = new PageFormat();
 			pageFormat.setOrientation(PageFormat.PORTRAIT);
 			pageFormat.setPaper(paper);
+			*/
 		}
 		return pageFormat;
 	}

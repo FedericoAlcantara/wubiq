@@ -40,9 +40,10 @@ public interface IRemotePrintJobManager {
 	/**
 	 * Return the instance of a print job.
 	 * @param jobId Id of the job to find.
+	 * @param fullPrintJob if true, just read remote print object must be returned.
 	 * @return IRemotePrintJob object or null if not found.
 	 */
-	RemotePrintJob getRemotePrintJob(long jobId);
+	RemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob);
 	
 	/**
 	 * Gather the list of print job ids for the given status. If status is null then all are

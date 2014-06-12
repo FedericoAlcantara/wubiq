@@ -31,4 +31,5 @@ public final class CommandKeys {
 	public static final String PRINT_TEST_PAGE = "t1";
 	public static final String SERVER_TIMESTAMP = "STS";
 	public static final String PRINT_SERVICE_PENDING_JOBS = "j3";
+	public static final String DIRECT_CONNECT = "dc";
 }

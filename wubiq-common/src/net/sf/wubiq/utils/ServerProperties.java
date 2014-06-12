@@ -46,6 +46,10 @@ public class ServerProperties {
 	public static String getPrintJobManager() {
 		return get("manager", "net.sf.wubiq.print.managers.impl.HsqldbPrintJobManager");
 	}
+
+	public static String getRemotePrintJobManager() {
+		return get("remoteManager", "net.sf.wubiq.print.managers.impl.DirectConnectPrintJobManager");
+	}
 	
 	private static String get(String key, String defaultValue) {
 		String returnValue = getProperties().getProperty(key);

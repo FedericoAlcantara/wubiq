@@ -367,6 +367,15 @@ public class RemotePrintService extends StreamPrintService {
 	}
 
 	/**
+	 * Indicates if this remote print server supports direct communication.
+	 * This is a way to determine if the client is apt to deal direct communication.
+	 * @return True always as indicator of a feacture implemented in the client.
+	 */
+	public boolean isDirectCommunicationEnabled() {
+		return isMobile() ? false : true;
+	}
+	
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

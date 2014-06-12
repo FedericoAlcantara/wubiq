@@ -59,7 +59,7 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	}
 	
 	@Override
-	public RemotePrintJob getRemotePrintJob(long jobId) {
+	public RemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob) {
 		RemotePrintJob returnValue = null;
 		String queueId = getPrintJobs().get(jobId);
 		if (queueId != null) {

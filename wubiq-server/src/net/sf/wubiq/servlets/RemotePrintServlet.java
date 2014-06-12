@@ -3,9 +3,7 @@
  */
 package net.sf.wubiq.servlets;
 
-import java.awt.print.Pageable;
-import java.awt.print.PrinterException;
-import java.awt.print.PrinterJob;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -29,27 +27,31 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.wubiq.adapters.RemoteCommand;
+import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.android.ConversionServerUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.data.RemoteClient;
-import net.sf.wubiq.print.jobs.PrinterJobManager;
+import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
+import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.managers.impl.DirectConnectorQueue;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 import net.sf.wubiq.remote.RemoteClientManager;
+import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
-import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.pdfbox.pdmodel.PDDocument;
 
 /**
  * Handles the communication between clients and server.
@@ -60,6 +62,7 @@ public class RemotePrintServlet extends HttpServlet {
 	private static final Log LOG = LogFactory.getLog(RemotePrintServlet.class);
 	private static final long serialVersionUID = 1L;
 	private long timeStamp = -1l;
+	private IRemotePrintJobManager manager;
 
 	public RemotePrintServlet() {
 		timeStamp = new Date().getTime();
@@ -75,6 +78,9 @@ public class RemotePrintServlet extends HttpServlet {
 				notifyRemote(uuid, request);
 				if (!Is.emptyString(uuid)) {
 					LOG.debug("accesing:" + uuid);
+					
+					manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
+					
 					if (!Is.emptyString(command)) {
 						LOG.debug("command:" + command);
 						if (command.equalsIgnoreCase(CommandKeys.KILL_MANAGER)) {
@@ -111,6 +117,8 @@ public class RemotePrintServlet extends HttpServlet {
 							getPrintJobCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
 							closePrintJobCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.DIRECT_CONNECT)) {
+							directConnect(uuid, request, response);
 						}
 						
 					}
@@ -367,19 +375,20 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("text/html");
 		PrintWriter writer = response.getWriter();
 		StringBuffer buffer = new StringBuffer("");
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
-			if (buffer.length() > 0) {
-				buffer.append(ParameterKeys.CATEGORIES_SEPARATOR);
+		if (manager != null) {
+			for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
+				if (buffer.length() > 0) {
+					buffer.append(ParameterKeys.CATEGORIES_SEPARATOR);
+				}
+				buffer.append(printJobId);
 			}
-			buffer.append(printJobId);
 		}
 		if (buffer.length() > 0) {
 			buffer.insert(0, ParameterKeys.PENDING_JOB_SIGNATURE);
 		}
 		writer.print(buffer);
 	}
-
+	
 	/**
 	 * Returns a list of pending jobs for the print service.
 	 * @param uuid Unique computer identification.
@@ -396,9 +405,8 @@ public class RemotePrintServlet extends HttpServlet {
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
 		if (printService != null) {
-			IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 			for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
-				RemotePrintJob remotePrintJob = manager.getRemotePrintJob(printJobId);
+				RemotePrintJob remotePrintJob = manager.getRemotePrintJob(printJobId, false);
 				if (remotePrintJob != null) {
 					if (printService.getName().equals(remotePrintJob.getPrintService().getName())) {
 						count++;
@@ -423,9 +431,8 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("text/html");
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		if (manager != null) {
-			RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+			RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
 			if (printJob != null) {
 				writer.print(printJob.getPrintServiceName());
 			}
@@ -444,8 +451,7 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("text/html");
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
 		printJob.setStatus(RemotePrintJobStatus.PRINTING); // Perform only on the first request for processing remotely the print job.
 		writer.print(PrintServiceUtils.serializeAttributes(printJob.getPrintRequestAttributeSet()));
 	}
@@ -462,8 +468,7 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("text/html");
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
 		writer.print(PrintServiceUtils.serializeAttributes(printJob.getAttributes()));
 	}
 
@@ -479,8 +484,7 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("text/html");
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
 		writer.print(PrintServiceUtils.serializeAttributes(printJob.getDocAttributeSet()));
 	}
 
@@ -496,8 +500,7 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("text/html");
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		PrintWriter writer = response.getWriter();
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
 		writer.print(PrintServiceUtils.serializeDocFlavor(printJob.getDocFlavor()));
 	}
 
@@ -513,8 +516,7 @@ public class RemotePrintServlet extends HttpServlet {
 		response.setContentType("application/pdf");				
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
 		StringBuffer responseOutput = new StringBuffer("");
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
-		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId));
+		RemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), true);
 		InputStream input = null;
 		// If it is remote we must convert pdf to image and then scale it to print size
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
@@ -546,7 +548,6 @@ public class RemotePrintServlet extends HttpServlet {
 	private void closePrintJobCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		response.setContentType("text/html");				
 		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
-		IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
 		manager.removeRemotePrintJob(Long.parseLong(jobId));
 		response.setContentType("text/html");
 		response.getWriter().print("ok");
@@ -578,8 +579,8 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
-			if ((printService instanceof RemotePrintService) &&
-					((RemotePrintService)printService).isMobile()) {
+			//if ((printService instanceof RemotePrintService) &&
+			//		((RemotePrintService)printService).isMobile()) {
 				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
 				DocPrintJob printJob = printService.createPrintJob();
 				try {
@@ -587,6 +588,7 @@ public class RemotePrintServlet extends HttpServlet {
 				} catch (PrintException e) {
 					throw new ServletException(e);
 				}
+			/*	
 			} else {
 				PrinterJobManager.initializePrinterJobManager();
 				PrinterJob printerJob = PrinterJob.getPrinterJob();
@@ -602,8 +604,12 @@ public class RemotePrintServlet extends HttpServlet {
 							LOG.error(e.getMessage(), e);
 							throw new ServletException(e);
 						} finally {
-							if (pageable != null && pageable instanceof PDDocument) {
-								((PDDocument)pageable).close();
+							if (pageable != null) {
+								if (pageable instanceof PDDocument) {
+									((PDDocument)pageable).close();
+								} else if (pageable instanceof PdfPageable) {
+									((PdfPageable)pageable).close();
+								}
 							}
 						}
 					}
@@ -611,6 +617,7 @@ public class RemotePrintServlet extends HttpServlet {
 					throw new ServletException(e);
 				}
 			}
+			*/
 			input.close();
 			PrintWriter writer = response.getWriter();
 			writer.print(backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)));
@@ -679,4 +686,69 @@ public class RemotePrintServlet extends HttpServlet {
 
 		return returnValue.toString();
 	}
+	
+	/**
+	 * Handles the direct connect sub commands.
+	 * @param uuid Unique printer uuid.
+	 * @param request Originating request.
+	 * @param response Output response.
+	 * @throws IOException Thrown if any errors found.
+	 */
+	private void directConnect(String uuid, HttpServletRequest request, HttpServletResponse response)
+			throws IOException {
+		int ordinal = Integer.parseInt(request.getParameter(ParameterKeys.DIRECT_CONNECT_PARAMETER));
+		IDirectConnectPrintJobManager manager = (IDirectConnectPrintJobManager)this.manager;
+		DirectConnectorQueue directConnector = manager.directConnector(uuid);
+		ReturnedData returnedData = null;
+		String exception = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA);
+		if (ordinal >= 0 && ordinal < DirectConnectCommand.values().length) {
+			DirectConnectCommand command = DirectConnectCommand.values()[ordinal];
+			switch (command) {
+				case START:
+					String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
+					directConnector.startPrintJob(Long.parseLong(jobId));
+					response.setContentType("text/html");
+					response.setContentLength(0);
+					break;
+				case POLL:
+					directConnector.getCommandToSend();
+					response.setContentType("text/html");
+					if (directConnector.isCommandToSendReady()) {
+						RemoteCommand remoteCommand = directConnector.getCommandToSend();
+						String serialized = DirectConnectUtils.INSTANCE.serialize(remoteCommand);
+						ByteArrayInputStream input = new ByteArrayInputStream(serialized.getBytes());
+						response.setContentType("application/octet-stream");
+						response.setContentLength(serialized.getBytes().length);
+						
+						OutputStream output = response.getOutputStream();
+						IOUtils.INSTANCE.copy(input, output);
+						input.close();
+					}
+					break;
+				case DATA:
+					String data = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA);
+					Object object = null;
+					if (data != null) {
+						object = DirectConnectUtils.INSTANCE.deserialize(data);
+					}
+					directConnector.queueReturnedData(new ReturnedData(object));
+					response.setContentType("text/html");
+					response.setContentLength(0);
+					break;
+				case EXCEPTION:
+					returnedData = new ReturnedData(exception);
+					returnedData.setException(true);
+				case RUNTIME_EXCEPTION:
+					if (returnedData == null) {
+						returnedData = new ReturnedData(exception);
+						returnedData.setRuntimeException(true);
+					}
+					directConnector.queueReturnedData(returnedData);
+					response.setContentType("text/html");
+					response.setContentLength(0);
+					
+			}
+		}
+	}
+	
 }

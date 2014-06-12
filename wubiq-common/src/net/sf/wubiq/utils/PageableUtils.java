@@ -40,7 +40,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public enum PageableUtils {
 	INSTANCE;
-	
+
 	public static final Log LOG = LogFactory.getLog(PageableUtils.class);
 	
 	public InputStream getStreamForBytes(Object printData,
@@ -221,6 +221,13 @@ public enum PageableUtils {
 					}
 					pageFormat.setOrientation(pageOrientation);
 				}
+			} else {
+				Paper paper = new Paper();
+				paper.setSize(612, 828);
+				paper.setImageableArea(0, 0, 612, 828);
+				pageFormat = new PageFormat();
+				pageFormat.setOrientation(PageFormat.PORTRAIT);
+				pageFormat.setPaper(paper);
 			}
 		}
 		return pageFormat;

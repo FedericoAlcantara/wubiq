@@ -27,6 +27,7 @@ import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.IOUtils;
@@ -61,10 +62,20 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private Set<String> connections;
 	private Set<URL> urls;
 	private URL preferredURL;
-
+	private boolean connected = false;
+			
+	/**
+	 * Level of detail for debug output. between 0 and 5.
+	 * 0 - Messages with this level always are shown.
+	 * 3 - Use for messages regarding connection.
+	 * 5 - Very fine grained messages such as handshake of printing.
+	 */
+	private int debugLevel;
+	
 	public AbstractLocalPrintManager() {
 		connections = new HashSet<String>();
 		preferredURL = null;
+		setDebugLevel(0);
 	}
 	
 	@Override
@@ -140,11 +151,11 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * Kills the manager.
 	 */
 	protected void killManager() {
-		doLog("Kill Manager");
+		doLog("Kill Manager", 5);
 		try {
 			askServer(CommandKeys.KILL_MANAGER);
 		} catch (ConnectException e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 3);
 		}
 	}
 
@@ -152,11 +163,11 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * Allow manager to re-register.
 	 */
 	protected void bringAlive() {
-		doLog("Bring alive");
+		doLog("Bring alive", 0);
 		try {
 			askServer(CommandKeys.BRING_ALIVE);
 		} catch (ConnectException e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 3);
 		}
 	}
 	
@@ -171,7 +182,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * @return A list of pending jobs, or a zero element String array. Never null.
 	 */
 	protected String[] getPendingJobs() throws ConnectException {
-		doLog("Get Pending Jobs");
+		doLog("Get Pending Jobs", 5);
 		
 		String[]returnValue = new String[]{};
 		String pendingJobResponse = askServer(CommandKeys.PENDING_JOBS);
@@ -180,7 +191,11 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			returnValue = pendingJobResponse.substring(ParameterKeys.PENDING_JOB_SIGNATURE.length())
 				.split(ParameterKeys.CATEGORIES_SEPARATOR);
 		}
-		doLog("pending jobs:" + pendingJobResponse);
+		if (!Is.emptyString(pendingJobResponse)) {
+			doLog("pending jobs:" + pendingJobResponse, 0);
+		} else {
+			doLog("pending jobs:" + pendingJobResponse, 5);
+		}
 		return returnValue;
 	}
 	
@@ -188,13 +203,13 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * Registers the probable computer name, and initializes remote print services for this client instance.
 	 */
 	protected void registerComputerName() throws ConnectException {
-		doLog("Register Computer Name");
+		doLog("Register Computer Name", 5);
 		// Gather computer Name.
 		StringBuffer computerName = new StringBuffer(ParameterKeys.COMPUTER_NAME)
 		.append(ParameterKeys.PARAMETER_SEPARATOR); 
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
-			doLog("Register computer name:" + computerName);
+			doLog("Register computer name:" + computerName, 5);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -220,10 +235,10 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					returnValue = true;
 				}
 			} catch (ConnectException e) {
-				doLog(e.getMessage());
+				doLog(e.getMessage(), 3);
 			}
 		}
-		doLog("Is Killed?" + returnValue);
+		doLog("Is Killed?" + returnValue, 5);
 		return returnValue;
 	}
 	
@@ -239,9 +254,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				returnValue = true;
 			}
 		} catch (ConnectException e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 3);
 		}
-		doLog("Is Active?" + returnValue);
+		doLog("Is Active?" + returnValue, 5);
 		return returnValue;
 	}
 
@@ -256,12 +271,33 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				returnValue = false;
 			}
 		} catch (ConnectException e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 3);
 		}
-		doLog("Needs Refresh?" + returnValue);
+		doLog("Needs Refresh?" + returnValue, 5);
 		return returnValue;
 	}
 
+	/**
+	 * Communicates with the server using the sub set of direct connection commands.
+	 * @param command Direct connect sub command.
+	 * @param parameters Parameters.
+	 * @return Response from the server.
+	 * @throws ConnectException If it can't connect to the server.
+	 */
+	protected Object directServer(DirectConnectCommand command, String... parameters) 
+			throws ConnectException {
+		StringBuffer returnValue = new StringBuffer(ParameterKeys.DIRECT_CONNECT_PARAMETER)
+			.append(ParameterKeys.PARAMETER_SEPARATOR)
+			.append(command.ordinal());
+		String[] newParameters = new String[parameters.length + 1];
+		int index = 0;
+		newParameters[index++] = returnValue.toString();
+		for (String parameter: parameters) {
+			newParameters[index++] = parameter;
+		}
+		return pollServer(CommandKeys.DIRECT_CONNECT, newParameters);
+	}
+	
 	/**
 	 * Send command to server and returns its response as a string.
 	 * @param command Command to send to the server.
@@ -297,12 +333,18 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			for (URL address : actualURLs) {
 				try {
 					url = getEncodedUrl(address, command, parameters);
-					doLog("URL:" + url);
+					doLog("URL:" + url, 5);
 					webUrl = new URL(url);
 					connection = (HttpURLConnection) webUrl.openConnection();
 					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 					connection.setRequestMethod("POST");
 					content = connection.getContent();
+					if (!connected) {
+						doLog("\nConnected! to:" + url + "\n", 0);
+						connected = true;
+					} else {
+						doLog("Connected! to:" + url, 5);
+					}
 				} catch (IOException e) {
 					LOG.debug(e.getMessage() + ":" + address);
 					connection = null;
@@ -310,11 +352,13 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 			if (connection == null) {
 				url = null;
+				connected = false;
 				throw new IOException("Couldn't connect to any of the addresses:" + getUrls());
 			}
 	
 			if (connection.getContentType() != null) {
-				if (connection.getContentType().equals("application/pdf")) {
+				if (connection.getContentType().equals("application/pdf") ||
+						"application/octet-stream".equals(connection.getContentType())) {
 					returnValue = (InputStream)content;
 				} else if (connection.getContentType().equals("text/html")) {
 					InputStream inputStream = (InputStream) content;
@@ -330,9 +374,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			LOG.error(e.getMessage() + "->" + url);
 		} catch (UnknownServiceException e) {
 			preferredURL = null;
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 5);
 		} catch (FileNotFoundException e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 5);
 		} catch (IOException e) {
 			preferredURL = null;
 			LOG.error(e.getMessage());
@@ -512,6 +556,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	public Set<String> getConnections() {
 		return connections;
 	}
+	
+	/**
+	 * Sets the connections.
+	 * @param connections
+	 */
+	protected void setConnections(Set<String> connections) {
+		this.connections = connections;
+	}
 
 	/**
 	 * @param debugMode the debugMode to set
@@ -525,6 +577,19 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	public boolean isDebugMode() {
 		return debugMode;
+	}
+
+	public int getDebugLevel() {
+		return debugLevel;
+	}
+
+	public void setDebugLevel(int debugLevel) {
+		if (debugLevel < 0) {
+			debugLevel = 0;
+		} else if (debugLevel > 5) {
+			debugLevel = 5;
+		}
+		this.debugLevel = debugLevel;
 	}
 
 	/**
@@ -549,7 +614,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			this.checkPendingJobInterval = Long.parseLong(checkPendingJobIntervalStr);
 		}
 		catch (Exception e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 5);
 		}
 	}
 
@@ -574,7 +639,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		try {
 			this.printingJobInterval = Long.parseLong(printingJobIntervalStr);
 		} catch (Exception e) {
-			doLog(e.getMessage());
+			doLog(e.getMessage(), 5);
 		}
 	}
 
@@ -621,8 +686,21 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return buffer;
 	}
 	
+	/**
+	 * Takes care of the logging. It defaults to maximal
+	 * @param message Message to be logged.
+	 */
 	protected void doLog(Object message) {
-		if (isDebugMode()) {
+		doLog(message, 5);
+	}
+	
+	/**
+	 * Takes care of the logging.
+	 * @param message Message to be logged.
+	 * @param logLevel Level associated with the message.
+	 */
+	protected void doLog(Object message, int logLevel) {
+		if (isDebugMode() && logLevel <= getDebugLevel()) {
 			LOG.info(message);
 		} else {
 			LOG.debug(message);

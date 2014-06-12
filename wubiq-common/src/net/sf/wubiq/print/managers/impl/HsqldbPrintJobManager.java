@@ -52,6 +52,8 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	private final String LOOK_UP_PENDING = "select " + JOB_ID_FIELD_NAME + " from " + TABLE_NAME + " where " + QUEUE_ID_FIELD_NAME + " = ? order by "
 			 + JOB_ID_FIELD_NAME;
 	private File hostFolder;
+	private long lastJobId = -1;
+	private RemotePrintJob lastRemotePrintJob = null;
 	
 	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
@@ -163,44 +165,53 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getRemotePrintJob(long)
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getRemotePrintJob(long, boolean)
 	 */
 	@Override
-	public RemotePrintJob getRemotePrintJob(long jobId) {
+	public RemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob) {
 		RemotePrintJob returnValue = null;
-		Connection connection = null;
-		PreparedStatement stmt = null;
-		ResultSet rs = null;
-		try {
-			connection = getConnection();
-			stmt = getJobStatement(connection, SELECT_JOB, jobId);
-			rs = stmt.executeQuery();
-			while (rs.next()) {
-				String printServiceName = rs.getString("PRINT_SERVICE_NAME");
-				DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(rs.getString("DOC_ATTRIBUTES"));
-				PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(rs.getString("PRINT_REQUEST_ATTRIBUTES"));
-				PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(rs.getString("PRINT_JOB_ATTRIBUTES"));
-				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(rs.getString("DOC_FLAVOR"));
-				ByteArrayInputStream inputStream = new ByteArrayInputStream(rs.getBytes("PRINT_DATA"));
-				PrintService printService = PrintServiceUtils.findPrinter(printServiceName);
-				if (printService != null) {
-					Doc doc = new SimpleDoc(inputStream, DocFlavor.INPUT_STREAM.AUTOSENSE, docAttributeSet);
-					returnValue = (RemotePrintJob) printService.createPrintJob();
-					try {
-						returnValue.update(doc, printRequestAttributeSet);
+		if (lastJobId == jobId && !fullPrintJob) {
+			returnValue = lastRemotePrintJob;
+		}
+		if (returnValue == null) {
+			Connection connection = null;
+			PreparedStatement stmt = null;
+			ResultSet rs = null;
+			try {
+				connection = getConnection();
+				stmt = getJobStatement(connection, SELECT_JOB, jobId);
+				rs = stmt.executeQuery();
+				while (rs.next()) {
+					String printServiceName = rs.getString("PRINT_SERVICE_NAME");
+					PrintService printService = PrintServiceUtils.findPrinter(printServiceName);
+
+					DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(rs.getString("DOC_ATTRIBUTES"));
+					PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(rs.getString("PRINT_REQUEST_ATTRIBUTES"));
+					PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(rs.getString("PRINT_JOB_ATTRIBUTES"));
+					DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(rs.getString("DOC_FLAVOR"));
+					if (printService != null) {
+						returnValue = (RemotePrintJob) printService.createPrintJob();
+						if (fullPrintJob) {
+							ByteArrayInputStream inputStream = new ByteArrayInputStream(rs.getBytes("PRINT_DATA"));
+							Doc doc = new SimpleDoc(inputStream, DocFlavor.INPUT_STREAM.AUTOSENSE, docAttributeSet);
+							try {
+								returnValue.update(doc, printRequestAttributeSet);
+							} catch (PrintException e) {
+								LOG.error(e.getMessage(), e);
+							}
+						}
 						returnValue.setAttributes(printJobAttributeSet);
 						returnValue.setDocFlavor(docFlavor);
-					} catch (PrintException e) {
-						LOG.error(e.getMessage(), e);
 					}
 				}
+			} catch (SQLException e) {
+				LOG.error(e.getMessage(), e);
+			} finally {
+				close(rs, stmt, connection);
 			}
-		} catch (SQLException e) {
-			LOG.error(e.getMessage(), e);
-		} finally {
-			close(stmt, connection);
-		}
-		
+			lastRemotePrintJob = returnValue;
+			lastJobId = jobId;
+		}		
 		return returnValue;
 	}
 

@@ -22,7 +22,7 @@ public class JspUtils {
 	public int getPendingJob(String queueId) {
 		int returnValue = 0;
 		if (!Is.emptyString(queueId)) {
-			IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager();
+			IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(queueId);
 			if (manager != null) {
 				returnValue = manager.getPrintJobs(queueId, RemotePrintJobStatus.NOT_PRINTED).size();
 			}
