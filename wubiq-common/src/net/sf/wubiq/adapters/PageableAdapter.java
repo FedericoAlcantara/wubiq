@@ -21,19 +21,19 @@ import net.sf.wubiq.wrappers.PageFormatWrapper;
  * @author Federico Alcantara
  *
  */
-public class RemotePageableAdapter implements IRemotePageableAdapter {	
+public class PageableAdapter implements IRemotePageableAdapter {	
 	private Pageable pageable;
 	private int lastPageFormatProcessed = -1;
 	private int lastPrintableProcessed = -1;
 	private PageFormatWrapper lastPageFormat = null;
-	private RemotePrintableAdapter lastPrintable = null;
+	private PrintableAdapter lastPrintable = null;
 	private IDirectConnectorQueue queue;
 	private UUID objectUUID;
 	
-	public RemotePageableAdapter() {
+	public PageableAdapter() {
 	}
 	
-	public RemotePageableAdapter(Pageable pageable, IDirectConnectorQueue queue, UUID objectUUID) {
+	public PageableAdapter(Pageable pageable, IDirectConnectorQueue queue, UUID objectUUID) {
 		this();
 		this.pageable = pageable;
 		this.objectUUID = objectUUID;
@@ -41,7 +41,7 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 		queue.registerObject(objectUUID, this);
 	}
 
-	public RemotePageableAdapter(Pageable pageable, String queueId) {
+	public PageableAdapter(Pageable pageable, String queueId) {
 		this();
 	}
 	
@@ -77,7 +77,7 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		Printable printable = pageable.getPrintable(pageIndex);
 		if (pageIndex != lastPrintableProcessed) {
-			lastPrintable = new RemotePrintableAdapter(printable, queue());
+			lastPrintable = new PrintableAdapter(printable, queue());
 		}
 		lastPrintableProcessed = pageIndex;
 		return lastPrintable; // Must be the adapter

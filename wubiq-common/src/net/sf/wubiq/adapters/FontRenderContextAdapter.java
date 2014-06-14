@@ -3,12 +3,7 @@
  */
 package net.sf.wubiq.adapters;
 
-import java.awt.GraphicsConfiguration;
-import java.awt.GraphicsDevice;
-import java.awt.Rectangle;
-import java.awt.geom.AffineTransform;
-import java.awt.image.BufferedImage;
-import java.awt.image.ColorModel;
+import java.awt.font.FontRenderContext;
 import java.util.Set;
 import java.util.UUID;
 
@@ -17,83 +12,24 @@ import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 
 /**
+ * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class RemoteGraphicsConfigurationAdapter extends GraphicsConfiguration
+public class FontRenderContextAdapter extends FontRenderContext 
 		implements IRemoteAdapter {
 	private IDirectConnectorQueue queue;
+	
 	private UUID objectUUID;
 	
-	public RemoteGraphicsConfigurationAdapter(IDirectConnectorQueue queue, UUID objectUUID) {
-		this.queue = queue;
+	public FontRenderContextAdapter(IDirectConnectorQueue queue, UUID objectUUID) {
 		this.objectUUID = objectUUID;
+		this.queue = queue;
 		queue.registerObject(objectUUID, this);
 	}
 	
-	/**
-	 * @see java.awt.GraphicsConfiguration#createCompatibleImage(int, int)
-	 */
-	@Override
-	public BufferedImage createCompatibleImage(int width, int height) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.awt.GraphicsConfiguration#getBounds()
-	 */
-	@Override
-	public Rectangle getBounds() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.awt.GraphicsConfiguration#getColorModel()
-	 */
-	@Override
-	public ColorModel getColorModel() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.awt.GraphicsConfiguration#getColorModel(int)
-	 */
-	@Override
-	public ColorModel getColorModel(int transparency) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.awt.GraphicsConfiguration#getDefaultTransform()
-	 */
-	@Override
-	public AffineTransform getDefaultTransform() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.awt.GraphicsConfiguration#getDevice()
-	 */
-	@Override
-	public GraphicsDevice getDevice() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	/* (non-Javadoc)
-	 * @see java.awt.GraphicsConfiguration#getNormalizingTransform()
-	 */
-	@Override
-	public AffineTransform getNormalizingTransform() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+	
+	
 	/* *****************************************
 	 * IRemoteAdapter interface implementation
 	 * *****************************************
@@ -153,5 +89,5 @@ public class RemoteGraphicsConfigurationAdapter extends GraphicsConfiguration
 		return this.objectUUID;
 	}
 
-
+	
 }

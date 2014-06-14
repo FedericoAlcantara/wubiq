@@ -79,7 +79,7 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	 */
 	@Override
 	public GraphicsDevice getDevice() {
-		return ;
+		return null;
 	}
 
 	/**

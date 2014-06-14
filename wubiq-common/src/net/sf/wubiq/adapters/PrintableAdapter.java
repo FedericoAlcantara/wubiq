@@ -13,24 +13,23 @@ import java.util.UUID;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.interfaces.IRemotePrintableAdapter;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.utils.DirectConnectUtils;
 
 /**
  * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class RemotePrintableAdapter implements IRemotePrintableAdapter {
+public class PrintableAdapter implements IRemotePrintableAdapter {
 	
 	private Printable printable;
-	private RemoteGraphicsAdapter remoteGraphicsAdapter;
+	private GraphicsAdapter graphicsAdapter;
 	private IDirectConnectorQueue queue;
 	private UUID objectUUID;
 	
-	public RemotePrintableAdapter() {
+	public PrintableAdapter() {
 	}
 	
-	public RemotePrintableAdapter(Printable printable, IDirectConnectorQueue queue, UUID objectUUID) {
+	public PrintableAdapter(Printable printable, IDirectConnectorQueue queue, UUID objectUUID) {
 		this();
 		this.printable = printable;
 		this.queue = queue;
@@ -38,7 +37,7 @@ public class RemotePrintableAdapter implements IRemotePrintableAdapter {
 		queue.registerObject(objectUUID, this);
 	}
 	
-	public RemotePrintableAdapter(Printable printable, IDirectConnectorQueue queue) {
+	public PrintableAdapter(Printable printable, IDirectConnectorQueue queue) {
 		this(printable, queue, UUID.randomUUID());
 	}
 	
@@ -59,10 +58,10 @@ public class RemotePrintableAdapter implements IRemotePrintableAdapter {
 	 * @throws PrinterException
 	 */
 	public int print(PageFormat pageFormat, int pageIndex, UUID objectUUID) throws PrinterException {
-		if (remoteGraphicsAdapter == null) {
-			remoteGraphicsAdapter = new RemoteGraphicsAdapter(queue(), objectUUID);
+		if (graphicsAdapter == null) {
+			graphicsAdapter = new GraphicsAdapter(queue(), objectUUID);
 		}
-		return print(remoteGraphicsAdapter, pageFormat, pageIndex);
+		return print(graphicsAdapter, pageFormat, pageIndex);
 	}
 	
 	/* *****************************************

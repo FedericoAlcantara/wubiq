@@ -59,18 +59,18 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter {
-	private static final Log LOG = LogFactory.getLog(RemoteGraphicsAdapter.class);
+public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter {
+	private static final Log LOG = LogFactory.getLog(GraphicsAdapter.class);
 	private IDirectConnectorQueue queue;
 	private UUID objectUUID;
 
-	public RemoteGraphicsAdapter(IDirectConnectorQueue queue, UUID objectUUID) {
+	public GraphicsAdapter(IDirectConnectorQueue queue, UUID objectUUID) {
 		this.queue = queue;
 		this.objectUUID = objectUUID;
 		queue.registerObject(objectUUID, this);
 	}
 
-	public RemoteGraphicsAdapter(IDirectConnectorQueue queue) {
+	public GraphicsAdapter(IDirectConnectorQueue queue) {
 		this(queue, UUID.randomUUID());
 	}
 	
@@ -187,7 +187,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	public Graphics create() {
 		sendCommand("createRemote");
 		UUID remoteUUID = (UUID)queue().returnData();
-		return new RemoteGraphicsAdapter(queue(), remoteUUID);
+		return new GraphicsAdapter(queue(), remoteUUID);
 	}
 	
 	@Override
@@ -198,7 +198,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 				new GraphicParameter(int.class, width),
 				new GraphicParameter(int.class, height));
 		UUID remoteUUID = (UUID)queue().returnData();
-		return new RemoteGraphicsAdapter(queue(), remoteUUID);
+		return new GraphicsAdapter(queue(), remoteUUID);
 	}
 
 	@Override
@@ -526,10 +526,10 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	public GraphicsConfiguration getDeviceConfiguration() {
 		sendCommand("getDeviceConfigurationRemote");
 		UUID remoteUUID = (UUID)queue().returnData();
-		RemoteGraphicsConfigurationAdapter remote = 
-				new RemoteGraphicsConfigurationAdapter(queue(), remoteUUID);
+		GraphicsConfigurationAdapter remote = 
+				new GraphicsConfigurationAdapter(queue(), remoteUUID);
 		sendCommand(methodName());
-		return (GraphicsConfiguration) queue().returnData();
+		return remote;
 	}
 
 	@Override
@@ -552,6 +552,9 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 
 	@Override
 	public FontRenderContext getFontRenderContext() {
+		sendCommand("getFontRenderContextRemote");
+		UUID remoteUUID = (UUID) queue().returnData();
+		
 		sendCommand(methodName());
 		return (FontRenderContext) queue().returnData();
 	}

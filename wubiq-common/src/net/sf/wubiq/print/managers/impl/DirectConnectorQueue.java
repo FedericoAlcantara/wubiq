@@ -15,8 +15,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.sf.wubiq.adapters.RemotePageableAdapter;
-import net.sf.wubiq.adapters.RemotePrintableAdapter;
+import net.sf.wubiq.adapters.PageableAdapter;
+import net.sf.wubiq.adapters.PrintableAdapter;
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -102,11 +102,11 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		if (remotePrintJob != null) {
 			Object printData = remotePrintJob.getPrintDataObject();
 			if (printData instanceof Printable) {
-				RemotePrintableAdapter remote = new RemotePrintableAdapter((Printable)printData, queue());
+				PrintableAdapter remote = new PrintableAdapter((Printable)printData, queue());
 				sendCommand(new RemoteCommand(null, "createPrintable",
 						new GraphicParameter(UUID.class, remote.getObjectUUID())));
 			} else if (printData instanceof Pageable) {
-				RemotePageableAdapter remote = new RemotePageableAdapter((Pageable)printData, queueId());
+				PageableAdapter remote = new PageableAdapter((Pageable)printData, queueId());
 				sendCommand(new RemoteCommand(null, "createPageable",
 						new GraphicParameter(UUID.class, remote.getObjectUUID())));
 				// no returnedData() here, because this creation objects starts a new connection handshake sequence.
