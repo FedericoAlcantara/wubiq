@@ -8,7 +8,6 @@ import java.util.UUID;
 
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 
@@ -18,6 +17,8 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
  *
  */
 public interface IDirectConnectorQueue extends IRemoteAdapter {
+	String queueId();
+	
 	/**
 	 * Adds a print job to the manager.
 	 * @param jobId Job Id.
@@ -88,11 +89,11 @@ public interface IDirectConnectorQueue extends IRemoteAdapter {
 	
 	/**
 	 * Registers a given object according to its object type.
-	 * @param remoteObjectType Type of object to be registered.
+	 * @param objectUUID Type of object to be registered.
 	 * @param object Object to be registered.
 	 * @return Previously registered object or null.
 	 */
-	Object registerObject(RemoteCommandType remoteObjectType, Object object);
+	Object registerObject(UUID objectUUID, Object object);
 	
 	/**
 	 * Called from server to get the data saved by a previous command.

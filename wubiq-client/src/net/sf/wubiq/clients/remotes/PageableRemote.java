@@ -6,28 +6,35 @@ package net.sf.wubiq.clients.remotes;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
+import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.enums.RemoteCommandType;
+import net.sf.wubiq.interfaces.IRemoteClient;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * @author Federico Alcantara
  *
  */
-public class PageableRemote implements Pageable {
+public class PageableRemote implements Pageable, IRemoteClient {
 	private DirectPrintManager manager;
 	private int lastFormatPageIndex;
 	private int lastPrintablePageIndex;
 	private PageFormat pageFormat;
 	private Printable printable;
-	
-	
-	public PageableRemote(DirectPrintManager manager) {
+	private UUID objectUUID;
+
+	public PageableRemote(DirectPrintManager manager, UUID objectUUID) {
 		this.manager = manager;
 		lastFormatPageIndex = -1;
 		lastPrintablePageIndex = -1;
+		this.objectUUID = objectUUID;
+		manager.registerObject(objectUUID, this);
+	}
+	
+	public PageableRemote(DirectPrintManager manager) {
+		this(manager, UUID.randomUUID());
 	}
 
 	@Override
@@ -53,11 +60,11 @@ public class PageableRemote implements Pageable {
 	@Override
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		if (lastPrintablePageIndex != pageIndex) {
-			printable = new PrintableRemote(manager);
 			lastPrintablePageIndex = pageIndex;
-			manager.registerObject(RemoteCommandType.PRINTABLE, printable);
 			readFromRemote("getPrintable",
 					new GraphicParameter(int.class, pageIndex));
+			UUID printableObjectUUID = (UUID) readFromRemote("getLastPrintableObjectUUID");
+			printable = new PrintableRemote(manager, printableObjectUUID);
 		}
 
 		return printable;
@@ -71,6 +78,14 @@ public class PageableRemote implements Pageable {
 	 */
 	private Object readFromRemote(String methodName, GraphicParameter... parameters) {
 		return manager.readFromRemote(
-				new RemoteCommand(RemoteCommandType.PAGEABLE, methodName, parameters));
+				new RemoteCommand(getObjectUUID(), methodName, parameters));
 	}
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
+	 */
+	public UUID getObjectUUID() {
+		return objectUUID;
+	}
+
 }

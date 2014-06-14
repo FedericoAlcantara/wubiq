@@ -33,10 +33,4 @@ public final class ParameterKeys {
 	public static final String ATTRIBUTE_TYPE_MEDIA_TRAY = "T";
 	public static final String PENDING_JOB_SIGNATURE = "pending_jobs";
 	public static final String PRINT_JOB_ID = "printJob";
-	public static final String DIRECT_CONNECT_PARAMETER="dp";
-	public static final String DIRECT_CONNECT_DATA="dd";
-	public static final String DIRECT_CONNECT_DATA_UUID="du";
-	public static final String DIRECT_CONNECT_NULL="/**NULL**/";
-	public static final String DIRECT_CONNECT_EXCEPTION="/**EXCEPTION**/";
-	public static final String DIRECT_CONNECT_NOT_READY="/**NOT READY**/";
 }

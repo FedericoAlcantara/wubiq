@@ -5,8 +5,8 @@ package net.sf.wubiq.enums;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.UUID;
 
-import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 
@@ -17,45 +17,35 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  */
 public class RemoteCommand implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private RemoteCommandType remoteCommandType;
+	private UUID objectUUID;
 	private String methodName;
 	private GraphicParameter[] parameters;
 		
 	/**
 	 * Constructs a remote command for the given object type.
-	 * @param remoteCommandType Type of object to handle.
+	 * @param objectUUID Type of object to handle.
 	 * @param methodName Name of the method to invoke.
 	 * @param parameters Parameters for the method.
 	 */
-	public RemoteCommand(RemoteCommandType remoteCommandType, 
+	public RemoteCommand(UUID objectUUID, 
 			String methodName, GraphicParameter...parameters) {
-		this.remoteCommandType = remoteCommandType;
+		this.objectUUID = objectUUID;
 		this.methodName = methodName;
 		this.parameters = parameters;
 	}	
 
 	/**
-	 * Creates a remote command for the parent most object.
-	 * @param methodName Name of the method to invoke.
-	 * @param parameters Parameters for the method.
-	 */
-	public RemoteCommand(String methodName,
-			GraphicParameter...parameters) {
-		this (RemoteCommandType.NONE, methodName, parameters);
-	}	
-
-	/**
 	 * @return the remoteCommandType
 	 */
-	public RemoteCommandType getRemoteCommandType() {
-		return remoteCommandType;
+	public UUID getObjectUUID() {
+		return objectUUID;
 	}
 
 	/**
-	 * @param remoteCommandType the remoteCommandType to set
+	 * @param objectUUID the remoteCommandType to set
 	 */
-	public void setRemoteCommandType(RemoteCommandType remoteCommandType) {
-		this.remoteCommandType = remoteCommandType;
+	public void setObjectUUID(UUID objectUUID) {
+		this.objectUUID = objectUUID;
 	}
 
 	/**
@@ -127,7 +117,7 @@ public class RemoteCommand implements Serializable {
 
 	@Override
 	public String toString() {
-		return "RemoteCommand [remoteCommandType=" + remoteCommandType
+		return "RemoteCommand [remoteCommandType=" + objectUUID
 				+ ", methodName=" + methodName + ", parameters="
 				+ Arrays.toString(parameters) + "]";
 	}

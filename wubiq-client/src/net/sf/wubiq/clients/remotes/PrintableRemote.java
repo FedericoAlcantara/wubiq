@@ -5,10 +5,11 @@ import java.awt.Graphics2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.enums.RemoteCommandType;
+import net.sf.wubiq.interfaces.IRemoteClient;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
@@ -20,13 +21,20 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  * @author Federico Alcantara
  *
  */
-public class PrintableRemote implements Printable {
-	DirectPrintManager manager;
+public class PrintableRemote implements Printable, IRemoteClient {
+	private DirectPrintManager manager;
+	private UUID objectUUID;
+	
+	public PrintableRemote(DirectPrintManager manager, UUID objectUUID) {
+		this.manager = manager;
+		this.objectUUID = objectUUID;
+		this.manager.registerObject(objectUUID, this);
+	}
 	
 	public PrintableRemote(DirectPrintManager manager) {
-		this.manager = manager;
+		this(manager, UUID.randomUUID());
 	}
-
+	
 	/**
 	 * This a two stage print method. 
 	 * First it records graphics command into itself by using a GraphicRecorder object.
@@ -36,12 +44,19 @@ public class PrintableRemote implements Printable {
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		new GraphicsRemote(manager, (Graphics2D)graphics);
-		return (Integer) manager.readFromRemote(new RemoteCommand(RemoteCommandType.PRINTABLE,
+		GraphicsRemote remote = new GraphicsRemote(manager, (Graphics2D)graphics);
+		return (Integer) manager.readFromRemote(new RemoteCommand(getObjectUUID(),
 				"print",
 				new GraphicParameter(PageFormat.class, pageFormat),
-				new GraphicParameter(int.class, pageIndex)));
+				new GraphicParameter(int.class, pageIndex),
+				new GraphicParameter(UUID.class, remote.getObjectUUID())));
 	}
 	
-	
+	/**
+	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
+	 */
+	public UUID getObjectUUID() {
+		return objectUUID;
+	}
+
 }

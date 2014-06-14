@@ -32,14 +32,12 @@ import java.text.AttributedCharacterIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.UUID;
 
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
-import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import net.sf.wubiq.wrappers.GlyphVectorWrapper;
@@ -56,8 +54,6 @@ import net.sf.wubiq.wrappers.StrokeWrapper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
-
 /**
  * Graphics Adapter for communicating with remote.
  * @author Federico Alcantara
@@ -65,14 +61,17 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter {
 	private static final Log LOG = LogFactory.getLog(RemoteGraphicsAdapter.class);
-	private String queueId;
-	private IDirectConnectPrintJobManager manager;
 	private IDirectConnectorQueue queue;
+	private UUID objectUUID;
 
-	public RemoteGraphicsAdapter(String queueId) {
-		this.queueId = queueId;
-		manager = (IDirectConnectPrintJobManager) RemotePrintJobManagerFactory.getRemotePrintJobManager(queueId);
-		queue = DirectConnectUtils.INSTANCE.directConnector(queueId());
+	public RemoteGraphicsAdapter(IDirectConnectorQueue queue, UUID objectUUID) {
+		this.queue = queue;
+		this.objectUUID = objectUUID;
+		queue.registerObject(objectUUID, this);
+	}
+
+	public RemoteGraphicsAdapter(IDirectConnectorQueue queue) {
+		this(queue, UUID.randomUUID());
 	}
 	
 	private void sendCommand(String command, GraphicParameter... parameters) {
@@ -91,9 +90,9 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 			
 		}
 		if (serializable) {
-			RemoteCommand remoteCommand = new RemoteCommand(RemoteCommandType.GRAPHICS, 
+			RemoteCommand remoteCommand = new RemoteCommand(getObjectUUID(), 
 					command, parameters);
-			sendCommand(remoteCommand);
+			queue.sendCommand(remoteCommand);
 		} else {
 			LOG.info("Method not implemented: " + fullCommand.toString());
 		}
@@ -102,77 +101,77 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	@Override
 	public void addRenderingHints(Map <?, ?> hints) {
 		sendCommand("addRenderingHints", new GraphicParameter(RenderingHintsWrapper.class, new RenderingHintsWrapper(hints)));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void clip(Shape shape) {
 		sendCommand("clip", shapeParameter(shape));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public boolean hit(Rectangle rect, Shape shape, boolean onStroke) {
 		sendCommand("hit", new GraphicParameter(Rectangle.class, rect), shapeParameter(shape), 
 				new GraphicParameter(boolean.class, onStroke));
-		return (Boolean)returnData();
+		return (Boolean)queue().returnData();
 	}
 
 	@Override
 	public void rotate(double theta) {
 		sendCommand("rotate", new GraphicParameter(double.class, theta));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void rotate(double theta, double x, double y) {
 		sendCommand("rotate", new GraphicParameter(double.class, theta), new GraphicParameter(double.class, x), 
 			new GraphicParameter(double.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void scale(double sx, double sy) {
 		sendCommand("scale", new GraphicParameter(double.class, sx), new GraphicParameter(double.class, sy));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void shear(double shx, double shy) {
 		sendCommand("shear", new GraphicParameter(double.class, shx), new GraphicParameter(double.class, shy));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void transform(AffineTransform transform) {
 		sendCommand("transform", new GraphicParameter(AffineTransform.class, transform));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void translate(int x, int y) {
 		sendCommand("translate", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void translate(double tx, double ty) {
 		sendCommand("translate", new GraphicParameter(double.class, tx), new GraphicParameter(double.class, ty));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void clearRect(int x, int y, int width, int height) {
 		sendCommand("clearRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void clipRect(int x, int y, int width, int height) {
 		sendCommand("clipRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -181,17 +180,25 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("copyArea", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
 			new GraphicParameter(int.class, dx), new GraphicParameter(int.class, dy));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public Graphics create() {
-		throw new NotImplementedException();
+		sendCommand("createRemote");
+		UUID remoteUUID = (UUID)queue().returnData();
+		return new RemoteGraphicsAdapter(queue(), remoteUUID);
 	}
 	
 	@Override
 	public Graphics create(int x, int y, int width, int height) {
-		throw new NotImplementedException();
+		sendCommand("createRemote",
+				new GraphicParameter(int.class, x),
+				new GraphicParameter(int.class, y),
+				new GraphicParameter(int.class, width),
+				new GraphicParameter(int.class, height));
+		UUID remoteUUID = (UUID)queue().returnData();
+		return new RemoteGraphicsAdapter(queue(), remoteUUID);
 	}
 
 	@Override
@@ -202,7 +209,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	@Override
 	public void draw(Shape s) {
 		sendCommand("draw", shapeParameter(s));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -210,7 +217,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("draw3DRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height), 
 			new GraphicParameter(boolean.class, raised));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
@@ -219,7 +226,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawArc", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
 			new GraphicParameter(int.class, startAngle), new GraphicParameter(int.class, arcAngle));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -227,7 +234,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawBytes", new GraphicParameter(byte[].class, data), new GraphicParameter(int.class, offset),
 				new GraphicParameter(int.class, length), new GraphicParameter(int.class, x),
 				new GraphicParameter(int.class, y));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
@@ -235,7 +242,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawChars", new GraphicParameter(byte[].class, data), new GraphicParameter(int.class, offset),
 				new GraphicParameter(int.class, length), new GraphicParameter(int.class, x),
 				new GraphicParameter(int.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -243,14 +250,14 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawGlyphVector", new GraphicParameter(GlyphVectorWrapper.class, new GlyphVectorWrapper(g)),
 				new GraphicParameter(float.class, x), 
 				new GraphicParameter(float.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
 		sendCommand("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y), new GraphicParameter(ImageObserver.class, observer));
-		return (Boolean)returnData();
+		return (Boolean)queue().returnData();
 	}
 
 	@Override
@@ -259,7 +266,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 				new GraphicParameter(int.class, y), new GraphicParameter(Color.class, bgcolor),
 				new GraphicParameter(ImageObserver.class, observer));
-		return (Boolean)returnData();
+		return (Boolean)queue().returnData();
 	}
 
 
@@ -269,7 +276,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
 			new GraphicParameter(int.class, height), new GraphicParameter(ImageObserver.class, observer));
-		return (Boolean) returnData();
+		return (Boolean) queue().returnData();
 	}
 
 	@Override
@@ -279,7 +286,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 				new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
 				new GraphicParameter(int.class, height), new GraphicParameter(Color.class, bgcolor), 
 				new GraphicParameter(ImageObserver.class, observer));
-		return (Boolean) returnData();
+		return (Boolean) queue().returnData();
 	}
 
 	@Override
@@ -291,7 +298,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
 			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
 			new GraphicParameter(int.class, sy2), new GraphicParameter(ImageObserver.class, observer));
-		return (Boolean) returnData();
+		return (Boolean) queue().returnData();
 	}
 
 	@Override
@@ -304,74 +311,74 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
 			new GraphicParameter(int.class, sy2), new GraphicParameter(Color.class, bgcolor), 
 			new GraphicParameter(ImageObserver.class, observer));
-		return (Boolean) returnData();
+		return (Boolean) queue().returnData();
 	}
 	
 	@Override
 	public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) {
 		sendCommand("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform), 
 				new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(obs)));
-		return (Boolean) returnData();
+		return (Boolean) queue().returnData();
 	}
 
 	@Override
 	public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
 		sendCommand("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(BufferedImageOp.class, op), 
 			new GraphicParameter(int.class, x), new GraphicParameter(int.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawLine(int x1, int y1, int x2, int y2) {
 		sendCommand("drawLine", new GraphicParameter(int.class, x1), new GraphicParameter(int.class, y1), 
 			new GraphicParameter(int.class, x2), new GraphicParameter(int.class, y2));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawOval(int x, int y, int width, int height) {
 		sendCommand("drawOval", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
 		sendCommand("drawPolygon", new GraphicParameter(int[].class, xPoints), new GraphicParameter(int[].class, yPoints), 
 			new GraphicParameter(int.class, nPoints));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
 	public void drawPolygon(Polygon p) {
 		sendCommand("drawPolygon", new GraphicParameter(Polygon.class, p));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
 		sendCommand("drawPolyline", new GraphicParameter(int[].class, xPoints), new GraphicParameter(int[].class, yPoints), 
 				new GraphicParameter(int.class, nPoints));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
 	public void drawRect(int x, int y, int width, int height) {
 		sendCommand("drawRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));;
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
 	public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
 		sendCommand("drawRenderableImage", new GraphicParameter(RenderableImageWrapper.class, new RenderableImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
 		sendCommand("drawRenderedImage", new GraphicParameter(RenderedImageWrapper.class, new RenderedImageWrapper(img)), new GraphicParameter(AffineTransform.class, xform));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -380,7 +387,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("drawRoundRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
 				new GraphicParameter(int.class, arcWidth), new GraphicParameter(int.class, arcHeight));
-		returnData();
+		queue().returnData();
 	}
 
 
@@ -388,21 +395,21 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	public void drawString(String str, int x, int y) {
 		sendCommand("drawString", new GraphicParameter(String.class, str), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawString(String str, float x, float y) {
 		sendCommand("drawString", new GraphicParameter(String.class, str), new GraphicParameter(float.class, x), 
 			new GraphicParameter(float.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, int x, int y) {
 		sendCommand("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -410,13 +417,13 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 			float y) {
 		sendCommand("drawString", new GraphicParameter(AttributedCharacterIterator.class, iterator), new GraphicParameter(float.class, x), 
 				new GraphicParameter(float.class, y));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void fill(Shape s) {
 		sendCommand("fill", shapeParameter(s));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
@@ -424,7 +431,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("fill3DRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 			new GraphicParameter(int.class, width), new GraphicParameter(int.class, height), 
 			new GraphicParameter(boolean.class, raised));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -433,34 +440,34 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("fillArc", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
 				new GraphicParameter(int.class, startAngle), new GraphicParameter(int.class, arcAngle));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void fillOval(int x, int y, int width, int height) {
 		sendCommand("fillOval", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
 		sendCommand("fillPolygon", new GraphicParameter(int[].class, xPoints), new GraphicParameter(int[].class, yPoints), 
 				new GraphicParameter(int.class, nPoints));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
 	public void fillPolygon(Polygon p) {
 		sendCommand("fillPolygon", new GraphicParameter(Polygon.class, p));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void fillRect(int x, int y, int width, int height) {
 		sendCommand("fillRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height));;
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -469,110 +476,114 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		sendCommand("fillRoundRect", new GraphicParameter(int.class, x), new GraphicParameter(int.class, y), 
 				new GraphicParameter(int.class, width), new GraphicParameter(int.class, height),
 				new GraphicParameter(int.class, arcWidth), new GraphicParameter(int.class, arcHeight));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public Color getBackground() {
 		sendCommand(methodName());
-		return (Color) returnData();
+		return (Color) queue().returnData();
 	}
 
 	@Override
 	public Shape getClip() {
 		sendCommand(methodName());
-		return (Shape) returnData();
+		return (Shape) queue().returnData();
 	}
 
 	@Override
 	public Rectangle getClipBounds() {
 		sendCommand(methodName());
-		return (Rectangle) returnData();
+		return (Rectangle) queue().returnData();
 	}
 
 	@Override
 	public Rectangle getClipBounds(Rectangle r) {
 		sendCommand(methodName(), new GraphicParameter(Rectangle.class, r));
-		return (Rectangle) returnData();
+		return (Rectangle) queue().returnData();
 	}
 	
 	@Override
 	public Rectangle getClipRect() {
 		sendCommand(methodName());
-		return (Rectangle) returnData();
+		return (Rectangle) queue().returnData();
 	}
 	
 	@Override
 	public Color getColor() {
 		sendCommand(methodName());
-		return (Color) returnData();
+		return (Color) queue().returnData();
 	}
 
 	@Override
 	public Composite getComposite() {
 		sendCommand(methodName());
-		CompositeWrapper wrapper = (CompositeWrapper) returnData();
+		CompositeWrapper wrapper = (CompositeWrapper) queue().returnData();
 		return wrapper.getComposite();
 	}
 
 	@Override
 	public GraphicsConfiguration getDeviceConfiguration() {
+		sendCommand("getDeviceConfigurationRemote");
+		UUID remoteUUID = (UUID)queue().returnData();
+		RemoteGraphicsConfigurationAdapter remote = 
+				new RemoteGraphicsConfigurationAdapter(queue(), remoteUUID);
 		sendCommand(methodName());
-		return (GraphicsConfiguration) returnData();
+		return (GraphicsConfiguration) queue().returnData();
 	}
 
 	@Override
 	public Font getFont() {
 		sendCommand(methodName());
-		return (Font) returnData();
+		return (Font) queue().returnData();
 	}
 
 	@Override
 	public FontMetrics getFontMetrics(Font font) {
 		sendCommand(methodName(), new GraphicParameter(Font.class, font));
-		return (FontMetrics) returnData();
+		return (FontMetrics) queue().returnData();
 	}
 	
 	@Override
 	public FontMetrics getFontMetrics() {
 		sendCommand(methodName());
-		return (FontMetrics) returnData();
+		return (FontMetrics) queue().returnData();
 	}
 
 	@Override
 	public FontRenderContext getFontRenderContext() {
 		sendCommand(methodName());
-		return (FontRenderContext) returnData();
+		return (FontRenderContext) queue().returnData();
 	}
 
 	@Override
 	public Paint getPaint() {
 		sendCommand(methodName());
-		return (Paint) returnData();
+		return (Paint) queue().returnData();
 	}
 
 	@Override
 	public Object getRenderingHint(Key hintKey) {
 		sendCommand(methodName());
-		return (Object) returnData();
+		return (Object) queue().returnData();
 	}
 
 	@Override
 	public RenderingHints getRenderingHints() {
 		sendCommand(methodName());
-		return (RenderingHints) returnData();
+		return (RenderingHints) queue().returnData();
 	}
 
 	@Override
 	public Stroke getStroke() {
 		sendCommand(methodName());
-		return (Stroke) returnData();
+		return (Stroke) queue().returnData();
 	}
 
 	@Override
 	public AffineTransform getTransform() {
 		sendCommand(methodName());
-		return (AffineTransform) returnData();
+		return (AffineTransform) queue().returnData();
 	}
 
 	@Override
@@ -582,56 +593,56 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 				new GraphicParameter(int.class, y),
 				new GraphicParameter(int.class, width),
 				new GraphicParameter(int.class, height));
-		return (Boolean) returnData();
+		return (Boolean) queue().returnData();
 	}
 	
 	@Override
 	public void setBackground(Color color) {
 		sendCommand("setBackground", new GraphicParameter(Color.class, color));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setClip(Shape shape) {
 		sendCommand("setClip", shapeParameter(shape));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setClip(int arg0, int arg1, int arg2, int arg3) {
 		sendCommand("setClip", new GraphicParameter(int.class, arg0), new GraphicParameter(int.class, arg1), 
 			new GraphicParameter(int.class, arg2), new GraphicParameter(int.class, arg3));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setColor(Color color) {
 		sendCommand("setColor", new GraphicParameter(Color.class, color));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
 	public void setComposite(Composite comp) {
 		sendCommand("setComposite", new GraphicParameter(CompositeWrapper.class, new CompositeWrapper(comp)));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setFont(Font font) {
 		sendCommand("setFont", new GraphicParameter(Font.class, font));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setPaintMode() {
 		sendCommand("setPaintMode");
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setXORMode(Color arg0) {
 		sendCommand("setXORMode", new GraphicParameter(Color.class, arg0));
-		returnData();
+		queue().returnData();
 	}
 	
 	@Override
@@ -641,13 +652,13 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		} else {
 			sendCommand("setPaint", new GraphicParameter(Paint.class, paint));
 		}
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setRenderingHint(Key hintKey, Object hintValue) {
 		sendCommand("setRenderingHint", new GraphicParameter(RenderingHintWrapper.class, new RenderingHintWrapper(hintKey, hintValue)), new GraphicParameter(int.class, 0));
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -655,7 +666,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		for (Entry<?, ?> entry : hints.entrySet()) {
 			sendCommand("setRenderingHint", new GraphicParameter(RenderingHintWrapper.class, new RenderingHintWrapper((RenderingHints.Key) entry.getKey(), entry.getValue())), new GraphicParameter(int.class, 0));
 		}
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
@@ -663,13 +674,13 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		if (s instanceof BasicStroke) { // only add it if valid stroke type
 			sendCommand("setStroke", new GraphicParameter(StrokeWrapper.class, new StrokeWrapper(s)));
 		}
-		returnData();
+		queue().returnData();
 	}
 
 	@Override
 	public void setTransform(AffineTransform transform) {
 		sendCommand("setTransform", new GraphicParameter(AffineTransform.class, transform));
-		returnData();
+		queue().returnData();
 	}
 	
 	private GraphicParameter shapeParameter(Shape shape) {
@@ -677,42 +688,46 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 		return returnValue;
 	}
 	
-	/*******************************************
-	 * Remote adapter interface implementation
+	/* *****************************************
+	 * IRemoteAdapter interface implementation
 	 * *****************************************
 	 */
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#queue()
+	 */
 	@Override
-	public String queueId() {
-		return queueId;
+	public IDirectConnectorQueue queue() {
+		return queue;
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
 		queue.addListener(listener);
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
 		return queue.removeListener(listener);
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 */
 	public Set<IRemoteListener> listeners() {
 		return queue.listeners();
 	}
-
-	/***************************************
+	
+	/* **************************************
 	 * SUPPORT ROUTINES
 	 * *************************************
 	 */
-	/**
-	 * Sends a command to the remote printer.
-	 * @param remoteCommand Command to send. Must never be null.
-	 */
-	private synchronized void sendCommand(RemoteCommand remoteCommand) {
-		IDirectConnectorQueue queue = manager.directConnector(queueId());
-		queue.sendCommand(remoteCommand);
-	}
 
 	/**
 	 * @return The invoking method name.
@@ -724,14 +739,12 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 			return null;
 		}
 	}
-
+	
 	/**
-	 * Waits for the response to become available.
-	 * @return Returned data.
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
 	 */
-	private Object returnData() {
-		IDirectConnectorQueue queue = manager.directConnector(queueId());
-		return queue.returnData();
+	public UUID getObjectUUID() {
+		return this.objectUUID;
 	}
 
 }

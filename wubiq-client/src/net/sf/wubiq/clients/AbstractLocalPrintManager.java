@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.utils.ClientLabels;
@@ -286,7 +287,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	protected Object directServer(DirectConnectCommand command, String... parameters) 
 			throws ConnectException {
-		StringBuffer returnValue = new StringBuffer(ParameterKeys.DIRECT_CONNECT_PARAMETER)
+		StringBuffer returnValue = new StringBuffer(DirectConnectKeys.DIRECT_CONNECT_PARAMETER)
 			.append(ParameterKeys.PARAMETER_SEPARATOR)
 			.append(command.ordinal());
 		String[] newParameters = new String[parameters.length + 1];

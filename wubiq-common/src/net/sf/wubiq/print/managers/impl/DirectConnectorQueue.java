@@ -12,19 +12,21 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import net.sf.wubiq.adapters.RemotePageableAdapter;
 import net.sf.wubiq.adapters.RemotePrintableAdapter;
 import net.sf.wubiq.adapters.ReturnedData;
+import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.exceptions.TimeoutException;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.wrappers.GraphicParameter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,16 +43,18 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	private Map<Long, IRemotePrintJob> printJobs;
 	private long onProcess;
 	private Set<IRemoteListener> listeners;
-	private final Map<RemoteCommandType, Object> registeredObjects;
+	private final Map<UUID, Object> registeredObjects;
 	private Map<String, String> remoteDatas;
+	private UUID objectUUID;
 
 	public DirectConnectorQueue(String queueId) {
 		this.queueId = queueId;
 		printJobs = new ConcurrentHashMap<Long, IRemotePrintJob>();
 		onProcess = -1l;
 		listeners = Collections.synchronizedSet( new HashSet<IRemoteListener>());
-		registeredObjects = new ConcurrentHashMap<RemoteCommandType, Object>();
+		registeredObjects = new ConcurrentHashMap<UUID, Object>();
 		remoteDatas = new ConcurrentHashMap<String, String>();
+		objectUUID = UUID.randomUUID();
 	}
 	
 	/**
@@ -93,15 +97,18 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 */
 	public synchronized void startPrintJob(final long jobId) {
 		registeredObjects.clear();
-		registeredObjects.put(RemoteCommandType.NONE, this);
+		registeredObjects.put(objectUUID, this);
 		IRemotePrintJob remotePrintJob = printJobs.get(jobId);
 		if (remotePrintJob != null) {
 			Object printData = remotePrintJob.getPrintDataObject();
 			if (printData instanceof Printable) {
-				registeredObjects.put(RemoteCommandType.PRINTABLE, new RemotePrintableAdapter((Printable)printData, queueId()));
+				RemotePrintableAdapter remote = new RemotePrintableAdapter((Printable)printData, queue());
+				sendCommand(new RemoteCommand(null, "createPrintable",
+						new GraphicParameter(UUID.class, remote.getObjectUUID())));
 			} else if (printData instanceof Pageable) {
-				registeredObjects.put(RemoteCommandType.PAGEABLE, new RemotePageableAdapter((Pageable)printData, queueId()));
-				sendCommand(new RemoteCommand("createPageable"));
+				RemotePageableAdapter remote = new RemotePageableAdapter((Pageable)printData, queueId());
+				sendCommand(new RemoteCommand(null, "createPageable",
+						new GraphicParameter(UUID.class, remote.getObjectUUID())));
 				// no returnedData() here, because this creation objects starts a new connection handshake sequence.
 			}
 		}
@@ -110,8 +117,8 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	/**
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#registerObject(net.sf.wubiq.enums.RemoteCommandType, java.lang.Object)
 	 */
-	public synchronized Object registerObject(RemoteCommandType remoteObjectType, Object object) {
-		return registeredObjects.put(remoteObjectType, object);
+	public synchronized Object registerObject(UUID objectUUID, Object object) {
+		return registeredObjects.put(objectUUID, object);
 	}
 	
 	private void resetProcess() {
@@ -125,6 +132,10 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	
 	public String queueId() {
 		return queueId;
+	}
+	
+	public IDirectConnectorQueue queue() {
+		return this;
 	}
 
 	@Override
@@ -260,7 +271,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 				remoteDatas.put(dataUUID, doCallCommand(printerCommand));
 				
 			}
-		}, printerCommand.getRemoteCommandType() + "-" + printerCommand.getMethodName());
+		}, printerCommand.getObjectUUID() + "-" + printerCommand.getMethodName());
 		returnData.start();
 		return "";
 	}
@@ -271,14 +282,14 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	public String getRemoteData(String dataUUID) {
 		String returnValue = remoteDatas.get(dataUUID);
 		if (returnValue == null) {
-			returnValue = ParameterKeys.DIRECT_CONNECT_NOT_READY;
+			returnValue = DirectConnectKeys.DIRECT_CONNECT_NOT_READY;
 		}
 		return returnValue;
 	}
 	
 	@SuppressWarnings("rawtypes")
 	private String doCallCommand(RemoteCommand printerCommand) {
-		String serializedData = ParameterKeys.DIRECT_CONNECT_NULL;
+		String serializedData = DirectConnectKeys.DIRECT_CONNECT_NULL;
 		String methodName = printerCommand.getMethodName();
 		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
 		Object[] parameterValues = new Object[printerCommand.getParameters().length];
@@ -289,7 +300,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		try {
 			Object data = null;
 			String error = null;
-			Object methodObject = registeredObjects.get(printerCommand.getRemoteCommandType());
+			Object methodObject = registeredObjects.get(printerCommand.getObjectUUID());
 			try {
 				Method method = DirectConnectUtils.INSTANCE.findMethod(methodObject.getClass(), methodName, parameterTypes);
 				if (method != null) {
@@ -303,7 +314,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 				}
 			}
 			if (error != null) {
-				serializedData = ParameterKeys.DIRECT_CONNECT_EXCEPTION
+				serializedData = DirectConnectKeys.DIRECT_CONNECT_EXCEPTION
 						+ ParameterKeys.PARAMETER_SEPARATOR
 						+ error;
 			} else {
@@ -320,4 +331,12 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		}
 		return serializedData;
 	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
+	 */
+	public UUID getObjectUUID() {
+		return this.objectUUID;
+	}
+
 }

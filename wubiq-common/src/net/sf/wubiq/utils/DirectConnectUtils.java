@@ -62,7 +62,7 @@ public enum DirectConnectUtils {
 	 */
 	public void notifyTimeout(IRemoteAdapter adapter, Set<IRemoteListener> listeners) {
 		for (IRemoteListener listener : listeners) {
-			listener.notify(adapter.queueId(), NotificationType.TIMEOUT, ServerLabels.get("server.exception.timeout"));
+			listener.notify(adapter.queue().queueId(), NotificationType.TIMEOUT, ServerLabels.get("server.exception.timeout"));
 		}
 	}
 
@@ -74,7 +74,7 @@ public enum DirectConnectUtils {
 	 */
 	public void notifyException(IRemoteAdapter adapter, Set<IRemoteListener> listeners, String message) {
 		for (IRemoteListener listener : listeners) {
-			listener.notify(adapter.queueId(), NotificationType.UNDETERMINED_EXCEPTION, message);
+			listener.notify(adapter.queue().queueId(), NotificationType.UNDETERMINED_EXCEPTION, message);
 		}
 	}
 	

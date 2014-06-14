@@ -8,8 +8,8 @@ import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.util.Set;
+import java.util.UUID;
 
-import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.interfaces.IRemotePrintableAdapter;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
@@ -23,18 +23,23 @@ import net.sf.wubiq.utils.DirectConnectUtils;
 public class RemotePrintableAdapter implements IRemotePrintableAdapter {
 	
 	private Printable printable;
-	private String queueId;
 	private RemoteGraphicsAdapter remoteGraphicsAdapter;
 	private IDirectConnectorQueue queue;
+	private UUID objectUUID;
 	
 	public RemotePrintableAdapter() {
 	}
-
-	public RemotePrintableAdapter(Printable printable, String queueId) {
+	
+	public RemotePrintableAdapter(Printable printable, IDirectConnectorQueue queue, UUID objectUUID) {
 		this();
 		this.printable = printable;
-		this.queueId = queueId;
-		queue = DirectConnectUtils.INSTANCE.directConnector(queueId());
+		this.queue = queue;
+		this.objectUUID = objectUUID;
+		queue.registerObject(objectUUID, this);
+	}
+	
+	public RemotePrintableAdapter(Printable printable, IDirectConnectorQueue queue) {
+		this(printable, queue, UUID.randomUUID());
 	}
 	
 	/**
@@ -43,34 +48,64 @@ public class RemotePrintableAdapter implements IRemotePrintableAdapter {
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		return printable.print(remoteGraphicsAdapter, pageFormat, pageIndex);
+		return printable.print(graphics, pageFormat, pageIndex);
 	}
 
-	public int print(PageFormat pageFormat, int pageIndex) throws PrinterException {
+	/**
+	 * Special method for setting the communication between remote and local printable.
+	 * @param pageFormat Page format to use.
+	 * @param pageIndex Page index.
+	 * @return Status of the action.
+	 * @throws PrinterException
+	 */
+	public int print(PageFormat pageFormat, int pageIndex, UUID objectUUID) throws PrinterException {
 		if (remoteGraphicsAdapter == null) {
-			remoteGraphicsAdapter = new RemoteGraphicsAdapter(queueId());
-			queue.registerObject(RemoteCommandType.GRAPHICS, remoteGraphicsAdapter);
+			remoteGraphicsAdapter = new RemoteGraphicsAdapter(queue(), objectUUID);
 		}
 		return print(remoteGraphicsAdapter, pageFormat, pageIndex);
 	}
 	
+	/* *****************************************
+	 * IRemoteAdapter interface implementation
+	 * *****************************************
+	 */
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#queue()
+	 */
 	@Override
-	public String queueId() {
-		return queueId;
+	public IDirectConnectorQueue queue() {
+		return queue;
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
 		queue.addListener(listener);
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
 		return queue.removeListener(listener);
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 */
 	public Set<IRemoteListener> listeners() {
 		return queue.listeners();
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
+	 */
+	public UUID getObjectUUID() {
+		return objectUUID;
+	}
+	
 }

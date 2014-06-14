@@ -21,6 +21,7 @@ import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
@@ -28,9 +29,10 @@ import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
 import java.util.Map;
+import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.enums.RemoteCommandType;
+import net.sf.wubiq.interfaces.IRemoteClient;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -39,14 +41,16 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * @author Federico Alcantara
  *
  */
-public class GraphicsRemote extends Graphics2D {
+public class GraphicsRemote extends Graphics2D implements IRemoteClient {
 	private DirectPrintManager manager;
 	private Graphics2D graphics;
+	private UUID objectUUID;
 	
 	public GraphicsRemote(DirectPrintManager manager, Graphics2D graphics) {
 		this.manager = manager;
 		this.graphics = graphics;
-		manager.registerObject(RemoteCommandType.GRAPHICS, this);
+		objectUUID = UUID.randomUUID();
+		this.manager.registerObject(objectUUID, this);
 	}
 	
 	@Override
@@ -120,9 +124,32 @@ public class GraphicsRemote extends Graphics2D {
 		throw new NotImplementedException();
 	}
 	
+	/**
+	 * Special method for establishing a two way communications.
+	 * @return Unique id of the just created graphics.
+	 */
+	public UUID createRemote() {
+		GraphicsRemote remote = new GraphicsRemote(manager, (Graphics2D)graphics.create());
+		return remote.getObjectUUID();
+	}
+	
 	@Override
 	public Graphics create(int x, int y, int width, int height) {
 		throw new NotImplementedException();
+	}
+
+	/**
+	 * Special method for establishing a two way communications.
+	 * @param x 
+	 * @param y
+	 * @param width
+	 * @param height
+	 * @return
+	 */
+	public UUID createRemote(int x, int y, int width, int height) {
+		GraphicsRemote remote = new GraphicsRemote(manager,
+				(Graphics2D)graphics.create(x, y, width, height));
+		return remote.getObjectUUID();
 	}
 
 	@Override
@@ -326,7 +353,8 @@ public class GraphicsRemote extends Graphics2D {
 
 	@Override
 	public Shape getClip() {
-		return graphics.getClip();
+		Shape shape = graphics.getClip();
+		return new GeneralPath(shape);
 	}
 
 	@Override
@@ -475,4 +503,11 @@ public class GraphicsRemote extends Graphics2D {
 		graphics.setTransform(transform);
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
+	 */
+	public UUID getObjectUUID() {
+		return objectUUID;
+	}
+
 }

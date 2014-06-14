@@ -30,6 +30,7 @@ import javax.servlet.http.HttpServletResponse;
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.android.ConversionServerUtils;
 import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.data.RemoteClient;
@@ -696,12 +697,12 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void directConnect(String uuid, HttpServletRequest request, HttpServletResponse response)
 			throws IOException {
-		int ordinal = Integer.parseInt(request.getParameter(ParameterKeys.DIRECT_CONNECT_PARAMETER));
+		int ordinal = Integer.parseInt(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_PARAMETER));
 		IDirectConnectPrintJobManager manager = (IDirectConnectPrintJobManager)this.manager;
 		IDirectConnectorQueue directConnector = manager.directConnector(uuid);
 		ReturnedData returnedData = null;
 		String dataUUID = null;
-		String exception = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA);
+		String exception = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA);
 		if (ordinal >= 0 && ordinal < DirectConnectCommand.values().length) {
 			DirectConnectCommand command = DirectConnectCommand.values()[ordinal];
 			String data = null;
@@ -730,7 +731,7 @@ public class RemotePrintServlet extends HttpServlet {
 					break;
 					
 				case DATA:
-					data = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA);
+					data = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA);
 					object = null;
 					if (data != null) {
 						object = DirectConnectUtils.INSTANCE.deserialize(data);
@@ -741,8 +742,8 @@ public class RemotePrintServlet extends HttpServlet {
 					break;
 					
 				case READ_REMOTE:
-					data = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA);
-					dataUUID = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA_UUID);
+					data = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA);
+					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
 					object = null;
 					if (data != null) {
 						object = DirectConnectUtils.INSTANCE.deserialize(data);
@@ -755,7 +756,7 @@ public class RemotePrintServlet extends HttpServlet {
 					break;
 
 				case POLL_REMOTE_DATA:
-					dataUUID = request.getParameter(ParameterKeys.DIRECT_CONNECT_DATA_UUID);
+					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
 					response.setContentType("text/html");
 					response.getWriter().print(directConnector.getRemoteData(dataUUID));
 					break;

@@ -7,13 +7,12 @@ import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.util.Set;
+import java.util.UUID;
 
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.interfaces.IRemotePageableAdapter;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.GraphicParameter;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 
@@ -24,22 +23,28 @@ import net.sf.wubiq.wrappers.PageFormatWrapper;
  */
 public class RemotePageableAdapter implements IRemotePageableAdapter {	
 	private Pageable pageable;
-	private String queueId;
 	private int lastPageFormatProcessed = -1;
 	private int lastPrintableProcessed = -1;
 	private PageFormatWrapper lastPageFormat = null;
 	private RemotePrintableAdapter lastPrintable = null;
 	private IDirectConnectorQueue queue;
+	private UUID objectUUID;
 	
 	public RemotePageableAdapter() {
 	}
 	
-	public RemotePageableAdapter(Pageable pageable, String queueId) {
+	public RemotePageableAdapter(Pageable pageable, IDirectConnectorQueue queue, UUID objectUUID) {
 		this();
 		this.pageable = pageable;
-		this.queueId = queueId;
-		queue = DirectConnectUtils.INSTANCE.directConnector(queueId());
+		this.objectUUID = objectUUID;
+		this.queue = queue;
+		queue.registerObject(objectUUID, this);
 	}
+
+	public RemotePageableAdapter(Pageable pageable, String queueId) {
+		this();
+	}
+	
 	
 	/**
 	 * @see java.awt.print.Pageable#getNumberOfPages()
@@ -72,11 +77,14 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		Printable printable = pageable.getPrintable(pageIndex);
 		if (pageIndex != lastPrintableProcessed) {
-			lastPrintable = new RemotePrintableAdapter(printable, queueId());
-			queue.registerObject(RemoteCommandType.PRINTABLE, lastPrintable);
+			lastPrintable = new RemotePrintableAdapter(printable, queue());
 		}
 		lastPrintableProcessed = pageIndex;
 		return lastPrintable; // Must be the adapter
+	}
+	
+	public UUID getLastPrintableObjectUUID() throws IndexOutOfBoundsException {
+		return lastPrintable.getObjectUUID();
 	}
 
 	/**
@@ -85,27 +93,47 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 	 */
 	private synchronized void sendCommand(String methodName, 
 			GraphicParameter...parameters) {
-		queue.sendCommand(new RemoteCommand(RemoteCommandType.PAGEABLE,
+		queue.sendCommand(new RemoteCommand(getObjectUUID(),
 				methodName, parameters));
 	}
 	
+	/* *****************************************
+	 * IRemoteAdapter interface implementation
+	 * *****************************************
+	 */
+	
+	public IDirectConnectorQueue queue() {
+		return queue;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
 		queue.addListener(listener);
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
 		return queue.removeListener(listener);
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 */
 	public Set<IRemoteListener> listeners() {
 		return queue.listeners();
 	}
-
-	@Override
-	public String queueId() {
-		return queueId;
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
+	 */
+	public UUID getObjectUUID() {
+		return this.objectUUID;
 	}
 	
 }
