@@ -33,11 +33,12 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
-import net.sf.wubiq.print.managers.impl.DirectConnectorQueue;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
@@ -66,7 +67,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	private static final Log LOG = LogFactory.getLog(RemoteGraphicsAdapter.class);
 	private String queueId;
 	private IDirectConnectPrintJobManager manager;
-	private DirectConnectorQueue queue;
+	private IDirectConnectorQueue queue;
 
 	public RemoteGraphicsAdapter(String queueId) {
 		this.queueId = queueId;
@@ -510,7 +511,8 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	@Override
 	public Composite getComposite() {
 		sendCommand(methodName());
-		return (Composite) returnData();
+		CompositeWrapper wrapper = (CompositeWrapper) returnData();
+		return wrapper.getComposite();
 	}
 
 	@Override
@@ -708,7 +710,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	 * @param remoteCommand Command to send. Must never be null.
 	 */
 	private synchronized void sendCommand(RemoteCommand remoteCommand) {
-		DirectConnectorQueue queue = manager.directConnector(queueId());
+		IDirectConnectorQueue queue = manager.directConnector(queueId());
 		queue.sendCommand(remoteCommand);
 	}
 
@@ -728,7 +730,7 @@ public class RemoteGraphicsAdapter extends Graphics2D implements IRemoteAdapter 
 	 * @return Returned data.
 	 */
 	private Object returnData() {
-		DirectConnectorQueue queue = manager.directConnector(queueId());
+		IDirectConnectorQueue queue = manager.directConnector(queueId());
 		return queue.returnData();
 	}
 

@@ -3,7 +3,6 @@
  */
 package net.sf.wubiq.print.managers;
 
-import net.sf.wubiq.print.managers.impl.DirectConnectorQueue;
 
 /**
  * Represents the contract for the Direct connection Management
@@ -16,5 +15,5 @@ public interface IDirectConnectPrintJobManager extends IRemotePrintJobManager {
 	 * @param queueId Id of the queue to find.
 	 * @return DirectConnectorQueue found or newly created. Must never be null.
 	 */
-	DirectConnectorQueue directConnector(String queueId);
+	IDirectConnectorQueue directConnector(String queueId);
 }

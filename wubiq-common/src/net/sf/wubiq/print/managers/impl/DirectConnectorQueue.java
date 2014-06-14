@@ -3,9 +3,10 @@
  */
 package net.sf.wubiq.print.managers.impl;
 
-import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
+import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -13,17 +14,17 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.sf.wubiq.adapters.RemoteCommand;
 import net.sf.wubiq.adapters.RemotePageableAdapter;
 import net.sf.wubiq.adapters.RemotePrintableAdapter;
 import net.sf.wubiq.adapters.ReturnedData;
+import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.exceptions.TimeoutException;
-import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
-import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.DirectConnectUtils;
-import net.sf.wubiq.utils.PageableUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -33,19 +34,23 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class DirectConnectorQueue implements IRemoteAdapter {
+public class DirectConnectorQueue implements IDirectConnectorQueue {
 	private static final Log LOG = LogFactory.getLog(DirectConnectorQueue.class);
 	
 	private String queueId;
-	private Map<Long, RemotePrintJob> printJobs;
+	private Map<Long, IRemotePrintJob> printJobs;
 	private long onProcess;
 	private Set<IRemoteListener> listeners;
+	private final Map<RemoteCommandType, Object> registeredObjects;
+	private Map<String, String> remoteDatas;
 
 	public DirectConnectorQueue(String queueId) {
 		this.queueId = queueId;
-		printJobs = new ConcurrentHashMap<Long, RemotePrintJob>();
+		printJobs = new ConcurrentHashMap<Long, IRemotePrintJob>();
 		onProcess = -1l;
 		listeners = Collections.synchronizedSet( new HashSet<IRemoteListener>());
+		registeredObjects = new ConcurrentHashMap<RemoteCommandType, Object>();
+		remoteDatas = new ConcurrentHashMap<String, String>();
 	}
 	
 	/**
@@ -53,7 +58,7 @@ public class DirectConnectorQueue implements IRemoteAdapter {
 	 * @param jobId Job Id.
 	 * @param remotePrintJob Remote print job.
 	 */
-	public synchronized void addPrintJob(long jobId, RemotePrintJob remotePrintJob) {
+	public synchronized void addPrintJob(long jobId, IRemotePrintJob remotePrintJob) {
 		printJobs.put(jobId, remotePrintJob);
 	}
 	
@@ -70,7 +75,7 @@ public class DirectConnectorQueue implements IRemoteAdapter {
 		return true;
 	}
 	
-	public synchronized RemotePrintJob remotePrintJob(long jobId) {
+	public synchronized IRemotePrintJob remotePrintJob(long jobId) {
 		return printJobs.get(jobId);
 	}
 	
@@ -87,25 +92,26 @@ public class DirectConnectorQueue implements IRemoteAdapter {
 	 * @param jobId 
 	 */
 	public synchronized void startPrintJob(final long jobId) {
-		Thread start = new Thread(new Runnable() {
-			public void run() {
-				RemotePrintJob remotePrintJob = printJobs.get(jobId);
-				if (remotePrintJob != null) {
-					Object printData = remotePrintJob.getPrintDataObject();
-					if (printData instanceof Printable) {
-						PageFormat pageFormat = PageableUtils.INSTANCE.getPageFormat(remotePrintJob.getPrintRequestAttributeSet());
-						RemotePrintableAdapter printable = new RemotePrintableAdapter((Printable)printData, queueId());
-						DirectConnectUtils.INSTANCE.exportRemotePrintable(printable, pageFormat);
-					} else if (printData instanceof Pageable) {
-						RemotePageableAdapter pageable = new RemotePageableAdapter((Pageable) remotePrintJob.getPrintDataObject(),
-								queueId());
-						DirectConnectUtils.INSTANCE.exportRemotePageable(pageable);
-					}
-					sendCommand(new RemoteCommand(RemoteCommandType.NONE, "endPrintJob"));
-				}
+		registeredObjects.clear();
+		registeredObjects.put(RemoteCommandType.NONE, this);
+		IRemotePrintJob remotePrintJob = printJobs.get(jobId);
+		if (remotePrintJob != null) {
+			Object printData = remotePrintJob.getPrintDataObject();
+			if (printData instanceof Printable) {
+				registeredObjects.put(RemoteCommandType.PRINTABLE, new RemotePrintableAdapter((Printable)printData, queueId()));
+			} else if (printData instanceof Pageable) {
+				registeredObjects.put(RemoteCommandType.PAGEABLE, new RemotePageableAdapter((Pageable)printData, queueId()));
+				sendCommand(new RemoteCommand("createPageable"));
+				// no returnedData() here, because this creation objects starts a new connection handshake sequence.
 			}
-		}, "ConnectorQueue:" + Long.toString(jobId));
-		start.start();
+		}
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#registerObject(net.sf.wubiq.enums.RemoteCommandType, java.lang.Object)
+	 */
+	public synchronized Object registerObject(RemoteCommandType remoteObjectType, Object object) {
+		return registeredObjects.put(remoteObjectType, object);
 	}
 	
 	private void resetProcess() {
@@ -205,7 +211,7 @@ public class DirectConnectorQueue implements IRemoteAdapter {
 	/**
 	 * @return The invoking method name.
 	 */
-	public String methodName() {
+	private String methodName() {
 		if (Thread.currentThread().getStackTrace().length >= 3) {
 			return Thread.currentThread().getStackTrace()[2].getMethodName();
 		} else { 
@@ -224,11 +230,11 @@ public class DirectConnectorQueue implements IRemoteAdapter {
 		while (!isReturnedDataReady()) {
 			try {
 				timeout = DirectConnectUtils.INSTANCE.checkTimeout(timeout);
-			} catch(InterruptedException e) {
-				LOG.fatal(e.getMessage(), e);
-				DirectConnectUtils.INSTANCE.notifyException(this, listeners(), e.getMessage());
 			} catch (TimeoutException e) {
 				DirectConnectUtils.INSTANCE.notifyTimeout(this, listeners());
+			} catch (Exception e) {
+				LOG.fatal(e.getMessage(), e);
+				DirectConnectUtils.INSTANCE.notifyException(this, listeners(), e.getMessage());
 			}
 		}
 		returnedData = getReturnedData();
@@ -243,5 +249,75 @@ public class DirectConnectorQueue implements IRemoteAdapter {
 		return returnValue;
 	}
 
-
+	/**
+	 * Calls the command in a new thread.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(net.sf.wubiq.enums.RemoteCommand)
+	 */
+	public String callCommand(final RemoteCommand printerCommand, final String dataUUID) {
+		remoteDatas.remove(dataUUID);
+		Thread returnData = new Thread(new Runnable() {
+			public void run() {
+				remoteDatas.put(dataUUID, doCallCommand(printerCommand));
+				
+			}
+		}, printerCommand.getRemoteCommandType() + "-" + printerCommand.getMethodName());
+		returnData.start();
+		return "";
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#getRemoteData()
+	 */
+	public String getRemoteData(String dataUUID) {
+		String returnValue = remoteDatas.get(dataUUID);
+		if (returnValue == null) {
+			returnValue = ParameterKeys.DIRECT_CONNECT_NOT_READY;
+		}
+		return returnValue;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private String doCallCommand(RemoteCommand printerCommand) {
+		String serializedData = ParameterKeys.DIRECT_CONNECT_NULL;
+		String methodName = printerCommand.getMethodName();
+		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
+		Object[] parameterValues = new Object[printerCommand.getParameters().length];
+		for (int i = 0; i < parameterTypes.length; i++) {
+			parameterTypes[i] = printerCommand.getParameters()[i].getParameterType();
+			parameterValues[i] = printerCommand.getParameters()[i].getParameterValue();
+		}
+		try {
+			Object data = null;
+			String error = null;
+			Object methodObject = registeredObjects.get(printerCommand.getRemoteCommandType());
+			try {
+				Method method = DirectConnectUtils.INSTANCE.findMethod(methodObject.getClass(), methodName, parameterTypes);
+				if (method != null) {
+					data = method.invoke(methodObject, parameterValues);
+				}
+			} catch (Exception e) {
+				if (e.getCause() != null) {
+					error = e.getCause().getMessage();
+				} else {
+					error = e.getMessage();
+				}
+			}
+			if (error != null) {
+				serializedData = ParameterKeys.DIRECT_CONNECT_EXCEPTION
+						+ ParameterKeys.PARAMETER_SEPARATOR
+						+ error;
+			} else {
+				if (data != null &&
+						data instanceof Serializable) {
+					// Don't try to serialized a non serializable.
+					// Return value that we don't want to transfer back
+					// will be returned as non-serializable.
+					serializedData = DirectConnectUtils.INSTANCE.serialize(data);
+				}
+			}
+		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		return serializedData;
+	}
 }

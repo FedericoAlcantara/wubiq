@@ -3,15 +3,6 @@
  */
 package net.sf.wubiq.utils;
 
-import java.awt.Color;
-import java.awt.Graphics2D;
-import java.awt.geom.AffineTransform;
-import java.awt.geom.Rectangle2D;
-import java.awt.image.BufferedImage;
-import java.awt.print.PageFormat;
-import java.awt.print.Pageable;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,14 +14,12 @@ import java.util.Set;
 
 import javax.xml.bind.DatatypeConverter;
 
-import net.sf.wubiq.adapters.RemotePageableAdapter;
-import net.sf.wubiq.adapters.RemotePrintableAdapter;
 import net.sf.wubiq.enums.NotificationType;
 import net.sf.wubiq.exceptions.TimeoutException;
 import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
-import net.sf.wubiq.print.managers.impl.DirectConnectorQueue;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 
 import org.apache.commons.logging.Log;
@@ -53,9 +42,13 @@ public enum DirectConnectUtils {
 	 * Validates if the connection is timed out.
 	 * @param timeout Timeout.
 	 */
-	public int checkTimeout(int timeout) throws InterruptedException, TimeoutException {
+	public int checkTimeout(int timeout) throws TimeoutException {
 		int returnValue = timeout + CONNECTION_RETRY_MILLISECONDS;
-		Thread.sleep(CONNECTION_RETRY_MILLISECONDS);
+		try {
+			Thread.sleep(CONNECTION_RETRY_MILLISECONDS);
+		} catch (InterruptedException e) {
+			throw new RuntimeException (e);
+		}
 		if ((returnValue / 1000) > CONNECTION_TIMEOUT_SECONDS) {
 			throw new TimeoutException();
 		}
@@ -83,19 +76,6 @@ public enum DirectConnectUtils {
 		for (IRemoteListener listener : listeners) {
 			listener.notify(adapter.queueId(), NotificationType.UNDETERMINED_EXCEPTION, message);
 		}
-	}
-	
-	/**
-	 * Direct connector.
-	 * @param queueId Id of the queue.
-	 * @return Direct connector instance. Never null.
-	 */
-	public DirectConnectorQueue directConnector(String queueId) {
-		IDirectConnectPrintJobManager manager = 
-				(IDirectConnectPrintJobManager) RemotePrintJobManagerFactory
-					.getRemotePrintJobManager(queueId);
-		DirectConnectorQueue queue = manager.directConnector(queueId);
-		return queue;
 	}
 	
 	/**
@@ -211,62 +191,18 @@ public enum DirectConnectUtils {
 		}
 		return method;
 	}
-
-	/**
-	 * Exports a pageable.
-	 * @param pageable Pageable to export.
-	 */
-	public void exportRemotePageable(RemotePageableAdapter pageable) {
-		int result = Printable.PAGE_EXISTS;
-		int pageIndex = 0;
-		PageFormat pageFormat = pageable.getPageFormat(pageIndex);
-		do {
-			RemotePrintableAdapter printable = (RemotePrintableAdapter) pageable.getPrintable(pageIndex);
-			result = doExportRemotePrintable(printable, pageFormat, pageIndex);
-			pageIndex++;
-		} while (result == Printable.PAGE_EXISTS);
-	}
-	
-	public void exportRemotePrintable(RemotePrintableAdapter printable, PageFormat pageFormat) {
-		int result = Printable.PAGE_EXISTS;
-		int pageIndex = 0;
-		do {
-			result = doExportRemotePrintable(printable, pageFormat, pageIndex);
-			pageIndex++;
-		} while (result == Printable.PAGE_EXISTS);
-	}
 	
 	/**
-	 * Export remote printable.
-	 * @param printable Printable to export.
-	 * @param pageFormat Page format to use.
-	 * @param pageIndex Page to export.
-	 * @return Status of the operation.
+	 * Direct connector.
+	 * @param queueId Id of the queue.
+	 * @return Direct connector instance. Never null.
 	 */
-	public int doExportRemotePrintable(RemotePrintableAdapter printable, PageFormat pageFormat, int pageIndex) {
-		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES;
-		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-		Graphics2D graph = img.createGraphics();
-		try {
-			AffineTransform scaleTransform = new AffineTransform();
-			scaleTransform.scale(1, 1);
-			graph.setTransform(scaleTransform);
-			graph.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-			graph.setClip(new Rectangle2D.Double(
-					0,
-					0,
-					pageFormat.getPaper().getImageableWidth(), 
-					pageFormat.getPaper().getImageableHeight()));
-			graph.setBackground(Color.WHITE);
-			graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
-					(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
-			returnValue = printable.print(graph, pageFormat, pageIndex);
-			graph.dispose();
-		} catch (PrinterException e) {
-			LOG.error(e.getMessage(), e);
-			throw new RuntimeException(e);
-		}
-		return returnValue;
+	public IDirectConnectorQueue directConnector(String queueId) {
+		IDirectConnectPrintJobManager manager = 
+				(IDirectConnectPrintJobManager) RemotePrintJobManagerFactory
+					.getRemotePrintJobManager(queueId);
+		IDirectConnectorQueue queue = manager.directConnector(queueId);
+		return queue;
 	}
 
 }

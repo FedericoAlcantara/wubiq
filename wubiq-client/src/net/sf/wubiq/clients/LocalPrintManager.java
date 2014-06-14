@@ -85,7 +85,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
 			
 			directServer(DirectConnectCommand.START, parameter);
-			DirectPrintManager manager = new DirectPrintManager(printService,
+			DirectPrintManager manager = new DirectPrintManager(
+					jobId,
+					printService,
 					printRequestAttributeSet,
 					printJobAttributeSet,
 					docAttributeSet,

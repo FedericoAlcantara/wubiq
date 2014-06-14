@@ -8,46 +8,69 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 
 import net.sf.wubiq.clients.DirectPrintManager;
+import net.sf.wubiq.enums.RemoteCommand;
+import net.sf.wubiq.enums.RemoteCommandType;
+import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * @author Federico Alcantara
  *
  */
 public class PageableRemote implements Pageable {
-	private int numberOfPages;
+	private DirectPrintManager manager;
+	private int lastFormatPageIndex;
+	private int lastPrintablePageIndex;
 	private PageFormat pageFormat;
 	private Printable printable;
-	private DirectPrintManager manager;
+	
 	
 	public PageableRemote(DirectPrintManager manager) {
 		this.manager = manager;
-		numberOfPages = Pageable.UNKNOWN_NUMBER_OF_PAGES;
+		lastFormatPageIndex = -1;
+		lastPrintablePageIndex = -1;
 	}
 
 	@Override
 	public int getNumberOfPages() {
-		return numberOfPages;
+		return (Integer) readFromRemote("getNumberOfPages");
 	}
 
-	public void setPageFormat(PageFormat pageFormat) {
-		this.pageFormat = pageFormat;
-	}
-	public void setPrintable(int pageIndex) {
-		printable = new PrintableRemote(manager);
-	}
-	
 	@Override
 	public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
+		if (lastFormatPageIndex != pageIndex) {
+			pageFormat = (PageFormat) readFromRemote("getPageFormat", 
+				new GraphicParameter(int.class, pageIndex));
+			lastFormatPageIndex = pageIndex;
+		}
 		return pageFormat;
 	}
 
+	/**
+	 * Will create a printable object which directly communicates with the
+	 * remote printable object.
+	 * @see java.awt.print.Pageable#getPrintable(int)
+	 */
 	@Override
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
+		if (lastPrintablePageIndex != pageIndex) {
+			printable = new PrintableRemote(manager);
+			lastPrintablePageIndex = pageIndex;
+			manager.registerObject(RemoteCommandType.PRINTABLE, printable);
+			readFromRemote("getPrintable",
+					new GraphicParameter(int.class, pageIndex));
+		}
+
 		return printable;
 	}
 	
-	public void setNumberOfPages(int numberOfPages) {
-		this.numberOfPages = numberOfPages;
+	/**
+	 * Reads information from the remote pageable.
+	 * @param methodName Name of the method to invoke.
+	 * @param parameters Parameters.
+	 * @return Object read from remote. Might be null.
+	 */
+	private Object readFromRemote(String methodName, GraphicParameter... parameters) {
+		return manager.readFromRemote(
+				new RemoteCommand(RemoteCommandType.PAGEABLE, methodName, parameters));
 	}
-	
 }

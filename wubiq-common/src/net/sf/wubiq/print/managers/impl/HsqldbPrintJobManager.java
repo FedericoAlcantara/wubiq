@@ -26,6 +26,7 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
@@ -95,7 +96,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	 * Adds a remote print job to the queue.
 	 */
 	@Override
-	public long addRemotePrintJob(String queueId, RemotePrintJob remotePrintJob) {
+	public long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
 		Connection connection = null;
 		PreparedStatement stmt = null;
 		ResultSet rs = null;

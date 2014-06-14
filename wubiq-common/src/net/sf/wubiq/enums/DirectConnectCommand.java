@@ -9,5 +9,5 @@ package net.sf.wubiq.enums;
  *
  */
 public enum DirectConnectCommand {
-	START, POLL, DATA, EXCEPTION, RUNTIME_EXCEPTION;
+	START, POLL, DATA, READ_REMOTE, POLL_REMOTE_DATA, EXCEPTION, RUNTIME_EXCEPTION;
 }

@@ -5,6 +5,9 @@ package net.sf.wubiq.wrappers;
 
 import java.awt.AlphaComposite;
 import java.awt.Composite;
+import java.awt.CompositeContext;
+import java.awt.RenderingHints;
+import java.awt.image.ColorModel;
 import java.io.Serializable;
 
 /**
@@ -12,7 +15,7 @@ import java.io.Serializable;
  * @author Federico Alcantara
  *
  */
-public class CompositeWrapper implements Serializable {
+public class CompositeWrapper implements Serializable, Composite {
 	private static final long serialVersionUID = 1L;
 	private int rule;
 	private float alpha;
@@ -41,5 +44,11 @@ public class CompositeWrapper implements Serializable {
 		} else {
 			return null;
 		}
+	}
+
+	@Override
+	public CompositeContext createContext(ColorModel arg0, ColorModel arg1,
+			RenderingHints arg2) {
+		return null;
 	}
 }

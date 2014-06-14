@@ -1,7 +1,7 @@
 /**
  * 
  */
-package net.sf.wubiq.adapters;
+package net.sf.wubiq.enums;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -21,11 +21,27 @@ public class RemoteCommand implements Serializable {
 	private String methodName;
 	private GraphicParameter[] parameters;
 		
+	/**
+	 * Constructs a remote command for the given object type.
+	 * @param remoteCommandType Type of object to handle.
+	 * @param methodName Name of the method to invoke.
+	 * @param parameters Parameters for the method.
+	 */
 	public RemoteCommand(RemoteCommandType remoteCommandType, 
 			String methodName, GraphicParameter...parameters) {
 		this.remoteCommandType = remoteCommandType;
 		this.methodName = methodName;
 		this.parameters = parameters;
+	}	
+
+	/**
+	 * Creates a remote command for the parent most object.
+	 * @param methodName Name of the method to invoke.
+	 * @param parameters Parameters for the method.
+	 */
+	public RemoteCommand(String methodName,
+			GraphicParameter...parameters) {
+		this (RemoteCommandType.NONE, methodName, parameters);
 	}	
 
 	/**

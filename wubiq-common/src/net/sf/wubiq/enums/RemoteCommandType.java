@@ -8,5 +8,5 @@ package net.sf.wubiq.enums;
  *
  */
 public enum RemoteCommandType {
-	NONE, PAGEABLE, PRINTABLE, GRAPHICS;
+	NONE, PAGEABLE, PRINTABLE, GRAPHICS, GRAPHICS_CONFIGURATION;
 }

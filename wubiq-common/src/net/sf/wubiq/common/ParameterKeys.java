@@ -35,4 +35,8 @@ public final class ParameterKeys {
 	public static final String PRINT_JOB_ID = "printJob";
 	public static final String DIRECT_CONNECT_PARAMETER="dp";
 	public static final String DIRECT_CONNECT_DATA="dd";
+	public static final String DIRECT_CONNECT_DATA_UUID="du";
+	public static final String DIRECT_CONNECT_NULL="/**NULL**/";
+	public static final String DIRECT_CONNECT_EXCEPTION="/**EXCEPTION**/";
+	public static final String DIRECT_CONNECT_NOT_READY="/**NOT READY**/";
 }

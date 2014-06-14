@@ -5,7 +5,7 @@ package net.sf.wubiq.print.managers;
 
 import java.util.Collection;
 
-import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
@@ -28,7 +28,7 @@ public interface IRemotePrintJobManager {
 	 * @param remotePrintJob Remote print job to manage.
 	 * @return Print job unique id.
 	 */
-	long addRemotePrintJob(String queueId, RemotePrintJob remotePrintJob);
+	long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob);
 	
 	/**
 	 * Makes the print job no more available for further usage.
@@ -43,7 +43,7 @@ public interface IRemotePrintJobManager {
 	 * @param fullPrintJob if true, just read remote print object must be returned.
 	 * @return IRemotePrintJob object or null if not found.
 	 */
-	RemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob);
+	IRemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob);
 	
 	/**
 	 * Gather the list of print job ids for the given status. If status is null then all are

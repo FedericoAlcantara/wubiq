@@ -30,6 +30,8 @@ import java.text.AttributedCharacterIterator;
 import java.util.Map;
 
 import net.sf.wubiq.clients.DirectPrintManager;
+import net.sf.wubiq.enums.RemoteCommandType;
+import net.sf.wubiq.wrappers.CompositeWrapper;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
@@ -42,7 +44,9 @@ public class GraphicsRemote extends Graphics2D {
 	private Graphics2D graphics;
 	
 	public GraphicsRemote(DirectPrintManager manager, Graphics2D graphics) {
+		this.manager = manager;
 		this.graphics = graphics;
+		manager.registerObject(RemoteCommandType.GRAPHICS, this);
 	}
 	
 	@Override
@@ -348,7 +352,7 @@ public class GraphicsRemote extends Graphics2D {
 
 	@Override
 	public Composite getComposite() {
-		return graphics.getComposite();
+		return new CompositeWrapper(graphics.getComposite());
 	}
 
 	@Override

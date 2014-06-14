@@ -11,7 +11,6 @@ import java.lang.reflect.Method;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
-import javax.print.DocPrintJob;
 import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
@@ -34,7 +33,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class RemotePrintJob implements DocPrintJob {
+public class RemotePrintJob implements IRemotePrintJob {
 	private static final Log LOG = LogFactory.getLog(RemotePrintJob.class);
 	private PrintJobAttributeSet printJobAttributeSet;
 	private PrintRequestAttributeSet printRequestAttributeSet;

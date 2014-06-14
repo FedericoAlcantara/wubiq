@@ -12,9 +12,8 @@ import java.util.Set;
 import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.interfaces.IRemotePrintableAdapter;
-import net.sf.wubiq.print.managers.impl.DirectConnectorQueue;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.DirectConnectUtils;
-import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * Establish and manages the communication between the server and the client at printable level.
@@ -26,7 +25,7 @@ public class RemotePrintableAdapter implements IRemotePrintableAdapter {
 	private Printable printable;
 	private String queueId;
 	private RemoteGraphicsAdapter remoteGraphicsAdapter;
-	private DirectConnectorQueue queue;
+	private IDirectConnectorQueue queue;
 	
 	public RemotePrintableAdapter() {
 	}
@@ -44,14 +43,17 @@ public class RemotePrintableAdapter implements IRemotePrintableAdapter {
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		if (remoteGraphicsAdapter == null) {
-			remoteGraphicsAdapter = new RemoteGraphicsAdapter(queueId());
-		}
-		int returnValue = printable.print(remoteGraphicsAdapter, pageFormat, pageIndex);
-		queue.sendCommand(new RemoteCommand(RemoteCommandType.PRINTABLE, "setReturnValue", new GraphicParameter(int.class, returnValue)));
-		return returnValue;
+		return printable.print(remoteGraphicsAdapter, pageFormat, pageIndex);
 	}
 
+	public int print(PageFormat pageFormat, int pageIndex) throws PrinterException {
+		if (remoteGraphicsAdapter == null) {
+			remoteGraphicsAdapter = new RemoteGraphicsAdapter(queueId());
+			queue.registerObject(RemoteCommandType.GRAPHICS, remoteGraphicsAdapter);
+		}
+		return print(remoteGraphicsAdapter, pageFormat, pageIndex);
+	}
+	
 	@Override
 	public String queueId() {
 		return queueId;

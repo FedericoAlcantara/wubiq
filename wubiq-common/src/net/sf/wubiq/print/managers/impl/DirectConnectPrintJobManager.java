@@ -7,9 +7,10 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 
 /**
  * Manages direct connection with clients.
@@ -32,11 +33,11 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	}
 
 	/**
-	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(java.lang.String, net.sf.wubiq.print.jobs.RemotePrintJob)
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#addRemotePrintJob(java.lang.String, net.sf.wubiq.print.jobs.IRemotePrintJob)
 	 */
 	@Override
-	public synchronized long addRemotePrintJob(String queueId, RemotePrintJob remotePrintJob) {
-		DirectConnectorQueue queue = directConnector(queueId);
+	public synchronized long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
+		IDirectConnectorQueue queue = directConnector(queueId);
 		lastJobId++;
 		queue.addPrintJob(lastJobId, remotePrintJob);
 		associatedQueue.put(lastJobId, queueId);
@@ -59,7 +60,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getRemotePrintJob(long, boolean)
 	 */
 	@Override
-	public RemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob) {
+	public IRemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob) {
 		DirectConnectorQueue queue = associatedQueue(jobId);
 		return queue.remotePrintJob(jobId);
 
@@ -71,7 +72,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	@Override
 	public Collection<Long> getPrintJobs(String queueId,
 			RemotePrintJobStatus status) {
-		DirectConnectorQueue queue = directConnector(queueId);
+		IDirectConnectorQueue queue = directConnector(queueId);
 		return queue.printJobs();
 	}
 
@@ -93,7 +94,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 * @see net.sf.wubiq.print.managers.IDirectConnectPrintJobManager#directConnector(java.lang.String)
 	 */
 	@Override
-	public DirectConnectorQueue directConnector(String queueId) {
+	public IDirectConnectorQueue directConnector(String queueId) {
 		DirectConnectorQueue queue = connectors.get(queueId);
 		if (queue == null) {
 			queue = new DirectConnectorQueue(queueId);

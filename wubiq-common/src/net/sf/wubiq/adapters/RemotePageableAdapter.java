@@ -8,10 +8,11 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.util.Set;
 
+import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.enums.RemoteCommandType;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.interfaces.IRemotePageableAdapter;
-import net.sf.wubiq.print.managers.impl.DirectConnectorQueue;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.GraphicParameter;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
@@ -28,7 +29,7 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 	private int lastPrintableProcessed = -1;
 	private PageFormatWrapper lastPageFormat = null;
 	private RemotePrintableAdapter lastPrintable = null;
-	private DirectConnectorQueue queue;
+	private IDirectConnectorQueue queue;
 	
 	public RemotePageableAdapter() {
 	}
@@ -61,11 +62,7 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 			lastPageFormat = new PageFormatWrapper(pageFormat);
 		}
 		lastPageFormatProcessed = pageIndex;
-		
-		sendCommand("setPageFormat", 
-				new GraphicParameter(int.class, pageIndex),
-				new GraphicParameter(PageFormat.class, lastPageFormat));
-		return pageFormat;
+		return lastPageFormat;
 	}
 
 	/**
@@ -76,8 +73,7 @@ public class RemotePageableAdapter implements IRemotePageableAdapter {
 		Printable printable = pageable.getPrintable(pageIndex);
 		if (pageIndex != lastPrintableProcessed) {
 			lastPrintable = new RemotePrintableAdapter(printable, queueId());
-			sendCommand("setPagePrintable",
-					new GraphicParameter(int.class, pageIndex));
+			queue.registerObject(RemoteCommandType.PRINTABLE, lastPrintable);
 		}
 		lastPrintableProcessed = pageIndex;
 		return lastPrintable; // Must be the adapter

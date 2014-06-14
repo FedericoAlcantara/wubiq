@@ -4,6 +4,7 @@
 package net.sf.wubiq.utils;
 
 import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
 import java.awt.print.Paper;
 import java.io.IOException;
 import java.io.InputStream;
@@ -61,18 +62,7 @@ public final class ClientPrintDirectUtils {
 			}
 			if (printData != null) {
 				Doc doc = null;
-				// Set Request Attributes
-				JobName jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, JobName.class);
-				if (jobName == null) {
-					jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printJobAttributeSet, JobName.class);
-				}
-				StringBuffer newJobName = new StringBuffer("Remote_")
-						.append(jobId);
-				if (jobName != null) {
-					newJobName.append('_')
-						.append(jobName.getValue());
-				}
-				printRequestAttributeSet.add(new JobName(newJobName.toString(), Locale.getDefault()));
+				setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
 				// Create doc and printJob
 				if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) ||
 						docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
@@ -121,4 +111,34 @@ public final class ClientPrintDirectUtils {
 		}
 	}
 
+	public static void printPageable(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			DocFlavor docFlavor,
+			Pageable pageable){
+		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+		DocPrintJob printJob = printService.createPrintJob();
+		try {
+			printJob.print(doc, printRequestAttributeSet);
+		} catch (PrintException e) {
+			LOG.error(e.getMessage(), e);
+		}
+	}
+	
+	private static void setJobName(String jobId, PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet) {
+		JobName jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, JobName.class);
+		if (jobName == null) {
+			jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printJobAttributeSet, JobName.class);
+		}
+		StringBuffer newJobName = new StringBuffer("Remote_")
+				.append(jobId);
+		if (jobName != null) {
+			newJobName.append('_')
+				.append(jobName.getValue());
+		}
+		printRequestAttributeSet.add(new JobName(newJobName.toString(), Locale.getDefault()));
+	}
 }
