@@ -43,7 +43,9 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  *
  */
 public class GraphicsRemote extends Graphics2D implements IRemoteClientMaster {
-	public static final String[] FILTERED_METHODS = new String[]{};
+	public static final String[] FILTERED_METHODS = new String[]{
+		"getClip"
+	};
 	
 	private DirectPrintManager manager;
 	private Graphics2D graphics;

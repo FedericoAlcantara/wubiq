@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Set;
 
@@ -238,5 +239,23 @@ public enum DirectConnectUtils {
 			LOG.error(e.getMessage(), e);
 		}
 		return returnValue;
+	}
+	
+	/**
+	 * Sets the field value.
+	 * @param object Object containing the field.
+	 * @param fieldName Name of the field to set.
+	 * @param value Value to set in the field.
+	 */
+	public void setField(Object object, String fieldName, Object value) {
+		try {
+			Field field = object.getClass().getDeclaredField(fieldName);
+			field.setAccessible(true);
+			field.set(object, value);
+		} catch (Exception e) {
+			LOG.info(object.getClass().getName() + " must define a field 'private " +
+					value.getClass().getSimpleName() + " " + fieldName);
+		}
+
 	}
 }

@@ -32,7 +32,8 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	private DirectPrintManager manager;
 	private UUID objectUUID;
 	private GraphicsConfiguration graphicsConfiguration;
-	public static final String[] FILTERED_METHODS = new String[]{};
+	public static final String[] FILTERED_METHODS = new String[]{
+	};
 	
 	/**
 	 * @see net.sf.wubiq.interfaces.IRemoteClient#initialize()

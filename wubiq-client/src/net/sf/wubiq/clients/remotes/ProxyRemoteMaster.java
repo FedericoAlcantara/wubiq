@@ -4,13 +4,17 @@
 package net.sf.wubiq.clients.remotes;
 
 import java.io.Serializable;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.wubiq.clients.DirectPrintManager;
+import net.sf.wubiq.interfaces.IRemoteClientMaster;
+import net.sf.wubiq.utils.DirectConnectUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,11 +29,13 @@ public class ProxyRemoteMaster implements MethodInterceptor {
 	private static final Log LOG = LogFactory.getLog(ProxyRemoteMaster.class);
 	private DirectPrintManager manager;
 	private UUID objectUUID;
+	private List<String> filtered;
 
 	public ProxyRemoteMaster(DirectPrintManager manager,
 			String[] filtered) {
 		this.manager = manager;
 		this.objectUUID = UUID.randomUUID();
+		this.filtered = Arrays.asList(filtered);
 	}
 
 	/**
@@ -40,34 +46,22 @@ public class ProxyRemoteMaster implements MethodInterceptor {
 			MethodProxy methodProxy) throws Throwable {
 		if ("initialize".equals(method.getName())) {
 			manager.registerObject(objectUUID, object);
-			setField(object, "manager", manager);
-			setField(object, "objectUUID", objectUUID);
+			DirectConnectUtils.INSTANCE.setField(object, "manager", manager);
+			DirectConnectUtils.INSTANCE.setField(object, "objectUUID", objectUUID);
+			return methodProxy.invokeSuper(object, args);
+		} else if (method.getName().endsWith("remote") ||
+				filtered.contains(method.getName())) {
 			return methodProxy.invokeSuper(object, args);
 		}
-		Object returnValue = methodProxy.invokeSuper(object, args);
+		Object decoratedObject = ((IRemoteClientMaster)object).decoratedObject();
+		Object returnValue = methodProxy.invokeSuper(decoratedObject, args);
 		if (!(returnValue instanceof Serializable)) {
-			LOG.info("MUST fixed method " + method.getName() + " on " 
+			LOG.info("MUST fix method " + method.getName() + " on " 
 						+ object.getClass().getName());
 			return null;
 		}
 		return returnValue;
 	}
-
-	/**
-	 * Sets the field value.
-	 * @param object Object containing the field.
-	 * @param fieldName Name of the field to set.
-	 * @param value Value to set in the field.
-	 */
-	private void setField(Object object, String fieldName, Object value) {
-		try {
-			Field field = object.getClass().getDeclaredField(fieldName);
-			field.setAccessible(true);
-			field.set(object, value);
-		} catch (Exception e) {
-			LOG.info(object.getClass().getName() + " must define a field 'private " +
-					value.getClass().getSimpleName() + " " + fieldName);
-		}
-
-	}
+	
+	
 }
