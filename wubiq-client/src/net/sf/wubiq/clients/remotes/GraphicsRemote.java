@@ -31,8 +31,9 @@ import java.text.AttributedCharacterIterator;
 import java.util.Map;
 import java.util.UUID;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.interfaces.IRemoteClient;
+import net.sf.wubiq.interfaces.IRemoteClientMaster;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -41,16 +42,34 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * @author Federico Alcantara
  *
  */
-public class GraphicsRemote extends Graphics2D implements IRemoteClient {
+public class GraphicsRemote extends Graphics2D implements IRemoteClientMaster {
+	public static final String[] FILTERED_METHODS = new String[]{};
+	
 	private DirectPrintManager manager;
 	private Graphics2D graphics;
 	private UUID objectUUID;
 	
-	public GraphicsRemote(DirectPrintManager manager, Graphics2D graphics) {
-		this.manager = manager;
+	public GraphicsRemote() {
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteClient#initialize()
+	 */
+	public void initialize() {
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteClientMaster#decoratedObject()
+	 */
+	public Object decoratedObject() {
+		return graphics;
+	}
+	
+	/**
+	 * @param graphics
+	 */
+	public void setGraphics(Graphics2D graphics) {
 		this.graphics = graphics;
-		objectUUID = UUID.randomUUID();
-		this.manager.registerObject(objectUUID, this);
 	}
 	
 	@Override
@@ -129,7 +148,10 @@ public class GraphicsRemote extends Graphics2D implements IRemoteClient {
 	 * @return Unique id of the just created graphics.
 	 */
 	public UUID createRemote() {
-		GraphicsRemote remote = new GraphicsRemote(manager, (Graphics2D)graphics.create());
+		GraphicsRemote remote = (GraphicsRemote) Enhancer.create(GraphicsRemote.class,
+				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
+		remote.initialize();
+		remote.setGraphics((Graphics2D)graphics.create());
 		return remote.getObjectUUID();
 	}
 	
@@ -147,8 +169,10 @@ public class GraphicsRemote extends Graphics2D implements IRemoteClient {
 	 * @return
 	 */
 	public UUID createRemote(int x, int y, int width, int height) {
-		GraphicsRemote remote = new GraphicsRemote(manager,
-				(Graphics2D)graphics.create(x, y, width, height));
+		GraphicsRemote remote = (GraphicsRemote) Enhancer.create(GraphicsRemote.class,
+				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
+		remote.initialize();
+		remote.setGraphics((Graphics2D)graphics.create());
 		return remote.getObjectUUID();
 	}
 
@@ -385,7 +409,20 @@ public class GraphicsRemote extends Graphics2D implements IRemoteClient {
 
 	@Override
 	public GraphicsConfiguration getDeviceConfiguration() {
-		return graphics.getDeviceConfiguration();
+		throw new NotImplementedException();
+	}
+	
+	/**
+	 * Special method for getting a remote device configuration.
+	 * @return Unique object UUID for communication.
+	 */
+	public UUID getDeviceConfigurationRemote() {
+		GraphicsConfigurationRemote remote = (GraphicsConfigurationRemote)
+				Enhancer.create(GraphicsConfigurationRemote.class,
+						new ProxyRemoteMaster(manager, GraphicsConfigurationRemote.FILTERED_METHODS));
+		remote.initialize();
+		remote.setGraphicsConfiguration(graphics.getDeviceConfiguration());
+		return remote.getObjectUUID();
 	}
 
 	@Override

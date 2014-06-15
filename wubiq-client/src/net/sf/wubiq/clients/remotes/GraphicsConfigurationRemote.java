@@ -12,7 +12,13 @@ import java.awt.image.ColorModel;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.interfaces.IRemoteClient;
+import net.sf.wubiq.interfaces.IRemoteClientMaster;
+import net.sf.wubiq.utils.DirectConnectUtils;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
+import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
  * Creates a remote handler for GraphicsConfiguration.
@@ -20,17 +26,29 @@ import net.sf.wubiq.interfaces.IRemoteClient;
  *
  */
 public class GraphicsConfigurationRemote extends GraphicsConfiguration 
-		implements IRemoteClient {
-	private DirectPrintManager manager;
-	private GraphicsConfiguration graphicsConfiguration;
-	private UUID objectUUID;
+		implements IRemoteClientMaster {
+	private static final Log LOG = LogFactory.getLog(GraphicsConfigurationRemote.class);
 	
-	public GraphicsConfigurationRemote(DirectPrintManager manager, 
-			GraphicsConfiguration graphicsConfiguration) {
-		this.manager = manager;
+	private DirectPrintManager manager;
+	private UUID objectUUID;
+	private GraphicsConfiguration graphicsConfiguration;
+	public static final String[] FILTERED_METHODS = new String[]{};
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteClient#initialize()
+	 */
+	public void initialize() {
+		
+	}
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteClientMaster#decoratedObject()
+	 */
+	public Object decoratedObject() {
+		return graphicsConfiguration;
+	}
+	
+	public void setGraphicsConfiguration(GraphicsConfiguration graphicsConfiguration) {
 		this.graphicsConfiguration = graphicsConfiguration;
-		objectUUID = UUID.randomUUID();
-		this.manager.registerObject(objectUUID, this);
 	}
 	
 	/**
@@ -38,8 +56,37 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	 */
 	@Override
 	public BufferedImage createCompatibleImage(int width, int height) {
+		throw new NotImplementedException();
+	}
+	
+	/**
+	 * Creates a compatible image and converts it to hex.
+	 * @param width Width of the image.
+	 * @param height Height of the image.
+	 * @return String representing an image.
+	 */
+	public String createCompatibleImageRemote(int width, int height) {
 		BufferedImage image = graphicsConfiguration.createCompatibleImage(width, height);
-		return image;
+		return DirectConnectUtils.INSTANCE.serializeImage(image);
+	}
+
+	/**
+	 * @see java.awt.GraphicsConfiguration#createCompatibleImage(int, int, int)
+	 */
+	@Override
+	public BufferedImage createCompatibleImage(int width, int height, int transparency) {
+		throw new NotImplementedException();
+	}
+
+	/**
+	 * Creates a compatible image and converts it to hex.
+	 * @param width Width of the image.
+	 * @param height Height of the image.
+	 * @return String representing an image.
+	 */
+	public String createCompatibleImageRemote(int width, int height, int transparency) {
+		BufferedImage image = graphicsConfiguration.createCompatibleImage(width, height, transparency);
+		return DirectConnectUtils.INSTANCE.serializeImage(image);
 	}
 
 	/**

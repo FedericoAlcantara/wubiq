@@ -12,9 +12,12 @@ import java.awt.image.ColorModel;
 import java.util.Set;
 import java.util.UUID;
 
+import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * @author Federico Alcantara
@@ -36,8 +39,25 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 	 */
 	@Override
 	public BufferedImage createCompatibleImage(int width, int height) {
-		// TODO Auto-generated method stub
-		return null;
+		sendCommand("createCompatibleImageRemote",
+			new GraphicParameter(int.class, width),
+			new GraphicParameter(int.class, height));
+		
+		return (BufferedImage)DirectConnectUtils.INSTANCE
+				.deserializeImage((String) queue().returnData());
+	}
+
+	/**
+	 * @see java.awt.GraphicsConfiguration#createCompatibleImage(int, int, int)
+	 */
+	@Override
+	public BufferedImage createCompatibleImage(int width, int height, int transparency) {
+		sendCommand("createCompatibleImageRemote",
+			new GraphicParameter(int.class, width),
+			new GraphicParameter(int.class, height));
+		
+		return (BufferedImage)DirectConnectUtils.INSTANCE
+				.deserializeImage((String) queue().returnData());
 	}
 
 	/* (non-Javadoc)
@@ -92,6 +112,16 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 	public AffineTransform getNormalizingTransform() {
 		// TODO Auto-generated method stub
 		return null;
+	}
+
+	/**
+	 * Sends a command to the remote printer.
+	 * @param graphicCommand Command to send. Must never be null.
+	 */
+	private synchronized void sendCommand(String methodName, 
+			GraphicParameter...parameters) {
+		queue.sendCommand(new RemoteCommand(getObjectUUID(),
+				methodName, parameters));
 	}
 
 	/* *****************************************

@@ -8,10 +8,10 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.util.UUID;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IRemoteClient;
-import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * @author Federico Alcantara
@@ -19,38 +19,33 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  */
 public class PageableRemote implements Pageable, IRemoteClient {
 	private DirectPrintManager manager;
-	private int lastFormatPageIndex;
-	private int lastPrintablePageIndex;
-	private PageFormat pageFormat;
-	private Printable printable;
 	private UUID objectUUID;
-
-	public PageableRemote(DirectPrintManager manager, UUID objectUUID) {
-		this.manager = manager;
-		lastFormatPageIndex = -1;
+	private int lastPrintablePageIndex;
+	private Printable printable;
+	
+	public static final String[] FILTERED_METHODS = new String[]{
+		"getPrintable"};
+	
+	public PageableRemote() {
 		lastPrintablePageIndex = -1;
-		this.objectUUID = objectUUID;
-		manager.registerObject(objectUUID, this);
 	}
 	
-	public PageableRemote(DirectPrintManager manager) {
-		this(manager, UUID.randomUUID());
+	public void initialize() {
 	}
-
+	
+	/**
+	 * @see java.awt.print.Pageable#getNumberOfPages()
+	 */
 	@Override
 	public int getNumberOfPages() {
-		return (Integer) readFromRemote("getNumberOfPages");
+		return 0;
 	}
 
 	@Override
 	public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
-		if (lastFormatPageIndex != pageIndex) {
-			pageFormat = (PageFormat) readFromRemote("getPageFormat", 
-				new GraphicParameter(int.class, pageIndex));
-			lastFormatPageIndex = pageIndex;
-		}
-		return pageFormat;
+		return null;
 	}
+	
 
 	/**
 	 * Will create a printable object which directly communicates with the
@@ -61,31 +56,15 @@ public class PageableRemote implements Pageable, IRemoteClient {
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		if (lastPrintablePageIndex != pageIndex) {
 			lastPrintablePageIndex = pageIndex;
-			readFromRemote("getPrintable",
-					new GraphicParameter(int.class, pageIndex));
-			UUID printableObjectUUID = (UUID) readFromRemote("getLastPrintableObjectUUID");
-			printable = new PrintableRemote(manager, printableObjectUUID);
+			manager.readFromRemote(new RemoteCommand(objectUUID, "getPrintable",
+					pageIndex));
+			UUID printableObjectUUID = (UUID) manager.readFromRemote(objectUUID, "getLastPrintableObjectUUID");
+			printable = (PrintableRemote) Enhancer.create(PrintableRemote.class,
+					new ProxyRemoteSlave(manager, printableObjectUUID,
+							PrintableRemote.FILTERED_METHODS));
 		}
 
 		return printable;
-	}
-	
-	/**
-	 * Reads information from the remote pageable.
-	 * @param methodName Name of the method to invoke.
-	 * @param parameters Parameters.
-	 * @return Object read from remote. Might be null.
-	 */
-	private Object readFromRemote(String methodName, GraphicParameter... parameters) {
-		return manager.readFromRemote(
-				new RemoteCommand(getObjectUUID(), methodName, parameters));
-	}
-
-	/**
-	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
-	 */
-	public UUID getObjectUUID() {
-		return objectUUID;
 	}
 
 }

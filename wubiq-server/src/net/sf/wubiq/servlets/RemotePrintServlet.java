@@ -727,6 +727,7 @@ public class RemotePrintServlet extends HttpServlet {
 						OutputStream output = response.getOutputStream();
 						IOUtils.INSTANCE.copy(input, output);
 						input.close();
+						directConnector.resetCommandToSend();
 					}
 					break;
 					

@@ -219,6 +219,10 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		return commandToSend;
 	}
 	
+	public synchronized void resetCommandToSend() {
+		commandToSendReady = false;
+	}
+	
 	/**
 	 * @return The invoking method name.
 	 */

@@ -17,8 +17,10 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.remotes.PageableRemote;
 import net.sf.wubiq.clients.remotes.PrintableRemote;
+import net.sf.wubiq.clients.remotes.ProxyRemoteSlave;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
@@ -98,18 +100,23 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * Creates a printable object and starts the local printing process.
 	 */
-	public void createPrintable() {
-		new PrintableRemote(this);
+	public void createPrintable(UUID objectUUID) {
+		PrintableRemote remote = (PrintableRemote) Enhancer.create(PrintableRemote.class, 
+				new ProxyRemoteSlave(this, objectUUID, PrintableRemote.FILTERED_METHODS));
+		remote.initialize();
 	}
 	
 	/**
 	 * Creates a pageable object and starts the printing process.
 	 */
-	public void createPageable() {
+	public void createPageable(UUID objectUUID) {
+		PageableRemote remote = (PageableRemote) Enhancer.create(PageableRemote.class, 
+				new ProxyRemoteSlave(this, objectUUID, PageableRemote.FILTERED_METHODS));
+		remote.initialize();
 		ClientPrintDirectUtils.printPageable(jobId, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				docFlavor,
-				new PageableRemote(this));
+				remote);
 	}
 	
 	/**
@@ -200,6 +207,17 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		}
 	}
 
+	/**
+	 * Connects to the remote and tries to read its data.
+	 * @param objectUUID Object unique identifier.
+	 * @param methodName Name of the method.
+	 * @param args Arguments for the method.
+	 * @return Server response.
+	 */
+	public Object readFromRemote(UUID objectUUID, String methodName, Object...args) {
+		return readFromRemote(new RemoteCommand(objectUUID, methodName, args));
+	}
+	
 	/**
 	 * Connects to the remote and tries to read its data.
 	 * @param remoteCommand Remote command.

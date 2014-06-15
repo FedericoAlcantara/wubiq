@@ -74,6 +74,11 @@ public interface IDirectConnectorQueue extends IRemoteAdapter {
 	RemoteCommand getCommandToSend();
 	
 	/**
+	 * Resets the command to send.
+	 */
+	void resetCommandToSend();
+	
+	/**
 	 * Waits for the response to become available, and returns it to the caller.
 	 * @return Returned data.
 	 */

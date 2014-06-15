@@ -35,6 +35,23 @@ public class RemoteCommand implements Serializable {
 	}	
 
 	/**
+	 * Constructs a remote command for the given object type.
+	 * @param objectUUID Type of object to handle.
+	 * @param methodName Name of the method to invoke.
+	 * @param args Objects .
+	 */
+	public RemoteCommand(UUID objectUUID, 
+			String methodName, Object...args) {
+		this.objectUUID = objectUUID;
+		this.methodName = methodName;
+		GraphicParameter[] parameters = new GraphicParameter[args.length];
+		for (int index = 0; index < args.length; index++) {
+			parameters[index] = new GraphicParameter(args[index].getClass(), args[index]);
+ 		}
+		this.parameters = parameters;
+	}	
+
+	/**
 	 * @return the remoteCommandType
 	 */
 	public UUID getObjectUUID() {

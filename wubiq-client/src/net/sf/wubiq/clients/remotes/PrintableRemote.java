@@ -7,6 +7,7 @@ import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.util.UUID;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IRemoteClient;
@@ -25,14 +26,13 @@ public class PrintableRemote implements Printable, IRemoteClient {
 	private DirectPrintManager manager;
 	private UUID objectUUID;
 	
-	public PrintableRemote(DirectPrintManager manager, UUID objectUUID) {
-		this.manager = manager;
-		this.objectUUID = objectUUID;
-		this.manager.registerObject(objectUUID, this);
+	public static final String[] FILTERED_METHODS = new String[]{"print"};
+	
+	public PrintableRemote() {
 	}
 	
-	public PrintableRemote(DirectPrintManager manager) {
-		this(manager, UUID.randomUUID());
+	public void initialize() {
+		
 	}
 	
 	/**
@@ -44,7 +44,10 @@ public class PrintableRemote implements Printable, IRemoteClient {
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		GraphicsRemote remote = new GraphicsRemote(manager, (Graphics2D)graphics);
+		GraphicsRemote remote = (GraphicsRemote)Enhancer.create(GraphicsRemote.class, 
+				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
+		remote.initialize();
+		remote.setGraphics((Graphics2D)graphics);
 		return (Integer) manager.readFromRemote(new RemoteCommand(getObjectUUID(),
 				"print",
 				new GraphicParameter(PageFormat.class, pageFormat),

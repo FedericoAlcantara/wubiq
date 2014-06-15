@@ -8,47 +8,54 @@ import java.awt.GraphicsDevice;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.interfaces.IRemoteClient;
+import net.sf.wubiq.interfaces.IRemoteClientMaster;
 
 /**
  * Creates a remote handler for GraphicsDevice.
  * @author Federico Alcantara
  *
  */
-public class GraphicsDeviceRemote extends GraphicsDevice implements IRemoteClient {
+public class GraphicsDeviceRemote extends GraphicsDevice implements IRemoteClientMaster {
 	private DirectPrintManager manager;
 	private GraphicsDevice graphicsDevice;
 	private UUID objectUUID;
 	
-	public GraphicsDeviceRemote(DirectPrintManager manager, 
-			GraphicsDevice graphicsDevice) {
-		this.manager = manager;
+	public static final String[] FILTERED_METHODS = new String[]{};
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteClient#initialize()
+	 */
+	public void initialize() {
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IRemoteClientMaster#decoratedObject()
+	 */
+	public Object decoratedObject() {
+		return graphicsDevice;
+	}
+	
+	public void setGraphicsDevice(GraphicsDevice graphicsDevice) {
 		this.graphicsDevice = graphicsDevice;
-		objectUUID = UUID.randomUUID();
-		this.manager.registerObject(objectUUID, this);
 	}
 
 	@Override
 	public GraphicsConfiguration[] getConfigurations() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public GraphicsConfiguration getDefaultConfiguration() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public String getIDstring() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
 	@Override
 	public int getType() {
-		// TODO Auto-generated method stub
 		return 0;
 	}
 	

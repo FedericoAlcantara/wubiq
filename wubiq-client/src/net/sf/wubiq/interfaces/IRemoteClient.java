@@ -3,7 +3,7 @@
  */
 package net.sf.wubiq.interfaces;
 
-import java.util.UUID;
+
 
 /**
  * Client Remote interface
@@ -12,8 +12,9 @@ import java.util.UUID;
  */
 public interface IRemoteClient {
 	/**
-	 * Unique identification of the object instance.
-	 * @return UUID of the object
+	 * Performs the initialization of the client.
+	 * Must be called before any other methods.
 	 */
-	UUID getObjectUUID();
+	void initialize();
+	
 }

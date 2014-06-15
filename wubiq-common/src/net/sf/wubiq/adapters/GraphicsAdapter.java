@@ -38,7 +38,6 @@ import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IRemoteAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import net.sf.wubiq.wrappers.GlyphVectorWrapper;
 import net.sf.wubiq.wrappers.GraphicParameter;
@@ -554,9 +553,9 @@ public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter {
 	public FontRenderContext getFontRenderContext() {
 		sendCommand("getFontRenderContextRemote");
 		UUID remoteUUID = (UUID) queue().returnData();
-		
-		sendCommand(methodName());
-		return (FontRenderContext) queue().returnData();
+		FontRenderContextAdapter remote = 
+				new FontRenderContextAdapter(queue(), remoteUUID);
+		return remote;
 	}
 
 	@Override

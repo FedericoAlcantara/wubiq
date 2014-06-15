@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.utils;
 
+import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +13,7 @@ import java.io.ObjectOutputStream;
 import java.lang.reflect.Method;
 import java.util.Set;
 
+import javax.imageio.ImageIO;
 import javax.xml.bind.DatatypeConverter;
 
 import net.sf.wubiq.enums.NotificationType;
@@ -142,7 +144,7 @@ public enum DirectConnectUtils {
 	 * @param data data to be converted.
 	 * @return Hex data in format 0xx.
 	 */
-	private String toHex(byte[] data) {
+	public String toHex(byte[] data) {
 		return DatatypeConverter.printHexBinary(data);
 	}
 	
@@ -151,7 +153,7 @@ public enum DirectConnectUtils {
 	 * @param hexData Data to be converted.
 	 * @return Byte[] representing the data.
 	 */
-	private byte[] fromHex(String hexData) {
+	public byte[] fromHex(String hexData) {
 		byte[] returnValue = DatatypeConverter.parseHexBinary(hexData);
 		return returnValue;
 	}
@@ -205,4 +207,36 @@ public enum DirectConnectUtils {
 		return queue;
 	}
 
+	/**
+	 * Serializes a given image into a hex one.
+	 * @param img Image to serialized.
+	 * @return A String representing a image.
+	 */
+	public String serializeImage(RenderedImage img) {
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
+			ImageIO.write(img, "png", output);
+			output.flush();
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		return toHex(output.toByteArray());
+	}
+	
+	/**
+	 * Deserialize a previously serialized image.
+	 * @param imgTxt Text representing the image.
+	 * @return Rendered image.
+	 */
+	public RenderedImage deserializeImage(String imgTxt) {
+		ByteArrayInputStream input = new ByteArrayInputStream(imgTxt.getBytes());
+		RenderedImage returnValue = null;
+		try {
+			returnValue = ImageIO.read(input);
+			return returnValue;
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		return returnValue;
+	}
 }
