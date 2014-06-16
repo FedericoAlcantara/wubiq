@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.adapters.PageableAdapter;
 import net.sf.wubiq.adapters.PrintableAdapter;
-import net.sf.wubiq.adapters.ProxyAdapterMaster;
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -27,6 +26,7 @@ import net.sf.wubiq.exceptions.TimeoutException;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.proxies.ProxyAdapterMaster;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
@@ -106,20 +106,21 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 			if (printData instanceof Printable) {
 				PrintableAdapter remote = (PrintableAdapter)
 						Enhancer.create(PrintableAdapter.class,
-								new ProxyAdapterMaster(this, PrintableAdapter.FILTERED_METHODS));
-				remote.initialize();
-				remote.setDecoratedObject((Printable)printData);
-				
+								new ProxyAdapterMaster(
+										this,
+										printData,
+										PrintableAdapter.FILTERED_METHODS));
 				sendCommand(new RemoteCommand(null, "createPrintable",
-						new GraphicParameter(UUID.class, remote.getObjectUUID())));
+						new GraphicParameter(UUID.class, remote.objectUUID())));
 			} else if (printData instanceof Pageable) {
 				PageableAdapter remote = (PageableAdapter)
 						Enhancer.create(PageableAdapter.class, 
-								new ProxyAdapterMaster(this, PageableAdapter.FILTERED_METHODS));
-				remote.initialize();
-				remote.setDecoratedObject((Pageable)printData);
+								new ProxyAdapterMaster(
+										this,
+										printData,
+										PageableAdapter.FILTERED_METHODS));
 				sendCommand(new RemoteCommand(null, "createPageable",
-						new GraphicParameter(UUID.class, remote.getObjectUUID())));
+						new GraphicParameter(UUID.class, remote.objectUUID())));
 				// no returnedData() here, because this creation objects starts a new connection handshake sequence.
 			}
 		}
@@ -337,7 +338,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
+	 * @see net.sf.wubiq.interfaces.IAdapter#getObjectUUID()
 	 */
 	public UUID getObjectUUID() {
 		return this.objectUUID;

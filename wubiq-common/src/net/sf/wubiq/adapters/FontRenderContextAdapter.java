@@ -7,7 +7,7 @@ import java.awt.font.FontRenderContext;
 import java.util.Set;
 import java.util.UUID;
 
-import net.sf.wubiq.interfaces.IRemoteAdapter;
+import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 
@@ -17,7 +17,7 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
  *
  */
 public class FontRenderContextAdapter extends FontRenderContext 
-		implements IRemoteAdapter {
+		implements IAdapter {
 	private IDirectConnectorQueue queue;
 	
 	private UUID objectUUID;
@@ -36,7 +36,7 @@ public class FontRenderContextAdapter extends FontRenderContext
 	 */
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#queue()
+	 * @see net.sf.wubiq.interfaces.IAdapter#queue()
 	 */
 	@Override
 	public IDirectConnectorQueue queue() {
@@ -44,7 +44,7 @@ public class FontRenderContextAdapter extends FontRenderContext
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
@@ -52,7 +52,7 @@ public class FontRenderContextAdapter extends FontRenderContext
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
@@ -60,7 +60,7 @@ public class FontRenderContextAdapter extends FontRenderContext
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 * @see net.sf.wubiq.interfaces.IAdapter#listeners()
 	 */
 	public Set<IRemoteListener> listeners() {
 		return queue.listeners();
@@ -83,7 +83,7 @@ public class FontRenderContextAdapter extends FontRenderContext
 	}
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
+	 * @see net.sf.wubiq.interfaces.IAdapter#getObjectUUID()
 	 */
 	public UUID getObjectUUID() {
 		return this.objectUUID;

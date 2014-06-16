@@ -8,7 +8,7 @@ import java.util.UUID;
 
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IRemoteAdapter;
+import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 
 /**
@@ -16,7 +16,7 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
  * @author Federico Alcantara
  *
  */
-public interface IDirectConnectorQueue extends IRemoteAdapter {
+public interface IDirectConnectorQueue extends IAdapter {
 	String queueId();
 	
 	/**

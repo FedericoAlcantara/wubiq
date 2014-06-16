@@ -33,7 +33,9 @@ import java.util.UUID;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
+import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.interfaces.IProxyMaster;
+import net.sf.wubiq.proxies.ProxyClientMaster;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -42,102 +44,76 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  * @author Federico Alcantara
  *
  */
-public class GraphicsRemote extends Graphics2D implements IProxyMaster {
+public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMaster {
 	public static final String[] FILTERED_METHODS = new String[]{
 		"getClip"
 	};
 	
-	private DirectPrintManager manager;
-	private Graphics2D decoratedObject;
-	private UUID objectUUID;
-	
-	public GraphicsRemote() {
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteClientSlave#initialize()
-	 */
-	public void initialize() {
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteClientMaster#decoratedObject()
-	 */
-	public Object decoratedObject() {
-		return decoratedObject;
-	}
-	
-	/**
-	 * @param decoratedObject
-	 */
-	public void setDecoratedObject(Object graphics) {
-		this.decoratedObject = (Graphics2D)graphics;
-	}
 	
 	@Override
 	public void addRenderingHints(Map <?, ?> hints) {
-		decoratedObject.addRenderingHints(hints);
+		graphics().addRenderingHints(hints);
 	}
 
 	@Override
 	public void clip(Shape shape) {
-		decoratedObject.clip(shape);
+		graphics().clip(shape);
 	}
 
 	@Override
 	public boolean hit(Rectangle rect, Shape shape, boolean onStroke) {
-		return decoratedObject.hit(rect, shape, onStroke);
+		return graphics().hit(rect, shape, onStroke);
 	}
 
 	@Override
 	public void rotate(double theta) {
-		decoratedObject.rotate(theta);
+		graphics().rotate(theta);
 	}
 
 	@Override
 	public void rotate(double theta, double x, double y) {
-		decoratedObject.rotate(theta, x, y);
+		graphics().rotate(theta, x, y);
 	}
 
 	@Override
 	public void scale(double sx, double sy) {
-		decoratedObject.scale(sx, sy);
+		graphics().scale(sx, sy);
 	}
 
 	@Override
 	public void shear(double shx, double shy) {
-		decoratedObject.shear(shx, shy);
+		graphics().shear(shx, shy);
 	}
 
 	@Override
 	public void transform(AffineTransform transform) {
-		decoratedObject.transform(transform);
+		graphics().transform(transform);
 	}
 
 	@Override
 	public void translate(int x, int y) {
-		decoratedObject.translate(x, y);
+		graphics().translate(x, y);
 	}
 
 	@Override
 	public void translate(double tx, double ty) {
-		decoratedObject.translate(tx, ty);
+		graphics().translate(tx, ty);
 	}
 
 	@Override
 	public void clearRect(int x, int y, int width, int height) {
-		decoratedObject.clearRect(x, y, width, height);
+		graphics().clearRect(x, y, width, height);
 	}
 
 	@Override
 	public void clipRect(int x, int y, int width, int height) {
-		decoratedObject.clipRect(x, y, width, height);
+		graphics().clipRect(x, y, width, height);
 	}
 
 	@Override
 	public void copyArea(int x, int y, int width, int height, int dx,
 			int dy) {
-		decoratedObject.copyArea(x, y, width, height, dx, dy);
+		graphics().copyArea(x, y, width, height, dx, dy);
 	}
 
 	@Override
@@ -147,14 +123,14 @@ public class GraphicsRemote extends Graphics2D implements IProxyMaster {
 	
 	/**
 	 * Special method for establishing a two way communications.
-	 * @return Unique id of the just created decoratedObject.
+	 * @return Unique id of the just created graphics().
 	 */
 	public UUID createRemote() {
 		GraphicsRemote remote = (GraphicsRemote) Enhancer.create(GraphicsRemote.class,
-				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
-		remote.initialize();
-		remote.setDecoratedObject((Graphics2D)decoratedObject.create());
-		return remote.getObjectUUID();
+				new ProxyClientMaster(manager(),
+				graphics().create(),
+				GraphicsRemote.FILTERED_METHODS));
+		return remote.objectUUID();
 	}
 	
 	@Override
@@ -172,241 +148,242 @@ public class GraphicsRemote extends Graphics2D implements IProxyMaster {
 	 */
 	public UUID createRemote(int x, int y, int width, int height) {
 		GraphicsRemote remote = (GraphicsRemote) Enhancer.create(GraphicsRemote.class,
-				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
-		remote.initialize();
-		remote.setDecoratedObject((Graphics2D)decoratedObject.create());
-		return remote.getObjectUUID();
+				new ProxyClientMaster(
+						manager(),
+						graphics().create(x, y, width, height),
+						GraphicsRemote.FILTERED_METHODS));
+		return remote.objectUUID();
 	}
 
 	@Override
 	public void dispose() {
-		decoratedObject.dispose();
+		graphics().dispose();
 	}
 	
 	@Override
 	public void draw(Shape s) {
-		decoratedObject.draw(s);
+		graphics().draw(s);
 	}
 
 	@Override
 	public void draw3DRect(int x, int y, int width, int height, boolean raised) {
-		decoratedObject.draw3DRect(x, y, width, height, raised);
+		graphics().draw3DRect(x, y, width, height, raised);
 	}
 	
 	@Override
 	public void drawArc(int x, int y, int width, int height, int startAngle,
 			int arcAngle) {
-		decoratedObject.drawArc(x, y, width, height, startAngle, arcAngle);
+		graphics().drawArc(x, y, width, height, startAngle, arcAngle);
 
 	}
 	
 	@Override
 	public void drawBytes(byte[] data, int offset, int length, int x, int y) {
-		decoratedObject.drawBytes(data, offset, length, x, y);
+		graphics().drawBytes(data, offset, length, x, y);
 	}
 	
 	@Override
 	public void drawChars(char[] data, int offset, int length, int x, int y) {
-		decoratedObject.drawChars(data, offset, length, x, y);
+		graphics().drawChars(data, offset, length, x, y);
 	}
 
 	@Override
 	public void drawGlyphVector(GlyphVector g, float x, float y) {
-		decoratedObject.drawGlyphVector(g, x, y);
+		graphics().drawGlyphVector(g, x, y);
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
-		return decoratedObject.drawImage(img, x, y, observer);
+		return graphics().drawImage(img, x, y, observer);
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, Color bgcolor,
 			ImageObserver observer) {
-		return decoratedObject.drawImage(img, x, y, bgcolor, observer);
+		return graphics().drawImage(img, x, y, bgcolor, observer);
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, 
 			int height, ImageObserver observer) {
-		return decoratedObject.drawImage(img, x, y, width, height, observer);
+		return graphics().drawImage(img, x, y, width, height, observer);
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, 
 			int height, Color bgcolor, ImageObserver observer) {
-		return decoratedObject.drawImage(img, x, y, width, height, bgcolor, observer);
+		return graphics().drawImage(img, x, y, width, height, bgcolor, observer);
 	}
 
 	@Override
 	public boolean drawImage(Image img, int dx1, int dy1, int dx2, 
 			int dy2, int sx1, int sy1, 
 			int sx2, int sy2, ImageObserver observer) {
-		return decoratedObject.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
+		return graphics().drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
 	}
 
 	@Override
 	public boolean drawImage(Image img, int dx1, int dy1, int dx2, 
 			int dy2, int sx1, int sy1, 
 			int sx2, int sy2, Color bgcolor, ImageObserver observer) {
-		return decoratedObject.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+		return graphics().drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
 	}
 	
 	@Override
 	public boolean drawImage(Image img, AffineTransform xform, ImageObserver obs) {
-		return decoratedObject.drawImage(img, xform, obs);
+		return graphics().drawImage(img, xform, obs);
 	}
 
 	@Override
 	public void drawImage(BufferedImage img, BufferedImageOp op, int x, int y) {
-		decoratedObject.drawImage(img, op, x, y);
+		graphics().drawImage(img, op, x, y);
 	}
 
 	@Override
 	public void drawLine(int x1, int y1, int x2, int y2) {
-		decoratedObject.drawLine(x1, y1, x2, y2);
+		graphics().drawLine(x1, y1, x2, y2);
 	}
 
 	@Override
 	public void drawOval(int x, int y, int width, int height) {
-		decoratedObject.drawOval(x, y, width, height);
+		graphics().drawOval(x, y, width, height);
 	}
 
 	@Override
 	public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-		decoratedObject.drawPolygon(xPoints, yPoints, nPoints);
+		graphics().drawPolygon(xPoints, yPoints, nPoints);
 	}
 	
 	@Override
 	public void drawPolygon(Polygon p) {
-		decoratedObject.drawPolygon(p);
+		graphics().drawPolygon(p);
 	}
 
 	@Override
 	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
-		decoratedObject.drawPolyline(xPoints, yPoints, nPoints);
+		graphics().drawPolyline(xPoints, yPoints, nPoints);
 	}
 	
 	@Override
 	public void drawRect(int x, int y, int width, int height) {
-		decoratedObject.drawRect(x, y, width, height);
+		graphics().drawRect(x, y, width, height);
 	}
 	
 	@Override
 	public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
-		decoratedObject.drawRenderableImage(img, xform);
+		graphics().drawRenderableImage(img, xform);
 	}
 
 	@Override
 	public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
-		decoratedObject.drawRenderedImage(img, xform);
+		graphics().drawRenderedImage(img, xform);
 	}
 
 	@Override
 	public void drawRoundRect(int x, int y, int width, int height, int arcWidth,
 			int arcHeight) {
-		decoratedObject.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
+		graphics().drawRoundRect(x, y, width, height, arcWidth, arcHeight);
 	}
 
 
 	@Override
 	public void drawString(String str, int x, int y) {
-		decoratedObject.drawString(str, x, y);
+		graphics().drawString(str, x, y);
 	}
 
 	@Override
 	public void drawString(String str, float x, float y) {
-		decoratedObject.drawString(str, x, y);
+		graphics().drawString(str, x, y);
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, int x, int y) {
-		decoratedObject.drawString(iterator, x, y);
+		graphics().drawString(iterator, x, y);
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, float x,
 			float y) {
-		decoratedObject.drawString(iterator, x, y);
+		graphics().drawString(iterator, x, y);
 	}
 
 	@Override
 	public void fill(Shape s) {
-		decoratedObject.fill(s);
+		graphics().fill(s);
 	}
 	
 	@Override
 	public void fill3DRect(int x, int y, int width, int height, boolean raised) {
-		decoratedObject.fill3DRect(x, y, width, height, raised);
+		graphics().fill3DRect(x, y, width, height, raised);
 	}
 
 	@Override
 	public void fillArc(int x, int y, int width, int height, int startAngle,
 			int arcAngle) {
-		decoratedObject.fillArc(x, y, width, height, startAngle, arcAngle);
+		graphics().fillArc(x, y, width, height, startAngle, arcAngle);
 	}
 
 	@Override
 	public void fillOval(int x, int y, int width, int height) {
-		decoratedObject.fillOval(x, y, width, height);
+		graphics().fillOval(x, y, width, height);
 	}
 
 	@Override
 	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-		decoratedObject.fillPolygon(xPoints, yPoints, nPoints);
+		graphics().fillPolygon(xPoints, yPoints, nPoints);
 	}
 	
 	@Override
 	public void fillPolygon(Polygon p) {
-		decoratedObject.fillPolygon(p);
+		graphics().fillPolygon(p);
 	}
 
 	@Override
 	public void fillRect(int x, int y, int width, int height) {
-		decoratedObject.fillRect(x, y, width, height);
+		graphics().fillRect(x, y, width, height);
 	}
 
 	@Override
 	public void fillRoundRect(int x, int y, int width, int height, int arcWidth,
 			int arcHeight) {
-		decoratedObject.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
+		graphics().fillRoundRect(x, y, width, height, arcWidth, arcHeight);
 	}
 
 	@Override
 	public Color getBackground() {
-		return decoratedObject.getBackground();
+		return graphics().getBackground();
 	}
 
 	@Override
 	public Shape getClip() {
-		Shape shape = decoratedObject.getClip();
+		Shape shape = graphics().getClip();
 		return new GeneralPath(shape);
 	}
 
 	@Override
 	public Rectangle getClipBounds() {
-		return decoratedObject.getClipBounds();
+		return graphics().getClipBounds();
 	}
 
 	@Override
 	public Rectangle getClipBounds(Rectangle r) {
-		return decoratedObject.getClipBounds(r);
+		return graphics().getClipBounds(r);
 	}
 	
 	@SuppressWarnings("deprecation")
 	@Override
 	public Rectangle getClipRect() {
-		return decoratedObject.getClipRect();
+		return graphics().getClipRect();
 	}
 	
 	@Override
 	public Color getColor() {
-		return decoratedObject.getColor();
+		return graphics().getColor();
 	}
 
 	@Override
 	public Composite getComposite() {
-		return new CompositeWrapper(decoratedObject.getComposite());
+		return new CompositeWrapper(graphics().getComposite());
 	}
 
 	@Override
@@ -421,132 +398,155 @@ public class GraphicsRemote extends Graphics2D implements IProxyMaster {
 	public UUID getDeviceConfigurationRemote() {
 		GraphicsConfigurationRemote remote = (GraphicsConfigurationRemote)
 				Enhancer.create(GraphicsConfigurationRemote.class,
-						new ProxyRemoteMaster(manager, GraphicsConfigurationRemote.FILTERED_METHODS));
-		remote.initialize();
-		remote.setDecoratedObject(decoratedObject.getDeviceConfiguration());
-		return remote.getObjectUUID();
+						new ProxyClientMaster(
+								manager(),
+								graphics().getDeviceConfiguration(),
+								GraphicsConfigurationRemote.FILTERED_METHODS));
+		return remote.objectUUID();
 	}
 
 	@Override
 	public Font getFont() {
-		return decoratedObject.getFont();
+		return graphics().getFont();
 	}
 
 	@Override
 	public FontMetrics getFontMetrics(Font font) {
-		return decoratedObject.getFontMetrics(font);
+		return graphics().getFontMetrics(font);
 	}
 	
 	@Override
 	public FontMetrics getFontMetrics() {
-		return decoratedObject.getFontMetrics();
+		return graphics().getFontMetrics();
 	}
 
 	@Override
 	public FontRenderContext getFontRenderContext() {
-		return decoratedObject.getFontRenderContext();
+		return graphics().getFontRenderContext();
 	}
 
 	@Override
 	public Paint getPaint() {
-		return decoratedObject.getPaint();
+		return graphics().getPaint();
 	}
 
 	@Override
 	public Object getRenderingHint(Key hintKey) {
-		return decoratedObject.getRenderingHint(hintKey);
+		return graphics().getRenderingHint(hintKey);
 	}
 
 	@Override
 	public RenderingHints getRenderingHints() {
-		return decoratedObject.getRenderingHints();
+		return graphics().getRenderingHints();
 	}
 
 	@Override
 	public Stroke getStroke() {
-		return decoratedObject.getStroke();
+		return graphics().getStroke();
 	}
 
 	@Override
 	public AffineTransform getTransform() {
-		return decoratedObject.getTransform();
+		return graphics().getTransform();
 	}
 
 	@Override
 	public boolean hitClip(int x, int y, int width, int height) {
-		return decoratedObject.hitClip(x, y, width, height);
+		return graphics().hitClip(x, y, width, height);
 	}
 	
 	@Override
 	public void setBackground(Color color) {
-		decoratedObject.setBackground(color);
+		graphics().setBackground(color);
 	}
 
 	@Override
 	public void setClip(Shape clip) {
-		decoratedObject.setClip(clip);
+		graphics().setClip(clip);
 	}
 
 	@Override
 	public void setClip(int arg0, int arg1, int arg2, int arg3) {
-		decoratedObject.setClip(arg0, arg1, arg2, arg3);
+		graphics().setClip(arg0, arg1, arg2, arg3);
 	}
 
 	@Override
 	public void setColor(Color color) {
-		decoratedObject.setColor(color);
+		graphics().setColor(color);
 	}
 	
 	@Override
 	public void setComposite(Composite comp) {
-		decoratedObject.setComposite(comp);
+		graphics().setComposite(comp);
 	}
 
 	@Override
 	public void setFont(Font font) {
-		decoratedObject.setFont(font);
+		graphics().setFont(font);
 	}
 
 	@Override
 	public void setPaintMode() {
-		decoratedObject.setPaintMode();
+		graphics().setPaintMode();
 	}
 
 	@Override
 	public void setXORMode(Color color) {
-		decoratedObject.setXORMode(color);
+		graphics().setXORMode(color);
 	}
 	
 	@Override
 	public void setPaint(Paint paint) {
-		decoratedObject.setPaint(paint);
+		graphics().setPaint(paint);
 	}
 
 	@Override
 	public void setRenderingHint(Key hintKey, Object hintValue) {
-		decoratedObject.setRenderingHint(hintKey, hintValue);
+		graphics().setRenderingHint(hintKey, hintValue);
 	}
 
 	@Override
 	public void setRenderingHints(Map <?, ?> hints) {
-		decoratedObject.setRenderingHints(hints);
+		graphics().setRenderingHints(hints);
 	}
 
 	@Override
 	public void setStroke(Stroke s) {
-		decoratedObject.setStroke(s);
+		graphics().setStroke(s);
 	}
 
 	@Override
 	public void setTransform(AffineTransform transform) {
-		decoratedObject.setTransform(transform);
+		graphics().setTransform(transform);
+	}
+	
+	private Graphics2D graphics() {
+		return (Graphics2D) graphics();
+	}
+	
+	/* ***************************
+	 * Proxied methods
+	 * ***************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
+	 */
+	public DirectPrintManager manager() {
+		return null;
 	}
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
 	 */
-	public UUID getObjectUUID() {
-		return objectUUID;
+	public Object decoratedObject() {
+		return null;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 */
+	public UUID objectUUID() {
+		return null;
 	}
 
 }

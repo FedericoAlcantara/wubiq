@@ -8,6 +8,7 @@ import java.awt.GraphicsDevice;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
+import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.interfaces.IProxyMaster;
 
 /**
@@ -15,33 +16,10 @@ import net.sf.wubiq.interfaces.IProxyMaster;
  * @author Federico Alcantara
  *
  */
-public class GraphicsDeviceRemote extends GraphicsDevice implements IProxyMaster {
-	private DirectPrintManager manager;
-	private GraphicsDevice graphicsDevice;
-	private UUID objectUUID;
+public class GraphicsDeviceRemote extends GraphicsDevice implements IProxyClient, IProxyMaster {
 	
 	public static final String[] FILTERED_METHODS = new String[]{};
 	
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteClientSlave#initialize()
-	 */
-	public void initialize() {
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteClientMaster#decoratedObject()
-	 */
-	public Object decoratedObject() {
-		return graphicsDevice;
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#setDecoratedObject(java.lang.Object)
-	 */
-	public void setDecoratedObject(Object graphicsDevice) {
-		this.graphicsDevice = (GraphicsDevice)graphicsDevice;
-	}
-
 	@Override
 	public GraphicsConfiguration[] getConfigurations() {
 		return null;
@@ -62,11 +40,31 @@ public class GraphicsDeviceRemote extends GraphicsDevice implements IProxyMaster
 		return 0;
 	}
 	
-	/**
-	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
+	/* ***************************
+	 * Proxied methods
+	 * ***************************
 	 */
-	public UUID getObjectUUID() {
-		return objectUUID;
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
+	 */
+	public DirectPrintManager manager() {
+		return null;
 	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 */
+	public Object decoratedObject() {
+		return null;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 */
+	public UUID objectUUID() {
+		return null;
+	}
+
+
 
 }

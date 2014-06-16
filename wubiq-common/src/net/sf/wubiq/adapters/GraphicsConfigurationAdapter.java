@@ -13,7 +13,8 @@ import java.util.Set;
 import java.util.UUID;
 
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IRemoteAdapter;
+import net.sf.wubiq.interfaces.IAdapter;
+import net.sf.wubiq.interfaces.IProxy;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.DirectConnectUtils;
@@ -24,15 +25,11 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  *
  */
 public class GraphicsConfigurationAdapter extends GraphicsConfiguration
-		implements IRemoteAdapter {
-	private IDirectConnectorQueue queue;
-	private UUID objectUUID;
+		implements IAdapter, IProxy {
 	
-	public GraphicsConfigurationAdapter(IDirectConnectorQueue queue, UUID objectUUID) {
-		this.queue = queue;
-		this.objectUUID = objectUUID;
-		queue.registerObject(objectUUID, this);
-	}
+	public static final String[] FILTERED_METHODS = new String[]{
+		
+	};
 	
 	/**
 	 * @see java.awt.GraphicsConfiguration#createCompatibleImage(int, int)
@@ -120,68 +117,50 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 	 */
 	private synchronized void sendCommand(String methodName, 
 			GraphicParameter...parameters) {
-		queue.sendCommand(new RemoteCommand(getObjectUUID(),
+		queue().sendCommand(new RemoteCommand(objectUUID(),
 				methodName, parameters));
 	}
 
 	/* *****************************************
-	 * IRemoteAdapter interface implementation
+	 * IProxy interface implementation
 	 * *****************************************
 	 */
+	public UUID objectUUID() {
+		return null;
+	}
 	
+	/* *****************************************
+	 * IAdapter interface implementation
+	 * *****************************************
+	 */
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#queue()
+	 * @see net.sf.wubiq.interfaces.IProxyAdapter#queue()
 	 */
 	@Override
 	public IDirectConnectorQueue queue() {
-		return queue;
+		return null;
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
-		queue.addListener(listener);
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
-		return queue.removeListener(listener);
+		return false;
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 * @see net.sf.wubiq.interfaces.IAdapter#listeners()
 	 */
+	@Override
 	public Set<IRemoteListener> listeners() {
-		return queue.listeners();
+		return null;
 	}
-	
-	/* **************************************
-	 * SUPPORT ROUTINES
-	 * *************************************
-	 */
-
-	/**
-	 * @return The invoking method name.
-	 */
-	private String methodName() {
-		if (Thread.currentThread().getStackTrace().length >= 3) {
-			return Thread.currentThread().getStackTrace()[2].getMethodName();
-		} else { 
-			return null;
-		}
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
-	 */
-	public UUID getObjectUUID() {
-		return this.objectUUID;
-	}
-
-
 }

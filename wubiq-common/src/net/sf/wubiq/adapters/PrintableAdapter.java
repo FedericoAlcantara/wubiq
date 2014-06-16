@@ -11,48 +11,23 @@ import java.util.Set;
 import java.util.UUID;
 
 import net.sf.cglib.proxy.Enhancer;
+import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
-import net.sf.wubiq.interfaces.IRemotePrintableAdapter;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.proxies.ProxyAdapterSlave;
 
 /**
  * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class PrintableAdapter implements IRemotePrintableAdapter, IProxyMaster {
+public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
 	
-	private Printable printable;
 	private GraphicsAdapter graphicsAdapter;
-	private IDirectConnectorQueue queue;
-	private UUID objectUUID;
 	public static final String[] FILTERED_METHODS = new String[]{
 		
 	};
-
-	public PrintableAdapter() {
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#initialize()
-	 */
-	public void initialize() {
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
-	 */
-	public Object decoratedObject() {
-		return printable;
-	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#setDecoratedObject(java.lang.Object)
-	 */
-	public void setDecoratedObject(Object printable) {
-		this.printable = (Printable)printable;
-	}
 	
 	/**
 	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
@@ -60,7 +35,7 @@ public class PrintableAdapter implements IRemotePrintableAdapter, IProxyMaster {
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		return printable.print(graphics, pageFormat, pageIndex);
+		return printable().print(graphics, pageFormat, pageIndex);
 	}
 
 	/**
@@ -75,52 +50,68 @@ public class PrintableAdapter implements IRemotePrintableAdapter, IProxyMaster {
 		if (graphicsAdapter == null) {
 			graphicsAdapter = (GraphicsAdapter)
 					Enhancer.create(GraphicsAdapter.class, 
-							new ProxyAdapterSlave(queue, remoteGraphicsUUID, GraphicsAdapter.FILTERED_METHODS));
+							new ProxyAdapterSlave(queue(), remoteGraphicsUUID, GraphicsAdapter.FILTERED_METHODS));
 		}
 		return print(graphicsAdapter, pageFormat, pageIndex);
 	}
 	
+	public Printable printable() {
+		return (Printable) decoratedObject();
+	}
+
 	/* *****************************************
-	 * IRemoteAdapter interface implementation
+	 * IProxy interface implementation
 	 * *****************************************
 	 */
+	public UUID objectUUID() {
+		return null;
+	}
 	
+	/* *****************************************
+	 * IAdapter interface implementation
+	 * *****************************************
+	 */
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#queue()
+	 * @see net.sf.wubiq.interfaces.IProxyAdapter#queue()
 	 */
 	@Override
 	public IDirectConnectorQueue queue() {
-		return queue;
+		return null;
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
-		queue.addListener(listener);
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
-		return queue.removeListener(listener);
+		return false;
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 * @see net.sf.wubiq.interfaces.IAdapter#listeners()
 	 */
+	@Override
 	public Set<IRemoteListener> listeners() {
-		return queue.listeners();
-	}
-
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
-	 */
-	public UUID getObjectUUID() {
-		return objectUUID;
+		return null;
 	}
 	
+	/* *****************************************
+	 * IProxyMaster interface implementation
+	 * *****************************************
+	 */
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 */
+	@Override
+	public Object decoratedObject() {
+		return null;
+	}
 }

@@ -20,12 +20,12 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.remotes.PageableRemote;
 import net.sf.wubiq.clients.remotes.PrintableRemote;
-import net.sf.wubiq.clients.remotes.ProxyRemoteSlave;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.exceptions.TimeoutException;
+import net.sf.wubiq.proxies.ProxyClientSlave;
 import net.sf.wubiq.utils.ClientPrintDirectUtils;
 import net.sf.wubiq.utils.DirectConnectUtils;
 
@@ -102,8 +102,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public void createPrintable(UUID objectUUID) {
 		PrintableRemote remote = (PrintableRemote) Enhancer.create(PrintableRemote.class, 
-				new ProxyRemoteSlave(this, objectUUID, PrintableRemote.FILTERED_METHODS));
-		remote.initialize();
+				new ProxyClientSlave(this, objectUUID, PrintableRemote.FILTERED_METHODS));
 	}
 	
 	/**
@@ -111,8 +110,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public void createPageable(UUID objectUUID) {
 		PageableRemote remote = (PageableRemote) Enhancer.create(PageableRemote.class, 
-				new ProxyRemoteSlave(this, objectUUID, PageableRemote.FILTERED_METHODS));
-		//remote.initialize();
+				new ProxyClientSlave(this, objectUUID, PageableRemote.FILTERED_METHODS));
 		ClientPrintDirectUtils.printPageable(jobId, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				docFlavor,

@@ -4,18 +4,12 @@
 package net.sf.wubiq.interfaces;
 
 /**
- * The minimal interface for proxying a object which have the 
- * concrete states (master).
+ * The minimal interface for proxying objects which implement
+ * the master role.
  * @author Federico Alcantara
  *
  */
-public interface IProxyMaster {
-	/**
-	 * Performs the initialization of the client.
-	 * Must be called before any other methods.
-	 */
-	void initialize();
-
+public interface IProxyMaster extends IProxy {
 	/**
 	 * Must return the object that is being decorated with the remote 
 	 * communication object.
@@ -23,10 +17,4 @@ public interface IProxyMaster {
 	 */
 	Object decoratedObject();
 	
-	/**
-	 * Defines the decorated object. This object will receive the 
-	 * surrogate calls from the implementation.
-	 * @param decoratedObject Object to be decorated.
-	 */
-	void setDecoratedObject(Object decoratedObject);
 }

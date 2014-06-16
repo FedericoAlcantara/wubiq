@@ -1,7 +1,6 @@
 package net.sf.wubiq.clients.remotes;
 
 import java.awt.Graphics;
-import java.awt.Graphics2D;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
@@ -10,7 +9,8 @@ import java.util.UUID;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IProxySlave;
+import net.sf.wubiq.interfaces.IProxyClient;
+import net.sf.wubiq.proxies.ProxyClientMaster;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
@@ -22,19 +22,10 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  * @author Federico Alcantara
  *
  */
-public class PrintableRemote implements Printable, IProxySlave {
-	private DirectPrintManager manager;
-	private UUID objectUUID;
+public class PrintableRemote implements Printable, IProxyClient {
 	
 	public static final String[] FILTERED_METHODS = new String[]{"print"};
-	
-	public PrintableRemote() {
-	}
-	
-	public void initialize() {
 		
-	}
-	
 	/**
 	 * This a two stage print method. 
 	 * First it records graphics command into itself by using a GraphicRecorder object.
@@ -45,21 +36,33 @@ public class PrintableRemote implements Printable, IProxySlave {
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
 		GraphicsRemote remote = (GraphicsRemote)Enhancer.create(GraphicsRemote.class, 
-				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
-		remote.initialize();
-		remote.setDecoratedObject((Graphics2D)graphics);
-		return (Integer) manager.readFromRemote(new RemoteCommand(getObjectUUID(),
+				new ProxyClientMaster(
+						manager(),
+						graphics,
+						GraphicsRemote.FILTERED_METHODS));
+		return (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
 				"print",
 				new GraphicParameter(PageFormat.class, pageFormat),
 				new GraphicParameter(int.class, pageIndex),
-				new GraphicParameter(UUID.class, remote.getObjectUUID())));
+				new GraphicParameter(UUID.class, remote.objectUUID())));
+	}
+	
+	/* ***************************
+	 * Proxied methods
+	 * ***************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
+	 */
+	public DirectPrintManager manager() {
+		return null;
 	}
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IClientRemote#getObjectUUID()
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
-	public UUID getObjectUUID() {
-		return objectUUID;
+	public UUID objectUUID() {
+		return null;
 	}
-
+	
 }

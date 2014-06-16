@@ -32,10 +32,11 @@ import java.util.UUID;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IProxySlave;
-import net.sf.wubiq.interfaces.IRemoteAdapter;
+import net.sf.wubiq.interfaces.IAdapter;
+import net.sf.wubiq.interfaces.IProxy;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.proxies.ProxyAdapterSlave;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
@@ -43,8 +44,8 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  * @author Federico Alcantara
  *
  */
-public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter,
-		IProxySlave {
+public class GraphicsAdapter extends Graphics2D implements IAdapter,
+		IProxy {
 
 	private IDirectConnectorQueue queue;
 	private UUID objectUUID;
@@ -55,13 +56,6 @@ public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter,
 		"composite",
 		"getDeviceConfiguration"
 	};
-
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxySlave#initialize()
-	 */
-	@Override
-	public void initialize() {
-	}
 
 	/**
 	 * @see java.awt.Graphics2D#addRenderingHints(java.util.Map)
@@ -193,8 +187,12 @@ public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter,
 	public GraphicsConfiguration getDeviceConfiguration() {
 		queue.sendCommand(new RemoteCommand(objectUUID, "getDeviceConfigurationRemote"));
 		UUID remoteUUID = (UUID)queue().returnData();
-		GraphicsConfigurationAdapter remote = 
-				new GraphicsConfigurationAdapter(queue(), remoteUUID);
+		GraphicsConfigurationAdapter remote = (GraphicsConfigurationAdapter)
+				Enhancer.create(GraphicsConfigurationAdapter.class,
+						new ProxyAdapterSlave(
+								queue(),
+								remoteUUID,
+								GraphicsConfigurationAdapter.FILTERED_METHODS));
 		return remote;
 	}
 
@@ -402,7 +400,6 @@ public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter,
 				Enhancer.create(GraphicsAdapter.class,
 						new ProxyAdapterSlave(queue, remoteUUID, 
 								GraphicsAdapter.FILTERED_METHODS));
-		adapter.initialize();
 		return adapter;
 	}
 	
@@ -421,7 +418,6 @@ public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter,
 				Enhancer.create(GraphicsAdapter.class,
 						new ProxyAdapterSlave(queue, remoteUUID, 
 								GraphicsAdapter.FILTERED_METHODS));
-		adapter.initialize();
 		return adapter;
 	}
 
@@ -666,49 +662,46 @@ public class GraphicsAdapter extends Graphics2D implements IRemoteAdapter,
 	public void setXORMode(Color arg0) {
 		
 	}
-
 	/* *****************************************
-	 * IRemoteAdapter interface implementation
+	 * IProxy interface implementation
 	 * *****************************************
 	 */
+	public UUID objectUUID() {
+		return null;
+	}
 	
+	/* *****************************************
+	 * IAdapter interface implementation
+	 * *****************************************
+	 */
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#queue()
+	 * @see net.sf.wubiq.interfaces.IProxyAdapter#queue()
 	 */
 	@Override
 	public IDirectConnectorQueue queue() {
-		return queue;
+		return null;
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
-		queue.addListener(listener);
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 * @see net.sf.wubiq.interfaces.IAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
 	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
-		return queue.removeListener(listener);
+		return false;
 	}
 
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#listeners()
+	 * @see net.sf.wubiq.interfaces.IAdapter#listeners()
 	 */
+	@Override
 	public Set<IRemoteListener> listeners() {
-		return queue.listeners();
+		return null;
 	}
-	
-	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteAdapter#getObjectUUID()
-	 */
-	public UUID getObjectUUID() {
-		return this.objectUUID;
-	}
-
-
 }

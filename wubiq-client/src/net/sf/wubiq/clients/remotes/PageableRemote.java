@@ -11,28 +11,19 @@ import java.util.UUID;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IProxySlave;
+import net.sf.wubiq.interfaces.IProxyClient;
+import net.sf.wubiq.proxies.ProxyClientSlave;
 
 /**
  * @author Federico Alcantara
  *
  */
-public class PageableRemote implements Pageable, IProxySlave {
-	private DirectPrintManager manager;
-	private UUID objectUUID;
-	private int lastPrintablePageIndex;
+public class PageableRemote implements Pageable, IProxyClient {
+	private int lastPrintablePageIndex = -1;
 	private Printable printable;
 	
 	public static final String[] FILTERED_METHODS = new String[]{
 		"getPrintable"};
-	
-	public PageableRemote() {
-		lastPrintablePageIndex = -1;
-		initialize();
-	}
-	
-	public void initialize() {
-	}
 	
 	/**
 	 * @see java.awt.print.Pageable#getNumberOfPages()
@@ -57,15 +48,33 @@ public class PageableRemote implements Pageable, IProxySlave {
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		if (lastPrintablePageIndex != pageIndex) {
 			lastPrintablePageIndex = pageIndex;
-			manager.readFromRemote(new RemoteCommand(objectUUID, "getPrintable",
+			manager().readFromRemote(new RemoteCommand(objectUUID(), "getPrintable",
 					pageIndex));
-			UUID printableObjectUUID = (UUID) manager.readFromRemote(objectUUID, "getLastPrintableObjectUUID");
+			UUID printableObjectUUID = (UUID) manager().readFromRemote(objectUUID(), "getLastPrintableObjectUUID");
 			printable = (PrintableRemote) Enhancer.create(PrintableRemote.class,
-					new ProxyRemoteSlave(manager, printableObjectUUID,
+					new ProxyClientSlave(manager(), printableObjectUUID,
 							PrintableRemote.FILTERED_METHODS));
 		}
 
 		return printable;
 	}
 
+	/* ***************************
+	 * Proxied methods
+	 * ***************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
+	 */
+	public DirectPrintManager manager() {
+		return null;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 */
+	public UUID objectUUID() {
+		return null;
+	}
+	
 }

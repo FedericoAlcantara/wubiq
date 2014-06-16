@@ -19,7 +19,7 @@ import javax.xml.bind.DatatypeConverter;
 
 import net.sf.wubiq.enums.NotificationType;
 import net.sf.wubiq.exceptions.TimeoutException;
-import net.sf.wubiq.interfaces.IRemoteAdapter;
+import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
@@ -63,7 +63,7 @@ public enum DirectConnectUtils {
 	 * @param fiscalPrinter FiscalPrinter originating the time out.
 	 * @param listeners Set of listeners to be notified.
 	 */
-	public void notifyTimeout(IRemoteAdapter adapter, Set<IRemoteListener> listeners) {
+	public void notifyTimeout(IAdapter adapter, Set<IRemoteListener> listeners) {
 		for (IRemoteListener listener : listeners) {
 			listener.notify(adapter.queue().queueId(), NotificationType.TIMEOUT, ServerLabels.get("server.exception.timeout"));
 		}
@@ -75,7 +75,7 @@ public enum DirectConnectUtils {
 	 * @param listeners Listeners.
 	 * @param message Message to notify.
 	 */
-	public void notifyException(IRemoteAdapter adapter, Set<IRemoteListener> listeners, String message) {
+	public void notifyException(IAdapter adapter, Set<IRemoteListener> listeners, String message) {
 		for (IRemoteListener listener : listeners) {
 			listener.notify(adapter.queue().queueId(), NotificationType.UNDETERMINED_EXCEPTION, message);
 		}
