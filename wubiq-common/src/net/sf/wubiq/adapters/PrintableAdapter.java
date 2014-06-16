@@ -10,6 +10,8 @@ import java.awt.print.PrinterException;
 import java.util.Set;
 import java.util.UUID;
 
+import net.sf.cglib.proxy.Enhancer;
+import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.interfaces.IRemotePrintableAdapter;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
@@ -19,26 +21,37 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
  * @author Federico Alcantara
  *
  */
-public class PrintableAdapter implements IRemotePrintableAdapter {
+public class PrintableAdapter implements IRemotePrintableAdapter, IProxyMaster {
 	
 	private Printable printable;
 	private GraphicsAdapter graphicsAdapter;
 	private IDirectConnectorQueue queue;
 	private UUID objectUUID;
-	
+	public static final String[] FILTERED_METHODS = new String[]{
+		
+	};
+
 	public PrintableAdapter() {
 	}
 	
-	public PrintableAdapter(Printable printable, IDirectConnectorQueue queue, UUID objectUUID) {
-		this();
-		this.printable = printable;
-		this.queue = queue;
-		this.objectUUID = objectUUID;
-		queue.registerObject(objectUUID, this);
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#initialize()
+	 */
+	public void initialize() {
 	}
 	
-	public PrintableAdapter(Printable printable, IDirectConnectorQueue queue) {
-		this(printable, queue, UUID.randomUUID());
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 */
+	public Object decoratedObject() {
+		return printable;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#setDecoratedObject(java.lang.Object)
+	 */
+	public void setDecoratedObject(Object printable) {
+		this.printable = (Printable)printable;
 	}
 	
 	/**
@@ -54,12 +67,15 @@ public class PrintableAdapter implements IRemotePrintableAdapter {
 	 * Special method for setting the communication between remote and local printable.
 	 * @param pageFormat Page format to use.
 	 * @param pageIndex Page index.
+	 * @param remoteGraphicsUUID UUID of the correspondant remote graphics
 	 * @return Status of the action.
 	 * @throws PrinterException
 	 */
-	public int print(PageFormat pageFormat, int pageIndex, UUID objectUUID) throws PrinterException {
+	public int print(PageFormat pageFormat, int pageIndex, UUID remoteGraphicsUUID) throws PrinterException {
 		if (graphicsAdapter == null) {
-			graphicsAdapter = new GraphicsAdapter(queue(), objectUUID);
+			graphicsAdapter = (GraphicsAdapter)
+					Enhancer.create(GraphicsAdapter.class, 
+							new ProxyAdapterSlave(queue, remoteGraphicsUUID, GraphicsAdapter.FILTERED_METHODS));
 		}
 		return print(graphicsAdapter, pageFormat, pageIndex);
 	}

@@ -5,7 +5,6 @@ package net.sf.wubiq.clients.remotes;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
@@ -13,7 +12,7 @@ import java.util.UUID;
 import net.sf.cglib.proxy.MethodInterceptor;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.interfaces.IRemoteClientMaster;
+import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.utils.DirectConnectUtils;
 
 import org.apache.commons.logging.Log;
@@ -53,7 +52,7 @@ public class ProxyRemoteMaster implements MethodInterceptor {
 				filtered.contains(method.getName())) {
 			return methodProxy.invokeSuper(object, args);
 		}
-		Object decoratedObject = ((IRemoteClientMaster)object).decoratedObject();
+		Object decoratedObject = ((IProxyMaster)object).decoratedObject();
 		Object returnValue = methodProxy.invokeSuper(decoratedObject, args);
 		if (!(returnValue instanceof Serializable)) {
 			LOG.info("MUST fix method " + method.getName() + " on " 

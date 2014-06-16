@@ -12,7 +12,7 @@ import java.awt.image.ColorModel;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.interfaces.IRemoteClientMaster;
+import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.utils.DirectConnectUtils;
 
 import org.apache.commons.logging.Log;
@@ -26,7 +26,7 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  *
  */
 public class GraphicsConfigurationRemote extends GraphicsConfiguration 
-		implements IRemoteClientMaster {
+		implements IProxyMaster {
 	private static final Log LOG = LogFactory.getLog(GraphicsConfigurationRemote.class);
 	
 	private DirectPrintManager manager;
@@ -36,7 +36,7 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	};
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteClient#initialize()
+	 * @see net.sf.wubiq.interfaces.IRemoteClientSlave#initialize()
 	 */
 	public void initialize() {
 		
@@ -48,8 +48,8 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 		return graphicsConfiguration;
 	}
 	
-	public void setGraphicsConfiguration(GraphicsConfiguration graphicsConfiguration) {
-		this.graphicsConfiguration = graphicsConfiguration;
+	public void setDecoratedObject(Object graphicsConfiguration) {
+		this.graphicsConfiguration = (GraphicsConfiguration)graphicsConfiguration;
 	}
 	
 	/**

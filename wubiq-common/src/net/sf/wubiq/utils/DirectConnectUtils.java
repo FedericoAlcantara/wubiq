@@ -249,11 +249,11 @@ public enum DirectConnectUtils {
 	 */
 	public void setField(Object object, String fieldName, Object value) {
 		try {
-			Field field = object.getClass().getDeclaredField(fieldName);
+			Field field = object.getClass().getField(fieldName);
 			field.setAccessible(true);
 			field.set(object, value);
 		} catch (Exception e) {
-			LOG.info(object.getClass().getName() + " must define a field 'private " +
+			LOG.info(object.getClass().getName() + " must define a field 'public " +
 					value.getClass().getSimpleName() + " " + fieldName);
 		}
 

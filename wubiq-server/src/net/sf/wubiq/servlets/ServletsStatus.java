@@ -20,7 +20,7 @@ public class ServletsStatus {
 			@Override
 			public void run() {
 				try {
-					Thread.sleep(30000); // Sleep for 30 seconds
+					Thread.sleep(5000); // Sleep for 30 seconds
 					ready = true;
 				} catch (InterruptedException e) {
 				} 

@@ -112,7 +112,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	public void createPageable(UUID objectUUID) {
 		PageableRemote remote = (PageableRemote) Enhancer.create(PageableRemote.class, 
 				new ProxyRemoteSlave(this, objectUUID, PageableRemote.FILTERED_METHODS));
-		remote.initialize();
+		//remote.initialize();
 		ClientPrintDirectUtils.printPageable(jobId, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				docFlavor,

@@ -8,14 +8,14 @@ import java.awt.GraphicsDevice;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.interfaces.IRemoteClientMaster;
+import net.sf.wubiq.interfaces.IProxyMaster;
 
 /**
  * Creates a remote handler for GraphicsDevice.
  * @author Federico Alcantara
  *
  */
-public class GraphicsDeviceRemote extends GraphicsDevice implements IRemoteClientMaster {
+public class GraphicsDeviceRemote extends GraphicsDevice implements IProxyMaster {
 	private DirectPrintManager manager;
 	private GraphicsDevice graphicsDevice;
 	private UUID objectUUID;
@@ -23,7 +23,7 @@ public class GraphicsDeviceRemote extends GraphicsDevice implements IRemoteClien
 	public static final String[] FILTERED_METHODS = new String[]{};
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IRemoteClient#initialize()
+	 * @see net.sf.wubiq.interfaces.IRemoteClientSlave#initialize()
 	 */
 	public void initialize() {
 	}
@@ -35,8 +35,11 @@ public class GraphicsDeviceRemote extends GraphicsDevice implements IRemoteClien
 		return graphicsDevice;
 	}
 	
-	public void setGraphicsDevice(GraphicsDevice graphicsDevice) {
-		this.graphicsDevice = graphicsDevice;
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#setDecoratedObject(java.lang.Object)
+	 */
+	public void setDecoratedObject(Object graphicsDevice) {
+		this.graphicsDevice = (GraphicsDevice)graphicsDevice;
 	}
 
 	@Override

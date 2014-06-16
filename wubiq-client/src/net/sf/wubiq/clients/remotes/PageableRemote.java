@@ -11,13 +11,13 @@ import java.util.UUID;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IRemoteClient;
+import net.sf.wubiq.interfaces.IProxySlave;
 
 /**
  * @author Federico Alcantara
  *
  */
-public class PageableRemote implements Pageable, IRemoteClient {
+public class PageableRemote implements Pageable, IProxySlave {
 	private DirectPrintManager manager;
 	private UUID objectUUID;
 	private int lastPrintablePageIndex;
@@ -28,6 +28,7 @@ public class PageableRemote implements Pageable, IRemoteClient {
 	
 	public PageableRemote() {
 		lastPrintablePageIndex = -1;
+		initialize();
 	}
 	
 	public void initialize() {

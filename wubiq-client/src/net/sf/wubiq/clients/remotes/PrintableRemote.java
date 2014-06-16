@@ -10,7 +10,7 @@ import java.util.UUID;
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.interfaces.IRemoteClient;
+import net.sf.wubiq.interfaces.IProxySlave;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
@@ -22,7 +22,7 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  * @author Federico Alcantara
  *
  */
-public class PrintableRemote implements Printable, IRemoteClient {
+public class PrintableRemote implements Printable, IProxySlave {
 	private DirectPrintManager manager;
 	private UUID objectUUID;
 	
@@ -47,7 +47,7 @@ public class PrintableRemote implements Printable, IRemoteClient {
 		GraphicsRemote remote = (GraphicsRemote)Enhancer.create(GraphicsRemote.class, 
 				new ProxyRemoteMaster(manager, GraphicsRemote.FILTERED_METHODS));
 		remote.initialize();
-		remote.setGraphics((Graphics2D)graphics);
+		remote.setDecoratedObject((Graphics2D)graphics);
 		return (Integer) manager.readFromRemote(new RemoteCommand(getObjectUUID(),
 				"print",
 				new GraphicParameter(PageFormat.class, pageFormat),

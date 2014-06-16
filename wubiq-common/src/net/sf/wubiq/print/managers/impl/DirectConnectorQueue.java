@@ -15,8 +15,10 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.adapters.PageableAdapter;
 import net.sf.wubiq.adapters.PrintableAdapter;
+import net.sf.wubiq.adapters.ProxyAdapterMaster;
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -102,11 +104,20 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		if (remotePrintJob != null) {
 			Object printData = remotePrintJob.getPrintDataObject();
 			if (printData instanceof Printable) {
-				PrintableAdapter remote = new PrintableAdapter((Printable)printData, queue());
+				PrintableAdapter remote = (PrintableAdapter)
+						Enhancer.create(PrintableAdapter.class,
+								new ProxyAdapterMaster(this, PrintableAdapter.FILTERED_METHODS));
+				remote.initialize();
+				remote.setDecoratedObject((Printable)printData);
+				
 				sendCommand(new RemoteCommand(null, "createPrintable",
 						new GraphicParameter(UUID.class, remote.getObjectUUID())));
 			} else if (printData instanceof Pageable) {
-				PageableAdapter remote = new PageableAdapter((Pageable)printData, queueId());
+				PageableAdapter remote = (PageableAdapter)
+						Enhancer.create(PageableAdapter.class, 
+								new ProxyAdapterMaster(this, PageableAdapter.FILTERED_METHODS));
+				remote.initialize();
+				remote.setDecoratedObject((Pageable)printData);
 				sendCommand(new RemoteCommand(null, "createPageable",
 						new GraphicParameter(UUID.class, remote.getObjectUUID())));
 				// no returnedData() here, because this creation objects starts a new connection handshake sequence.
@@ -223,17 +234,6 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		commandToSendReady = false;
 	}
 	
-	/**
-	 * @return The invoking method name.
-	 */
-	private String methodName() {
-		if (Thread.currentThread().getStackTrace().length >= 3) {
-			return Thread.currentThread().getStackTrace()[2].getMethodName();
-		} else { 
-			return null;
-		}
-	}
-
 	/**
 	 * Waits for the response to become available.
 	 * @return Returned data.
