@@ -16,7 +16,6 @@ import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.proxies.ProxyClientMaster;
-import net.sf.wubiq.utils.DirectConnectUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
@@ -28,6 +27,7 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 		implements IProxyClient, IProxyMaster {
 	
 	public static final String[] FILTERED_METHODS = new String[]{
+		"graphicsConfiguration"
 	};
 
 	public GraphicsConfigurationRemote() {

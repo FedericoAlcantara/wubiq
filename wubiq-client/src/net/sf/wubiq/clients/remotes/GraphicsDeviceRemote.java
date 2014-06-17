@@ -22,7 +22,9 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  */
 public class GraphicsDeviceRemote extends GraphicsDevice implements IProxyClient, IProxyMaster {
 	
-	public static final String[] FILTERED_METHODS = new String[]{};
+	public static final String[] FILTERED_METHODS = new String[]{
+		"graphicsDevice"
+	};
 	GraphicsConfigurationRemote[] remotes;
 	
 	public GraphicsDeviceRemote() {

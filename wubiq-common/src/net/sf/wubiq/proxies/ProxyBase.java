@@ -28,6 +28,12 @@ public abstract class ProxyBase implements MethodInterceptor {
 		for (String filter : filtered) {
 			this.filtered.add(filter);
 		}
+		this.filtered.add("toString");
+		this.filtered.add("finalize");
+		this.filtered.add("dispose");
+		this.filtered.add("hashCode");
+		this.filtered.add("notify");
+		this.filtered.add("notifyAll");
 	}
 	
 	/**
@@ -39,8 +45,16 @@ public abstract class ProxyBase implements MethodInterceptor {
 		if ("objectUUID".equals(method.getName())) {
 			return objectUUID;
 		} else if (filtered.contains(method.getName())) {
-			return method.invoke(object, args);
+			return methodProxy.invokeSuper(object, args);
 		} else {
+			StringBuffer argBuffer = new StringBuffer("");
+			for (Object arg : args) {
+				if (argBuffer.length() > 0) {
+					argBuffer.append(", ");
+				}
+				argBuffer.append(arg.toString());
+			}
+			System.out.println("Processing:" + object.getClass().getSimpleName() + "#" + method.getName() + ":" + argBuffer.toString());
 			return interception(object, method, args, methodProxy);
 		}
 	}

@@ -23,6 +23,7 @@ import net.sf.wubiq.proxies.ProxyClientSlave;
 public class CompositeRemote implements Composite, IProxyClient, IProxyMaster {
 
 	public static final String[] FILTERED_METHODS = new String[]{
+		"composite"
 	};
 	
 	public CompositeRemote() {

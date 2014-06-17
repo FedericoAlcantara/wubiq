@@ -4,6 +4,7 @@
 package net.sf.wubiq.wrappers;
 
 import java.awt.RenderingHints;
+import java.awt.RenderingHints.Key;
 import java.io.Serializable;
 
 /**
@@ -42,6 +43,65 @@ public class RenderingHintWrapper implements Serializable {
 			setTextAntiAliasValue(value);
 		} else if (key.equals(RenderingHints.KEY_TEXT_LCD_CONTRAST)) {
 			setTextLcdContrastValue(value);
+		}
+	}
+	
+	/**
+	 * Converts a key value to internal wrapper representation.
+	 * @param key Key to convert.
+	 * @return Integer representing the key.
+	 */
+	public static int keyRepresentation(RenderingHints.Key key) {
+		if (key.equals(RenderingHints.KEY_ALPHA_INTERPOLATION)) {
+			return 0;
+		} else if (key.equals(RenderingHints.KEY_ANTIALIASING)) {
+			return 1;
+		} else if (key.equals(RenderingHints.KEY_COLOR_RENDERING)) {
+			return 2;
+		} else if (key.equals(RenderingHints.KEY_DITHERING)) {
+			return 3;
+		} else if (key.equals(RenderingHints.KEY_FRACTIONALMETRICS)) {
+			return 4;
+		} else if (key.equals(RenderingHints.KEY_INTERPOLATION)) {
+			return 5;
+		} else if (key.equals(RenderingHints.KEY_RENDERING)) {
+			return 6;
+		} else if (key.equals(RenderingHints.KEY_STROKE_CONTROL)) {
+			return 7;
+		} else if (key.equals(RenderingHints.KEY_TEXT_ANTIALIASING)) {
+			return 8;
+		} else {
+			return 9;
+		}
+	}
+
+	
+	/**
+	 * Transform a key representation into a RenderingHints.key.
+	 * @param keyRepresentation Key representation.
+	 * @return RenderingHints.key.
+	 */
+	public static Key getKey(int keyRepresentation) {
+		if (keyRepresentation == 0) {
+			return RenderingHints.KEY_ALPHA_INTERPOLATION;
+		} else if (keyRepresentation == 1) {
+			return RenderingHints.KEY_ANTIALIASING;
+		} else if (keyRepresentation == 2) {
+			return RenderingHints.KEY_COLOR_RENDERING;
+		} else if (keyRepresentation == 3) {
+			return RenderingHints.KEY_DITHERING;
+		} else if (keyRepresentation == 4) {
+			return RenderingHints.KEY_FRACTIONALMETRICS;
+		} else if (keyRepresentation == 5) {
+			return RenderingHints.KEY_INTERPOLATION;
+		} else if (keyRepresentation == 6) {
+			return RenderingHints.KEY_RENDERING;
+		} else if (keyRepresentation == 7) {
+			return RenderingHints.KEY_STROKE_CONTROL;
+		} else if (keyRepresentation == 8) {
+			return RenderingHints.KEY_TEXT_ANTIALIASING;
+		} else {
+			return RenderingHints.KEY_TEXT_LCD_CONTRAST;
 		}
 	}
 	
@@ -174,6 +234,14 @@ public class RenderingHintWrapper implements Serializable {
 		return returnValue;
 	}
 	
+	/**
+	 * Gets the representation of the key value.
+	 * @return
+	 */
+	public int getKeyRepresentation() {
+		return keyValue;
+	}
+	
 	public Object getValue() {
 		Object returnValue = null;
 		if (keyValue == 0) {
@@ -198,6 +266,10 @@ public class RenderingHintWrapper implements Serializable {
 			returnValue = getTextLcdContrastValue();
 		}
 		return returnValue;
+	}
+	
+	public int getValueRepresentation() {
+		return keyValue;
 	}
 	
 	private Object getAlphaValue() {

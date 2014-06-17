@@ -46,12 +46,12 @@ public class ProxyAdapterMaster extends ProxyAdapter {
 		Object returnValue = null;
 		if (decoratedMethod != null) {
 			returnValue = decoratedMethod.invoke(decoratedObject, args);
-		}
-		if (!(returnValue instanceof Serializable)) {
-			throw new RuntimeException ("Method: " + method.getName()
-					+ " of class " 
-					+ object.getClass().getName()
-					+ " MUST return a java.io.Serializable "); 
+			if (!void.class.equals(decoratedMethod.getReturnType())
+					&& !decoratedMethod.getReturnType().isPrimitive()
+					&& !(Serializable.class.isAssignableFrom(decoratedMethod.getReturnType()))) {
+				throw new RuntimeException("MUST fix method " + method.getName() + " on " 
+							+ object.getClass().getName());
+			}
 		}
 		return returnValue;
 	}

@@ -20,6 +20,7 @@ import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.GeneralPath;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
@@ -39,6 +40,9 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.proxies.ProxyAdapterSlave;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import net.sf.wubiq.wrappers.GraphicParameter;
+import net.sf.wubiq.wrappers.RenderingHintWrapper;
+import net.sf.wubiq.wrappers.RenderingHintsWrapper;
+import net.sf.wubiq.wrappers.StrokeWrapper;
 
 /**
  * @author Federico Alcantara
@@ -50,9 +54,18 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	public static final String[] FILTERED_METHODS = new String[]{
 		"create",
 		"dispose",
-		"getComposite",
 		"getDeviceConfiguration",
-		"getFontRenderContext"
+		"getFontRenderContext",
+		"addRenderingHints",
+		"setRenderingHint",
+		"setRenderingHints",
+		"getRenderingHint",
+		"getRenderingHints",
+		"setStroke",
+		"setComposite",
+		"clip",
+		"setClip",
+		"getStroke"
 	};
 	
 	public GraphicsAdapter() {
@@ -64,7 +77,8 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public void addRenderingHints(Map<?, ?> hints) {
-		
+		queue().sendCommand(new RemoteCommand(objectUUID(), "addRenderingHintsRemote",
+				new GraphicParameter(RenderingHintWrapper.class, new RenderingHintsWrapper(hints))));
 	}
 
 	/**
@@ -72,7 +86,9 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public void clip(Shape s) {
-		
+		queue().sendCommand(new RemoteCommand(objectUUID(), "clip",
+				new GraphicParameter(GeneralPath.class, new GeneralPath(s))));
+
 	}
 
 	/**
@@ -177,6 +193,7 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public Composite getComposite() {
+		/*
 		queue().sendCommand(new RemoteCommand(objectUUID(), "getCompositeRemote"));
 		UUID remoteUUID = (UUID) queue().returnData();
 		CompositeAdapter adapter = (CompositeAdapter)
@@ -186,6 +203,8 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 								remoteUUID,
 								CompositeAdapter.FILTERED_METHODS));
 		return adapter;
+		*/
+		return null;
 	}
 
 	/**
@@ -233,7 +252,10 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public Object getRenderingHint(Key hintKey) {
-		return null;
+		queue().sendCommand(new RemoteCommand(objectUUID(), "getRenderingHintRemote",
+				new GraphicParameter(int.class, RenderingHintWrapper.keyRepresentation(hintKey))));
+		RenderingHintWrapper wrapper = (RenderingHintWrapper) queue().returnData();
+		return wrapper.getValue();
 	}
 
 	/**
@@ -241,7 +263,9 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public RenderingHints getRenderingHints() {
-		return null;
+		queue().sendCommand(new RemoteCommand(objectUUID(), "getRenderingHintsRemote"));
+		RenderingHintsWrapper wrapper = (RenderingHintsWrapper)queue().returnData();
+		return wrapper.getRenderingHints();
 	}
 
 	/**
@@ -249,7 +273,14 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public Stroke getStroke() {
-		return null;
+		queue().sendCommand(new RemoteCommand(objectUUID(), "getStrokeRemote"));
+		UUID remoteUUID = (UUID)queue().returnData();
+		BasicStrokeAdapter adapter = (BasicStrokeAdapter)
+				Enhancer.create(BasicStrokeAdapter.class, 
+						new ProxyAdapterSlave(queue(),
+								remoteUUID,
+								BasicStrokeAdapter.FILTERED_METHODS));
+		return adapter;
 	}
 
 	/**
@@ -305,7 +336,8 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public void setComposite(Composite comp) {
-		
+		queue().sendCommand(new RemoteCommand(objectUUID(), "setComposite",
+				new GraphicParameter(CompositeWrapper.class, new CompositeWrapper(comp))));
 	}
 
 	/**
@@ -321,7 +353,8 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public void setRenderingHint(Key hintKey, Object hintValue) {
-		
+		queue().sendCommand(new RemoteCommand(objectUUID(), "setRenderingRemote",
+				new GraphicParameter(RenderingHintWrapper.class, new RenderingHintWrapper(hintKey, hintValue))));
 	}
 
 	/**
@@ -329,7 +362,8 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public void setRenderingHints(Map<?, ?> hints) {
-		
+		queue().sendCommand(new RemoteCommand(objectUUID(), "setRenderingHintsRemote",
+				new GraphicParameter(RenderingHintWrapper.class, new RenderingHintsWrapper(hints))));
 	}
 
 	/**
@@ -337,7 +371,8 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public void setStroke(Stroke s) {
-		
+		queue().sendCommand(new RemoteCommand(objectUUID(), "setStroke",
+				new GraphicParameter(StrokeWrapper.class, new StrokeWrapper(s))));
 	}
 
 	/**
@@ -635,8 +670,9 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 * @see java.awt.Graphics#setClip(java.awt.Shape)
 	 */
 	@Override
-	public void setClip(Shape arg0) {
-		
+	public void setClip(Shape shape) {
+		queue().sendCommand(new RemoteCommand(objectUUID(), "setClip",
+				new GraphicParameter(GeneralPath.class, new GeneralPath(shape))));
 	}
 
 	/**

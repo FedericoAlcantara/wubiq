@@ -58,8 +58,9 @@ public class ProxyClientSlave extends ProxyBase {
 		for (int index = 0; index < parameters.length; index++) {
 			parameters[index] = new GraphicParameter(method.getParameterTypes()[index], args[index]);
 		}
-		return manager.readFromRemote(
+		Object returnValue = manager.readFromRemote(
 				new RemoteCommand(objectUUID(), method.getName(), 
 						DirectConnectUtils.INSTANCE.convertToGraphicParameters(method, args)));
+		return returnValue;
 	}
 }

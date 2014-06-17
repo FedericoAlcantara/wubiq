@@ -37,6 +37,8 @@ import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.proxies.ProxyClientMaster;
 import net.sf.wubiq.wrappers.CompositeWrapper;
+import net.sf.wubiq.wrappers.RenderingHintWrapper;
+import net.sf.wubiq.wrappers.RenderingHintsWrapper;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
 /**
@@ -46,8 +48,8 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMaster {
 	public static final String[] FILTERED_METHODS = new String[]{
-		"getClip",
 		"graphics",
+		"getClip",
 		"create",
 		"getComposite"
 	};
@@ -59,6 +61,10 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 	@Override
 	public void addRenderingHints(Map <?, ?> hints) {
 		graphics().addRenderingHints(hints);
+	}
+	
+	public void addRenderingHintsRemote(RenderingHintsWrapper renderingHints) {
+		addRenderingHints(renderingHints.getRenderingHints());
 	}
 
 	@Override
@@ -441,16 +447,36 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 		return graphics().getRenderingHint(hintKey);
 	}
 
+	public RenderingHintWrapper getRenderingHintRemote(int keyRepresentation) {
+		Key hintKey = RenderingHintWrapper.getKey(keyRepresentation);
+		return new RenderingHintWrapper(hintKey, graphics().getRenderingHint(hintKey));
+	}
+	
 	@Override
 	public RenderingHints getRenderingHints() {
-		return graphics().getRenderingHints();
+		return null;
+	}
+	
+	public RenderingHintsWrapper getRenderingHintsRemote() {
+		RenderingHints hints = graphics().getRenderingHints();
+		return new RenderingHintsWrapper(hints);
 	}
 
 	@Override
 	public Stroke getStroke() {
-		return graphics().getStroke();
+		return null;
 	}
 
+	public UUID getStrokeRemote() {
+		BasicStrokeRemote remote = (BasicStrokeRemote)
+				Enhancer.create(BasicStrokeRemote.class, 
+						new ProxyClientMaster(
+								manager(),
+								graphics().getStroke(),
+								BasicStrokeRemote.FILTERED_METHODS));
+		return remote.objectUUID();
+	}
+	
 	@Override
 	public AffineTransform getTransform() {
 		return graphics().getTransform();
@@ -516,6 +542,10 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 		graphics().setRenderingHints(hints);
 	}
 
+	public void setRenderingHintsRemote(RenderingHintsWrapper wrapper) {
+		setRenderingHints(wrapper.getRenderingHints());
+	}
+	
 	@Override
 	public void setStroke(Stroke s) {
 		graphics().setStroke(s);
@@ -527,7 +557,7 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 	}
 	
 	private Graphics2D graphics() {
-		return (Graphics2D) graphics();
+		return (Graphics2D) decoratedObject();
 	}
 	
 	/* ***************************

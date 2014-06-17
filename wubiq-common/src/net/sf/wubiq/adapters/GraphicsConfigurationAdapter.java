@@ -29,6 +29,7 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 		implements IAdapter, IProxy {
 	
 	public static final String[] FILTERED_METHODS = new String[]{
+		"sendCommand",
 		"createCompatibleImage"
 	};
 

@@ -180,6 +180,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 					data = method.invoke(methodObject, parameterValues);
 				}
 			} catch (Exception e) {
+				e.printStackTrace();
 				if (e.getCause() != null) {
 					error = e.getCause().getMessage();
 				} else {
@@ -191,6 +192,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 					directServer(DirectConnectCommand.EXCEPTION, DirectConnectKeys.DIRECT_CONNECT_DATA 
 							+ ParameterKeys.PARAMETER_SEPARATOR 
 							+ error);
+					LOG.error(error);
 				} else {
 					if (data != null) {
 						String serializedData = DirectConnectUtils.INSTANCE.serialize(data);

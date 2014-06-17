@@ -3,7 +3,7 @@
  */
 package net.sf.wubiq.clients.remotes;
 
-import java.awt.image.BufferedImage;
+import java.awt.BasicStroke;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
@@ -11,17 +11,15 @@ import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.interfaces.IProxyMaster;
 
 /**
+ * Graphics Adapter for communicating with remote.
  * @author Federico Alcantara
  *
  */
-public class BufferedImageRemote extends BufferedImage implements IProxyClient,
-		IProxyMaster {
-	
+public class BasicStrokeRemote extends BasicStroke implements IProxyClient, IProxyMaster {
 	public static final String[] FILTERED_METHODS = new String[]{
 	};
-
-	public BufferedImageRemote() {
-		super(0, 0, 0);
+	
+	public BasicStrokeRemote() {
 		initialize();
 	}
 	

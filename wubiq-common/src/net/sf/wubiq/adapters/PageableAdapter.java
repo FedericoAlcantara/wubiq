@@ -28,6 +28,7 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 	private PageFormatWrapper lastPageFormat = null;
 	private PrintableAdapter lastPrintable = null;
 	public static final String[] FILTERED_METHODS = new String[]{
+		"pageable",
 		"getPageFormat",
 		"getPrintable",
 		"getLastPrintableObjectUUID"

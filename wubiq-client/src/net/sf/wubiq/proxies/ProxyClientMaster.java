@@ -5,13 +5,9 @@ package net.sf.wubiq.proxies;
 
 import java.io.Serializable;
 import java.lang.reflect.Method;
-import java.util.UUID;
 
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.wubiq.clients.DirectPrintManager;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * This proxy is located on the remote side, and the server connects 
@@ -20,7 +16,6 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class ProxyClientMaster extends ProxyMasterBase {
-	private static final Log LOG = LogFactory.getLog(ProxyClientMaster.class);
 	private DirectPrintManager manager;
 	
 	/**
@@ -32,7 +27,7 @@ public class ProxyClientMaster extends ProxyMasterBase {
 	public ProxyClientMaster(DirectPrintManager manager,
 			Object decoratedObject,
 			String[] filtered) {
-		super(UUID.randomUUID(), filtered);
+		super(decoratedObject, filtered);
 		this.manager = manager;
 	}
 
@@ -61,11 +56,12 @@ public class ProxyClientMaster extends ProxyMasterBase {
 		Object returnValue = null;
 		if (decoratedMethod != null) {
 			returnValue = decoratedMethod.invoke(decoratedObject, args);
-		}
-		if (!(returnValue instanceof Serializable)) {
-			LOG.info("MUST fix method " + method.getName() + " on " 
-						+ object.getClass().getName());
-			return null;
+			if (!void.class.equals(decoratedMethod.getReturnType())
+					&& !decoratedMethod.getReturnType().isPrimitive()
+					&& !(Serializable.class.isAssignableFrom(decoratedMethod.getReturnType()))) {
+				throw new RuntimeException("MUST fix method " + method.getName() + " on " 
+							+ object.getClass().getName());
+			}
 		}
 		return returnValue;
 

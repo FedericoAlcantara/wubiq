@@ -19,7 +19,7 @@ public class GraphicParameter implements Serializable{
 	public GraphicParameter(Class parameterType, Object parameterValue) {
 		this.parameterType = parameterType;
 		this.parameterValue = parameterValue;
-		if (!Serializable.class.isAssignableFrom(parameterType)) {
+		if (!parameterType.isPrimitive() && !Serializable.class.isAssignableFrom(parameterType)) {
 			throw new RuntimeException("Class: " + parameterType.getName() 
 					+ " MUST implement java.io.Serializable interface");
 		}

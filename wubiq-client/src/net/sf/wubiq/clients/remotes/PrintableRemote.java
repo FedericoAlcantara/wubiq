@@ -12,6 +12,7 @@ import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.proxies.ProxyClientMaster;
 import net.sf.wubiq.wrappers.GraphicParameter;
+import net.sf.wubiq.wrappers.PageFormatWrapper;
 
 /**
  * Wraps a printable object into a serializable class.
@@ -48,7 +49,7 @@ public class PrintableRemote implements Printable, IProxyClient {
 						GraphicsRemote.FILTERED_METHODS));
 		return (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
 				"print",
-				new GraphicParameter(PageFormat.class, pageFormat),
+				new GraphicParameter(PageFormatWrapper.class, pageFormat),
 				new GraphicParameter(int.class, pageIndex),
 				new GraphicParameter(UUID.class, remote.objectUUID())));
 	}
