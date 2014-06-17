@@ -30,6 +30,10 @@ public abstract class ProxyAdapter extends ProxyBase {
 	@Override
 	public Object intercept(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
+		if ("initialize".equals(method.getName())) {
+			queue().registerObject(objectUUID(), object);
+			return null;
+		}
 		if ("queue".equals(method.getName())) {
 			return queue();
 		} else if ("addListener".equals(method.getName())) {

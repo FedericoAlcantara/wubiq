@@ -11,9 +11,11 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
 import java.util.UUID;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.interfaces.IProxyMaster;
+import net.sf.wubiq.proxies.ProxyClientMaster;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
@@ -27,13 +29,17 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	
 	public static final String[] FILTERED_METHODS = new String[]{
 	};
-		
+
+	public GraphicsConfigurationRemote() {
+		initialize();
+	}
+
 	/**
 	 * @see java.awt.GraphicsConfiguration#createCompatibleImage(int, int)
 	 */
 	@Override
 	public BufferedImage createCompatibleImage(int width, int height) {
-		throw new NotImplementedException();
+		return null;
 	}
 	
 	/**
@@ -42,9 +48,14 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	 * @param height Height of the image.
 	 * @return String representing an image.
 	 */
-	public String createCompatibleImageRemote(int width, int height) {
-		BufferedImage image = graphicsConfiguration().createCompatibleImage(width, height);
-		return DirectConnectUtils.INSTANCE.serializeImage(image);
+	public UUID createCompatibleImageRemote(int width, int height) {
+		BufferedImageRemote remote = (BufferedImageRemote)
+				Enhancer.create(BufferedImageRemote.class,
+						new ProxyClientMaster(
+								manager(),
+								graphicsConfiguration().createCompatibleImage(width, height),
+								BufferedImageRemote.FILTERED_METHODS));
+		return remote.objectUUID();
 	}
 
 	/**
@@ -61,9 +72,14 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 	 * @param height Height of the image.
 	 * @return String representing an image.
 	 */
-	public String createCompatibleImageRemote(int width, int height, int transparency) {
-		BufferedImage image = graphicsConfiguration().createCompatibleImage(width, height, transparency);
-		return DirectConnectUtils.INSTANCE.serializeImage(image);
+	public UUID createCompatibleImageRemote(int width, int height, int transparency) {
+		BufferedImageRemote remote = (BufferedImageRemote)
+				Enhancer.create(BufferedImageRemote.class,
+						new ProxyClientMaster(
+								manager(),
+								graphicsConfiguration().createCompatibleImage(width, height, transparency),
+								BufferedImageRemote.FILTERED_METHODS));
+		return remote.objectUUID();
 	}
 
 	/**
@@ -129,6 +145,12 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 		return null;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
 	 */

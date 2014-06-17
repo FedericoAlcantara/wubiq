@@ -141,7 +141,11 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID 
 					+ ParameterKeys.PARAMETER_SEPARATOR
 					+ uuid.toString());
-			timeout = DirectConnectUtils.INSTANCE.checkTimeout(timeout);
+			if (remoteData == null) {
+				timeout = DirectConnectUtils.INSTANCE.checkTimeout(timeout);
+			} else {
+				timeout = 0;
+			}
 		} while (remoteData == null || 
 				remoteData.equals(DirectConnectKeys.DIRECT_CONNECT_NOT_READY));
 		return remoteData;
@@ -203,17 +207,6 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		} catch (IllegalArgumentException e) {
 			LOG.error(e.getMessage(), e);
 		}
-	}
-
-	/**
-	 * Connects to the remote and tries to read its data.
-	 * @param objectUUID Object unique identifier.
-	 * @param methodName Name of the method.
-	 * @param args Arguments for the method.
-	 * @return Server response.
-	 */
-	public Object readFromRemote(UUID objectUUID, String methodName, Object...args) {
-		return readFromRemote(new RemoteCommand(objectUUID, methodName, args));
 	}
 	
 	/**

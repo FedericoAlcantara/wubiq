@@ -29,8 +29,11 @@ public abstract class ProxyMasterBase extends ProxyBase {
 	@Override
 	public Object intercept(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
+		
 		if ("decoratedObject".equals(method.getName())) {
 			return decoratedObject;
+		} else if (method.getName().endsWith("Remote")) {
+			return method.invoke(object, args);
 		} else {
 			return super.intercept(object, method, args, methodProxy);
 		}

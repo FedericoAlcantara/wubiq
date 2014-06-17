@@ -9,6 +9,8 @@ import java.util.UUID;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
+import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * This proxy is located on the remote side, and connects to the server
@@ -38,7 +40,10 @@ public class ProxyClientSlave extends ProxyBase {
 	@Override
 	public Object intercept(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
-		if ("manager".equals(method.getName())) {
+		if ("initialize".equals(method.getName())) {
+			manager.registerObject(objectUUID(), object);
+			return null;
+		} else if ("manager".equals(method.getName())) {
 			return manager;
 		}
 		return super.intercept(object, method, args, methodProxy);
@@ -49,7 +54,12 @@ public class ProxyClientSlave extends ProxyBase {
 	 */
 	public Object interception(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
+		GraphicParameter[] parameters = new GraphicParameter[method.getParameterTypes().length];
+		for (int index = 0; index < parameters.length; index++) {
+			parameters[index] = new GraphicParameter(method.getParameterTypes()[index], args[index]);
+		}
 		return manager.readFromRemote(
-				new RemoteCommand(objectUUID(), method.getName(), args));
+				new RemoteCommand(objectUUID(), method.getName(), 
+						DirectConnectUtils.INSTANCE.convertToGraphicParameters(method, args)));
 	}
 }

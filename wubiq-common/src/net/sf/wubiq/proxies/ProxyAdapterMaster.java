@@ -3,11 +3,11 @@
  */
 package net.sf.wubiq.proxies;
 
+import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.UUID;
 
 import net.sf.cglib.proxy.MethodProxy;
-import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 
 /**
@@ -24,6 +24,7 @@ public class ProxyAdapterMaster extends ProxyAdapter {
 			Object decoratedObject,
 			String filtered[]) {
 		super(queue, UUID.randomUUID(), filtered);
+		this.decoratedObject = decoratedObject;
 	}
 	
 	/**
@@ -41,8 +42,17 @@ public class ProxyAdapterMaster extends ProxyAdapter {
 	@Override
 	public Object interception(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
-		queue().sendCommand(new RemoteCommand(objectUUID(), method.getName(), args));
-		Object returnValue = queue().returnData();
+		Method decoratedMethod = decoratedObject.getClass().getDeclaredMethod(method.getName(), method.getParameterTypes());
+		Object returnValue = null;
+		if (decoratedMethod != null) {
+			returnValue = decoratedMethod.invoke(decoratedObject, args);
+		}
+		if (!(returnValue instanceof Serializable)) {
+			throw new RuntimeException ("Method: " + method.getName()
+					+ " of class " 
+					+ object.getClass().getName()
+					+ " MUST return a java.io.Serializable "); 
+		}
 		return returnValue;
 	}
 

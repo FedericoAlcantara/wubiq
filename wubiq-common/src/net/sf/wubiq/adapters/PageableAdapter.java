@@ -28,16 +28,21 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 	private PageFormatWrapper lastPageFormat = null;
 	private PrintableAdapter lastPrintable = null;
 	public static final String[] FILTERED_METHODS = new String[]{
-		
+		"getPageFormat",
+		"getPrintable",
+		"getLastPrintableObjectUUID"
 	};
-		
+	
+	public PageableAdapter() {
+		initialize();
+	}
+	
 	/**
 	 * @see java.awt.print.Pageable#getNumberOfPages()
 	 */
 	@Override
 	public int getNumberOfPages() {
-		int pages = pageable().getNumberOfPages();
-		return pages;
+		return 0;
 	}
 
 	/**
@@ -82,6 +87,16 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
+	 */
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
 	public UUID objectUUID() {
 		return null;

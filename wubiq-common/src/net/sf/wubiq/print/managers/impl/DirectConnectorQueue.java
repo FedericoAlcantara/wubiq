@@ -271,6 +271,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 */
 	public String callCommand(final RemoteCommand printerCommand, final String dataUUID) {
 		remoteDatas.remove(dataUUID);
+		remoteDatas.put(dataUUID, DirectConnectKeys.DIRECT_CONNECT_NOT_READY);
 		Thread returnData = new Thread(new Runnable() {
 			public void run() {
 				remoteDatas.put(dataUUID, doCallCommand(printerCommand));

@@ -267,12 +267,14 @@ public class RemotePrintServlet extends HttpServlet {
 			String serviceName = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
 			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
 			String docFlavors = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
+			String directConnectEnabled = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
 			remotePrintService.setSupportedDocFlavors(PrintServiceUtils.deserializeDocumentFlavors(docFlavors));
 			remotePrintService.setRemoteName(serviceName);
 			remotePrintService.setMobile(false);
+			remotePrintService.setDirectCommunicationEnabled("true".equalsIgnoreCase(directConnectEnabled));
 			getRemoteClientManager(request).validateRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
 			response.setContentType("text/html");
@@ -759,7 +761,8 @@ public class RemotePrintServlet extends HttpServlet {
 				case POLL_REMOTE_DATA:
 					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
 					response.setContentType("text/html");
-					response.getWriter().print(directConnector.getRemoteData(dataUUID));
+					data = directConnector.getRemoteData(dataUUID);
+					response.getWriter().print(data);
 					break;
 					
 				case EXCEPTION:

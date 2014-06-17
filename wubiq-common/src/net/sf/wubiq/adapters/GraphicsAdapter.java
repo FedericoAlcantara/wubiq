@@ -46,16 +46,18 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  */
 public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		IProxy {
-
-	private IDirectConnectorQueue queue;
-	private UUID objectUUID;
 	
 	public static final String[] FILTERED_METHODS = new String[]{
 		"create",
 		"dispose",
-		"composite",
-		"getDeviceConfiguration"
+		"getComposite",
+		"getDeviceConfiguration",
+		"getFontRenderContext"
 	};
+	
+	public GraphicsAdapter() {
+		initialize();
+	}
 
 	/**
 	 * @see java.awt.Graphics2D#addRenderingHints(java.util.Map)
@@ -175,9 +177,15 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public Composite getComposite() {
-		queue.sendCommand(new RemoteCommand(objectUUID, "getComposite"));
-		CompositeWrapper wrapper = (CompositeWrapper) queue().returnData();
-		return wrapper.getComposite();
+		queue().sendCommand(new RemoteCommand(objectUUID(), "getCompositeRemote"));
+		UUID remoteUUID = (UUID) queue().returnData();
+		CompositeAdapter adapter = (CompositeAdapter)
+				Enhancer.create(CompositeAdapter.class,
+						new ProxyAdapterSlave(
+								queue(),
+								remoteUUID,
+								CompositeAdapter.FILTERED_METHODS));
+		return adapter;
 	}
 
 	/**
@@ -185,15 +193,15 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public GraphicsConfiguration getDeviceConfiguration() {
-		queue.sendCommand(new RemoteCommand(objectUUID, "getDeviceConfigurationRemote"));
+		queue().sendCommand(new RemoteCommand(objectUUID(), "getDeviceConfigurationRemote"));
 		UUID remoteUUID = (UUID)queue().returnData();
-		GraphicsConfigurationAdapter remote = (GraphicsConfigurationAdapter)
+		GraphicsConfigurationAdapter adapter = (GraphicsConfigurationAdapter)
 				Enhancer.create(GraphicsConfigurationAdapter.class,
 						new ProxyAdapterSlave(
 								queue(),
 								remoteUUID,
 								GraphicsConfigurationAdapter.FILTERED_METHODS));
-		return remote;
+		return adapter;
 	}
 
 	/**
@@ -201,7 +209,15 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public FontRenderContext getFontRenderContext() {
-		return null;
+		queue().sendCommand(new RemoteCommand(objectUUID(), "getFontRenderContextRemote"));
+		UUID remoteUUID = (UUID)queue().returnData();
+		FontRenderContextAdapter adapter = (FontRenderContextAdapter)
+				Enhancer.create(FontRenderContextAdapter.class,
+						new ProxyAdapterSlave(
+								queue(),
+								remoteUUID,
+								FontRenderContextAdapter.FILTERED_METHODS));
+		return adapter;
 	}
 
 	/**
@@ -394,11 +410,11 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public Graphics create() {
-		queue.sendCommand(new RemoteCommand(objectUUID, "createRemote"));
+		queue().sendCommand(new RemoteCommand(objectUUID(), "createRemote"));
 		UUID remoteUUID = (UUID)queue().returnData();
 		GraphicsAdapter adapter = (GraphicsAdapter)
 				Enhancer.create(GraphicsAdapter.class,
-						new ProxyAdapterSlave(queue, remoteUUID, 
+						new ProxyAdapterSlave(queue(), remoteUUID, 
 								GraphicsAdapter.FILTERED_METHODS));
 		return adapter;
 	}
@@ -408,7 +424,7 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	 */
 	@Override
 	public Graphics create(int x, int y, int width, int height) {
-		queue.sendCommand(new RemoteCommand(objectUUID, "createRemote",
+		queue().sendCommand(new RemoteCommand(objectUUID(), "createRemote",
 				new GraphicParameter(int.class, x),
 				new GraphicParameter(int.class, y),
 				new GraphicParameter(int.class, width),
@@ -416,7 +432,7 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		UUID remoteUUID = (UUID)queue().returnData();
 		GraphicsAdapter adapter = (GraphicsAdapter)
 				Enhancer.create(GraphicsAdapter.class,
-						new ProxyAdapterSlave(queue, remoteUUID, 
+						new ProxyAdapterSlave(queue(), remoteUUID, 
 								GraphicsAdapter.FILTERED_METHODS));
 		return adapter;
 	}
@@ -662,9 +678,19 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	public void setXORMode(Color arg0) {
 		
 	}
+	
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
 	public UUID objectUUID() {
 		return null;

@@ -3,70 +3,66 @@
  */
 package net.sf.wubiq.adapters;
 
-import java.awt.Graphics;
-import java.awt.print.PageFormat;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
+import java.awt.image.ColorModel;
 import java.util.Set;
 import java.util.UUID;
 
-import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.proxies.ProxyAdapterSlave;
 
 /**
- * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
-	
-	private GraphicsAdapter graphicsAdapter;
+public class ColorModelAdapter extends ColorModel implements IAdapter,
+		IProxyMaster {
 	public static final String[] FILTERED_METHODS = new String[]{
+		
 	};
 
-	public PrintableAdapter() {
+	public ColorModelAdapter() {
+		super(0);
 		initialize();
-	}
-	
-	/**
-	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
-	 */
-	@Override
-	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
-			throws PrinterException {
-		return printable().print(graphics, pageFormat, pageIndex);
 	}
 
 	/**
-	 * Special method for setting the communication between remote and local printable.
-	 * @param pageFormat Page format to use.
-	 * @param pageIndex Page index.
-	 * @param remoteGraphicsUUID UUID of the correspondant remote graphics
-	 * @return Status of the action.
-	 * @throws PrinterException
+	 * @see java.awt.image.ColorModel#getAlpha(int)
 	 */
-	public int print(PageFormat pageFormat, int pageIndex, UUID remoteGraphicsUUID) throws PrinterException {
-		if (graphicsAdapter == null) {
-			graphicsAdapter = (GraphicsAdapter)
-					Enhancer.create(GraphicsAdapter.class, 
-							new ProxyAdapterSlave(queue(), remoteGraphicsUUID, GraphicsAdapter.FILTERED_METHODS));
-		}
-		return print(graphicsAdapter, pageFormat, pageIndex);
+	@Override
+	public int getAlpha(int arg0) {
+		return 0;
 	}
-	
-	public Printable printable() {
-		return (Printable) decoratedObject();
+
+	/**
+	 * @see java.awt.image.ColorModel#getBlue(int)
+	 */
+	@Override
+	public int getBlue(int arg0) {
+		return 0;
+	}
+
+	/**
+	 * @see java.awt.image.ColorModel#getGreen(int)
+	 */
+	@Override
+	public int getGreen(int arg0) {
+		return 0;
+	}
+
+	/**
+	 * @see java.awt.image.ColorModel#getRed(int)
+	 */
+	@Override
+	public int getRed(int arg0) {
+		return 0;
 	}
 
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
 	 */
-
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
@@ -127,4 +123,5 @@ public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
 	public Object decoratedObject() {
 		return null;
 	}
+
 }

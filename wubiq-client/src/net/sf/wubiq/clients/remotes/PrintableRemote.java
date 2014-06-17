@@ -24,8 +24,14 @@ import net.sf.wubiq.wrappers.GraphicParameter;
  */
 public class PrintableRemote implements Printable, IProxyClient {
 	
-	public static final String[] FILTERED_METHODS = new String[]{"print"};
-		
+	public static final String[] FILTERED_METHODS = new String[]{
+		"print"
+	};
+
+	public PrintableRemote() {
+		initialize();
+	}
+	
 	/**
 	 * This a two stage print method. 
 	 * First it records graphics command into itself by using a GraphicRecorder object.
@@ -58,6 +64,12 @@ public class PrintableRemote implements Printable, IProxyClient {
 		return null;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */

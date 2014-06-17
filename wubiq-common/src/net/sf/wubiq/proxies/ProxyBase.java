@@ -39,7 +39,7 @@ public abstract class ProxyBase implements MethodInterceptor {
 		if ("objectUUID".equals(method.getName())) {
 			return objectUUID;
 		} else if (filtered.contains(method.getName())) {
-			return methodProxy.invokeSuper(object, args);
+			return method.invoke(object, args);
 		} else {
 			return interception(object, method, args, methodProxy);
 		}

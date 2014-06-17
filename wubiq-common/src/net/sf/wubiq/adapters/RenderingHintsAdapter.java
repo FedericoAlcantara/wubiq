@@ -3,65 +3,29 @@
  */
 package net.sf.wubiq.adapters;
 
-import java.awt.Graphics;
-import java.awt.print.PageFormat;
-import java.awt.print.Printable;
-import java.awt.print.PrinterException;
+import java.awt.RenderingHints;
 import java.util.Set;
 import java.util.UUID;
 
-import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.proxies.ProxyAdapterSlave;
 
 /**
- * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
-	
-	private GraphicsAdapter graphicsAdapter;
+public class RenderingHintsAdapter extends RenderingHints implements IAdapter, IProxyMaster {
+
 	public static final String[] FILTERED_METHODS = new String[]{
 	};
-
-	public PrintableAdapter() {
+	
+	public RenderingHintsAdapter() {
+		super(null, null);
 		initialize();
 	}
 	
-	/**
-	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
-	 */
-	@Override
-	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
-			throws PrinterException {
-		return printable().print(graphics, pageFormat, pageIndex);
-	}
-
-	/**
-	 * Special method for setting the communication between remote and local printable.
-	 * @param pageFormat Page format to use.
-	 * @param pageIndex Page index.
-	 * @param remoteGraphicsUUID UUID of the correspondant remote graphics
-	 * @return Status of the action.
-	 * @throws PrinterException
-	 */
-	public int print(PageFormat pageFormat, int pageIndex, UUID remoteGraphicsUUID) throws PrinterException {
-		if (graphicsAdapter == null) {
-			graphicsAdapter = (GraphicsAdapter)
-					Enhancer.create(GraphicsAdapter.class, 
-							new ProxyAdapterSlave(queue(), remoteGraphicsUUID, GraphicsAdapter.FILTERED_METHODS));
-		}
-		return print(graphicsAdapter, pageFormat, pageIndex);
-	}
-	
-	public Printable printable() {
-		return (Printable) decoratedObject();
-	}
-
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
@@ -73,13 +37,11 @@ public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
 	public void initialize(){
 	}
 
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
-	 */
 	public UUID objectUUID() {
 		return null;
 	}
 	
+
 	/* *****************************************
 	 * IAdapter interface implementation
 	 * *****************************************

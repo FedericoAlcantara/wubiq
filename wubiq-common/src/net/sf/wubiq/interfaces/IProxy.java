@@ -14,6 +14,11 @@ import java.util.UUID;
  */
 public interface IProxy {
 	/**
+	 * Initializes the object.
+	 */
+	void initialize();
+
+	/**
 	 * Unique object identification.
 	 * @return The externally assigned object identification.
 	 */

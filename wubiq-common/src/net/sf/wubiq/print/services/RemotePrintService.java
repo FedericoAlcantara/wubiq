@@ -55,6 +55,7 @@ public class RemotePrintService extends StreamPrintService {
 	private DocFlavor[] supportedDocFlavors;
 	private Map<String, PrintServiceAttribute> attributesPerCategory;
 	private Map<String, Object> defaultAttributes;
+	private boolean directCommunicationEnabled = true;
 	
 	public RemotePrintService() {
 		super(new ByteArrayOutputStream());
@@ -372,7 +373,15 @@ public class RemotePrintService extends StreamPrintService {
 	 * @return True always as indicator of a feacture implemented in the client.
 	 */
 	public boolean isDirectCommunicationEnabled() {
-		return isMobile() ? false : true;
+		return isMobile() ? false : directCommunicationEnabled;
+	}
+	
+	/**
+	 * Sets the direct communication state for this print service.
+	 * @param directCommunicationEnabled new direct communication state.
+	 */
+	public void setDirectCommunicationEnabled(boolean directCommunicationEnabled) {
+		this.directCommunicationEnabled = directCommunicationEnabled;
 	}
 	
 	/**

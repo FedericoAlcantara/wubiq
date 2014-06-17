@@ -43,7 +43,7 @@ public enum GraphicsUtils {
 			}
 		}
 		if (dotMatrixUseLogicalFonts == null) {
-			dotMatrixUseLogicalFonts = "TRUE".equalsIgnoreCase(System.getProperty("wubiq.fonts.dotmatrix.forcelogical"));
+			dotMatrixUseLogicalFonts = "TRUE".equalsIgnoreCase(System.getProperty("wubiq.fonts.dotmatrix.force.logical"));
 		}
 		if (printerType.equals(PrinterType.DOT_MATRIX) ||
 				printerType.equals(PrinterType.DOT_MATRIX_HQ)) {

@@ -13,6 +13,7 @@ import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.proxies.ProxyClientSlave;
+import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
  * @author Federico Alcantara
@@ -24,6 +25,10 @@ public class PageableRemote implements Pageable, IProxyClient {
 	
 	public static final String[] FILTERED_METHODS = new String[]{
 		"getPrintable"};
+
+	public PageableRemote() {
+		initialize();
+	}
 	
 	/**
 	 * @see java.awt.print.Pageable#getNumberOfPages()
@@ -49,8 +54,9 @@ public class PageableRemote implements Pageable, IProxyClient {
 		if (lastPrintablePageIndex != pageIndex) {
 			lastPrintablePageIndex = pageIndex;
 			manager().readFromRemote(new RemoteCommand(objectUUID(), "getPrintable",
-					pageIndex));
-			UUID printableObjectUUID = (UUID) manager().readFromRemote(objectUUID(), "getLastPrintableObjectUUID");
+					new GraphicParameter(int.class, pageIndex)));
+			UUID printableObjectUUID = (UUID) manager().readFromRemote(new RemoteCommand(objectUUID(),
+					"getLastPrintableObjectUUID"));
 			printable = (PrintableRemote) Enhancer.create(PrintableRemote.class,
 					new ProxyClientSlave(manager(), printableObjectUUID,
 							PrintableRemote.FILTERED_METHODS));
@@ -70,6 +76,12 @@ public class PageableRemote implements Pageable, IProxyClient {
 		return null;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */

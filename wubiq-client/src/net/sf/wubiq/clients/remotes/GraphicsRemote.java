@@ -46,9 +46,15 @@ import sun.reflect.generics.reflectiveObjects.NotImplementedException;
  */
 public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMaster {
 	public static final String[] FILTERED_METHODS = new String[]{
-		"getClip"
+		"getClip",
+		"graphics",
+		"create",
+		"getComposite"
 	};
 	
+	public GraphicsRemote() {
+		initialize();
+	}
 	
 	@Override
 	public void addRenderingHints(Map <?, ?> hints) {
@@ -535,6 +541,12 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 		return null;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
 	 */

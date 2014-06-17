@@ -9,6 +9,7 @@ import java.util.UUID;
 import net.sf.cglib.proxy.MethodProxy;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.utils.DirectConnectUtils;
 
 /**
  * Intercepts the objects' methods to ensure proper communication with
@@ -28,7 +29,8 @@ public class ProxyAdapterSlave extends ProxyAdapter {
 	@Override
 	public Object interception(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
-		queue().sendCommand(new RemoteCommand(objectUUID(), method.getName(), args));
+		queue().sendCommand(new RemoteCommand(objectUUID(), method.getName(), 
+				DirectConnectUtils.INSTANCE.convertToGraphicParameters(method, args)));
 		Object returnValue = queue().returnData();
 		return returnValue;
 	}

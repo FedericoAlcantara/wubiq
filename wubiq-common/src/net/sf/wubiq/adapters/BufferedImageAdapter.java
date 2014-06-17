@@ -3,7 +3,7 @@
  */
 package net.sf.wubiq.adapters;
 
-import java.awt.font.FontRenderContext;
+import java.awt.image.BufferedImage;
 import java.util.Set;
 import java.util.UUID;
 
@@ -13,19 +13,18 @@ import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 
 /**
- * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class FontRenderContextAdapter extends FontRenderContext 
-		implements IAdapter, IProxy {
-	
-	public static final String[] FILTERED_METHODS = new String[]{
-	};	
-	
-	public FontRenderContextAdapter() {
+public class BufferedImageAdapter extends BufferedImage implements IAdapter, IProxy {
+
+	public BufferedImageAdapter() {
+		super(0, 0, 0);
 		initialize();
 	}
+	
+	public static final String[] FILTERED_METHODS = new String[]{
+	};
 	
 	/* *****************************************
 	 * IProxy interface implementation
@@ -78,4 +77,5 @@ public class FontRenderContextAdapter extends FontRenderContext
 	public Set<IRemoteListener> listeners() {
 		return null;
 	}
+
 }

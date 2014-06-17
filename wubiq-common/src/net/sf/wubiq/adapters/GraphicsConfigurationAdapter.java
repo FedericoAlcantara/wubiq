@@ -12,12 +12,13 @@ import java.awt.image.ColorModel;
 import java.util.Set;
 import java.util.UUID;
 
+import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxy;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.proxies.ProxyAdapterSlave;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 /**
@@ -28,9 +29,13 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 		implements IAdapter, IProxy {
 	
 	public static final String[] FILTERED_METHODS = new String[]{
-		
+		"createCompatibleImage"
 	};
-	
+
+	public GraphicsConfigurationAdapter() {
+		initialize();
+	}
+
 	/**
 	 * @see java.awt.GraphicsConfiguration#createCompatibleImage(int, int)
 	 */
@@ -39,9 +44,15 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 		sendCommand("createCompatibleImageRemote",
 			new GraphicParameter(int.class, width),
 			new GraphicParameter(int.class, height));
+		UUID remoteUUID = (UUID) queue().returnData();
 		
-		return (BufferedImage)DirectConnectUtils.INSTANCE
-				.deserializeImage((String) queue().returnData());
+		BufferedImageAdapter bufferedImageAdapter = (BufferedImageAdapter)
+				Enhancer.create(BufferedImageAdapter.class, 
+						new ProxyAdapterSlave(
+								queue(),
+								remoteUUID,
+								BufferedImageAdapter.FILTERED_METHODS));
+		return bufferedImageAdapter;
 	}
 
 	/**
@@ -51,63 +62,65 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 	public BufferedImage createCompatibleImage(int width, int height, int transparency) {
 		sendCommand("createCompatibleImageRemote",
 			new GraphicParameter(int.class, width),
-			new GraphicParameter(int.class, height));
+			new GraphicParameter(int.class, height),
+			new GraphicParameter(int.class, transparency));
 		
-		return (BufferedImage)DirectConnectUtils.INSTANCE
-				.deserializeImage((String) queue().returnData());
+		UUID remoteUUID = (UUID) queue().returnData();
+		
+		BufferedImageAdapter bufferedImageAdapter = (BufferedImageAdapter)
+				Enhancer.create(BufferedImageAdapter.class, 
+						new ProxyAdapterSlave(
+								queue(),
+								remoteUUID,
+								BufferedImageAdapter.FILTERED_METHODS));
+		return bufferedImageAdapter;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.awt.GraphicsConfiguration#getBounds()
 	 */
 	@Override
 	public Rectangle getBounds() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.awt.GraphicsConfiguration#getColorModel()
 	 */
 	@Override
 	public ColorModel getColorModel() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.awt.GraphicsConfiguration#getColorModel(int)
 	 */
 	@Override
 	public ColorModel getColorModel(int transparency) {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.awt.GraphicsConfiguration#getDefaultTransform()
 	 */
 	@Override
 	public AffineTransform getDefaultTransform() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.awt.GraphicsConfiguration#getDevice()
 	 */
 	@Override
 	public GraphicsDevice getDevice() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.awt.GraphicsConfiguration#getNormalizingTransform()
 	 */
 	@Override
 	public AffineTransform getNormalizingTransform() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 
@@ -124,6 +137,16 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
+	 */
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
+	 */
+	public void initialize(){
+	}
+
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
 	public UUID objectUUID() {
 		return null;

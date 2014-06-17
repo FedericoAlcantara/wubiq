@@ -3,18 +3,15 @@
  */
 package net.sf.wubiq.utils;
 
-import java.awt.image.RenderedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.util.Set;
 
-import javax.imageio.ImageIO;
 import javax.xml.bind.DatatypeConverter;
 
 import net.sf.wubiq.enums.NotificationType;
@@ -24,6 +21,7 @@ import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.wrappers.GraphicParameter;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -36,7 +34,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public enum DirectConnectUtils {
 	INSTANCE;
-	private final int CONNECTION_TIMEOUT_SECONDS = 10;
+	private final int CONNECTION_TIMEOUT_SECONDS = 10000;
 	private final int CONNECTION_RETRY_MILLISECONDS = 100;
 	
 	private static final Log LOG = LogFactory.getLog(DirectConnectUtils.class);
@@ -207,55 +205,19 @@ public enum DirectConnectUtils {
 		IDirectConnectorQueue queue = manager.directConnector(queueId);
 		return queue;
 	}
-
-	/**
-	 * Serializes a given image into a hex one.
-	 * @param img Image to serialized.
-	 * @return A String representing a image.
-	 */
-	public String serializeImage(RenderedImage img) {
-		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		try {
-			ImageIO.write(img, "png", output);
-			output.flush();
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		}
-		return toHex(output.toByteArray());
-	}
 	
 	/**
-	 * Deserialize a previously serialized image.
-	 * @param imgTxt Text representing the image.
-	 * @return Rendered image.
+	 * Converts a method to a compatible graphic parameters.
+	 * This is necessary because arguments might have null values.
+	 * @param method Method to assess.
+	 * @param args Arguments of objects.
+	 * @return Array of graphic parameters.
 	 */
-	public RenderedImage deserializeImage(String imgTxt) {
-		ByteArrayInputStream input = new ByteArrayInputStream(imgTxt.getBytes());
-		RenderedImage returnValue = null;
-		try {
-			returnValue = ImageIO.read(input);
-			return returnValue;
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+	public GraphicParameter[] convertToGraphicParameters(Method method, Object... args) {
+		GraphicParameter[] parameters = new GraphicParameter[method.getParameterTypes().length];
+		for (int index = 0; index < parameters.length; index++) {
+			parameters[index] = new GraphicParameter(method.getParameterTypes()[index], args[index]);
 		}
-		return returnValue;
-	}
-	
-	/**
-	 * Sets the field value.
-	 * @param object Object containing the field.
-	 * @param fieldName Name of the field to set.
-	 * @param value Value to set in the field.
-	 */
-	public void setField(Object object, String fieldName, Object value) {
-		try {
-			Field field = object.getClass().getField(fieldName);
-			field.setAccessible(true);
-			field.set(object, value);
-		} catch (Exception e) {
-			LOG.info(object.getClass().getName() + " must define a field 'public " +
-					value.getClass().getSimpleName() + " " + fieldName);
-		}
-
+		return parameters;
 	}
 }

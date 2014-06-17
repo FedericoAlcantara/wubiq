@@ -42,8 +42,13 @@ public class ProxyClientMaster extends ProxyMasterBase {
 	@Override
 	public Object intercept(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
-		if ("manager".equals(method.getName())) {
+		if ("initialize".equals(method.getName())) {
+			manager.registerObject(objectUUID(), object);
+			return null;
+		} else if ("manager".equals(method.getName())) {
 			return manager;
+		} else if (method.getName().endsWith("Remote")) {
+			return methodProxy.invokeSuper(object, args);
 		}
 		return super.intercept(object, method, args, methodProxy);
 	}
@@ -52,7 +57,11 @@ public class ProxyClientMaster extends ProxyMasterBase {
 	@Override
 	public Object interception(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
-		Object returnValue = methodProxy.invokeSuper(decoratedObject, args);
+		Method decoratedMethod = decoratedObject.getClass().getDeclaredMethod(method.getName(), method.getParameterTypes());
+		Object returnValue = null;
+		if (decoratedMethod != null) {
+			returnValue = decoratedMethod.invoke(decoratedObject, args);
+		}
 		if (!(returnValue instanceof Serializable)) {
 			LOG.info("MUST fix method " + method.getName() + " on " 
 						+ object.getClass().getName());

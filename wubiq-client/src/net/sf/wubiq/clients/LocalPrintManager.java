@@ -16,6 +16,7 @@ import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
 import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.PrinterType;
@@ -84,20 +85,24 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
 			
-			directServer(DirectConnectCommand.START, parameter);
-			DirectPrintManager manager = new DirectPrintManager(
-					jobId,
-					printService,
-					printRequestAttributeSet,
-					printJobAttributeSet,
-					docAttributeSet,
-					docFlavor);
-			manager.setConnections(getConnections());
-			manager.setApplicationName(getApplicationName());
-			manager.setServletName(getServletName());
-			manager.setUuid(getUuid());
-			manager.handleDirectPrinting();
-			
+			if ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY))) {
+				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+				ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+			} else {
+				directServer(DirectConnectCommand.START, parameter);
+				DirectPrintManager manager = new DirectPrintManager(
+						jobId,
+						printService,
+						printRequestAttributeSet,
+						printJobAttributeSet,
+						docAttributeSet,
+						docFlavor);
+				manager.setConnections(getConnections());
+				manager.setApplicationName(getApplicationName());
+				manager.setServletName(getServletName());
+				manager.setUuid(getUuid());
+				manager.handleDirectPrinting();
+			}			
 			doLog("Job(" + jobId + ") printed.", 0);
 		} catch (ConnectException e) {
 			LOG.error(e.getMessage(), e);
@@ -236,7 +241,11 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 					.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
 				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
-						PrintServiceUtils.serializeDocumentFlavors(printService, isDebugMode()));
+						PrintServiceUtils.serializeDocumentFlavors(printService, isDebugMode()),
+						DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER 
+							+ ParameterKeys.PARAMETER_SEPARATOR
+							+ ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ?
+									"FALSE" : "TRUE"));
 				PrinterType printerType = PrintServiceUtils.printerType(printService);
 				LOG.info(printServiceName + " -> " + printerType);
 			}
@@ -288,8 +297,10 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						+ "-Dwubiq.printers.dotmatrixhq For high quality dot matrix printers (24pin) \n"
 						+ "-Dwubiq.printers.dotmatrix For normal quality dot matrix printers (9pin) \n"
 						+ "-Dwubiq.fonts.dotmatrix.default Specify default fonts for dot matrix printers\n"
-						+ "-Dwubiq.fonts.dotmatrix.forcelogical If true printing on dot matrix will only be done with java's logical fonts.\n"
-						+ "."
+						+ "-Dwubiq.fonts.dotmatrix.force.logical If true printing on dot matrix will only be done with java's logical fonts.\n"
+						+ "\n"
+						+ "-D" + DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY + " If true communications between server and client uses old serialized implementation.\n"
+						+ "\n"
 						+ "", options, "\n For more information visit wubiq's site: http://sourceforge.net/projects/wubiq", true);
 			}
 			if (line.hasOption("kill")) {
