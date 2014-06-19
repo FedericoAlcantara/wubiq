@@ -96,7 +96,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						printRequestAttributeSet,
 						printJobAttributeSet,
 						docAttributeSet,
-						docFlavor);
+						docFlavor,
+						isDebugMode(),
+						getDebugLevel());
 				manager.setConnections(getConnections());
 				manager.setApplicationName(getApplicationName());
 				manager.setServletName(getServletName());

@@ -320,17 +320,8 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 * Calls the command in a new thread.
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(net.sf.wubiq.enums.RemoteCommand)
 	 */
-	public String callCommand(final Long jobId, final RemoteCommand printerCommand, final String dataUUID) {
-		remoteDatas(jobId).remove(dataUUID);
-		remoteDatas(jobId).put(dataUUID, DirectConnectKeys.DIRECT_CONNECT_NOT_READY);
-		Thread returnData = new Thread(new Runnable() {
-			public void run() {
-				remoteDatas(jobId).put(dataUUID, doCallCommand(jobId, printerCommand));
-				
-			}
-		}, printerCommand.getObjectUUID() + "-" + printerCommand.getMethodName());
-		returnData.start();
-		return "";
+	public String callCommand(final Long jobId, final RemoteCommand printerCommand) {
+		return doCallCommand(jobId, printerCommand);
 	}
 	
 	/**

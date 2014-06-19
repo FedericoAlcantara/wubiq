@@ -23,7 +23,6 @@ import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicsChunkRecorder;
 
@@ -42,7 +41,7 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		"print",
 		"graphicCommands",
 		"endPrintable",
-		"serializedGraphicCommands"
+		"graphicCommands"
 	};
 
 	private static GraphicsChunkRecorder graphicsRecorder = new GraphicsChunkRecorder();
@@ -92,8 +91,8 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		return returnValue;
 	}
 	
-	public String serializedGraphicCommands(int pageIndex) {
-		return DirectConnectUtils.INSTANCE.serialize(graphicCommands.get(pageIndex));
+	public Set<GraphicCommand> graphicCommands(int pageIndex) {
+		return graphicCommands.get(pageIndex);
 	}
 	
 	public Printable printable() {

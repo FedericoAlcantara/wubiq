@@ -55,7 +55,9 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
-			DocFlavor docFlavor){
+			DocFlavor docFlavor,
+			boolean debugMode,
+			int debugLevel){
 		this.jobIdString = jobIdString;
 		this.jobId = Long.parseLong(jobIdString);
 		this.printService = printService;
@@ -63,6 +65,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		this.printJobAttributeSet = printJobAttributeSet;
 		this.docAttributeSet = docAttributeSet;
 		this.docFlavor = docFlavor;
+		setDebugMode(debugMode);
+		setDebugLevel(debugLevel);
 	}
 		
 	/**
@@ -135,6 +139,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * @return the readValue
 	 */
+	/*
 	private synchronized String getRemoteData(UUID uuid) throws ConnectException, TimeoutException {
 		int timeout = 0;
 		String remoteData = null;
@@ -152,7 +157,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				remoteData.equals(DirectConnectKeys.DIRECT_CONNECT_NOT_READY));
 		return remoteData;
 	}
-
+	*/
 
 	/**
 	 * Calls the command on the physical printer.
@@ -220,25 +225,13 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public Object readFromRemote(RemoteCommand remoteCommand) {
 		Object returnValue = null;
-		try {
-			UUID uuid = executeOnRemote(remoteCommand);
-			String remoteData = null;
-			remoteData = getRemoteData(uuid);
-			if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_NULL)) {
-				returnValue = null;
-			} else if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_EXCEPTION)) {
-				throw new RuntimeException(remoteData.split(ParameterKeys.PARAMETER_SEPARATOR)[1]); 
-			} else {
-				returnValue = DirectConnectUtils.INSTANCE.deserialize(remoteData);
-			}
-			directServer(jobIdString, DirectConnectCommand.REMOVE_REMOTE_DATA, 
-					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID 
-					+ ParameterKeys.PARAMETER_SEPARATOR
-					+ uuid.toString());
-		} catch (ConnectException e) {
-			throw new RuntimeException(e.getMessage());
-		} catch (TimeoutException e) {
-			throw new RuntimeException(e.getMessage());
+		String remoteData = (String) executeOnRemote(remoteCommand);
+		if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_NULL)) {
+			returnValue = null;
+		} else if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_EXCEPTION)) {
+			throw new RuntimeException(remoteData.split(ParameterKeys.PARAMETER_SEPARATOR)[1]); 
+		} else {
+			returnValue = DirectConnectUtils.INSTANCE.deserialize(remoteData);
 		}
 		return returnValue;
 	}
@@ -248,18 +241,14 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * @param remoteCommand Remote command to execute.
 	 * @return Unique id of the data to retrieve.
 	 */
-	public UUID executeOnRemote(RemoteCommand remoteCommand) {
+	public Object executeOnRemote(RemoteCommand remoteCommand) {
 		String serialized = DirectConnectUtils.INSTANCE.serialize(remoteCommand);
-		UUID returnValue = UUID.randomUUID();
+		Object returnValue = null;
 		try {
-			// Just read it, will return empty.
-			directServer(jobIdString, DirectConnectCommand.READ_REMOTE, DirectConnectKeys.DIRECT_CONNECT_DATA
+		
+			returnValue = directServer(jobIdString, DirectConnectCommand.READ_REMOTE, DirectConnectKeys.DIRECT_CONNECT_DATA
 					+ ParameterKeys.PARAMETER_SEPARATOR
-					+ serialized,
-					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID
-					+ ParameterKeys.PARAMETER_SEPARATOR
-					+ returnValue.toString()
-					);
+					+ serialized);
 		} catch (ConnectException e) {
 			throw new RuntimeException(e.getMessage());
 		}

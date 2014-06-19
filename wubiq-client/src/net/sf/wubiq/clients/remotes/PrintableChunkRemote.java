@@ -31,6 +31,7 @@ import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.PrinterType;
+import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.GraphicsUtils;
@@ -41,6 +42,7 @@ import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicParameter;
 import net.sf.wubiq.wrappers.ImageObserverWrapper;
 import net.sf.wubiq.wrappers.ImageWrapper;
+import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.RenderableImageWrapper;
 import net.sf.wubiq.wrappers.RenderedImageWrapper;
 import net.sf.wubiq.wrappers.RenderingHintWrapper;
@@ -91,30 +93,11 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		Graphics2D graph = (Graphics2D) graphics;
 		if (printed <= 0) {
 			long startTime = new Date().getTime();
-/*
+
 			returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
 					"print",
 					new GraphicParameter(PageFormatWrapper.class, pageFormat),
 					new GraphicParameter(int.class, pageIndex)));
-*/	
-			try {
-				returnValue = Integer.parseInt(
-					(String)manager().directServer(
-							jobId().toString(), 
-							DirectConnectCommand.EXECUTE_PRINTABLE,
-							DirectConnectKeys.DIRECT_CONNECT_DATA
-								+ ParameterKeys.PARAMETER_SEPARATOR
-								+ DirectConnectUtils.INSTANCE.serialize(objectUUID()),
-							DirectConnectKeys.DIRECT_CONNECT_PAGE_FORMAT
-								+ ParameterKeys.PARAMETER_SEPARATOR
-								+ DirectConnectUtils.INSTANCE.serialize(pageFormat),
-							DirectConnectKeys.DIRECT_CONNECT_PAGE_INDEX
-								+ ParameterKeys.PARAMETER_SEPARATOR
-								+ Integer.toString(pageIndex)));
-			} catch (Exception e) {
-				LOG.fatal(e.getMessage(), e);
-				throw new RuntimeException(e);
-			}
 					
 			manager().doLog("Generating page in server took:" + (new Date().getTime() - startTime) + "ms", 4); 
 		}
@@ -124,17 +107,9 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 			try {
 				if (printed > 0) {
 					graphicCommands.addAll((Set<GraphicCommand>)
-							DirectConnectUtils.INSTANCE.deserialize((String)
-									manager().directServer(
-									jobId().toString(),
-									DirectConnectCommand.POLL_PRINTABLE_DATA,
-									DirectConnectKeys.DIRECT_CONNECT_DATA
-										+ ParameterKeys.PARAMETER_SEPARATOR
-										+ DirectConnectUtils.INSTANCE.serialize(objectUUID()),
-									DirectConnectKeys.DIRECT_CONNECT_PAGE_INDEX
-										+ ParameterKeys.PARAMETER_SEPARATOR
-										+ Integer.toString(pageIndex)
-									)));
+							manager().readFromRemote(new RemoteCommand(objectUUID(),
+									"graphicCommands",
+									new GraphicParameter(int.class, pageIndex))));
 				}
 			} catch (Exception e) {
 				LOG.fatal(e.getMessage(), e);

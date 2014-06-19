@@ -580,7 +580,7 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			testPageName = "MobileTestPage.pdf";
 		}
-testPageName = "TestPage-50x2.pdf";
+testPageName = "TestPage-50.pdf";
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
@@ -751,18 +751,17 @@ testPageName = "TestPage-50x2.pdf";
 					
 				case READ_REMOTE:
 					data = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA);
-					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
 					object = null;
 					if (data != null) {
 						object = DirectConnectUtils.INSTANCE.deserialize(data);
 					}
 					if (object instanceof RemoteCommand) {
-						directConnector.callCommand(jobId, (RemoteCommand) object, dataUUID);
+						data = directConnector.callCommand(jobId, (RemoteCommand) object);
 					}
 					response.setContentType("text/html");
-					response.setContentLength(0);
+					response.getWriter().write(data);
 					break;
-
+				/*
 				case POLL_REMOTE_DATA:
 					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
 					response.setContentType("text/html");
@@ -807,7 +806,7 @@ testPageName = "TestPage-50x2.pdf";
 							Object adapter = directConnector.getAdapter(jobId, (UUID)object);
 							if (adapter != null &&
 									adapter instanceof PrintableChunkAdapter) {
-								data = ((PrintableChunkAdapter)adapter).serializedGraphicCommands(pageIndex);
+								//data = ((PrintableChunkAdapter)adapter).serializedGraphicCommands(pageIndex);
 							}
 						}
 					}
@@ -819,7 +818,8 @@ testPageName = "TestPage-50x2.pdf";
 					response.setContentType("text/html");
 					response.setContentLength(0);
 					break;
-				
+				*/
+					
 				case EXCEPTION:
 					returnedData = new ReturnedData(exception);
 					returnedData.setException(true);

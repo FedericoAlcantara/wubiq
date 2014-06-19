@@ -93,10 +93,9 @@ public interface IDirectConnectorQueue extends IAdapter {
 	 * Execute a method on the object referenced within the remote command.
 	 * @param jobId Id of the job being processed.
 	 * @param remoteCommand Remote command to be processed.
-	 * @param dataUUID identifier of the data to be retrieve.
 	 * @return Serialized output.
 	 */
-	String callCommand(Long jobId, RemoteCommand remoteCommand, String dataUUID);
+	String callCommand(Long jobId, RemoteCommand remoteCommand);
 	
 	/**
 	 * Registers a given object according to its object type.
