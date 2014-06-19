@@ -3,6 +3,10 @@
  */
 package net.sf.wubiq.servlets;
 
+import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -10,6 +14,7 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.util.Date;
 import java.util.Locale;
+import java.util.UUID;
 
 import javax.print.Doc;
 import javax.print.DocFlavor;
@@ -27,6 +32,7 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import net.sf.wubiq.adapters.PrintableChunkAdapter;
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.android.ConversionServerUtils;
 import net.sf.wubiq.common.CommandKeys;
@@ -37,6 +43,7 @@ import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.PrinterJobManager;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
@@ -48,6 +55,7 @@ import net.sf.wubiq.remote.RemoteClientManager;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
 
@@ -572,18 +580,21 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			testPageName = "MobileTestPage.pdf";
 		}
+testPageName = "TestPage-50x2.pdf";
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
-		response.setContentType("text/html");				
+		response.setContentType("text/html");
+		PrinterJobManager.initializePrinterJobManager();
+
 		if (printService != null) {
 			PrintRequestAttributeSet requestAttributes = new HashPrintRequestAttributeSet();
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
-			//if ((printService instanceof RemotePrintService) &&
-			//		((RemotePrintService)printService).isMobile()) {
+			if ((printService instanceof RemotePrintService) &&
+					((RemotePrintService)printService).isMobile()) {
 				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
 				DocPrintJob printJob = printService.createPrintJob();
 				try {
@@ -591,13 +602,12 @@ public class RemotePrintServlet extends HttpServlet {
 				} catch (PrintException e) {
 					throw new ServletException(e);
 				}
-			/*	
 			} else {
 				PrinterJobManager.initializePrinterJobManager();
 				PrinterJob printerJob = PrinterJob.getPrinterJob();
 				Pageable pageable;
 				try {
-					pageable = PdfUtils.INSTANCE.pdfToPageable(input, printerJob);
+					pageable = PdfUtils.INSTANCE.pdfToPageable(input, printService, requestAttributes);
 					synchronized(pageable) {
 						printerJob.setPageable(pageable);
 						try {
@@ -606,21 +616,14 @@ public class RemotePrintServlet extends HttpServlet {
 						} catch (PrinterException e) {
 							LOG.error(e.getMessage(), e);
 							throw new ServletException(e);
-						} finally {
-							if (pageable != null) {
-								if (pageable instanceof PDDocument) {
-									((PDDocument)pageable).close();
-								} else if (pageable instanceof PdfPageable) {
-									((PdfPageable)pageable).close();
-								}
-							}
 						}
 					}
 				} catch (PrintException e) {
 					throw new ServletException(e);
 				}
+		
 			}
-			*/
+
 			input.close();
 			PrintWriter writer = response.getWriter();
 			writer.print(backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)));
@@ -709,10 +712,12 @@ public class RemotePrintServlet extends HttpServlet {
 			DirectConnectCommand command = DirectConnectCommand.values()[ordinal];
 			String data = null;
 			Object object = null;
+			String jobIdString = request.getParameter(ParameterKeys.PRINT_JOB_ID);
+			Long jobId = Long.parseLong(jobIdString);
+			int pageIndex = -1;
 			switch (command) {
 				case START:
-					String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
-					directConnector.startPrintJob(Long.parseLong(jobId));
+					directConnector.startPrintJob(jobId);
 					response.setContentType("text/html");
 					response.setContentLength(0);
 					break;
@@ -752,7 +757,7 @@ public class RemotePrintServlet extends HttpServlet {
 						object = DirectConnectUtils.INSTANCE.deserialize(data);
 					}
 					if (object instanceof RemoteCommand) {
-						directConnector.callCommand((RemoteCommand) object, dataUUID);
+						directConnector.callCommand(jobId, (RemoteCommand) object, dataUUID);
 					}
 					response.setContentType("text/html");
 					response.setContentLength(0);
@@ -761,10 +766,60 @@ public class RemotePrintServlet extends HttpServlet {
 				case POLL_REMOTE_DATA:
 					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
 					response.setContentType("text/html");
-					data = directConnector.getRemoteData(dataUUID);
+					data = directConnector.getRemoteData(jobId, dataUUID);
 					response.getWriter().print(data);
 					break;
-					
+				
+				case EXECUTE_PRINTABLE:
+					data = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA);
+					PageFormat pageFormat = (PageFormat)DirectConnectUtils.INSTANCE.deserialize(
+							request.getParameter(DirectConnectKeys.DIRECT_CONNECT_PAGE_FORMAT));
+					pageIndex = Integer.parseInt(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_PAGE_INDEX));
+					response.setContentType("text/html");
+					object = null;
+					if (data != null) {
+						object = DirectConnectUtils.INSTANCE.deserialize(data);
+						data = "";
+						if (object instanceof UUID) {
+							Object adapter = directConnector.getAdapter(jobId, (UUID)object);
+							if (adapter != null &&
+									adapter instanceof PrintableChunkAdapter) {
+								try {
+									data = Integer.toString(((PrintableChunkAdapter)adapter).print(pageFormat, pageIndex));
+								} catch (PrinterException e) {
+									data = "0";
+								}
+							}
+						}
+					}
+					response.getWriter().print(data);
+					break;
+				
+				case POLL_PRINTABLE_DATA:
+					data = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA);
+					response.setContentType("text/html");
+					pageIndex = Integer.parseInt(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_PAGE_INDEX));
+					object = null;
+					if (data != null) {
+						object = DirectConnectUtils.INSTANCE.deserialize(data);
+						data = "";
+						if (object instanceof UUID) {
+							Object adapter = directConnector.getAdapter(jobId, (UUID)object);
+							if (adapter != null &&
+									adapter instanceof PrintableChunkAdapter) {
+								data = ((PrintableChunkAdapter)adapter).serializedGraphicCommands(pageIndex);
+							}
+						}
+					}
+					response.getWriter().print(data);
+					break;
+				case REMOVE_REMOTE_DATA:
+					dataUUID = request.getParameter(DirectConnectKeys.DIRECT_CONNECT_DATA_UUID);
+					directConnector.removeRemoteData(jobId, dataUUID);
+					response.setContentType("text/html");
+					response.setContentLength(0);
+					break;
+				
 				case EXCEPTION:
 					returnedData = new ReturnedData(exception);
 					returnedData.setException(true);

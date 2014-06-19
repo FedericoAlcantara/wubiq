@@ -17,9 +17,10 @@ import net.sf.cglib.proxy.MethodProxy;
 public abstract class ProxyMasterBase extends ProxyBase {
 	Object decoratedObject;
 	
-	public ProxyMasterBase(Object decoratedObject,
+	public ProxyMasterBase(Long jobId,
+			Object decoratedObject,
 			String[] filtered) {
-		super(UUID.randomUUID(), filtered);
+		super(jobId, UUID.randomUUID(), filtered);
 		this.decoratedObject = decoratedObject;
 	}
 	

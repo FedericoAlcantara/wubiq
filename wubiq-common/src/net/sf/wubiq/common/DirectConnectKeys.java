@@ -20,6 +20,8 @@ public final class DirectConnectKeys {
 	public static final String DIRECT_CONNECT_EXCEPTION = "/**EX**/";
 	public static final String DIRECT_CONNECT_NOT_READY = "/**NR**/";
 	public static final String DIRECT_CONNECT_ENABLED_PARAMETER = "dcen";
+	public static final String DIRECT_CONNECT_PAGE_INDEX = "dcpi";
+	public static final String DIRECT_CONNECT_PAGE_FORMAT = "dcpf";
 	
 	public static final String DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY = "wubiq.client.force.serialized.communication";
 	

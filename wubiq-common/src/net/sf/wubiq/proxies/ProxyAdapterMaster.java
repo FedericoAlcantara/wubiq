@@ -20,10 +20,11 @@ public class ProxyAdapterMaster extends ProxyAdapter {
 	private Object decoratedObject;
 	
 	public ProxyAdapterMaster(
+			Long jobId,
 			IDirectConnectorQueue queue,
 			Object decoratedObject,
 			String filtered[]) {
-		super(queue, UUID.randomUUID(), filtered);
+		super(jobId, queue, UUID.randomUUID(), filtered);
 		this.decoratedObject = decoratedObject;
 	}
 	

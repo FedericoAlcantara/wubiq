@@ -3,8 +3,8 @@
  */
 package net.sf.wubiq.print.managers.impl;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
@@ -34,7 +34,7 @@ public final class RemotePrintJobManagerFactory {
 	 * @param uuid Unique printer id.
 	 * @return Singleton object.
 	 */
-	public static IRemotePrintJobManager getRemotePrintJobManager(String uuid) {
+	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(String uuid) {
 		return getRemotePrintJobManager(managers().get(uuid));
 	}
 	
@@ -44,7 +44,7 @@ public final class RemotePrintJobManagerFactory {
 	 * @param managerType Manager type.
 	 * @return Instance of remote print job manager.
 	 */
-	public static IRemotePrintJobManager getRemotePrintJobManager(String uuid, RemotePrintJobManagerType managerType) {
+	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(String uuid, RemotePrintJobManagerType managerType) {
 		IRemotePrintJobManager returnValue = getRemotePrintJobManager(managerType);
 		managers().put(uuid, managerType);
 		return returnValue;
@@ -117,7 +117,7 @@ public final class RemotePrintJobManagerFactory {
 
 	private static Map<String, RemotePrintJobManagerType> managers() {
 		if (managers == null) {
-			managers = new ConcurrentHashMap<String, RemotePrintJobManagerType>();
+			managers = new HashMap<String, RemotePrintJobManagerType>();
 		}
 		return managers;
 	}

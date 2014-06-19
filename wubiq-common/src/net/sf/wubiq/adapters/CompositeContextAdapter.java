@@ -36,6 +36,7 @@ public class CompositeContextAdapter implements CompositeContext, IAdapter, IPro
 		RasterAdapter srcAdapter = (RasterAdapter)
 				Enhancer.create(RasterAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								src,
 								RasterAdapter.FILTERED_METHODS));
@@ -43,12 +44,14 @@ public class CompositeContextAdapter implements CompositeContext, IAdapter, IPro
 		RasterAdapter dstInAdapter = (RasterAdapter)
 				Enhancer.create(RasterAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								dstIn,
 								RasterAdapter.FILTERED_METHODS));
 		WritableRasterAdapter dstOutAdapter = (WritableRasterAdapter)
 				Enhancer.create(WritableRasterAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								dstOut,
 								WritableRasterAdapter.FILTERED_METHODS));
@@ -63,7 +66,6 @@ public class CompositeContextAdapter implements CompositeContext, IAdapter, IPro
 	public void dispose() {
 	}
 
-	
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
@@ -71,12 +73,22 @@ public class CompositeContextAdapter implements CompositeContext, IAdapter, IPro
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}

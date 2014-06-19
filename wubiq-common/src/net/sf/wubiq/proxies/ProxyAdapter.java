@@ -18,9 +18,10 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 public abstract class ProxyAdapter extends ProxyBase {
 	private IDirectConnectorQueue queue;
 	
-	public ProxyAdapter(IDirectConnectorQueue queue,
+	public ProxyAdapter(Long jobId, 
+			IDirectConnectorQueue queue,
 			UUID objectUUID, String[] filtered) {
-		super(objectUUID, filtered);
+		super(jobId, objectUUID, filtered);
 		this.queue = queue;
 	}
 
@@ -31,7 +32,7 @@ public abstract class ProxyAdapter extends ProxyBase {
 	public Object intercept(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
 		if ("initialize".equals(method.getName())) {
-			queue().registerObject(objectUUID(), object);
+			queue().registerObject(jobId(), objectUUID(), object);
 			return null;
 		}
 		if ("queue".equals(method.getName())) {

@@ -44,6 +44,7 @@ public class PrintableRemote implements Printable, IProxyClient {
 			throws PrinterException {
 		GraphicsRemote remote = (GraphicsRemote)Enhancer.create(GraphicsRemote.class, 
 				new ProxyClientMaster(
+						jobId(),
 						manager(),
 						graphics,
 						GraphicsRemote.FILTERED_METHODS));
@@ -54,28 +55,40 @@ public class PrintableRemote implements Printable, IProxyClient {
 				new GraphicParameter(UUID.class, remote.objectUUID())));
 	}
 	
-	/* ***************************
-	 * Proxied methods
-	 * ***************************
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
-	 */
-	public DirectPrintManager manager() {
-		return null;
-	}
-	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	public UUID objectUUID() {
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 */
+	@Override
+	public UUID objectUUID() {
+		return null;
+	}
+
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

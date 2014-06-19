@@ -210,7 +210,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		.append(ParameterKeys.PARAMETER_SEPARATOR); 
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
-			doLog("Register computer name:" + computerName, 5);
+			doLog("Register computer name:" + computerName, 0);
+			doLog("Force Serialized Communication:" + System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY), 0);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -280,19 +281,23 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 
 	/**
 	 * Communicates with the server using the sub set of direct connection commands.
+	 * @param jobIdString id of the current job.
 	 * @param command Direct connect sub command.
 	 * @param parameters Parameters.
 	 * @return Response from the server.
 	 * @throws ConnectException If it can't connect to the server.
 	 */
-	protected Object directServer(DirectConnectCommand command, String... parameters) 
+	public Object directServer(String jobIdString, DirectConnectCommand command, String... parameters) 
 			throws ConnectException {
 		StringBuffer returnValue = new StringBuffer(DirectConnectKeys.DIRECT_CONNECT_PARAMETER)
 			.append(ParameterKeys.PARAMETER_SEPARATOR)
 			.append(command.ordinal());
-		String[] newParameters = new String[parameters.length + 1];
+		String[] newParameters = new String[parameters.length + 2];
 		int index = 0;
 		newParameters[index++] = returnValue.toString();
+		newParameters[index++] = ParameterKeys.PRINT_JOB_ID
+				+ ParameterKeys.PARAMETER_SEPARATOR
+				+ jobIdString;
 		for (String parameter: parameters) {
 			newParameters[index++] = parameter;
 		}

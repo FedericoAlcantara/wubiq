@@ -24,10 +24,11 @@ public class ProxyClientMaster extends ProxyMasterBase {
 	 * @param decoratedObject Object to be decorated.
 	 * @param filtered List of method not handled by this proxy.
 	 */
-	public ProxyClientMaster(DirectPrintManager manager,
+	public ProxyClientMaster(Long jobId,
+			DirectPrintManager manager,
 			Object decoratedObject,
 			String[] filtered) {
-		super(decoratedObject, filtered);
+		super(jobId, decoratedObject, filtered);
 		this.manager = manager;
 	}
 

@@ -26,7 +26,7 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 	private int lastPageFormatProcessed = -1;
 	private int lastPrintableProcessed = -1;
 	private PageFormatWrapper lastPageFormat = null;
-	private PrintableAdapter lastPrintable = null;
+	private PrintableChunkAdapter lastPrintable = null;
 	public static final String[] FILTERED_METHODS = new String[]{
 		"pageable",
 		"getPageFormat",
@@ -66,12 +66,14 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		Printable printable = pageable().getPrintable(pageIndex);
 		if (pageIndex != lastPrintableProcessed) {
-			lastPrintable = (PrintableAdapter)
-					Enhancer.create(PrintableAdapter.class,
+			lastPrintable = 
+					(PrintableChunkAdapter)
+					Enhancer.create(PrintableChunkAdapter.class,
 							new ProxyAdapterMaster(
+									jobId(),
 									queue(),
 									printable,
-									PrintableAdapter.FILTERED_METHODS));
+									PrintableChunkAdapter.FILTERED_METHODS));
 		}
 		lastPrintableProcessed = pageIndex;
 		return lastPrintable; // Must be the adapter
@@ -89,19 +91,29 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 	 * IProxy interface implementation
 	 * *****************************************
 	 */
-
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}
+	
 	
 	/* *****************************************
 	 * IAdapter interface implementation

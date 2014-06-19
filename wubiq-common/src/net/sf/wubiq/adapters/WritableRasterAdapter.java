@@ -26,7 +26,6 @@ public class WritableRasterAdapter extends WritableRaster implements IAdapter, I
 	public static final String[] FILTERED_METHODS = new String[]{
 	};
 	
-	
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
@@ -34,12 +33,22 @@ public class WritableRasterAdapter extends WritableRaster implements IAdapter, I
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
 	}
 	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}

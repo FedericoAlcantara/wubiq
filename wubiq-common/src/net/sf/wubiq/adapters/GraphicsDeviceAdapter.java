@@ -44,6 +44,7 @@ public class GraphicsDeviceAdapter extends GraphicsDevice implements
 			returnValue[index] = (GraphicsConfigurationAdapter)
 					Enhancer.create(GraphicsConfigurationAdapter.class,
 							new ProxyAdapterSlave(
+									jobId(),
 									queue(),
 									remoteUUIDS[index],
 									GraphicsConfigurationAdapter.FILTERED_METHODS));
@@ -61,6 +62,7 @@ public class GraphicsDeviceAdapter extends GraphicsDevice implements
 		GraphicsConfigurationAdapter remote = (GraphicsConfigurationAdapter)
 				Enhancer.create(GraphicsConfigurationAdapter.class,
 				new ProxyAdapterSlave(
+						jobId(),
 						queue(),
 						remoteUUID,
 						GraphicsConfigurationAdapter.FILTERED_METHODS));
@@ -83,16 +85,25 @@ public class GraphicsDeviceAdapter extends GraphicsDevice implements
 	 * IProxy interface implementation
 	 * *****************************************
 	 */
-
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}

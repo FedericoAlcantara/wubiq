@@ -22,35 +22,54 @@ public class BlankMasterRemote implements IProxyClient, IProxyMaster {
 		initialize();
 	}
 	
-	/* ***************************
-	 * Proxied methods
-	 * ***************************
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
-	 */
-	public DirectPrintManager manager() {
-		return null;
-	}
-	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	public Object decoratedObject() {
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}
+
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/* *****************************************
+	 * IProxyMaster interface implementation
+	 * *****************************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 */
+	@Override
+	public Object decoratedObject() {
+		return null;
+	}
+	
 
 }

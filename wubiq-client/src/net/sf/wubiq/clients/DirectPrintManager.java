@@ -7,9 +7,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -39,7 +39,8 @@ import org.apache.commons.logging.LogFactory;
 public class DirectPrintManager extends AbstractLocalPrintManager {
 	private static final Log LOG = LogFactory.getLog(DirectPrintManager.class);
 
-	private String jobId;
+	private String jobIdString;
+	private Long jobId;
 	private PrintService printService;
 	private PrintRequestAttributeSet printRequestAttributeSet;
 	private PrintJobAttributeSet printJobAttributeSet;
@@ -50,18 +51,18 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private Map<UUID, Object> registeredObjects;
 	
 	
-	public DirectPrintManager(String jobId, PrintService printService, 
+	public DirectPrintManager(String jobIdString, PrintService printService, 
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
 			DocFlavor docFlavor){
-		this.jobId = jobId;
+		this.jobIdString = jobIdString;
+		this.jobId = Long.parseLong(jobIdString);
 		this.printService = printService;
 		this.printRequestAttributeSet = printRequestAttributeSet;
 		this.printJobAttributeSet = printJobAttributeSet;
 		this.docAttributeSet = docAttributeSet;
 		this.docFlavor = docFlavor;
-		this.registeredObjects = new ConcurrentHashMap<UUID, Object>();
 	}
 		
 	/**
@@ -70,22 +71,22 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public void handleDirectPrinting() throws ConnectException {
 		printing = true;
-		registeredObjects.clear();
+		registeredObjects = new HashMap<UUID, Object>();
 		int timeout = 0;
 		while (printing) {
-			Object response  = directServer(DirectConnectCommand.POLL);
+			Object response  = directServer(jobIdString, DirectConnectCommand.POLL);
 			if (response instanceof InputStream) {
 				timeout = 0;
 				final RemoteCommand remoteCommand = 
 						(RemoteCommand) DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
 				if (remoteCommand != null) {
 					// Run it in a separate thread, so it won't block the communication
-					Thread callCommand = new Thread(new Runnable() {
-						public void run() {
+					//Thread callCommand = new Thread(new Runnable() {
+						//public void run() {
 							callCommand(remoteCommand);
-						}
-					}, remoteCommand.getObjectUUID() + "-" + remoteCommand.getMethodName());
-					callCommand.start();
+						//}
+					//}, remoteCommand.getObjectUUID() + "-" + remoteCommand.getMethodName());
+					//callCommand.start();
 				}
 			} else {
 				try {
@@ -102,7 +103,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public void createPrintable(UUID objectUUID) {
 		PrintableRemote remote = (PrintableRemote) Enhancer.create(PrintableRemote.class, 
-				new ProxyClientSlave(this, objectUUID, PrintableRemote.FILTERED_METHODS));
+				new ProxyClientSlave(jobId, this, objectUUID, PrintableRemote.FILTERED_METHODS));
 	}
 	
 	/**
@@ -110,11 +111,12 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public void createPageable(UUID objectUUID) {
 		PageableRemote remote = (PageableRemote) Enhancer.create(PageableRemote.class, 
-				new ProxyClientSlave(this, objectUUID, PageableRemote.FILTERED_METHODS));
-		ClientPrintDirectUtils.printPageable(jobId, printService, printRequestAttributeSet, printJobAttributeSet, 
+				new ProxyClientSlave(jobId, this, objectUUID, PageableRemote.FILTERED_METHODS));
+		ClientPrintDirectUtils.printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				docFlavor,
 				remote);
+		printing = false;
 	}
 	
 	/**
@@ -122,7 +124,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * @param objectUUID object unique id.
 	 * @param object Object to be registered.
 	 */
-	public void registerObject(UUID objectUUID, Object object) {
+	public synchronized void registerObject(UUID objectUUID, Object object) {
 		registeredObjects.put(objectUUID, object);
 	}
 	
@@ -137,7 +139,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		int timeout = 0;
 		String remoteData = null;
 		do {
-			remoteData = (String)directServer(DirectConnectCommand.POLL_REMOTE_DATA, 
+			remoteData = (String)directServer(jobIdString, DirectConnectCommand.POLL_REMOTE_DATA, 
 					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID 
 					+ ParameterKeys.PARAMETER_SEPARATOR
 					+ uuid.toString());
@@ -189,18 +191,18 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			}
 			try {
 				if (error != null) {
-					directServer(DirectConnectCommand.EXCEPTION, DirectConnectKeys.DIRECT_CONNECT_DATA 
+					directServer(jobIdString, DirectConnectCommand.EXCEPTION, DirectConnectKeys.DIRECT_CONNECT_DATA 
 							+ ParameterKeys.PARAMETER_SEPARATOR 
 							+ error);
 					LOG.error(error);
 				} else {
 					if (data != null) {
 						String serializedData = DirectConnectUtils.INSTANCE.serialize(data);
-						directServer(DirectConnectCommand.DATA, DirectConnectKeys.DIRECT_CONNECT_DATA 
+						directServer(jobIdString, DirectConnectCommand.DATA, DirectConnectKeys.DIRECT_CONNECT_DATA 
 								+ ParameterKeys.PARAMETER_SEPARATOR 
 								+ serializedData);
 					} else {
-						directServer(DirectConnectCommand.DATA);
+						directServer(jobIdString, DirectConnectCommand.DATA);
 					}
 				}
 			} catch (IOException e) {
@@ -221,10 +223,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		try {
 			UUID uuid = executeOnRemote(remoteCommand);
 			String remoteData = null;
-			int timeout = 0;
-			while ((remoteData = getRemoteData(uuid)) == null) {
-				timeout = DirectConnectUtils.INSTANCE.checkTimeout(timeout);
-			}
+			remoteData = getRemoteData(uuid);
 			if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_NULL)) {
 				returnValue = null;
 			} else if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_EXCEPTION)) {
@@ -232,6 +231,10 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			} else {
 				returnValue = DirectConnectUtils.INSTANCE.deserialize(remoteData);
 			}
+			directServer(jobIdString, DirectConnectCommand.REMOVE_REMOTE_DATA, 
+					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID 
+					+ ParameterKeys.PARAMETER_SEPARATOR
+					+ uuid.toString());
 		} catch (ConnectException e) {
 			throw new RuntimeException(e.getMessage());
 		} catch (TimeoutException e) {
@@ -250,7 +253,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		UUID returnValue = UUID.randomUUID();
 		try {
 			// Just read it, will return empty.
-			directServer(DirectConnectCommand.READ_REMOTE, DirectConnectKeys.DIRECT_CONNECT_DATA
+			directServer(jobIdString, DirectConnectCommand.READ_REMOTE, DirectConnectKeys.DIRECT_CONNECT_DATA
 					+ ParameterKeys.PARAMETER_SEPARATOR
 					+ serialized,
 					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID
@@ -269,5 +272,10 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 
 	@Override
 	protected void registerPrintServices() throws ConnectException {
+	}
+	
+	@Override
+	public void doLog(Object message, int logLevel) {
+		super.doLog(message, logLevel);
 	}
 }

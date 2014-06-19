@@ -89,7 +89,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 				ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			} else {
-				directServer(DirectConnectCommand.START, parameter);
+				directServer(jobId, DirectConnectCommand.START, parameter);
 				DirectPrintManager manager = new DirectPrintManager(
 						jobId,
 						printService,

@@ -50,6 +50,7 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 		BufferedImageAdapter bufferedImageAdapter = (BufferedImageAdapter)
 				Enhancer.create(BufferedImageAdapter.class, 
 						new ProxyAdapterSlave(
+								jobId(),
 								queue(),
 								remoteUUID,
 								BufferedImageAdapter.FILTERED_METHODS));
@@ -71,6 +72,7 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 		BufferedImageAdapter bufferedImageAdapter = (BufferedImageAdapter)
 				Enhancer.create(BufferedImageAdapter.class, 
 						new ProxyAdapterSlave(
+								jobId(),
 								queue(),
 								remoteUUID,
 								BufferedImageAdapter.FILTERED_METHODS));
@@ -139,16 +141,25 @@ public class GraphicsConfigurationAdapter extends GraphicsConfiguration
 	 * IProxy interface implementation
 	 * *****************************************
 	 */
-
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}

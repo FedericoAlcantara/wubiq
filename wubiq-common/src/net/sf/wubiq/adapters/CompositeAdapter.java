@@ -42,6 +42,7 @@ public class CompositeAdapter implements Composite, IProxy, IAdapter {
 		ColorModelAdapter colorModelAdapter = (ColorModelAdapter)
 				Enhancer.create(ColorModelAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								colorModel,
 								ColorModelAdapter.FILTERED_METHODS));
@@ -49,6 +50,7 @@ public class CompositeAdapter implements Composite, IProxy, IAdapter {
 		ColorModelAdapter colorModelAdapter2 = (ColorModelAdapter)
 				Enhancer.create(ColorModelAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								colorModel2,
 								ColorModelAdapter.FILTERED_METHODS));
@@ -56,6 +58,7 @@ public class CompositeAdapter implements Composite, IProxy, IAdapter {
 		RenderingHintsAdapter renderingAdapter = (RenderingHintsAdapter)
 				Enhancer.create(RenderingHintsAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								hints,
 								RenderingHintsAdapter.FILTERED_METHODS));
@@ -69,6 +72,7 @@ public class CompositeAdapter implements Composite, IProxy, IAdapter {
 		CompositeContextAdapter adapter = (CompositeContextAdapter)
 				Enhancer.create(CompositeContextAdapter.class,
 						new ProxyAdapterMaster(
+								jobId(),
 								queue(),
 								remoteUUID,
 								CompositeContextAdapter.FILTERED_METHODS));
@@ -82,12 +86,22 @@ public class CompositeAdapter implements Composite, IProxy, IAdapter {
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}

@@ -19,6 +19,13 @@ public interface IProxy {
 	void initialize();
 
 	/**
+	 * Unique identification of the job.
+	 * @param jobId Id of the job being processed.
+	 * @return Current jobId.
+	 */
+	Long jobId();
+	
+	/**
 	 * Unique object identification.
 	 * @return The externally assigned object identification.
 	 */

@@ -52,6 +52,7 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 		BufferedImageRemote remote = (BufferedImageRemote)
 				Enhancer.create(BufferedImageRemote.class,
 						new ProxyClientMaster(
+								jobId(),
 								manager(),
 								graphicsConfiguration().createCompatibleImage(width, height),
 								BufferedImageRemote.FILTERED_METHODS));
@@ -76,6 +77,7 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 		BufferedImageRemote remote = (BufferedImageRemote)
 				Enhancer.create(BufferedImageRemote.class,
 						new ProxyClientMaster(
+								jobId(),
 								manager(),
 								graphicsConfiguration().createCompatibleImage(width, height, transparency),
 								BufferedImageRemote.FILTERED_METHODS));
@@ -134,36 +136,53 @@ public class GraphicsConfigurationRemote extends GraphicsConfiguration
 		return (GraphicsConfiguration) decoratedObject();
 	}
 	
-	/* ***************************
-	 * Proxied methods
-	 * ***************************
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
-	 */
-	public DirectPrintManager manager() {
-		return null;
-	}
-	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	public Object decoratedObject() {
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}
 
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 
+	/* *****************************************
+	 * IProxyMaster interface implementation
+	 * *****************************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 */
+	@Override
+	public Object decoratedObject() {
+		return null;
+	}
+	
 }

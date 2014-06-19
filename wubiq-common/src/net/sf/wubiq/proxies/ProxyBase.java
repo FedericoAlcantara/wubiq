@@ -18,11 +18,14 @@ import net.sf.cglib.proxy.MethodProxy;
  *
  */
 public abstract class ProxyBase implements MethodInterceptor {
+	private Long jobId;
 	private UUID objectUUID;
 	private Set<String> filtered;
 	
-	public ProxyBase(UUID objectUUID,
+	public ProxyBase(Long jobId, 
+			UUID objectUUID,
 			String[] filtered) {
+		this.jobId = jobId;
 		this.objectUUID = objectUUID;
 		this.filtered = new HashSet<String>();
 		for (String filter : filtered) {
@@ -42,7 +45,9 @@ public abstract class ProxyBase implements MethodInterceptor {
 	@Override
 	public Object intercept(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable {
-		if ("objectUUID".equals(method.getName())) {
+		if ("jobId".equals(method.getName())) {
+			return jobId;
+		} else if ("objectUUID".equals(method.getName())) {
 			return objectUUID;
 		} else if (filtered.contains(method.getName())) {
 			return methodProxy.invokeSuper(object, args);
@@ -54,7 +59,6 @@ public abstract class ProxyBase implements MethodInterceptor {
 				}
 				argBuffer.append(arg.toString());
 			}
-			System.out.println("Processing:" + object.getClass().getSimpleName() + "#" + method.getName() + ":" + argBuffer.toString());
 			return interception(object, method, args, methodProxy);
 		}
 	}
@@ -66,6 +70,14 @@ public abstract class ProxyBase implements MethodInterceptor {
 	 */
 	public abstract Object interception(Object object, Method method, Object[] args,
 			MethodProxy methodProxy) throws Throwable;
+	
+	/**
+	 * The unique identification of the print job.
+	 * @return Job Id.
+	 */
+	public Long jobId() {
+		return jobId;
+	}
 	
 	/**
 	 * The unique object identification.

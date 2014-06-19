@@ -34,16 +34,26 @@ public class FontRenderContextAdapter extends FontRenderContext
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	public UUID objectUUID() {
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 */
+	@Override
+	public UUID objectUUID() {
+		return null;
+	}
+		
 	/* *****************************************
 	 * IAdapter interface implementation
 	 * *****************************************

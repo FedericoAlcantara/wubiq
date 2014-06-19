@@ -27,10 +27,12 @@ public class ProxyClientSlave extends ProxyBase {
 	 * @param objectUUID Unique id of the object taken from the server.
 	 * @param filtered List of methods' names not handled by this proxy.
 	 */
-	public ProxyClientSlave(DirectPrintManager manager,
+	public ProxyClientSlave(
+			Long jobId,
+			DirectPrintManager manager,
 			UUID objectUUID,
 			String[] filtered) {
-		super(objectUUID, filtered);
+		super(jobId, objectUUID, filtered);
 		this.manager = manager;
 	}
 	

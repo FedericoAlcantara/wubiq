@@ -23,28 +23,40 @@ public class RenderingHintsRemote extends RenderingHints implements IProxyClient
 	public static final String[] FILTERED_METHODS = new String[]{
 	};
 	
-	/* ***************************
-	 * Proxied methods
-	 * ***************************
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	public DirectPrintManager manager() {
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}
 
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
+		return null;
+	}
 }

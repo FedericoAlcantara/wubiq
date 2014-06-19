@@ -1,4 +1,4 @@
-package net.sf.wubiq.wrappers;
+package net.sf.wubiq.clients.remotes;
 
 import java.awt.Color;
 import java.awt.Composite;
@@ -18,18 +18,35 @@ import java.awt.image.RenderedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
-import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.UUID;
 
+import net.sf.wubiq.clients.DirectPrintManager;
+import net.sf.wubiq.common.DirectConnectKeys;
+import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.PrinterType;
+import net.sf.wubiq.interfaces.IProxyClient;
+import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.GraphicsUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.wrappers.CompositeWrapper;
+import net.sf.wubiq.wrappers.GlyphVectorWrapper;
+import net.sf.wubiq.wrappers.GraphicCommand;
+import net.sf.wubiq.wrappers.GraphicParameter;
+import net.sf.wubiq.wrappers.ImageObserverWrapper;
+import net.sf.wubiq.wrappers.ImageWrapper;
+import net.sf.wubiq.wrappers.RenderableImageWrapper;
+import net.sf.wubiq.wrappers.RenderedImageWrapper;
+import net.sf.wubiq.wrappers.RenderingHintWrapper;
+import net.sf.wubiq.wrappers.RenderingHintsWrapper;
+import net.sf.wubiq.wrappers.ShapeWrapper;
+import net.sf.wubiq.wrappers.StrokeWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -37,83 +54,101 @@ import org.apache.commons.logging.LogFactory;
 /**
  * Wraps a printable object into a serializable class.
  * This object stores the commands sent to a graphic recorder.
- * Because it is serialized, the commands can later be deserialized
+ * Because it is serialized, the commands can later be de-serialized
  * into this object.
  * 
  * @author Federico Alcantara
  *
  */
-public class PrintableWrapper implements Printable, Serializable {
-	private static final long serialVersionUID = 1L;
-	private static Log LOG = LogFactory.getLog(PrintableWrapper.class);
-	private transient Printable printable;
-	private Map<Integer, Set<GraphicCommand>> graphicCommandsList;
-	private int returnValue = 0;
-	private Map<Integer, Integer> printedPages;
-	private boolean noScale = false;
-	private transient boolean notSerialized = false;
+public class PrintableChunkRemote implements Printable, IProxyClient {
+	private static final Log LOG = LogFactory.getLog(PrintableChunkRemote.class);
+	public static final String[] FILTERED_METHODS = new String[]{
+		"print"
+	};
+
 	private PrinterType printerType;
 	private transient AffineTransform initialTransform;
 	private boolean initialTransformApplied = false;
-	
-	public PrintableWrapper() {
-	}
+	private boolean noScale = false;
+	private int printed = 0;
+	private Integer returnValue = -1;
+	private static Set<GraphicCommand>graphicCommands = new TreeSet<GraphicCommand>();
 
-	/**
-	 * Creates a wrapper by reading printable values. This should be the 
-	 * preferred constructor.
-	 * @param printable Printable object to be encapsulated.
-	 */
-	public PrintableWrapper(Printable printable) {
-		this();
-		this.printable = printable;
-		if (printable.getClass().getName().endsWith(".TextPrintable")) {
-			noScale = true;
-		}
-		if (printable instanceof PrintableWrapper) {
-			this.notSerialized = ((PrintableWrapper)printable).notSerialized;
-		}
+	public PrintableChunkRemote() {
+		initialize();
 	}
 	
 	/**
 	 * This a two stage print method. 
 	 * First it records graphics command into itself by using a GraphicRecorder object.
-	 * After it is deserialized, then it sends the previously saved command to the
+	 * After it is de-serialized, then it sends the previously saved command to the
 	 * graphics provided by the local printer object.
 	 */
+	@SuppressWarnings("unchecked")
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
 		Graphics2D graph = (Graphics2D) graphics;
-
-		if (notSerialized) {
-			long start = new Date().getTime();
-			Set<GraphicCommand> graphicCommands = createGraphicCommands(pageIndex);
-			GraphicsRecorder graphicsRecorder = new GraphicsRecorder(graphicCommands, graph);
-			returnValue = printable.print(graphicsRecorder, new PageFormatWrapper(pageFormat), pageIndex);
-			if (returnValue == Printable.PAGE_EXISTS) {
-				graphicCommandsList.put(pageIndex, graphicCommands);
-				if (printedPages == null) {
-					printedPages = new HashMap<Integer, Integer>();
-				}
-				printedPages.put(pageIndex, 0);
+		if (printed <= 0) {
+			long startTime = new Date().getTime();
+/*
+			returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
+					"print",
+					new GraphicParameter(PageFormatWrapper.class, pageFormat),
+					new GraphicParameter(int.class, pageIndex)));
+*/	
+			try {
+				returnValue = Integer.parseInt(
+					(String)manager().directServer(
+							jobId().toString(), 
+							DirectConnectCommand.EXECUTE_PRINTABLE,
+							DirectConnectKeys.DIRECT_CONNECT_DATA
+								+ ParameterKeys.PARAMETER_SEPARATOR
+								+ DirectConnectUtils.INSTANCE.serialize(objectUUID()),
+							DirectConnectKeys.DIRECT_CONNECT_PAGE_FORMAT
+								+ ParameterKeys.PARAMETER_SEPARATOR
+								+ DirectConnectUtils.INSTANCE.serialize(pageFormat),
+							DirectConnectKeys.DIRECT_CONNECT_PAGE_INDEX
+								+ ParameterKeys.PARAMETER_SEPARATOR
+								+ Integer.toString(pageIndex)));
+			} catch (Exception e) {
+				LOG.fatal(e.getMessage(), e);
+				throw new RuntimeException(e);
 			}
-			LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
-		} else {
-			Integer printed = printedPages.get(pageIndex);
-			if (printed != null && printed <= 1) { // Normally a page rendering is called twice. One for peek graphics and the actual printing.
-				long start = new Date().getTime();
-				returnValue = Printable.PAGE_EXISTS;
+					
+			manager().doLog("Generating page in server took:" + (new Date().getTime() - startTime) + "ms", 4); 
+		}
+		if (returnValue != null && Printable.NO_SUCH_PAGE != returnValue) {
+			graphicCommands.clear();
+			
+			try {
+				if (printed > 0) {
+					graphicCommands.addAll((Set<GraphicCommand>)
+							DirectConnectUtils.INSTANCE.deserialize((String)
+									manager().directServer(
+									jobId().toString(),
+									DirectConnectCommand.POLL_PRINTABLE_DATA,
+									DirectConnectKeys.DIRECT_CONNECT_DATA
+										+ ParameterKeys.PARAMETER_SEPARATOR
+										+ DirectConnectUtils.INSTANCE.serialize(objectUUID()),
+									DirectConnectKeys.DIRECT_CONNECT_PAGE_INDEX
+										+ ParameterKeys.PARAMETER_SEPARATOR
+										+ Integer.toString(pageIndex)
+									)));
+				}
+			} catch (Exception e) {
+				LOG.fatal(e.getMessage(), e);
+				throw new RuntimeException(e);
+			}
+			if (graphicCommands != null && !graphicCommands.isEmpty()) {
+				long startTime = new Date().getTime();
 				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
 				Point2D scaleValue = GraphicsUtils.INSTANCE.scaleGraphics(graph, pageFormat, noScale);
-				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY(), pageIndex);
-				printed += 1;
-				printedPages.put(pageIndex, printed);
-				LOG.debug("Page " + pageIndex + " printing took:" + (new Date().getTime() - start) + "ms");
-			} else {
-				returnValue = Printable.NO_SUCH_PAGE;
+				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY(), graphicCommands);
+				manager().doLog("Sending page to printer took:" + (new Date().getTime() - startTime) + "ms", 4); 
 			}
 		}
+		printed++;
 		return returnValue;
 	}
 	
@@ -124,10 +159,10 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param xScale new scale to apply horizontally wise.
 	 * @param yScale new scale to apply vertically wise.
 	 */
-	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
+	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale,
+			Set<GraphicCommand> graphicCommands) {
 		initialTransform = graph.getTransform();
 		initialTransformApplied = false;
-		Set<GraphicCommand> graphicCommands = getGraphicCommands(pageIndex);
 		if (graphicCommands != null) {
 			Iterator<GraphicCommand> it = graphicCommands.iterator();
 			while (it.hasNext()) {
@@ -276,46 +311,41 @@ public class PrintableWrapper implements Printable, Serializable {
 		return method;
 	}
 
-	/**
-	 * @return the notSerialized
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
-	public boolean isNotSerialized() {
-		return notSerialized;
-	}
-
 	/**
-	 * @param notSerialized the notSerialized to set
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
-	public void setNotSerialized(boolean notSerialized) {
-		this.notSerialized = notSerialized;
-	}
-
-	/**
-	 * Gets the graphic commands set by its page index.
-	 * @param pageIndex Page index to the graphic commands set.
-	 * @return Found instance or null if not found.
-	 */
-	private Set<GraphicCommand> getGraphicCommands(int pageIndex) {
-		Set<GraphicCommand> returnValue = null;
-		if (graphicCommandsList == null) {
-			graphicCommandsList = new HashMap<Integer, Set<GraphicCommand>>();
-		}
-
-		returnValue = graphicCommandsList.get(pageIndex);
-		return returnValue;
+	@Override
+	public void initialize(){
 	}
 	
 	/**
-	 * Finds or create a graphic commands set.
-	 * @param pageIndex Index of the graphicCommand.
-	 * @return An empty set of the graphic command. Never null.
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	private Set<GraphicCommand> createGraphicCommands(int pageIndex) {
-		
-		Set<GraphicCommand> returnValue = 
-				getGraphicCommands(pageIndex);
-		returnValue = new TreeSet<GraphicCommand>();
-		graphicCommandsList.put(pageIndex, returnValue);
-		return returnValue;
+	@Override
+	public Long jobId() {
+		return null;
 	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
+	 */
+	@Override
+	public UUID objectUUID() {
+		return null;
+	}
+
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+	
 }

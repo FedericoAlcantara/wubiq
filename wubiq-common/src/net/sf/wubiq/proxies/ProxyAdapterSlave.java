@@ -20,10 +20,11 @@ import net.sf.wubiq.utils.DirectConnectUtils;
  */
 public class ProxyAdapterSlave extends ProxyAdapter {
 
-	public ProxyAdapterSlave(IDirectConnectorQueue queue,
+	public ProxyAdapterSlave(Long jobId,
+			IDirectConnectorQueue queue,
 			UUID objectUUID,
 			String filtered[]) {
-		super(queue, objectUUID, filtered);
+		super(jobId, queue, objectUUID, filtered);
 	}
 	
 	@Override

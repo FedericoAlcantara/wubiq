@@ -217,6 +217,7 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		GraphicsConfigurationAdapter adapter = (GraphicsConfigurationAdapter)
 				Enhancer.create(GraphicsConfigurationAdapter.class,
 						new ProxyAdapterSlave(
+								jobId(),
 								queue(),
 								remoteUUID,
 								GraphicsConfigurationAdapter.FILTERED_METHODS));
@@ -233,6 +234,7 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		FontRenderContextAdapter adapter = (FontRenderContextAdapter)
 				Enhancer.create(FontRenderContextAdapter.class,
 						new ProxyAdapterSlave(
+								jobId(),
 								queue(),
 								remoteUUID,
 								FontRenderContextAdapter.FILTERED_METHODS));
@@ -277,7 +279,9 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		UUID remoteUUID = (UUID)queue().returnData();
 		BasicStrokeAdapter adapter = (BasicStrokeAdapter)
 				Enhancer.create(BasicStrokeAdapter.class, 
-						new ProxyAdapterSlave(queue(),
+						new ProxyAdapterSlave(
+								jobId(),
+								queue(),
 								remoteUUID,
 								BasicStrokeAdapter.FILTERED_METHODS));
 		return adapter;
@@ -449,7 +453,10 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		UUID remoteUUID = (UUID)queue().returnData();
 		GraphicsAdapter adapter = (GraphicsAdapter)
 				Enhancer.create(GraphicsAdapter.class,
-						new ProxyAdapterSlave(queue(), remoteUUID, 
+						new ProxyAdapterSlave(
+								jobId(),
+								queue(),
+								remoteUUID, 
 								GraphicsAdapter.FILTERED_METHODS));
 		return adapter;
 	}
@@ -467,7 +474,10 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 		UUID remoteUUID = (UUID)queue().returnData();
 		GraphicsAdapter adapter = (GraphicsAdapter)
 				Enhancer.create(GraphicsAdapter.class,
-						new ProxyAdapterSlave(queue(), remoteUUID, 
+						new ProxyAdapterSlave(
+								jobId(),
+								queue(),
+								remoteUUID, 
 								GraphicsAdapter.FILTERED_METHODS));
 		return adapter;
 	}
@@ -722,16 +732,27 @@ public class GraphicsAdapter extends Graphics2D implements IAdapter,
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}
 	
+
 	/* *****************************************
 	 * IAdapter interface implementation
 	 * *****************************************

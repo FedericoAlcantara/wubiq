@@ -19,6 +19,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
+import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.RemotePrintJobManagerType;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
@@ -41,6 +42,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	private DocFlavor docFlavor;
 	private PrintService printService;
 	private String printServiceName;
+	private String printServiceClientName;
 	private RemotePrintJobStatus status;
 	private Object printData;
 	private PageFormat pageFormat;
@@ -55,6 +57,11 @@ public class RemotePrintJob implements IRemotePrintJob {
 		try {
 			getRemoteName = printService.getClass().getDeclaredMethod("getRemoteName", new Class[]{});
 			printServiceName = (String)getRemoteName.invoke(printService, new Object[]{});
+			if (printService.getName().contains(WebKeys.REMOTE_SERVICE_SEPARATOR)) {
+				printServiceClientName = printService.getName().split(WebKeys.REMOTE_SERVICE_SEPARATOR)[1];
+			} else {
+				printServiceClientName = printService.getName();
+			}
 		} catch (SecurityException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (NoSuchMethodException e) {
@@ -161,7 +168,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 */
 	private void printSerialized(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet) 
 			throws PrintException {
-		LOG.warn("You are connecting with an OLD client, please update the client to ensure optimal performance");
+		LOG.warn(printServiceClientName + " is connecting with an OLD client, please upgrade this client to ensure optimal performance");
 		try {			
 			IRemotePrintJobManager manager = null;
 			this.printRequestAttributeSet = printRequestAttributeSet;

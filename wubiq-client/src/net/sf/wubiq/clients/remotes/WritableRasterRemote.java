@@ -23,27 +23,40 @@ public class WritableRasterRemote extends WritableRaster implements IProxyClient
 	public static final String[] FILTERED_METHODS = new String[]{
 	};
 	
-	/* ***************************
-	 * Proxied methods
-	 * ***************************
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
+	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
-	public DirectPrintManager manager() {
+	@Override
+	public void initialize(){
+	}
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
-	 */
-	public void initialize(){
-	}
-
-	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
+		return null;
+	}
+
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
 		return null;
 	}
 

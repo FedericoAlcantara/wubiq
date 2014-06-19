@@ -3,34 +3,52 @@
  */
 package net.sf.wubiq.adapters;
 
+import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.Graphics2D;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.util.Date;
+import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
 import java.util.UUID;
 
-import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.proxies.ProxyAdapterSlave;
+import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.wrappers.GraphicCommand;
+import net.sf.wubiq.wrappers.GraphicsChunkRecorder;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * Establish and manages the communication between the server and the client at printable level.
  * @author Federico Alcantara
  *
  */
-public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
-	
-	private GraphicsAdapter graphicsAdapter;
+public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster {
+	private static final Log LOG = LogFactory.getLog(PrintableChunkAdapter.class);
 	public static final String[] FILTERED_METHODS = new String[]{
 		"printable",
-		"print"
+		"print",
+		"graphicCommands",
+		"endPrintable",
+		"serializedGraphicCommands"
 	};
 
-	public PrintableAdapter() {
+	private static GraphicsChunkRecorder graphicsRecorder = new GraphicsChunkRecorder();
+	private static Map<Integer, Set<GraphicCommand>> graphicCommands = new TreeMap<Integer, Set<GraphicCommand>>();
+
+	public PrintableChunkAdapter() {
 		initialize();
 	}
 	
@@ -40,24 +58,42 @@ public class PrintableAdapter implements Printable, IAdapter, IProxyMaster {
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		return printable().print(graphics, pageFormat, pageIndex);
+		graphicCommands.put(pageIndex, new TreeSet<GraphicCommand>());
+		graphicsRecorder.initialize(graphicCommands.get(pageIndex), (Graphics2D)graphics);
+		return printable().print(graphicsRecorder, pageFormat, pageIndex);
 	}
-
+	
 	/**
-	 * Special method for setting the communication between remote and local printable.
-	 * @param pageFormat Page format to use.
+	 * Starts the collection of graphics commands.
+	 * @param pageFormat Format to print.
 	 * @param pageIndex Page index.
-	 * @param remoteGraphicsUUID UUID of the correspondant remote graphics
-	 * @return Status of the action.
+	 * @return Status of the print page.
 	 * @throws PrinterException
 	 */
-	public int print(PageFormat pageFormat, int pageIndex, UUID remoteGraphicsUUID) throws PrinterException {
-		if (graphicsAdapter == null) {
-			graphicsAdapter = (GraphicsAdapter)
-					Enhancer.create(GraphicsAdapter.class, 
-							new ProxyAdapterSlave(jobId(), queue(), remoteGraphicsUUID, GraphicsAdapter.FILTERED_METHODS));
-		}
-		return print(graphicsAdapter, pageFormat, pageIndex);
+	public int print(PageFormat pageFormat, int pageIndex) throws PrinterException {
+		long start = new Date().getTime();
+		
+		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
+		Graphics2D graph = img.createGraphics();
+		AffineTransform scaleTransform = new AffineTransform();
+		scaleTransform.scale(1, 1);
+		graph.setTransform(scaleTransform);
+		graph.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+		graph.setClip(new Rectangle2D.Double(
+				0,
+				0,
+				pageFormat.getPaper().getImageableWidth(), 
+				pageFormat.getPaper().getImageableHeight()));
+		graph.setBackground(Color.WHITE);
+		graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
+				(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
+		int returnValue = print(graph, pageFormat, pageIndex);
+		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
+		return returnValue;
+	}
+	
+	public String serializedGraphicCommands(int pageIndex) {
+		return DirectConnectUtils.INSTANCE.serialize(graphicCommands.get(pageIndex));
 	}
 	
 	public Printable printable() {

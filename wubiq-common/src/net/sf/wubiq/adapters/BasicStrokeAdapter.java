@@ -20,7 +20,6 @@ public class BasicStrokeAdapter extends BasicStroke implements IAdapter, IProxy 
 	public static final String[] FILTERED_METHODS = new String[]{
 		
 	};
-	
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************
@@ -28,12 +27,22 @@ public class BasicStrokeAdapter extends BasicStroke implements IAdapter, IProxy 
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
+	 */
+	@Override
+	public Long jobId() {
+		return null;
+	}
+	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}

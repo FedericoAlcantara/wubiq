@@ -8,12 +8,11 @@ import java.awt.print.Printable;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.Collection;
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.adapters.PageableAdapter;
@@ -42,20 +41,22 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	private static final Log LOG = LogFactory.getLog(DirectConnectorQueue.class);
 	
 	private String queueId;
-	private Map<Long, IRemotePrintJob> printJobs;
 	private long onProcess;
 	private Set<IRemoteListener> listeners;
-	private final Map<UUID, Object> registeredObjects;
-	private Map<String, String> remoteDatas;
 	private UUID objectUUID;
+	private Map<Long, JobBucket> jobBuckets;
 
+	private class JobBucket {
+		private Map<UUID, Object> registeredObjects;
+		private Map<String, String> remoteDatas;
+		private IRemotePrintJob printJob;
+	}
+	
 	public DirectConnectorQueue(String queueId) {
 		this.queueId = queueId;
-		printJobs = new ConcurrentHashMap<Long, IRemotePrintJob>();
 		onProcess = -1l;
-		listeners = Collections.synchronizedSet( new HashSet<IRemoteListener>());
-		registeredObjects = new ConcurrentHashMap<UUID, Object>();
-		remoteDatas = new ConcurrentHashMap<String, String>();
+		listeners = new HashSet<IRemoteListener>();
+		jobBuckets = new HashMap<Long, JobBucket>();
 		objectUUID = UUID.randomUUID();
 	}
 	
@@ -65,7 +66,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 * @param remotePrintJob Remote print job.
 	 */
 	public synchronized void addPrintJob(long jobId, IRemotePrintJob remotePrintJob) {
-		printJobs.put(jobId, remotePrintJob);
+		jobBucket(jobId).printJob = remotePrintJob;
 	}
 	
 	/**
@@ -77,12 +78,15 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		if (jobId == onProcess) {
 			resetProcess();
 		}
-		printJobs.remove(jobId);
+		jobBucket(jobId).registeredObjects = null;
+		jobBucket(jobId).remoteDatas = null;
+		jobBucket(jobId).printJob = null;
+		jobBuckets.remove(jobId);
 		return true;
 	}
 	
 	public synchronized IRemotePrintJob remotePrintJob(long jobId) {
-		return printJobs.get(jobId);
+		return jobBucket(jobId).printJob;
 	}
 	
 	/**
@@ -90,7 +94,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 * @return Collection of print jobs.
 	 */
 	public synchronized Collection<Long> printJobs() {
-		return printJobs.keySet();
+		return jobBuckets.keySet();
 	}
 	
 	/**
@@ -98,15 +102,15 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 * @param jobId 
 	 */
 	public synchronized void startPrintJob(final long jobId) {
-		registeredObjects.clear();
-		registeredObjects.put(objectUUID, this);
-		IRemotePrintJob remotePrintJob = printJobs.get(jobId);
+		registeredObjects(jobId).put(objectUUID, this);
+		IRemotePrintJob remotePrintJob = jobBucket(jobId).printJob;
 		if (remotePrintJob != null) {
 			Object printData = remotePrintJob.getPrintDataObject();
 			if (printData instanceof Printable) {
 				PrintableAdapter remote = (PrintableAdapter)
 						Enhancer.create(PrintableAdapter.class,
 								new ProxyAdapterMaster(
+										jobId,
 										this,
 										printData,
 										PrintableAdapter.FILTERED_METHODS));
@@ -116,6 +120,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 				PageableAdapter remote = (PageableAdapter)
 						Enhancer.create(PageableAdapter.class, 
 								new ProxyAdapterMaster(
+										jobId,
 										this,
 										printData,
 										PageableAdapter.FILTERED_METHODS));
@@ -129,8 +134,50 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	/**
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#registerObject(net.sf.wubiq.enums.RemoteCommandType, java.lang.Object)
 	 */
-	public synchronized Object registerObject(UUID objectUUID, Object object) {
-		return registeredObjects.put(objectUUID, object);
+	public synchronized Object registerObject(Long jobId, UUID objectUUID, Object object) {
+		return registeredObjects(jobId).put(objectUUID, object);
+	}
+	
+	/**
+	 * Finds the map of registered objects for the job.
+	 * @param jobId Id of the job to get the registered object from.
+	 * @return Map of registered objects.
+	 */
+	private synchronized Map<UUID, Object> registeredObjects(Long jobId) {
+		Map<UUID, Object> registeredObjects = jobBucket(jobId).registeredObjects;
+		if (registeredObjects == null) {
+			registeredObjects = new HashMap<UUID, Object>();
+			jobBucket(jobId).registeredObjects = registeredObjects;
+		}
+		return registeredObjects;
+	}
+	
+	/**
+	 * Finds the map of registered objects for the job.
+	 * @param jobId Id of the job to get the registered object from.
+	 * @return Map of registered objects.
+	 */
+	private synchronized Map<String, String> remoteDatas(Long jobId) {
+		Map<String, String> remoteDatas = jobBucket(jobId).remoteDatas;
+		if (remoteDatas == null) {
+			remoteDatas = new HashMap<String, String>();
+			jobBucket(jobId).remoteDatas = remoteDatas;
+		}
+		return remoteDatas;
+	}
+
+	/**
+	 * Returns the job bucket. The bucket contains the objects related to the print job.
+	 * @param jobId Id of the job.
+	 * @return Existing or newly created bucket.
+	 */
+	private synchronized JobBucket jobBucket(Long jobId) {
+		JobBucket jobBucket = jobBuckets.get(jobId);
+		if (jobBucket == null) {
+			jobBucket = new JobBucket();
+			jobBuckets.put(jobId, jobBucket);
+		}
+		return jobBucket;
 	}
 	
 	private void resetProcess() {
@@ -152,17 +199,21 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 
 	@Override
 	public void addListener(IRemoteListener listener) {
-		listeners.add(listener);
+		synchronized(listeners) {
+			listeners.add(listener);
+		}
 	}
 
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
-		listeners.remove(listener);
+		synchronized(listeners) {
+			listeners.remove(listener);
+		}
 		return true;
 	}
 
 	@Override
-	public Set<IRemoteListener> listeners() {
+	public synchronized Set<IRemoteListener> listeners() {
 		return listeners;
 	}
 
@@ -269,12 +320,12 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 * Calls the command in a new thread.
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(net.sf.wubiq.enums.RemoteCommand)
 	 */
-	public String callCommand(final RemoteCommand printerCommand, final String dataUUID) {
-		remoteDatas.remove(dataUUID);
-		remoteDatas.put(dataUUID, DirectConnectKeys.DIRECT_CONNECT_NOT_READY);
+	public String callCommand(final Long jobId, final RemoteCommand printerCommand, final String dataUUID) {
+		remoteDatas(jobId).remove(dataUUID);
+		remoteDatas(jobId).put(dataUUID, DirectConnectKeys.DIRECT_CONNECT_NOT_READY);
 		Thread returnData = new Thread(new Runnable() {
 			public void run() {
-				remoteDatas.put(dataUUID, doCallCommand(printerCommand));
+				remoteDatas(jobId).put(dataUUID, doCallCommand(jobId, printerCommand));
 				
 			}
 		}, printerCommand.getObjectUUID() + "-" + printerCommand.getMethodName());
@@ -285,16 +336,32 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	/**
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#getRemoteData()
 	 */
-	public String getRemoteData(String dataUUID) {
-		String returnValue = remoteDatas.get(dataUUID);
+	public synchronized String getRemoteData(Long jobId, String dataUUID) {
+		String returnValue = remoteDatas(jobId).get(dataUUID);
 		if (returnValue == null) {
 			returnValue = DirectConnectKeys.DIRECT_CONNECT_NOT_READY;
 		}
 		return returnValue;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#removeRemoteData(java.lang.Long, java.lang.String)
+	 */
+	public synchronized void removeRemoteData(Long jobId, String dataUUID) {
+		remoteDatas(jobId).remove(dataUUID);
+	}
+	
+	/**
+	 * @param jobId
+	 * @param adapterUUID
+	 * @return
+	 */
+	public synchronized Object getAdapter(Long jobId, UUID adapterUUID) {
+		return registeredObjects(jobId).get(adapterUUID);
+	}
+	
 	@SuppressWarnings("rawtypes")
-	private String doCallCommand(RemoteCommand printerCommand) {
+	private String doCallCommand(Long jobId, RemoteCommand printerCommand) {
 		String serializedData = DirectConnectKeys.DIRECT_CONNECT_NULL;
 		String methodName = printerCommand.getMethodName();
 		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
@@ -306,7 +373,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		try {
 			Object data = null;
 			String error = null;
-			Object methodObject = registeredObjects.get(printerCommand.getObjectUUID());
+			Object methodObject = registeredObjects(jobId).get(printerCommand.getObjectUUID());
 			try {
 				Method method = DirectConnectUtils.INSTANCE.findMethod(methodObject.getClass(), methodName, parameterTypes);
 				if (method != null) {

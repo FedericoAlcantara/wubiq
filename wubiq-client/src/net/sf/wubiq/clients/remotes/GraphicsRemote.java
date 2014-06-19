@@ -139,9 +139,11 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 	 */
 	public UUID createRemote() {
 		GraphicsRemote remote = (GraphicsRemote) Enhancer.create(GraphicsRemote.class,
-				new ProxyClientMaster(manager(),
-				graphics().create(),
-				GraphicsRemote.FILTERED_METHODS));
+				new ProxyClientMaster(
+						jobId(),
+						manager(),
+						graphics().create(),
+						GraphicsRemote.FILTERED_METHODS));
 		return remote.objectUUID();
 	}
 	
@@ -161,6 +163,7 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 	public UUID createRemote(int x, int y, int width, int height) {
 		GraphicsRemote remote = (GraphicsRemote) Enhancer.create(GraphicsRemote.class,
 				new ProxyClientMaster(
+						jobId(),
 						manager(),
 						graphics().create(x, y, width, height),
 						GraphicsRemote.FILTERED_METHODS));
@@ -411,6 +414,7 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 		GraphicsConfigurationRemote remote = (GraphicsConfigurationRemote)
 				Enhancer.create(GraphicsConfigurationRemote.class,
 						new ProxyClientMaster(
+								jobId(),
 								manager(),
 								graphics().getDeviceConfiguration(),
 								GraphicsConfigurationRemote.FILTERED_METHODS));
@@ -471,6 +475,7 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 		BasicStrokeRemote remote = (BasicStrokeRemote)
 				Enhancer.create(BasicStrokeRemote.class, 
 						new ProxyClientMaster(
+								jobId(),
 								manager(),
 								graphics().getStroke(),
 								BasicStrokeRemote.FILTERED_METHODS));
@@ -560,35 +565,53 @@ public class GraphicsRemote extends Graphics2D implements IProxyClient, IProxyMa
 		return (Graphics2D) decoratedObject();
 	}
 	
-	/* ***************************
-	 * Proxied methods
-	 * ***************************
+	/* *****************************************
+	 * IProxy interface implementation
+	 * *****************************************
 	 */
-	/**
-	 * @see net.sf.wubiq.interfaces.IProxyClient#manager()
-	 */
-	public DirectPrintManager manager() {
-		return null;
-	}
-	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#initialize()
 	 */
+	@Override
 	public void initialize(){
 	}
-
+	
 	/**
-	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 * @see net.sf.wubiq.interfaces.IProxy#jobId()
 	 */
-	public Object decoratedObject() {
+	@Override
+	public Long jobId() {
 		return null;
 	}
 	
 	/**
 	 * @see net.sf.wubiq.interfaces.IProxy#objectUUID()
 	 */
+	@Override
 	public UUID objectUUID() {
 		return null;
 	}
 
+	/* *****************************************
+	 * IProxyClient interface implementation
+	 * *****************************************
+	 */
+	@Override
+	public DirectPrintManager manager() {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	/* *****************************************
+	 * IProxyMaster interface implementation
+	 * *****************************************
+	 */
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyMaster#decoratedObject()
+	 */
+	@Override
+	public Object decoratedObject() {
+		return null;
+	}
+	
 }
