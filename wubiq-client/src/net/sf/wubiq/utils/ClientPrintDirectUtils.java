@@ -6,6 +6,7 @@ package net.sf.wubiq.utils;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Paper;
+import java.awt.print.Printable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -111,11 +112,19 @@ public final class ClientPrintDirectUtils {
 		}
 	}
 
+	/**
+	 * Prints a pageable object.
+	 * @param jobId Id of the object.
+	 * @param printService Print service.
+	 * @param printRequestAttributeSet Print request Attribute set.
+	 * @param printJobAttributeSet Print Job attribute set.
+	 * @param docAttributeSet Document attribute set.
+	 * @param pageable Pageable.
+	 */
 	public static void printPageable(String jobId, PrintService printService, 
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			DocFlavor docFlavor,
 			Pageable pageable){
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
 		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
@@ -127,6 +136,29 @@ public final class ClientPrintDirectUtils {
 		}
 	}
 	
+	/**
+	 * Prints a pageable object.
+	 * @param jobId Id of the object.
+	 * @param printService Print service.
+	 * @param printRequestAttributeSet Print request Attribute set.
+	 * @param printJobAttributeSet Print Job attribute set.
+	 * @param docAttributeSet Document attribute set.
+	 * @param printable Printable.
+	 */
+	public static void printPrintable(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			Printable printable){
+		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		Doc doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
+		DocPrintJob printJob = printService.createPrintJob();
+		try {
+			printJob.print(doc, printRequestAttributeSet);
+		} catch (PrintException e) {
+			LOG.error(e.getMessage(), e);
+		}
+	}
 	private static void setJobName(String jobId, PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet) {
 		JobName jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, JobName.class);

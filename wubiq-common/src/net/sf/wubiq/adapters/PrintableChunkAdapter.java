@@ -4,12 +4,15 @@
 package net.sf.wubiq.adapters;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.util.Date;
@@ -41,16 +44,21 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		"print",
 		"graphicCommands",
 		"endPrintable",
-		"graphicCommands"
+		"graphicCommands",
+		"setPageable"
 	};
 
 	private static GraphicsChunkRecorder graphicsRecorder = new GraphicsChunkRecorder();
 	private static Map<Integer, Set<GraphicCommand>> graphicCommands = new TreeMap<Integer, Set<GraphicCommand>>();
-
+	private Pageable pageable;
+	
 	public PrintableChunkAdapter() {
 		initialize();
 	}
 	
+	public void setPageable(Pageable pageable) {
+		this.pageable = pageable;
+	}
 	/**
 	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
 	 */
@@ -69,9 +77,9 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	 * @return Status of the print page.
 	 * @throws PrinterException
 	 */
-	public int print(PageFormat pageFormat, int pageIndex) throws PrinterException {
+	public int print(int pageIndex) throws PrinterException {
 		long start = new Date().getTime();
-		
+		PageFormat pageFormat = pageable.getPageFormat(pageIndex);
 		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
 		AffineTransform scaleTransform = new AffineTransform();
@@ -86,6 +94,36 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		graph.setBackground(Color.WHITE);
 		graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
 				(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
+		int returnValue = print(graph, pageFormat, pageIndex);
+		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
+		return returnValue;
+	}
+
+	/**
+	 * Starts the collection of graphics commands.
+	 * @param pageFormat Format to print.
+	 * @param pageIndex Page index.
+	 * @return Status of the print page.
+	 * @throws PrinterException
+	 */
+	public int print(int pageIndex, Rectangle rectangle, AffineTransform transform, 
+			Color backgroundColor, Font font) throws PrinterException {
+		long start = new Date().getTime();
+		PageFormat pageFormat = pageable.getPageFormat(pageIndex);
+		BufferedImage img = new BufferedImage(new Double(rectangle.getWidth()).intValue(), 
+				new Double(rectangle.getHeight()).intValue(), BufferedImage.TYPE_INT_RGB);
+		Graphics2D graph = img.createGraphics();
+		graph.setTransform(transform);
+		graph.setClip(new Rectangle2D.Double(
+				0,
+				0,
+				rectangle.getWidth(), 
+				rectangle.getHeight()));
+		graph.setBackground(backgroundColor);
+		graph.clearRect(0, 0, 
+				new Double(rectangle.getWidth()).intValue(), 
+				new Double(rectangle.getHeight()).intValue());
+		graph.setFont(font);
 		int returnValue = print(graph, pageFormat, pageIndex);
 		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
 		return returnValue;

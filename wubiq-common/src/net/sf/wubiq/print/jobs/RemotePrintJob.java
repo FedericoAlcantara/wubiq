@@ -26,6 +26,7 @@ import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PdfUtils;
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -119,9 +120,9 @@ public class RemotePrintJob implements IRemotePrintJob {
 			Method isDirectCommunicationEnabledMethod = printService.getClass().getDeclaredMethod("isDirectCommunicationEnabled", new Class[]{});
 			isDirectCommunicationEnabled = (Boolean)isDirectCommunicationEnabledMethod.invoke(printService, new Object[]{});
 		} catch (Exception e) {
+			LOG.warn(printServiceClientName + " is connecting with an OLD client, please upgrade this client to ensure optimal performance");
 			isDirectCommunicationEnabled = false;
 		}
-		
 		String uuid = null;
 		try {
 			Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
@@ -130,7 +131,15 @@ public class RemotePrintJob implements IRemotePrintJob {
 			LOG.error(e.getMessage(), e);
 		}
 		if (!Is.emptyString(uuid)) {
+			boolean printRemotely = true;
 			if (isDirectCommunicationEnabled) {
+				if (PrintServiceUtils.supportDocFlavor(printService, doc.getDocFlavor())) {
+					printRemotely = false;
+				}
+			} else {
+				printRemotely = false;
+			}
+			if (printRemotely) {
 				printRemote(uuid, doc, printRequestAttributeSet);
 			} else {
 				printSerialized(uuid, doc, printRequestAttributeSet);
@@ -168,7 +177,6 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 */
 	private void printSerialized(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet) 
 			throws PrintException {
-		LOG.warn(printServiceClientName + " is connecting with an OLD client, please upgrade this client to ensure optimal performance");
 		try {			
 			IRemotePrintJobManager manager = null;
 			this.printRequestAttributeSet = printRequestAttributeSet;

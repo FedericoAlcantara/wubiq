@@ -7,6 +7,7 @@ import java.awt.image.BufferedImage;
 import java.awt.print.Pageable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -188,5 +189,23 @@ public enum PdfUtils {
 				LOG.error(e.getMessage());
 			}
 		}
+	}
+	
+	/**
+	 * Converts a pdf (or any input stream) to a byte array.
+	 * @param input Input stream.
+	 * @return byte[] representing the input stream.
+	 */
+	public byte[] pdfToByteArray(InputStream input) {
+		byte[] returnValue = new byte[]{};
+		ByteArrayOutputStream output = new ByteArrayOutputStream();
+		try {
+			IOUtils.INSTANCE.copy(input, output);
+			output.flush();
+			returnValue = output.toByteArray();
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		return returnValue;
 	}
 }

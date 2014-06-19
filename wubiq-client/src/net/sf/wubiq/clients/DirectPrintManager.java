@@ -11,7 +11,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
@@ -45,7 +44,6 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private PrintRequestAttributeSet printRequestAttributeSet;
 	private PrintJobAttributeSet printJobAttributeSet;
 	private DocAttributeSet docAttributeSet;
-	private DocFlavor docFlavor;
 	
 	private boolean printing;
 	private Map<UUID, Object> registeredObjects;
@@ -55,7 +53,6 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
-			DocFlavor docFlavor,
 			boolean debugMode,
 			int debugLevel){
 		this.jobIdString = jobIdString;
@@ -64,7 +61,6 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		this.printRequestAttributeSet = printRequestAttributeSet;
 		this.printJobAttributeSet = printJobAttributeSet;
 		this.docAttributeSet = docAttributeSet;
-		this.docFlavor = docFlavor;
 		setDebugMode(debugMode);
 		setDebugLevel(debugLevel);
 	}
@@ -108,6 +104,9 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	public void createPrintable(UUID objectUUID) {
 		PrintableRemote remote = (PrintableRemote) Enhancer.create(PrintableRemote.class, 
 				new ProxyClientSlave(jobId, this, objectUUID, PrintableRemote.FILTERED_METHODS));
+		ClientPrintDirectUtils.printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
+				docAttributeSet, 
+				remote);
 	}
 	
 	/**
@@ -118,7 +117,6 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				new ProxyClientSlave(jobId, this, objectUUID, PageableRemote.FILTERED_METHODS));
 		ClientPrintDirectUtils.printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
-				docFlavor,
 				remote);
 		printing = false;
 	}

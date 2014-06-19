@@ -22,6 +22,7 @@ import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientPrintDirectUtils;
+import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
@@ -85,7 +86,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
 			
-			if ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY))) {
+			if ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ||
+					!(DocFlavor.SERVICE_FORMATTED.PAGEABLE.equals(docFlavor) || DocFlavor.SERVICE_FORMATTED.PRINTABLE.equals(docFlavor))) {
 				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 				ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			} else {
@@ -96,7 +98,6 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						printRequestAttributeSet,
 						printJobAttributeSet,
 						docAttributeSet,
-						docFlavor,
 						isDebugMode(),
 						getDebugLevel());
 				manager.setConnections(getConnections());
@@ -242,14 +243,16 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, isDebugMode()));
 				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 					.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
-				askServer(CommandKeys.REGISTER_PRINT_SERVICE, printServiceRegister.toString(), categories.toString(), 
-						PrintServiceUtils.serializeDocumentFlavors(printService, isDebugMode()),
+				askServer(CommandKeys.REGISTER_PRINT_SERVICE_V2, printServiceRegister.toString(), categories.toString(), 
+						ParameterKeys.PRINT_SERVICE_DOC_FLAVORS
+							+ParameterKeys.PARAMETER_SEPARATOR
+							+DirectConnectUtils.INSTANCE.serialize(printService.getSupportedDocFlavors()),
 						DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER 
 							+ ParameterKeys.PARAMETER_SEPARATOR
 							+ ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ?
 									"FALSE" : "TRUE"));
 				PrinterType printerType = PrintServiceUtils.printerType(printService);
-				LOG.info(printServiceName + " -> " + printerType);
+				doLog(printServiceName + " -> " + printerType, 0);				
 			}
 			lastServerTimestamp = serverTimestamp;
 		}

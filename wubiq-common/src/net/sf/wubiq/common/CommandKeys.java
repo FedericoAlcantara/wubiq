@@ -18,6 +18,7 @@ public final class CommandKeys {
 	public static final String BRING_ALIVE = "b1";
 	public static final String REGISTER_COMPUTER_NAME = "c1";
 	public static final String REGISTER_PRINT_SERVICE = "p0";
+	public static final String REGISTER_PRINT_SERVICE_V2 = "p0b";
 	public static final String REGISTER_MOBILE_PRINT_SERVICE = "pm";
 	public static final String SHOW_PRINT_SERVICES = "p1";
 	public static final String PENDING_JOBS = "j0";

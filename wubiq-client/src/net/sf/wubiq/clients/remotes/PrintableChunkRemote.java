@@ -7,12 +7,12 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Paint;
+import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.Point2D;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.print.PageFormat;
@@ -27,13 +27,9 @@ import java.util.TreeSet;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
-import net.sf.wubiq.common.DirectConnectKeys;
-import net.sf.wubiq.common.ParameterKeys;
-import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IProxyClient;
-import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.GraphicsUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
@@ -42,7 +38,6 @@ import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicParameter;
 import net.sf.wubiq.wrappers.ImageObserverWrapper;
 import net.sf.wubiq.wrappers.ImageWrapper;
-import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.RenderableImageWrapper;
 import net.sf.wubiq.wrappers.RenderedImageWrapper;
 import net.sf.wubiq.wrappers.RenderingHintWrapper;
@@ -69,9 +64,6 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	};
 
 	private PrinterType printerType;
-	private transient AffineTransform initialTransform;
-	private boolean initialTransformApplied = false;
-	private boolean noScale = false;
 	private int printed = 0;
 	private Integer returnValue = -1;
 	private static Set<GraphicCommand>graphicCommands = new TreeSet<GraphicCommand>();
@@ -93,11 +85,17 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		Graphics2D graph = (Graphics2D) graphics;
 		if (printed <= 0) {
 			long startTime = new Date().getTime();
-
+			Rectangle rect = graph.getClipBounds();
+			AffineTransform transform = graph.getTransform();
+			Color background = graph.getBackground();
+			Font font = graph.getFont();
 			returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
 					"print",
-					new GraphicParameter(PageFormatWrapper.class, pageFormat),
-					new GraphicParameter(int.class, pageIndex)));
+					new GraphicParameter(int.class, pageIndex),
+					new GraphicParameter(Rectangle.class, rect),
+					new GraphicParameter(AffineTransform.class, transform),
+					new GraphicParameter(Color.class, background),
+					new GraphicParameter(Font.class, font)));
 					
 			manager().doLog("Generating page in server took:" + (new Date().getTime() - startTime) + "ms", 4); 
 		}
@@ -118,8 +116,7 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 			if (graphicCommands != null && !graphicCommands.isEmpty()) {
 				long startTime = new Date().getTime();
 				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
-				Point2D scaleValue = GraphicsUtils.INSTANCE.scaleGraphics(graph, pageFormat, noScale);
-				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY(), graphicCommands);
+				executeGraphics(graph, pageFormat, graphicCommands);
 				manager().doLog("Sending page to printer took:" + (new Date().getTime() - startTime) + "ms", 4); 
 			}
 		}
@@ -134,16 +131,14 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	 * @param xScale new scale to apply horizontally wise.
 	 * @param yScale new scale to apply vertically wise.
 	 */
-	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale,
+	private void executeGraphics(Graphics2D graph, PageFormat pageFormat,
 			Set<GraphicCommand> graphicCommands) {
-		initialTransform = graph.getTransform();
-		initialTransformApplied = false;
 		if (graphicCommands != null) {
 			Iterator<GraphicCommand> it = graphicCommands.iterator();
 			while (it.hasNext()) {
 				GraphicCommand graphicCommand = it.next();
 	
-				executeMethod(graph, graphicCommand, xScale, yScale);
+				executeMethod(graph, graphicCommand);
 			}
 		}
 	}
@@ -155,18 +150,13 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	 * @param graphicCommand Specific graphic command.
 	 */
 	@SuppressWarnings("rawtypes")
-	private void executeMethod(Graphics2D graph, GraphicCommand graphicCommand, double xScale, double yScale) {
+	private void executeMethod(Graphics2D graph, GraphicCommand graphicCommand) {
+		double xScale = 1;
+		double yScale = 1;
 		Method method = null;
 		Class[] parameterTypes = new Class[]{};
 		Object[] parameterValues = new Object[]{};
-		if (graphicCommand.getMethodName().equals("setTransform")) {
-			if (!initialTransformApplied) {
-				graph.setTransform(initialTransform);
-				initialTransformApplied = true;
-			}
-			return;
-		}
-		
+
 		if ("setFont".equalsIgnoreCase(graphicCommand.getMethodName())) {
 			Font originalFont = (Font)graphicCommand.getParameters()[0].getParameterValue();
 			Font font = GraphicsUtils.INSTANCE.properFont(originalFont, printerType);

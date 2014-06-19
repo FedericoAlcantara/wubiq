@@ -74,6 +74,7 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 									queue(),
 									printable,
 									PrintableChunkAdapter.FILTERED_METHODS));
+			lastPrintable.setPageable(this);
 		}
 		lastPrintableProcessed = pageIndex;
 		return lastPrintable; // Must be the adapter

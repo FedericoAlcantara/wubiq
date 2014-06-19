@@ -564,12 +564,16 @@ public class PrintServiceUtils {
 	/**
 	 * Serialize print service's document flavors.
 	 * @param printService Print service to look into.
-	 * @param debugMode If true errors are debugged.
 	 * @return String representing the document flavors. Never null.
 	 */
-	public static String serializeDocumentFlavors(PrintService printService, boolean debugMode) {
+	public static String serializeDocumentFlavors(PrintService printService) {
 		StringBuffer docFlavors = new StringBuffer("");
+		Set<DocFlavor> flavors = new HashSet<DocFlavor>();
 		for (DocFlavor docFlavor : printService.getSupportedDocFlavors()) {
+			System.out.println(docFlavor);
+			flavors.add(docFlavor);
+		}
+		for (DocFlavor docFlavor : flavors) {
 			if (docFlavors.length() > 0) {
 				docFlavors.append(ParameterKeys.CATEGORIES_SEPARATOR);
 			}
@@ -1038,5 +1042,21 @@ public class PrintServiceUtils {
 		return docFlavorConversionMap;
 	}
 	
+	/**
+	 * Determines if a print service supports the given doc flavor.
+	 * @param printService Print Service to test about.
+	 * @param docFlavor Doc flavor to test.
+	 * @return True if the print service support the flavor. False otherwise.
+	 */
+	public static boolean supportDocFlavor(PrintService printService, DocFlavor docFlavor) {
+		boolean returnValue = false;
+		for (DocFlavor psDocFlavor : printService.getSupportedDocFlavors()) {
+			if (psDocFlavor.equals(docFlavor)) {
+				returnValue = true;
+				break;
+			}
+		}
+		return returnValue;
+	}
 	
 }

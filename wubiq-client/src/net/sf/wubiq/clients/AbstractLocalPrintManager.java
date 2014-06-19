@@ -4,6 +4,7 @@
 package net.sf.wubiq.clients;
 
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
@@ -338,12 +339,21 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		try {
 			for (URL address : actualURLs) {
 				try {
-					url = getEncodedUrl(address, command, parameters);
-					doLog("URL:" + url, 5);
-					webUrl = new URL(url);
+					//url = getEncodedUrl(address, command, parameters);
+					//doLog("URL:" + url, 5);
+					webUrl = address;
+					url = getEncodedParameters(command, parameters);
 					connection = (HttpURLConnection) webUrl.openConnection();
-					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+					connection.setDoOutput(true);
+					connection.setDoInput(true);
 					connection.setRequestMethod("POST");
+					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+					connection.setRequestProperty("charset", "utf-8");
+					connection.setRequestProperty("ContentType", "text/html");
+					connection.setRequestProperty("Content-Length", "" + Integer.toString(url.getBytes().length));
+					ByteArrayInputStream input = new ByteArrayInputStream(url.getBytes());
+					connection.setUseCaches (false);
+					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 					content = connection.getContent();
 					if (!connected) {
 						doLog("\nConnected! to:" + url + "\n", 0);
@@ -416,6 +426,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		}
 		return urls;
 	}
+	
 	/**
 	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
 	 * @param command Command to be encoded as part of the url.
@@ -460,6 +471,44 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				command.equals(CommandKeys.SHOW_PRINT_SERVICES)) {
 			returnValue = returnValue.replace("wubiq.do", "wubiq-print-test.do");
 		}
+
+		return returnValue;
+	}
+	
+	/**
+	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
+	 * @param command Command to be encoded as part of the url.
+	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
+	 * @return Url string with parameterValues encoded.
+	 */
+	protected String getEncodedParameters(String command, String... parameters) {
+		StringBuffer parametersQuery = new StringBuffer("")
+				.append(ParameterKeys.UUID)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(getUuid());
+			if (!Is.emptyString(command)) {
+				parametersQuery.append('&')
+				.append(ParameterKeys.COMMAND)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(command);
+			}
+		
+			for (String parameter: parameters) {
+				String parameterString = parameter;
+				if (parameter.contains("=")) {
+					String parameterName = parameter.substring(0, parameter.indexOf("="));
+					String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
+					try {
+						parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
+						parameterString = parameterName + "=" + parameterValue;
+					} catch (UnsupportedEncodingException e) {
+						LOG.error(e.getMessage());
+					}
+				}
+				parametersQuery.append('&')
+						.append(parameterString);
+			}
+		String returnValue = parametersQuery.toString();
 
 		return returnValue;
 	}

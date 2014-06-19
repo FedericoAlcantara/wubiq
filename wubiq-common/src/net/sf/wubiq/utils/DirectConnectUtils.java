@@ -98,7 +98,7 @@ public enum DirectConnectUtils {
 		}
 		return returnValue;
 	}
-	
+		
 	/**
 	 * De serializes a given string.
 	 * @param serialized String representing the object.
