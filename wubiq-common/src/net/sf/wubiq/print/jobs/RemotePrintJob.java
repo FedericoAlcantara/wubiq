@@ -120,8 +120,10 @@ public class RemotePrintJob implements IRemotePrintJob {
 			Method isDirectCommunicationEnabledMethod = printService.getClass().getDeclaredMethod("isDirectCommunicationEnabled", new Class[]{});
 			isDirectCommunicationEnabled = (Boolean)isDirectCommunicationEnabledMethod.invoke(printService, new Object[]{});
 		} catch (Exception e) {
-			LOG.warn(printServiceClientName + " is connecting with an OLD client, please upgrade this client to ensure optimal performance");
 			isDirectCommunicationEnabled = false;
+		}
+		if (!PrintServiceUtils.isSameVersion(printService)) {
+			LOG.warn(printServiceClientName + " is connecting with different version client, please use the appropriate wubiq-client to ensure stable and optimal performance");
 		}
 		String uuid = null;
 		try {
@@ -312,29 +314,11 @@ public class RemotePrintJob implements IRemotePrintJob {
 	}
 
 	/**
-	 * @return the pageFormat
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getPageFormat()
 	 */
 	public PageFormat getPageFormat() {
 		if (pageFormat == null) {
 			pageFormat = PageableUtils.INSTANCE.getPageFormat(printRequestAttributeSet);
-			/*
-			MediaPrintableArea printableArea = 
-					(MediaPrintableArea)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, MediaPrintableArea.class);
-			Paper paper = new Paper();
-			if (printableArea != null) {
-				paper.setImageableArea(
-						printableArea.getX(MediaPrintableArea.INCH) * 72,
-						printableArea.getY(MediaPrintableArea.INCH) * 72,
-						printableArea.getWidth(MediaPrintableArea.INCH) * 72,
-						printableArea.getHeight(MediaPrintableArea.INCH) * 72);
-			} else {
-				paper.setSize(612, 828);
-				paper.setImageableArea(0, 0, 612, 828);
-			}
-			pageFormat = new PageFormat();
-			pageFormat.setOrientation(PageFormat.PORTRAIT);
-			pageFormat.setPaper(paper);
-			*/
 		}
 		return pageFormat;
 	}

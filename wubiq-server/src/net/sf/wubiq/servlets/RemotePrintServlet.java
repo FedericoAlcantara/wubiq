@@ -3,6 +3,9 @@
  */
 package net.sf.wubiq.servlets;
 
+import java.awt.print.Pageable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -48,6 +51,7 @@ import net.sf.wubiq.remote.RemoteClientManager;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
 
@@ -116,6 +120,8 @@ public class RemotePrintServlet extends HttpServlet {
 							getDocAttributesCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
 							getDocFlavorCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.READ_IS_DIRECT_CONNECT)) {
+							isDirectConnectionCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
 							getPrintJobCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
@@ -290,6 +296,7 @@ public class RemotePrintServlet extends HttpServlet {
 			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
 			String docFlavors = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
 			String directConnectEnabled = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
+			String clientVersion = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
@@ -297,6 +304,7 @@ public class RemotePrintServlet extends HttpServlet {
 			remotePrintService.setRemoteName(serviceName);
 			remotePrintService.setMobile(false);
 			remotePrintService.setDirectCommunicationEnabled("true".equalsIgnoreCase(directConnectEnabled));
+			remotePrintService.setClientVersion(clientVersion);
 			getRemoteClientManager(request).validateRemoteLookup();
 			RemotePrintServiceLookup.registerService(remotePrintService);
 			respond("ok", response);
@@ -511,7 +519,20 @@ public class RemotePrintServlet extends HttpServlet {
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
 		respond(PrintServiceUtils.serializeDocFlavor(printJob.getDocFlavor()), response);
 	}
-
+	
+	/**
+	 * Returns if the type of manager is direct connection.
+	 * @param uuid Unique Id of the print service.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException 
+	 * @throws IOException
+	 */
+	private void isDirectConnectionCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		Boolean returnValue = (manager instanceof IDirectConnectPrintJobManager);
+		respond(returnValue.toString(), response);
+	}
+	
 	/**
 	 * Returns the print data.
 	 * @param uuid Unique computer identification.
@@ -568,8 +589,6 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			testPageName = "MobileTestPage.pdf";
 		}
-//testPageName = "TestPage-50.pdf";
-//testPageName = "TestPage-calibrate.pdf";
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
@@ -581,8 +600,9 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
-			//if ((printService instanceof RemotePrintService) &&
-			//		((RemotePrintService)printService).isMobile()) {
+			if (((printService instanceof RemotePrintService) &&
+					((RemotePrintService)printService).isMobile()) ||
+					PrintServiceUtils.isSameVersion(printService)) {
 				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
 				DocPrintJob printJob = printService.createPrintJob();
 				try {
@@ -590,7 +610,6 @@ public class RemotePrintServlet extends HttpServlet {
 				} catch (PrintException e) {
 					throw new ServletException(e);
 				}
-			/*	
 			} else {
 				PrinterJobManager.initializePrinterJobManager();
 				PrinterJob printerJob = PrinterJob.getPrinterJob();
@@ -612,7 +631,6 @@ public class RemotePrintServlet extends HttpServlet {
 				}
 		
 			}
-			*/
 				
 			respond(backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)), response);
 		} else {

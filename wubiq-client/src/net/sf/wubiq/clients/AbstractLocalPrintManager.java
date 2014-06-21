@@ -29,6 +29,7 @@ import java.util.Set;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientProperties;
@@ -212,7 +213,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
 			doLog("Register computer name:" + computerName, 0);
-			doLog("Force Serialized Communication:" + System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY), 0);
+			doLog("Force Serialized Communication:" + System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY), 0);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -604,7 +605,6 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return uuid.trim();
 	}
 		
-
 	/**
 	 * @return the connections
 	 */

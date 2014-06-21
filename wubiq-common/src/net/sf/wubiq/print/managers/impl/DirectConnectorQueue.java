@@ -16,7 +16,7 @@ import java.util.UUID;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.adapters.PageableAdapter;
-import net.sf.wubiq.adapters.PrintableAdapter;
+import net.sf.wubiq.adapters.PrintableChunkAdapter;
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -52,7 +52,11 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		private IRemotePrintJob printJob;
 	}
 	
-	public DirectConnectorQueue(String queueId) {
+	/**
+	 * Creates the unique instance of DirectConnectorQueue. For each queue (Print Service) a new instance is created.
+	 * @param queueId
+	 */
+	protected DirectConnectorQueue(String queueId) {
 		this.queueId = queueId;
 		onProcess = -1l;
 		listeners = new HashSet<IRemoteListener>();
@@ -61,18 +65,14 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 	
 	/**
-	 * Adds a print job to the manager.
-	 * @param jobId Job Id.
-	 * @param remotePrintJob Remote print job.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#addPrintJob(long, net.sf.wubiq.print.jobs.IRemotePrintJob)
 	 */
 	public synchronized void addPrintJob(long jobId, IRemotePrintJob remotePrintJob) {
 		jobBucket(jobId).printJob = remotePrintJob;
 	}
 	
 	/**
-	 * Removes the print job from the queue.
-	 * @param jobId Id of the printJob.
-	 * @return True if removed properly.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#removePrintJob(long)
 	 */
 	public synchronized boolean removePrintJob(long jobId) {
 		if (jobId == onProcess) {
@@ -85,21 +85,22 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		return true;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#remotePrintJob(long)
+	 */
 	public synchronized IRemotePrintJob remotePrintJob(long jobId) {
 		return jobBucket(jobId).printJob;
 	}
 	
 	/**
-	 * List of pending print jobs.
-	 * @return Collection of print jobs.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#printJobs()
 	 */
 	public synchronized Collection<Long> printJobs() {
 		return jobBuckets.keySet();
 	}
 	
 	/**
-	 * Starts the print job.
-	 * @param jobId 
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#startPrintJob(long)
 	 */
 	public synchronized void startPrintJob(final long jobId) {
 		registeredObjects(jobId).put(objectUUID, this);
@@ -107,13 +108,14 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		if (remotePrintJob != null) {
 			Object printData = remotePrintJob.getPrintDataObject();
 			if (printData instanceof Printable) {
-				PrintableAdapter remote = (PrintableAdapter)
-						Enhancer.create(PrintableAdapter.class,
+				PrintableChunkAdapter remote = (PrintableChunkAdapter)
+						Enhancer.create(PrintableChunkAdapter.class,
 								new ProxyAdapterMaster(
 										jobId,
 										this,
 										printData,
-										PrintableAdapter.FILTERED_METHODS));
+										PrintableChunkAdapter.FILTERED_METHODS));
+				remote.setPageFormat(remotePrintJob.getPageFormat());
 				sendCommand(new RemoteCommand(null, "createPrintable",
 						new GraphicParameter(UUID.class, remote.objectUUID())));
 			} else if (printData instanceof Pageable) {
@@ -132,7 +134,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 	
 	/**
-	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#registerObject(net.sf.wubiq.enums.RemoteCommandType, java.lang.Object)
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#registerObject(java.lang.Long, java.util.UUID, java.lang.Object)
 	 */
 	public synchronized Object registerObject(Long jobId, UUID objectUUID, Object object) {
 		return registeredObjects(jobId).put(objectUUID, object);
@@ -180,6 +182,9 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		return jobBucket;
 	}
 	
+	/**
+	 * Resets the process.
+	 */
 	private void resetProcess() {
 		onProcess = -1l;
 	}
@@ -189,14 +194,23 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	 * *************************************
 	 */
 	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#queueId()
+	 */
 	public String queueId() {
 		return queueId;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.interfaces.IProxyAdapter#queue()
+	 */
 	public IDirectConnectorQueue queue() {
 		return this;
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IAdapter#addListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public void addListener(IRemoteListener listener) {
 		synchronized(listeners) {
@@ -204,6 +218,9 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		}
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IAdapter#removeListener(net.sf.wubiq.interfaces.IRemoteListener)
+	 */
 	@Override
 	public boolean removeListener(IRemoteListener listener) {
 		synchronized(listeners) {
@@ -212,6 +229,9 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		return true;
 	}
 
+	/**
+	 * @see net.sf.wubiq.interfaces.IAdapter#listeners()
+	 */
 	@Override
 	public synchronized Set<IRemoteListener> listeners() {
 		return listeners;
@@ -228,8 +248,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	private boolean commandToSendReady;
 	
 	/**
-	 * Sends a command to the remote printer.
-	 * @param remoteCommand Command to send. Must never be null.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#sendCommand(net.sf.wubiq.enums.RemoteCommand)
 	 */
 	public synchronized void sendCommand(RemoteCommand remoteCommand) {
 		returnedDataReady = false;
@@ -238,10 +257,8 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		commandToSendReady = true;
 	}
 
-
 	/**
-	 * Queues the returned data on this printer.
-	 * @param data Data to be queued
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#queueReturnedData(net.sf.wubiq.adapters.ReturnedData)
 	 */
 	public synchronized void queueReturnedData(ReturnedData data) {
 		commandToSendReady = false;
@@ -267,28 +284,28 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 
 	/**
-	 * Checks if there is a command ready to be sent.
-	 * @return True if there is a command ready to sent, false otherwise.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#isCommandToSendReady()
 	 */
 	public synchronized boolean isCommandToSendReady() {
 		return commandToSendReady;
 	}
 	
 	/**
-	 * Gets the command to send to the physical fiscal printer.
-	 * @return Data or null if nothing is pending.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#getCommandToSend()
 	 */
 	public synchronized RemoteCommand getCommandToSend() {
 		return commandToSend;
 	}
 	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#resetCommandToSend()
+	 */
 	public synchronized void resetCommandToSend() {
 		commandToSendReady = false;
 	}
 	
 	/**
-	 * Waits for the response to become available.
-	 * @return Returned data.
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#returnData()
 	 */
 	public Object returnData() {
 		Object returnValue = null;
@@ -317,15 +334,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 
 	/**
-	 * Calls the command in a new thread.
-	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(net.sf.wubiq.enums.RemoteCommand)
-	 */
-	public String callCommand(final Long jobId, final RemoteCommand printerCommand) {
-		return doCallCommand(jobId, printerCommand);
-	}
-	
-	/**
-	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#getRemoteData()
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#getRemoteData(java.lang.Long, java.lang.String)
 	 */
 	public synchronized String getRemoteData(Long jobId, String dataUUID) {
 		String returnValue = remoteDatas(jobId).get(dataUUID);
@@ -343,16 +352,17 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 	
 	/**
-	 * @param jobId
-	 * @param adapterUUID
-	 * @return
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#getAdapter(java.lang.Long, java.util.UUID)
 	 */
 	public synchronized Object getAdapter(Long jobId, UUID adapterUUID) {
 		return registeredObjects(jobId).get(adapterUUID);
 	}
 	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(java.lang.Long, net.sf.wubiq.enums.RemoteCommand)
+	 */
 	@SuppressWarnings("rawtypes")
-	private String doCallCommand(Long jobId, RemoteCommand printerCommand) {
+	public String callCommand(Long jobId, RemoteCommand printerCommand) {
 		String serializedData = DirectConnectKeys.DIRECT_CONNECT_NULL;
 		String methodName = printerCommand.getMethodName();
 		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
@@ -397,7 +407,8 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 	
 	/**
-	 * @see net.sf.wubiq.interfaces.IAdapter#getObjectUUID()
+	 * Gets this object UUID.
+	 * @return Current object unique identification.
 	 */
 	public UUID getObjectUUID() {
 		return this.objectUUID;

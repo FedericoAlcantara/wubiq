@@ -23,6 +23,15 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	private long lastJobId;
 	
 	/**
+	 * While you can directly create an instance of this queue, we encourage to use the
+	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String, net.sf.wubiq.print.managers.RemotePrintJobManagerType)}
+	 * method instead.
+	 */
+	protected DirectConnectPrintJobManager(){
+		
+	}
+	
+	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
 	 */
 	@Override

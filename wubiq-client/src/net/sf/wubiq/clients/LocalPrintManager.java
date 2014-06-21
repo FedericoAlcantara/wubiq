@@ -18,6 +18,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.ClientLabels;
@@ -79,15 +80,18 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			doLog("Job(" + jobId + ") docAttributes:" + docAttributesData, 5);
 			String docFlavorData = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
 			doLog("Job(" + jobId + ") docFlavor:" + docFlavorData, 5);
+			String isDirectConnectData = askServer(CommandKeys.READ_IS_DIRECT_CONNECT);
+			doLog("Job(" + jobId + ") isDirectConnect:" + isDirectConnectData, 5);
 
 			PrintService printService = getPrintServicesName().get(printServiceName);
 			PrintRequestAttributeSet printRequestAttributeSet = PrintServiceUtils.convertToPrintRequestAttributeSet(printRequestAttributesData);
 			PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(printJobAttributesData);
 			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
+			boolean isDirectConnect = "true".equalsIgnoreCase(isDirectConnectData);
 			
-			if ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ||
-					!(DocFlavor.SERVICE_FORMATTED.PAGEABLE.equals(docFlavor) || DocFlavor.SERVICE_FORMATTED.PRINTABLE.equals(docFlavor))) {
+			if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY))  ||
+					!isDirectConnect) {
 				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 				ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			} else {
@@ -249,8 +253,11 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 							+DirectConnectUtils.INSTANCE.serialize(printService.getSupportedDocFlavors()),
 						DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER 
 							+ ParameterKeys.PARAMETER_SEPARATOR
-							+ ("true".equalsIgnoreCase(System.getProperty(DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ?
-									"FALSE" : "TRUE"));
+							+ ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ?
+									"FALSE" : "TRUE"),
+						DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION
+							+ ParameterKeys.PARAMETER_SEPARATOR
+							+ Labels.VERSION);
 				PrinterType printerType = PrintServiceUtils.printerType(printService);
 				doLog(printServiceName + " -> " + printerType, 0);				
 			}
@@ -298,13 +305,13 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			if (line.hasOption("help")) {
 				HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp("java -jar wubiq-client.jar", "java properties:\n"
-						+ "-Dwubiq.printers.photo For specifying laser or photo capable printers\n"
-						+ "-Dwubiq.printers.dotmatrixhq For high quality dot matrix printers (24pin) \n"
-						+ "-Dwubiq.printers.dotmatrix For normal quality dot matrix printers (9pin) \n"
-						+ "-Dwubiq.fonts.dotmatrix.default Specify default fonts for dot matrix printers\n"
-						+ "-Dwubiq.fonts.dotmatrix.force.logical If true printing on dot matrix will only be done with java's logical fonts.\n"
+						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_PHOTO + " For specifying laser or photo capable printers\n"
+						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ + " For high quality dot matrix printers (24pin) \n"
+						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + "wubiq.printers.dotmatrix For normal quality dot matrix printers (9pin) \n"
+						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT + " Specify default fonts for dot matrix printers\n"
+						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + " If true printing on dot matrix will only be done with java's logical fonts.\n"
 						+ "\n"
-						+ "-D" + DirectConnectKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY + " If true communications between server and client uses old serialized implementation.\n"
+						+ "-D" + PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY + " If true communications between server and client uses old serialized implementation.\n"
 						+ "\n"
 						+ "", options, "\n For more information visit wubiq's site: http://sourceforge.net/projects/wubiq", true);
 			}

@@ -26,6 +26,14 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	private static Map<String, Map<Long, IRemotePrintJob>> queues;
 	
 	/**
+	 * While you can directly create an instance of this queue, we encourage to use the
+	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String, net.sf.wubiq.print.managers.RemotePrintJobManagerType)}
+	 * method instead.
+	 */
+	protected QueuePrintJobManager(){
+	}
+	
+	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
 	 */
 	@Override

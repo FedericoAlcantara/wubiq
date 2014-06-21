@@ -236,7 +236,7 @@ public class RenderingHintWrapper implements Serializable {
 	
 	/**
 	 * Gets the representation of the key value.
-	 * @return
+	 * @return An integer equivalent to the internal key representation.
 	 */
 	public int getKeyRepresentation() {
 		return keyValue;

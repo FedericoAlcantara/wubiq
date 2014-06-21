@@ -22,10 +22,13 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
+import javax.print.attribute.HashPrintRequestAttributeSet;
+
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicsChunkRecorder;
 
@@ -45,12 +48,15 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		"graphicCommands",
 		"endPrintable",
 		"graphicCommands",
-		"setPageable"
+		"setPageable",
+		"setPageFormat",
+		"getPageFormat"
 	};
 
 	private static GraphicsChunkRecorder graphicsRecorder = new GraphicsChunkRecorder();
 	private static Map<Integer, Set<GraphicCommand>> graphicCommands = new TreeMap<Integer, Set<GraphicCommand>>();
 	private Pageable pageable;
+	private PageFormat pageFormat;
 	
 	public PrintableChunkAdapter() {
 		initialize();
@@ -59,6 +65,11 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	public void setPageable(Pageable pageable) {
 		this.pageable = pageable;
 	}
+	
+	public void setPageFormat(PageFormat pageFormat) {
+		this.pageFormat = pageFormat;
+	}
+	
 	/**
 	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
 	 */
@@ -72,14 +83,12 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	
 	/**
 	 * Starts the collection of graphics commands.
-	 * @param pageFormat Format to print.
 	 * @param pageIndex Page index.
-	 * @return Status of the print page.
 	 * @throws PrinterException
 	 */
 	public int print(int pageIndex) throws PrinterException {
 		long start = new Date().getTime();
-		PageFormat pageFormat = pageable.getPageFormat(pageIndex);
+		PageFormat pageFormat = getPageFormat(pageIndex);
 		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
 		AffineTransform scaleTransform = new AffineTransform();
@@ -100,29 +109,32 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	}
 
 	/**
-	 * Starts the collection of graphics commands.
-	 * @param pageFormat Format to print.
-	 * @param pageIndex Page index.
-	 * @return Status of the print page.
+	 * Starts the printing process. In reality it starts the collection of graphics commands.
+	 * @param pageIndex Page index for the printable.
+	 * @param clipRect Size of the printing area.
+	 * @param transform Initial transform.
+	 * @param backgroundColor Background color.
+	 * @param font Initial font.
+	 * @return Printable.PAGE_EXISTS if the page is rendered successfully or Printable.NO_SUCH_PAGE if pageIndex specifies a non-existent page.
 	 * @throws PrinterException
 	 */
-	public int print(int pageIndex, Rectangle rectangle, AffineTransform transform, 
+	public int print(int pageIndex, Rectangle clipRect, AffineTransform transform, 
 			Color backgroundColor, Font font) throws PrinterException {
 		long start = new Date().getTime();
 		PageFormat pageFormat = pageable.getPageFormat(pageIndex);
-		BufferedImage img = new BufferedImage(new Double(rectangle.getWidth()).intValue(), 
-				new Double(rectangle.getHeight()).intValue(), BufferedImage.TYPE_INT_RGB);
+		BufferedImage img = new BufferedImage(new Double(clipRect.getWidth()).intValue(), 
+				new Double(clipRect.getHeight()).intValue(), BufferedImage.TYPE_INT_RGB);
 		Graphics2D graph = img.createGraphics();
 		graph.setTransform(transform);
 		graph.setClip(new Rectangle2D.Double(
 				0,
 				0,
-				rectangle.getWidth(), 
-				rectangle.getHeight()));
+				clipRect.getWidth(), 
+				clipRect.getHeight()));
 		graph.setBackground(backgroundColor);
 		graph.clearRect(0, 0, 
-				new Double(rectangle.getWidth()).intValue(), 
-				new Double(rectangle.getHeight()).intValue());
+				new Double(clipRect.getWidth()).intValue(), 
+				new Double(clipRect.getHeight()).intValue());
 		graph.setFont(font);
 		int returnValue = print(graph, pageFormat, pageIndex);
 		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
@@ -135,6 +147,17 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	
 	public Printable printable() {
 		return (Printable) decoratedObject();
+	}
+	
+	private PageFormat getPageFormat(int pageIndex) {
+		if (pageable != null) {
+			return pageable.getPageFormat(pageIndex);
+		} else {
+			if (pageFormat == null) {
+				pageFormat = PageableUtils.INSTANCE.getPageFormat(new HashPrintRequestAttributeSet());
+			}
+			return pageFormat;
+		}
 	}
 
 	/* *****************************************

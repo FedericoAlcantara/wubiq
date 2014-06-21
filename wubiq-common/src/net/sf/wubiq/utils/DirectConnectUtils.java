@@ -58,7 +58,7 @@ public enum DirectConnectUtils {
 
 	/**
 	 * Send a notification to all listeners about a timeout ocurrence.
-	 * @param fiscalPrinter FiscalPrinter originating the time out.
+	 * @param adapter Associated adapter.
 	 * @param listeners Set of listeners to be notified.
 	 */
 	public void notifyTimeout(IAdapter adapter, Set<IRemoteListener> listeners) {

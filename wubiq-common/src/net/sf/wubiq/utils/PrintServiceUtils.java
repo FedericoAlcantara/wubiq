@@ -42,6 +42,7 @@ import javax.print.attribute.standard.PrinterName;
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.print.services.RemotePrintService;
@@ -861,14 +862,14 @@ public class PrintServiceUtils {
 		PrinterType returnValue = PrinterType.UNDEFINED;
 		String printerName = sentPrinterName.trim().toUpperCase();
 		if (photoPrinters == null) {
-			photoPrinters = printerTypeStrings("wubiq.printers.photo", "photo,jet,laser");
+			photoPrinters = printerTypeStrings(PropertyKeys.WUBIQ_PRINTERS_PHOTO, "photo,jet,laser");
 		}
 		if (dotMatrixHqPrinters == null) {
-			dotMatrixHqPrinters = printerTypeStrings("wubiq.printers.dotmatrixhq", 
+			dotMatrixHqPrinters = printerTypeStrings(PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ, 
 					" LQ,24-pin,24 pin,KX-P,KXP");
 		}
 		if (dotMatrixPrinters == null) {
-			dotMatrixPrinters = printerTypeStrings("wubiq.printers.dotmatrix", 
+			dotMatrixPrinters = printerTypeStrings(PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX, 
 					" lx-, lx , fx-, fx , mx-, mx , rx-, rx , ml-42,9-pin,9 pin");
 		}
 		if (containsString(photoPrinters, printerName)) {
@@ -1059,4 +1060,19 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 	
+	/**
+	 * Returns true if the print service has the same version as the
+	 * server.
+	 * @param printService
+	 * @return True if the print service represents a local print service or if the
+	 * remote print service is the same as the server version.
+	 */
+	public static boolean isSameVersion(PrintService printService) {
+		boolean returnValue = true;
+		if (printService instanceof RemotePrintService) {
+			returnValue = Labels.VERSION
+					.equals(((RemotePrintService) printService).getClientVersion());
+		}
+		return returnValue;
+	}
 }

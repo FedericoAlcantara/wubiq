@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.print.jobs;
 
+import java.awt.print.PageFormat;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -58,4 +59,10 @@ public interface IRemotePrintJob extends DocPrintJob {
 	 * @param status the status to set.
 	 */
 	void setStatus(RemotePrintJobStatus status);
+	
+	/**
+	 * Return the current page format of the remote print object.
+	 * @return PageFormat instance.
+	 */
+	PageFormat getPageFormat();
 }

@@ -56,6 +56,7 @@ public class RemotePrintService extends StreamPrintService {
 	private Map<String, PrintServiceAttribute> attributesPerCategory;
 	private Map<String, Object> defaultAttributes;
 	private boolean directCommunicationEnabled = true;
+	private String clientVersion = "";
 	
 	public RemotePrintService() {
 		super(new ByteArrayOutputStream());
@@ -382,6 +383,14 @@ public class RemotePrintService extends StreamPrintService {
 	 */
 	public void setDirectCommunicationEnabled(boolean directCommunicationEnabled) {
 		this.directCommunicationEnabled = directCommunicationEnabled;
+	}
+	
+	public void setClientVersion(String clientVersion) {
+		this.clientVersion = clientVersion;
+	}
+	
+	public String getClientVersion() {
+		return clientVersion;
 	}
 	
 	/**

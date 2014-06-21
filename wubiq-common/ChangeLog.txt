@@ -1,4 +1,10 @@
 ==========================
+Wubiq 1.9.0 (2014-06-20)
+==========================
+-New remote printing methodology.
+-Large remote printing now works without client out of memory.
+
+==========================
 Wubiq 1.8.1 (2014-05-25)
 ==========================
 -Improved font handling for dot matrix printing

@@ -13,8 +13,8 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 public interface IProxyAdapter {
 	
 	/**
-	 * 
-	 * @return
+	 * Associated connector queue.
+	 * @return Queue connector.
 	 */
 	IDirectConnectorQueue queue();
 }

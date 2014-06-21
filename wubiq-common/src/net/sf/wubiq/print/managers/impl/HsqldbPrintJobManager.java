@@ -57,6 +57,14 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	private RemotePrintJob lastRemotePrintJob = null;
 	
 	/**
+	 * While you can directly create an instance of this queue, we encourage to use the
+	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String, net.sf.wubiq.print.managers.RemotePrintJobManagerType)}
+	 * method instead.
+	 */
+	protected HsqldbPrintJobManager(){
+	}
+	
+	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#initialize()
 	 */
 	@Override

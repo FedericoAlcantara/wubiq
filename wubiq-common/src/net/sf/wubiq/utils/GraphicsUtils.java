@@ -9,6 +9,7 @@ import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.print.PageFormat;
 
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.PrinterType;
 
 /**
@@ -37,13 +38,13 @@ public enum GraphicsUtils {
 			osName = System.getProperty("os.name");
 		}
 		if (defaultDotMatrixFont == null) {
-			defaultDotMatrixFont = System.getProperty("wubiq.fonts.dotmatrix.default");
+			defaultDotMatrixFont = System.getProperty(PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT);
 			if (Is.emptyString(defaultDotMatrixFont)) {
 				defaultDotMatrixFont = "Serif";
 			}
 		}
 		if (dotMatrixUseLogicalFonts == null) {
-			dotMatrixUseLogicalFonts = "TRUE".equalsIgnoreCase(System.getProperty("wubiq.fonts.dotmatrix.force.logical"));
+			dotMatrixUseLogicalFonts = "TRUE".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL));
 		}
 		if (printerType.equals(PrinterType.DOT_MATRIX) ||
 				printerType.equals(PrinterType.DOT_MATRIX_HQ)) {

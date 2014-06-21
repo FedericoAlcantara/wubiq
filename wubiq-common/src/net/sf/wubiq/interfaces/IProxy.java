@@ -20,7 +20,6 @@ public interface IProxy {
 
 	/**
 	 * Unique identification of the job.
-	 * @param jobId Id of the job being processed.
 	 * @return Current jobId.
 	 */
 	Long jobId();

@@ -18,7 +18,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.clients.remotes.PageableRemote;
-import net.sf.wubiq.clients.remotes.PrintableRemote;
+import net.sf.wubiq.clients.remotes.PrintableChunkRemote;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
@@ -102,8 +102,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * Creates a printable object and starts the local printing process.
 	 */
 	public void createPrintable(UUID objectUUID) {
-		PrintableRemote remote = (PrintableRemote) Enhancer.create(PrintableRemote.class, 
-				new ProxyClientSlave(jobId, this, objectUUID, PrintableRemote.FILTERED_METHODS));
+		PrintableChunkRemote remote = (PrintableChunkRemote) Enhancer.create(PrintableChunkRemote.class, 
+				new ProxyClientSlave(jobId, this, objectUUID, PrintableChunkRemote.FILTERED_METHODS));
 		ClientPrintDirectUtils.printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				remote);
