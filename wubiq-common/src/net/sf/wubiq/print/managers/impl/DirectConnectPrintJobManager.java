@@ -7,6 +7,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.print.PrintService;
+
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
@@ -110,5 +112,20 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 			connectors.put(queueId, queue);
 		}
 		return queue;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getPrintServicePendingJobs(java.lang.String, javax.print.PrintService)
+	 */
+	public int getPrintServicePendingJobs(String queueId, PrintService printService) {
+		int returnValue = 0;
+		IDirectConnectorQueue queue = directConnector(queueId);
+		for (Long jobId : queue.printJobs()) {
+			IRemotePrintJob printJob = queue.remotePrintJob(jobId);
+			if (printJob.getPrintService().equals(printService)) {
+				returnValue++;
+			}
+		}
+		return returnValue;
 	}
 }

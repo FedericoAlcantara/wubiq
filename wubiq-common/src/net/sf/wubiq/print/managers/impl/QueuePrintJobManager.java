@@ -10,6 +10,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.TreeMap;
 
+import javax.print.PrintService;
+
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
@@ -132,5 +134,12 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 		}
 		return returnValue;
 	}	
+
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getPrintServicePendingJobs(java.lang.String, javax.print.PrintService)
+	 */
+	public int getPrintServicePendingJobs(String queueId, PrintService printService) {
+		return 0;
+	}
 
 }

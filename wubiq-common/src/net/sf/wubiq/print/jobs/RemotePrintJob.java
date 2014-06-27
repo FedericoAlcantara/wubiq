@@ -135,8 +135,10 @@ public class RemotePrintJob implements IRemotePrintJob {
 		if (!Is.emptyString(uuid)) {
 			boolean printRemotely = true;
 			if (isDirectCommunicationEnabled) {
-				if (PrintServiceUtils.supportDocFlavor(printService, doc.getDocFlavor())) {
-					printRemotely = false;
+				if (!(doc.getDocFlavor() instanceof DocFlavor.SERVICE_FORMATTED)) {
+					if (PrintServiceUtils.supportDocFlavor(printService, doc.getDocFlavor())) {
+						printRemotely = false;
+					}
 				}
 			} else {
 				printRemotely = false;

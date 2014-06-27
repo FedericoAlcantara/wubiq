@@ -103,21 +103,29 @@ public class PrintServiceUtils {
 	}
 	
 	/**
-	 * Gets only the print services belonging to the given group and not belonging to any group.
-	 * @param group Group to look for.
-	 * @return Array of print services.
+	 * Gets print services belonging to a given group and optionally the locals print services and the non grouped print services.
+	 * @param group Group to look for. Null or empty group will result in return non grouped print services.
+	 * @param includeLocals If true also local print services will be returned.
+	 * @param includeNonGrouped If true also adds the non grouped print services. This parameter has no use if group is given empty or null.
+	 * @return An array containing the selected print services.
 	 */
-	public static PrintService[] getPrintServices(String group) {
+	public static PrintService[] getPrintServices(String group, boolean includeLocals, boolean includeNonGrouped) {
 		List<PrintService> returnValue = new ArrayList<PrintService>();
 		for (PrintService printService : getPrintServices()) {
 			if (isRemotePrintService(printService)) {
 				RemotePrintService remotePrintService = (RemotePrintService)printService;
-				if (remotePrintService.getGroups().isEmpty() ||
-						remotePrintService.getGroups().contains(group.toLowerCase())) {
+				if (Is.emptyString(group) && remotePrintService.getGroups().isEmpty()) {
+					returnValue.add(printService);
+				} else if (remotePrintService.getGroups().contains(group.toLowerCase())) {
+					returnValue.add(printService);
+				} else if (remotePrintService.getGroups().isEmpty() &&
+						includeNonGrouped) {
 					returnValue.add(printService);
 				}
 			} else {
-				returnValue.add(printService);
+				if (includeLocals) {
+					returnValue.add(printService);
+				}
 			}
 		}
 		
@@ -728,6 +736,11 @@ public class PrintServiceUtils {
 		return remotePrintService;
 	}
 	
+	/**
+	 * Compresses the attribute list of a print service.
+	 * @param attributeList String representing the list of valid attributes.
+	 * @return Compressed representation of the attribute list.
+	 */
 	public static String compressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
@@ -736,6 +749,11 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 	
+	/**
+	 * Uncompress a previously compressed list of attributes.
+	 * @param attributeList Attribute list is compressed format.
+	 * @return String representing the attribute list.
+	 */
 	public static String deCompressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {

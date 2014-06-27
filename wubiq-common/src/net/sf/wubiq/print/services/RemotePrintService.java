@@ -75,18 +75,7 @@ public class RemotePrintService extends StreamPrintService {
 		defaultAttributes = new HashMap<String, Object>();
 		groups = new HashSet<String>();
 	}
-	
-	public RemotePrintService(String groups) {
-		this();
-		registerGroups(groups);
-	}
-	
-	public RemotePrintService(String groups, OutputStream outputStream) {
-		this(outputStream);
-		registerGroups(groups);
-	}
-	
-	
+		
 	@SuppressWarnings("unchecked")
 	public RemotePrintService(PrintService printService) {
 		this();
@@ -428,7 +417,7 @@ public class RemotePrintService extends StreamPrintService {
 	 * Registers the groups to which this print service belongs.
 	 * @param groups Comma (or semicolon) separated list of group names.
 	 */
-	private void registerGroups(String groups) {
+	public void registerGroups(String groups) {
 		if (!Is.emptyString(groups)) {
 			for (String groupRead : groups.split("[,;]")) {
 				String group = groupRead.trim().toLowerCase();

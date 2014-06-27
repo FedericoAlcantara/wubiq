@@ -1,3 +1,6 @@
+<%@page import="net.sf.wubiq.print.jobs.RemotePrintJobStatus"%>
+<%@page import="net.sf.wubiq.print.managers.IRemotePrintJobManager"%>
+<%@page import="net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
     pageEncoding="ISO-8859-1"%>
 <%@ page import="java.util.Collection" %>
@@ -27,21 +30,28 @@
 	private Collection<String[]> getPrintServices(String uuid) {
 		Collection<String[]> returnValue = new ArrayList<String[]>();
 		for (PrintService printService : PrintServiceUtils.getPrintServices()) {
-			String[] printServiceData = new String[3];
+			String[] printServiceData = new String[4];
 			RemotePrintService remotePrintService = null;
 			boolean remote = PrintServiceUtils.isRemotePrintService(printService);
 			if (remote) {
 				remotePrintService = (RemotePrintService)printService;
 				if (remotePrintService.getUuid().equals(uuid)) {
+					IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
+					String count = "0";
+					if (manager != null) {
+						count = Integer.toString(manager.getPrintServicePendingJobs(uuid, printService));
+					}
 					printServiceData[0] = remotePrintService.getRemoteName();
 					printServiceData[1] = ServerLabels.get("server.remote_yes");
 					printServiceData[2] = remotePrintService.getUuid();
+					printServiceData[3] = count;
 				}
 			} else {
 				if (uuid.isEmpty()) {
 					printServiceData[0] = printService.getName();
 					printServiceData[1] = ServerLabels.get("server.remote_no");
 					printServiceData[2] = "";
+					printServiceData[3] = "0";
 				}
 			}
 			
@@ -139,7 +149,9 @@
 								<th class="wubiq_sd_table_th_name"><%=ServerLabels.get("server.service_name")%></th>
 								<th class="wubiq_sd_table_th_remote"><%=ServerLabels.get("server.remote")%></th>
 								<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.actions")%></th>
-								<th class="wubiq_sd_table_th_jobs"><%=ServerLabels.get("server.jobs")%></th>
+								<%if (remote) { %>
+									<th class="wubiq_sd_table_th_jobs"><%=ServerLabels.get("server.jobs")%></th>
+								<%} %>
 							</tr>
 			
 			<%
@@ -181,13 +193,11 @@
 											id='wubiq_testpage_button_<%=serviceCount++%>' />
 									</a>
 								</td>
-								<td class="wubiq_sd_table_td_jobs" style="text-align:center">
-									<%if (serviceUUID != null && !"".equals(serviceUUID)) {%>
-										<%=jspUtils.getPendingJob(serviceUUID) %>
-									<%} else { %>
-										&nbsp;
-									<%}%>				
-								</td>			 
+								<%if (remote) { %>
+									<td class="wubiq_sd_table_td_jobs" style="text-align:center">
+										<%=serviceData[3]%>
+									</td>
+								<%} %>			 
 							</tr>
 				<%
 			}

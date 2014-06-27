@@ -29,6 +29,7 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
+import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
@@ -383,6 +384,20 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		PreparedStatement returnValue = null;
 		returnValue = connection.prepareStatement(query,
 				ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+		return returnValue;
+	}
+
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getPrintServicePendingJobs(java.lang.String, javax.print.PrintService)
+	 */
+	public int getPrintServicePendingJobs(String queueId, PrintService printService) {
+		int returnValue = 0;
+		for (Long jobId : getPrintJobs(queueId, RemotePrintJobStatus.NOT_PRINTED)) {
+			IRemotePrintJob printJob = getRemotePrintJob(jobId, false);
+			if (printJob.getPrintService().equals(printService)) {
+				returnValue++;
+			}
+		}
 		return returnValue;
 	}
 

@@ -297,8 +297,10 @@ public class RemotePrintServlet extends HttpServlet {
 			String docFlavors = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
 			String directConnectEnabled = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
 			String clientVersion = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION));
+			String groups = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.GROUPS));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
+			remotePrintService.registerGroups(groups);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
 			remotePrintService.setSupportedDocFlavors((DocFlavor[])DirectConnectUtils.INSTANCE.deserialize(docFlavors));
 			remotePrintService.setRemoteName(serviceName);

@@ -5,6 +5,8 @@ package net.sf.wubiq.print.managers;
 
 import java.util.Collection;
 
+import javax.print.PrintService;
+
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
@@ -53,4 +55,13 @@ public interface IRemotePrintJobManager {
 	 * @return A collection of job ids. Never null.
 	 */
 	Collection<Long> getPrintJobs(String queueId, RemotePrintJobStatus status);
+	
+	/**
+	 * Get print service pending jobs.
+	 * @param queueId Unique id of the queue to be read.
+	 * @param printService Print service to poll.
+	 * @return Number of pending jobs for the printer.
+	 */
+	int getPrintServicePendingJobs(String queueId, PrintService printService);
+	
 }
