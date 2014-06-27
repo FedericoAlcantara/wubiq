@@ -139,7 +139,11 @@ public class ServerTest extends WubiqBaseTest {
 	 */
 	private Object getNewPage(String command) throws Exception {
 		for (URL url : manager.getUrls()) {
-			return getPage(manager.getEncodedUrl(url, command));
+			String returnValue = url.toString() 
+					+ "?"
+					+ manager.getEncodedParameters(command);
+			
+			return getPage(returnValue);
 		}
 		return null;
 	}

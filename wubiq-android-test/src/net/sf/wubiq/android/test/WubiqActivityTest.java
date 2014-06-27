@@ -34,6 +34,7 @@ public class WubiqActivityTest extends InstrumentationTestCase {
 	private EditText host;
 	private EditText port;
 	private EditText uuid;
+	private EditText groups;
 
 	@Override
 	protected void setUp() throws Exception {
@@ -102,9 +103,11 @@ public class WubiqActivityTest extends InstrumentationTestCase {
 		host = (EditText) currentActivity.findViewById(net.sf.wubiq.android.R.id.hostField);
 		port = (EditText) currentActivity.findViewById(net.sf.wubiq.android.R.id.portField);
 		uuid = (EditText) currentActivity.findViewById(net.sf.wubiq.android.R.id.clientUUIDField);
+		groups = (EditText) currentActivity.findViewById(net.sf.wubiq.android.R.id.groupsField);
 		assertEquals("Should be http://localhost", "http://localhost", host.getText().toString());
 		assertEquals("Should be 8080", "8080", port.getText().toString());
 		assertNotSame("Should not be blank", "", uuid.getText().toString());
+		assertEquals("Should be Blanck", "", groups.getText().toString());
 		TouchUtils.clickView(this, host);
 		sendRepeatedKeys(9,KeyEvent.KEYCODE_DEL);
 		sendKeys(KeyEvent.KEYCODE_1, KeyEvent.KEYCODE_2, KeyEvent.KEYCODE_7, KeyEvent.KEYCODE_PERIOD);

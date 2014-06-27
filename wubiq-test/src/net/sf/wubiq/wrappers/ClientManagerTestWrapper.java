@@ -82,8 +82,7 @@ public class ClientManagerTestWrapper extends LocalPrintManager {
 	}
 	
 	@Override
-	public String getEncodedUrl(URL address, String command,
-			String... parameters) {
-		return super.getEncodedUrl(address, command, parameters);
+	public String getEncodedParameters(String command, String... parameters) {
+		return super.getEncodedParameters(command, parameters);
 	}
 }

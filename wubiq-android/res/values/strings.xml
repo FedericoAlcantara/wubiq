@@ -14,6 +14,7 @@
     <string name="server_host_default">http://localhost</string>
     <string name="server_connection_default">http://localhost:8080</string>
     <string name="client_uuid">UUID</string>
+    <string name="groups">Groups</string>
     <string name="start_service">Start Print Manager</string>
     <string name="stop_service">Stop Print Manager</string>
     <string name="error_cant_connect_to">Connection: Couldn´t connect</string>

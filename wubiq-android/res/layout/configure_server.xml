@@ -24,7 +24,21 @@
         android:layout_height="wrap_content"
         android:ems="10"
         android:inputType="textCapCharacters" />
-
+    
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/groups"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+    
+    <EditText
+	    android:id="@+id/groupsField"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:ems="10"
+	    android:inputType="textMultiLine|textUri" />
+    
     <TextView
         android:id="@+id/textView6"
         android:layout_width="wrap_content"

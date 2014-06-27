@@ -103,6 +103,28 @@ public class PrintServiceUtils {
 	}
 	
 	/**
+	 * Gets only the print services belonging to the given group and not belonging to any group.
+	 * @param group Group to look for.
+	 * @return Array of print services.
+	 */
+	public static PrintService[] getPrintServices(String group) {
+		List<PrintService> returnValue = new ArrayList<PrintService>();
+		for (PrintService printService : getPrintServices()) {
+			if (isRemotePrintService(printService)) {
+				RemotePrintService remotePrintService = (RemotePrintService)printService;
+				if (remotePrintService.getGroups().isEmpty() ||
+						remotePrintService.getGroups().contains(group.toLowerCase())) {
+					returnValue.add(printService);
+				}
+			} else {
+				returnValue.add(printService);
+			}
+		}
+		
+		return returnValue.toArray(new PrintService[0]);
+	}
+	
+	/**
 	 * Based on its name find corresponding printer.
 	 * @param name Name of the printer.
 	 * @return A PrinterService or null.

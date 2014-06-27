@@ -14,8 +14,6 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.net.UnknownHostException;
@@ -54,6 +52,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private String applicationName;
 	private String servletName;
 	private String uuid;
+	private String groups;
 	private boolean killManager;
 	private boolean refreshServices;
 	private boolean debugMode;
@@ -66,6 +65,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private Set<URL> urls;
 	private URL preferredURL;
 	private boolean connected = false;
+	
 			
 	/**
 	 * Level of detail for debug output. between 0 and 5.
@@ -340,8 +340,6 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		try {
 			for (URL address : actualURLs) {
 				try {
-					//url = getEncodedUrl(address, command, parameters);
-					//doLog("URL:" + url, 5);
 					webUrl = address;
 					url = getEncodedParameters(command, parameters);
 					connection = (HttpURLConnection) webUrl.openConnection();
@@ -434,59 +432,16 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
 	 * @return Url string with parameterValues encoded.
 	 */
-	protected String getEncodedUrl(URL address, String command, String... parameters) {
-		StringBuffer parametersQuery = new StringBuffer("")
-				.append(ParameterKeys.UUID)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(getUuid());
-			if (!Is.emptyString(command)) {
-				parametersQuery.append('&')
-				.append(ParameterKeys.COMMAND)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(command);
-			}
-		
-			for (String parameter: parameters) {
-				String parameterString = parameter;
-				if (parameter.contains("=")) {
-					String parameterName = parameter.substring(0, parameter.indexOf("="));
-					String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
-					try {
-						parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
-						parameterString = parameterName + "=" + parameterValue;
-					} catch (UnsupportedEncodingException e) {
-						LOG.error(e.getMessage());
-					}
-				}
-				parametersQuery.append('&')
-						.append(parameterString);
-			}
-		String returnValue = "";
-		try {
-			URI uri = new URI(address.getProtocol(), address.getHost() + ":" + address.getPort(), address.getPath(), parametersQuery.toString(), null);
-			returnValue = uri.toASCIIString();
-		} catch (URISyntaxException e) {
-			LOG.error(e.getMessage(), e);
-		}
-		if (command.equals(CommandKeys.PRINT_TEST_PAGE) ||
-				command.equals(CommandKeys.SHOW_PRINT_SERVICES)) {
-			returnValue = returnValue.replace("wubiq.do", "wubiq-print-test.do");
-		}
-
-		return returnValue;
-	}
-	
-	/**
-	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
-	 * @param command Command to be encoded as part of the url.
-	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
-	 * @return Url string with parameterValues encoded.
-	 */
 	protected String getEncodedParameters(String command, String... parameters) {
 		StringBuffer parametersQuery = new StringBuffer("")
 				.append(ParameterKeys.UUID)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(getUuid());
+				.append(getUuid())
+				.append('&')
+				.append(ParameterKeys.GROUPS)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(getGroups());
+				
 			if (!Is.emptyString(command)) {
 				parametersQuery.append('&')
 				.append(ParameterKeys.COMMAND)
@@ -605,6 +560,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return uuid.trim();
 	}
 		
+	public String getGroups() {
+		return groups;
+	}
+
+	public void setGroups(String groups) {
+		this.groups = groups;
+	}
+
 	/**
 	 * @return the connections
 	 */

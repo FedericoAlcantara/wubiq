@@ -134,58 +134,6 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}
 		}
 	}
-	
-	/**
-	 * Process a single pending job.
-	 * @param jobId Id of the job to be printed.
-	 */
-	protected void OLD_processPendingJob(String jobId) throws ConnectException {
-		String parameter = printJobPollString(jobId);
-		doLog("Process Pending Job: " + jobId, 0);
-		InputStream printData = null;
-		try {
-			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
-			doLog("Job(" + jobId + ") printServiceName:" + printServiceName, 5);
-			String printRequestAttributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") printRequestAttributes:" + printRequestAttributesData, 5);
-			String printJobAttributesData = askServer(CommandKeys.READ_PRINT_JOB_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") printJobAttributes:" + printJobAttributesData, 5);
-			String docAttributesData = askServer(CommandKeys.READ_DOC_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") docAttributes:" + docAttributesData, 5);
-			String docFlavorData = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
-			doLog("Job(" + jobId + ") docFlavor:" + docFlavorData, 5);
-			
-			printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
-			PrintService printService = getPrintServicesName().get(printServiceName);
-			PrintRequestAttributeSet printRequestAttributeSet = PrintServiceUtils.convertToPrintRequestAttributeSet(printRequestAttributesData);
-			PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(printJobAttributesData);
-			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
-			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
-			ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
-			doLog("Job(" + jobId + ") printed.", 0);
-		} catch (ConnectException e) {
-			LOG.error(e.getMessage(), e);
-			throw e;
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (Exception e) {
-			LOG.error(e.getMessage(), e);
-		} finally {
-			try {
-				if (printData != null) {
-					printData.close();
-				}
-			} catch (IOException e) {
-				doLog(e.getMessage());
-			}
-			try {
-				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-				doLog("Job(" + jobId + ") closing print job.");
-			} catch (Exception e) {
-				doLog(e.getMessage()); // this is not a desirable to show error
-			}
-		}
-	}
  	
 	/**
 	 * Creates the print job poll string.
@@ -289,6 +237,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		options.addOption("a", "app", true, ClientLabels.get("client.command_line_app"));
 		options.addOption("s", "servlet", true, ClientLabels.get("client.command_line_servlet"));
 		options.addOption("u", "uuid", true, ClientLabels.get("client.command_line_uuid"));
+		options.addOption("g", "groups", true, ClientLabels.get("client.command_line_groups"));
 		options.addOption("v", "verbose", false, ClientLabels.get("client.command_line_verbose"));
 		options.addOption("l", "logLevel", true, ClientLabels.get("client.command_line_loglevel"));
 		options.addOption("i", "interval", true, ClientLabels.get("client.command_line_interval"));
@@ -335,6 +284,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}
 			if (line.hasOption("uuid")) {
 				manager.setUuid(line.getOptionValue("uuid"));
+			}
+			if (line.hasOption("groups")) {
+				manager.setGroups(line.getOptionValue("groups"));
 			}
 			if (line.hasOption("verbose")) {
 				manager.setDebugMode(true);

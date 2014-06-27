@@ -12,6 +12,7 @@ public final class ParameterKeys {
 	private ParameterKeys () {
 	}
 	public static final String UUID = "uuid";
+	public static final String GROUPS = "grps";
 	public static final String COMMAND = "command";
 	public static final String PARAMETER_SEPARATOR = "=";
 	public static final String COMPUTER_NAME = "computerName";
