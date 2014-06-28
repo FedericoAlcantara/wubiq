@@ -1,3 +1,7 @@
+<%@page import="java.net.URLEncoder"%>
+<%@page import="net.sf.wubiq.common.WebKeys"%>
+<%@page import="net.sf.wubiq.utils.ServerProperties"%>
+<%@page import="net.sf.wubiq.utils.Is"%>
 <%@page import="net.sf.wubiq.print.jobs.RemotePrintJobStatus"%>
 <%@page import="net.sf.wubiq.print.managers.IRemotePrintJobManager"%>
 <%@page import="net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory"%>
@@ -69,7 +73,11 @@
 		}
 		return returnValue;
 	}
-%>   
+%>
+<%
+String userId = (String)session.getAttribute(WebKeys.SERVER_USER_ID);
+boolean logged =  !Is.emptyString(userId);
+%>  
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
 	<head>
@@ -103,6 +111,29 @@
 					</form>
 				</td>
 			</tr>
+			<%if (!logged) {
+				if (!ServerProperties.getUsers().isEmpty()) {%>
+			<tr>
+				<td colspan="3">
+						<form action="loginCheck.jsp" method="post" style="font-size: smaller;">
+							<%=ServerLabels.get("server.user_id")%>:<input type="text" name="<%=WebKeys.SERVER_USER_ID%>" />
+							&nbsp;&nbsp;
+							<%=ServerLabels.get("server.user_password") %>:<input type="password" name="<%=WebKeys.SERVER_USER_PASSWORD%>" />
+							&nbsp;&nbsp;
+							<input type="submit" value="<%=ServerLabels.get("server.log_in") %>" />
+						</form>
+				</td>
+			</tr>
+			<%	}
+			} else { %>
+			<tr>
+				<td colspan="3">
+					<form action="logout.jsp" method="post">
+						<%=ServerLabels.get("server.logged_in_as", userId) %>&nbsp;<input type="submit" value="<%=ServerLabels.get("server.log_out") %>" />
+					</form>
+				</td>
+			</tr>
+			<%} %>			
 		</table>
 		<%
 		RemoteClientManager manager = RemoteClientManager.getRemoteClientManager(request);
@@ -129,6 +160,37 @@
 				.append(ParameterKeys.UUID)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
 				.append(uuid);
+			StringBuffer pauseResumeClient = new StringBuffer("");
+			String pauseResumeLabel = "";
+			if (remoteClient != null) {
+				if (remoteClient.isPaused()) {
+					pauseResumeLabel = ServerLabels.get("server.resume_client");
+					pauseResumeClient
+						.append(url)
+						.append('/')
+						.append("wubiq.do?")
+						.append(ParameterKeys.COMMAND)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(CommandKeys.RESUME_MANAGER)
+						.append('&')
+						.append(ParameterKeys.UUID)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(uuid);
+				} else {
+					pauseResumeLabel = ServerLabels.get("server.pause_client");
+					pauseResumeClient
+						.append(url)
+						.append('/')
+						.append("wubiq.do?")
+						.append(ParameterKeys.COMMAND)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(CommandKeys.PAUSE_MANAGER)
+						.append('&')
+						.append(ParameterKeys.UUID)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(uuid);
+				}
+			}
 			%>
 			<table class="wubiq_s_table" id="wubiq_service_table_<%=clientCount%>">
 				<tr class="wubiq_s_table_tr" >
@@ -139,7 +201,14 @@
 							<a href="<%=killClient.toString()%>">
 								<input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' />
 							</a>
-						</th>						
+						</th>
+						<%if (logged) {%>
+							<th class="wubiq_s_table_th_actions">
+								<a href="<%=pauseResumeClient.toString()%>">
+									<input type="button" value='<%=pauseResumeLabel%>'  onclick='<%=pauseResumeClient%>' />
+								</a>
+							</th>
+						<%} %>	
 					<%}%>				 
 				</tr>
 				<tr class="wubiq_s_table_tr">
@@ -151,6 +220,9 @@
 								<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.actions")%></th>
 								<%if (remote) { %>
 									<th class="wubiq_sd_table_th_jobs"><%=ServerLabels.get("server.jobs")%></th>
+									<%if (logged) {%>
+										<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.jobs.remove_all") %></th>
+									<%} %>
 								<%} %>
 							</tr>
 			
@@ -160,9 +232,9 @@
 				if (serviceData[0] == null) {
 					continue;
 				}
-				String serviceName = !uuid.equals("") ? fixServiceName(serviceData[0]) : serviceData[0];
+				String serviceName = !uuid.equals("") ? fixServiceName(serviceData[0]) : java.net.URLEncoder.encode(serviceData[0], "UTF-8");
 				String serviceUUID = serviceData[2];
-				StringBuffer buffer = new StringBuffer("")
+				StringBuffer printTestPage = new StringBuffer("")
 						.append(url)
 						.append('/')
 						.append("wubiq-print-test.do?")
@@ -174,21 +246,28 @@
 						.append(ParameterKeys.PARAMETER_SEPARATOR)
 						.append(serviceName);
 						if (!serviceData[2].isEmpty()) {
-							buffer.append('&')
-							.append(ParameterKeys.UUID)
-							.append(ParameterKeys.PARAMETER_SEPARATOR)
-							.append(serviceData[2]);
+							printTestPage.append('&')
+								.append(ParameterKeys.UUID)
+								.append(ParameterKeys.PARAMETER_SEPARATOR)
+								.append(serviceData[2]);
 						}
-				StringBuffer pendingJobPage = new StringBuffer(request.getContextPath())
+				StringBuffer removeAll = new StringBuffer("")
+						.append(url)
 						.append('/')
-						.append("wubiq.do");
-						
+						.append("wubiq.do?")
+						.append(ParameterKeys.COMMAND)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(CommandKeys.REMOVE_ALL_PRINT_JOBS)
+						.append('&')
+						.append(ParameterKeys.PRINT_SERVICE_NAME)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(serviceName);
 				%>
 							<tr class="wubiq_sd_table_tr">
 								<td class="wubiq_sd_table_td_name"><%=serviceData[0]%></td>
 								<td class="wubiq_sd_table_td_remote"><%=serviceData[1]%></td>
 								<td class="wubiq_sd_table_td_actions">
-									<a href="<%=buffer.toString()%>">
+									<a href="<%=printTestPage.toString()%>">
 										<input style="width:100%" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
 											id='wubiq_testpage_button_<%=serviceCount++%>' />
 									</a>
@@ -197,6 +276,14 @@
 									<td class="wubiq_sd_table_td_jobs" style="text-align:center">
 										<%=serviceData[3]%>
 									</td>
+									<%if (logged) {%>
+										<td class="wubiq_sd_table_td_actions">
+											<a href="<%=printTestPage.toString()%>">
+												<input style="width:100%" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
+													id='wubiq_testpage_button_<%=serviceCount++%>' />
+											</a>
+										</td>
+									<%} %>
 								<%} %>			 
 							</tr>
 				<%

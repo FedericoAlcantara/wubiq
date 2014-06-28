@@ -29,7 +29,7 @@ public class HsqldbContextListener implements ServletContextListener {
 	 * @see javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
 	 */
 	@Override
-	public void contextDestroyed(ServletContextEvent arg0) {
+	public void contextDestroyed(ServletContextEvent event) {
 		hsqlServer.shutdown();
 	}
 
@@ -38,6 +38,7 @@ public class HsqldbContextListener implements ServletContextListener {
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
+		ServerProperties.setRealPath(event.getServletContext().getRealPath(""));
 		Level level = getLevel("org");
 		Logger.getLogger(this.getClass().getName()).info(ServerLabels.get("server.version", Labels.VERSION));
 		Logger.getLogger(this.getClass().getName()).info("http://sourceforge.net/projects/wubiq\n");

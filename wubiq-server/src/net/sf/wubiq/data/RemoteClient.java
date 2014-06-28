@@ -23,6 +23,7 @@ public class RemoteClient {
 	private String computerName;
 	private Long lastAccessedTime;
 	private Boolean refreshed;
+	private Boolean paused;
 	
 	public RemoteClient() {
 		this(20000); // 20 seconds default idle time
@@ -34,6 +35,7 @@ public class RemoteClient {
 		this.longInactiveTime = 2l * (60l * 60l * 1000l); // Two hours without activities is considered dead
 		this.setKilled(false);
 		this.setRefreshed(false);
+		this.setPaused(false);
 	}
 	
 	/**
@@ -153,5 +155,13 @@ public class RemoteClient {
 			return false;
 		} 
 		return true;
+	}
+
+	public Boolean isPaused() {
+		return paused;
+	}
+
+	public void setPaused(Boolean paused) {
+		this.paused = paused;
 	}
 }

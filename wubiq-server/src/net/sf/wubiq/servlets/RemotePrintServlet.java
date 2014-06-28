@@ -10,6 +10,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLDecoder;
 import java.util.Date;
 import java.util.Locale;
 
@@ -90,6 +91,10 @@ public class RemotePrintServlet extends HttpServlet {
 						LOG.debug("command:" + command);
 						if (command.equalsIgnoreCase(CommandKeys.KILL_MANAGER)) {
 							killManagerCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.PAUSE_MANAGER)) {
+							pauseManagerCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.RESUME_MANAGER)) {
+							resumeManagerCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.IS_KILLED)) {
 							isKilledCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.IS_REFRESHED)) {
@@ -152,6 +157,40 @@ public class RemotePrintServlet extends HttpServlet {
 		}
 		getRemoteClientManager(request).updateRemotes();
 		respond(backResponse(request, ServerLabels.get("server.client_killed", uuid)), response);
+	}
+	
+	/**
+	 * Produces a text response with a 1 indicating that the pause command was executed.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void pauseManagerCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		if (client != null) {
+			client.setPaused(true);;
+		}
+		getRemoteClientManager(request).updateRemotes();
+		respond(backResponse(request, ServerLabels.get("server.client_paused", uuid)), response);
+	}
+
+	/**
+	 * Produces a text response with a 1 indicating that the resume command was executed.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void resumeManagerCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		if (client != null) {
+			client.setPaused(false);;
+		}
+		getRemoteClientManager(request).updateRemotes();
+		respond(backResponse(request, ServerLabels.get("server.client_resumed", uuid)), response);
 	}
 	
 	/**
@@ -592,7 +631,7 @@ public class RemotePrintServlet extends HttpServlet {
 			testPageName = "MobileTestPage.pdf";
 		}
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
-		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
+		String printServiceName = URLDecoder.decode(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME), "UTF-8");
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
 		PrinterJobManager.initializePrinterJobManager();
@@ -633,7 +672,6 @@ public class RemotePrintServlet extends HttpServlet {
 				}
 		
 			}
-				
 			respond(backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)), response);
 		} else {
 			respond("application/pdf", input, response);
