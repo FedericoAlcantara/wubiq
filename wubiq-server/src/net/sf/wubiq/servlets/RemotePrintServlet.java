@@ -10,7 +10,6 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URLDecoder;
 import java.util.Date;
 import java.util.Locale;
 
@@ -55,6 +54,8 @@ import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
+import net.sf.wubiq.utils.ServerWebUtils;
+import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -111,6 +112,8 @@ public class RemotePrintServlet extends HttpServlet {
 							registerPrintServiceCommandV2(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.REGISTER_MOBILE_PRINT_SERVICE)) {
 							registerMobilePrintServiceCommand(uuid, request, response);
+						} else if (command.equalsIgnoreCase(CommandKeys.REMOVE_ALL_PRINT_JOBS)) {
+							getRemoveAllCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.PENDING_JOBS)) {
 							getPendingJobsCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.PRINT_SERVICE_PENDING_JOBS)) {
@@ -156,7 +159,7 @@ public class RemotePrintServlet extends HttpServlet {
 			RemotePrintServiceLookup.removePrintServices(uuid);
 		}
 		getRemoteClientManager(request).updateRemotes();
-		respond(backResponse(request, ServerLabels.get("server.client_killed", uuid)), response);
+		respond(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.client_killed", uuid)), response);
 	}
 	
 	/**
@@ -173,7 +176,7 @@ public class RemotePrintServlet extends HttpServlet {
 			client.setPaused(true);;
 		}
 		getRemoteClientManager(request).updateRemotes();
-		respond(backResponse(request, ServerLabels.get("server.client_paused", uuid)), response);
+		respond(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.client_paused", uuid)), response);
 	}
 
 	/**
@@ -190,7 +193,7 @@ public class RemotePrintServlet extends HttpServlet {
 			client.setPaused(false);;
 		}
 		getRemoteClientManager(request).updateRemotes();
-		respond(backResponse(request, ServerLabels.get("server.client_resumed", uuid)), response);
+		respond(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.client_resumed", uuid)), response);
 	}
 	
 	/**
@@ -303,10 +306,10 @@ public class RemotePrintServlet extends HttpServlet {
 	private void registerPrintServiceCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		if (client != null) {
-			String serviceName = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
-			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
-			String docFlavors = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
-			String directConnectEnabled = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
+			String serviceName = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
+			String categoriesString = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
+			String docFlavors = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
+			String directConnectEnabled = WebUtils.INSTANCE.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteComputerName(client.getComputerName());
@@ -331,12 +334,12 @@ public class RemotePrintServlet extends HttpServlet {
 	private void registerPrintServiceCommandV2(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		if (client != null) {
-			String serviceName = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
-			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
-			String docFlavors = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
-			String directConnectEnabled = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
-			String clientVersion = PrintServiceUtils.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION));
-			String groups = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.GROUPS));
+			String serviceName = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
+			String categoriesString = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
+			String docFlavors = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_DOC_FLAVORS));
+			String directConnectEnabled = WebUtils.INSTANCE.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER));
+			String clientVersion = WebUtils.INSTANCE.decodeHtml(request.getParameter(DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION));
+			String groups = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.GROUPS));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.registerGroups(groups);
@@ -362,8 +365,8 @@ public class RemotePrintServlet extends HttpServlet {
 	private void registerMobilePrintServiceCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		if (client != null) {
-			String serviceName = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
-			String categoriesString = PrintServiceUtils.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
+			String serviceName = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME));
+			String categoriesString = WebUtils.INSTANCE.decodeHtml(request.getParameter(ParameterKeys.PRINT_SERVICE_CATEGORIES));
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);
@@ -431,6 +434,32 @@ public class RemotePrintServlet extends HttpServlet {
 		buffer.append("</table");
 		respond(buffer.toString(), response);
 	}
+	
+	/**
+	 * Remove all jobs for the print service.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void getRemoveAllCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
+		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
+		Integer count = 0;
+		if (manager != null && printService != null) {
+			for (Long jobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
+				IRemotePrintJob printJob = manager.getRemotePrintJob(jobId, false);
+				if (printService.equals(printJob.getPrintService())) {
+					manager.removeRemotePrintJob(jobId);
+					count++;
+				}
+			}
+		}
+		respond(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.jobs_removed", 
+				count.toString(), printServiceName)), response);
+	}
+	
 
 	/**
 	 * Returns a list of pending jobs.
@@ -441,13 +470,16 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void getPendingJobsCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		StringBuffer buffer = new StringBuffer("");
-		if (manager != null) {
-			for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
-				if (buffer.length() > 0) {
-					buffer.append(ParameterKeys.CATEGORIES_SEPARATOR);
+		if (!client.isPaused()) {
+			if (manager != null) {
+				for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
+					if (buffer.length() > 0) {
+						buffer.append(ParameterKeys.CATEGORIES_SEPARATOR);
+					}
+					buffer.append(printJobId);
 				}
-				buffer.append(printJobId);
 			}
 		}
 		if (buffer.length() > 0) {
@@ -631,7 +663,8 @@ public class RemotePrintServlet extends HttpServlet {
 			testPageName = "MobileTestPage.pdf";
 		}
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
-		String printServiceName = URLDecoder.decode(request.getParameter(ParameterKeys.PRINT_SERVICE_NAME), "UTF-8");
+		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
+		printServiceName = WebUtils.INSTANCE.decodeHtml(printServiceName);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
 		PrinterJobManager.initializePrinterJobManager();
@@ -672,7 +705,7 @@ public class RemotePrintServlet extends HttpServlet {
 				}
 		
 			}
-			respond(backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)), response);
+			respond(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)), response);
 		} else {
 			respond("application/pdf", input, response);
 		}
@@ -710,30 +743,6 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private RemoteClientManager getRemoteClientManager(HttpServletRequest request) {
 		return RemoteClientManager.getRemoteClientManager(request);
-	}
-	
-	/**
-	 * Creates a back response after performing actions that produce a user information.
-	 * @param request Originating request.
-	 * @param body Contents to be shown in the html body. 
-	 * @return A Html string to be used.
-	 * @throws IOException
-	 */
-	private String backResponse(HttpServletRequest request, String body) throws IOException {
-		StringBuffer returnValue = new StringBuffer("");
-		String context = request.getContextPath().substring(1);
-		
-		String url =  "/" + context;
-		returnValue.append("<html>")
-			.append("<header>")
-			.append("<meta http-equiv=\"refresh\" content=\"3," + url + "\"/>")
-			.append("</header>")
-			.append("<body>")
-			.append(body)
-			.append("</body>")
-			.append("</html>");
-
-		return returnValue.toString();
 	}
 	
 	/**

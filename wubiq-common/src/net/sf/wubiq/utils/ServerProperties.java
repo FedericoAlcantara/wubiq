@@ -82,7 +82,7 @@ public class ServerProperties {
 	 * True if the user / password combination is found in the map of users.
 	 * @param userId Id of the user to search for.
 	 * @param password Password.
-	 * @return
+	 * @return True if the user/password combination.
 	 */
 	public static boolean isValidUser(String userId, String password) {
 		return getUsers().containsKey(userId) &&

@@ -42,6 +42,10 @@ body {
 	color:#ffffff;
 }
 
+.paused {
+	background-color: #F7C9C2;
+}
+
 .wubiq_sd_table_th_name,
 .wubiq_sd_table_td_name 
 {

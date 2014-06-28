@@ -1,3 +1,6 @@
+<%@page import="net.sf.wubiq.utils.ServerLabels"%>
+<%@page import="net.sf.wubiq.utils.ServerWebUtils"%>
+<%@page import="java.io.PrintWriter"%>
 <%@page import="net.sf.wubiq.common.WebKeys"%>
 <%@page import="net.sf.wubiq.utils.ServerProperties"%>
 <%@ page language="java" contentType="text/html; charset=ISO-8859-1"
@@ -9,13 +12,17 @@
 <title>Insert title here</title>
 </head>
 <body>
-	<% 
-	String userId=request.getParameter(WebKeys.SERVER_USER_ID);
-	String password=request.getParameter(WebKeys.SERVER_USER_PASSWORD);
-	if (ServerProperties.isValidUser(userId, password)) {
-		session.setAttribute(WebKeys.SERVER_USER_ID, userId);
-	}
-	response.sendRedirect("index.jsp");
+	<%
+		String userId=request.getParameter(WebKeys.SERVER_USER_ID);
+		String password=request.getParameter(WebKeys.SERVER_USER_PASSWORD);
+		if (ServerProperties.isValidUser(userId, password)) {
+			session.setAttribute(WebKeys.SERVER_USER_ID, userId);
+			response.sendRedirect("index.jsp");
+		} else {
+			PrintWriter writer = response.getWriter();
+			writer.println(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.invalid_login")));		
+			
+		}
 	%>
 </body>
 </html>

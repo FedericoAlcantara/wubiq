@@ -643,32 +643,6 @@ public class PrintServiceUtils {
 		return printServiceRegister.toString();
 	}
 
-	/**
-	 * Decodes a html with % codes.
-	 * @param input Html with % codes.
-	 * @return Converted string.
-	 */
-	public static String decodeHtml(String input) {
-		StringBuffer buffer = new StringBuffer("");
-		if (input != null) {
-			for (int index = 0; index < input.length(); index++) {
-				char characterAt = input.charAt(index);
-				if (characterAt == '%') {
-					if ((index + 2) < input.length()) {
-						String hex = new String(new char[]{input.charAt(index + 1),
-								input.charAt(index + 2)});
-						buffer.append((char)Integer.parseInt(hex, 16));
-						index += 2;
-					} else {
-						buffer.append(characterAt);
-					}
-				} else {
-					buffer.append(characterAt);
-				}
-			}
-		}
-		return buffer.toString();
-	}
 
 	/**
 	 * Deserialize printService and its categories

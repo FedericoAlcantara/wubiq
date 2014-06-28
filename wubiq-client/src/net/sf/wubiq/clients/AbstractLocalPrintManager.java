@@ -9,13 +9,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
 import java.util.ArrayList;
@@ -33,6 +31,7 @@ import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -454,12 +453,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				if (parameter.contains("=")) {
 					String parameterName = parameter.substring(0, parameter.indexOf("="));
 					String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
-					try {
-						parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
-						parameterString = parameterName + "=" + parameterValue;
-					} catch (UnsupportedEncodingException e) {
-						LOG.error(e.getMessage());
-					}
+					parameterValue = WebUtils.INSTANCE.encode(parameterValue);
+					parameterString = parameterName + "=" + parameterValue;
 				}
 				parametersQuery.append('&')
 						.append(parameterString);

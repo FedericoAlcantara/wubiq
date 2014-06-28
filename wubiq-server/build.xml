@@ -38,6 +38,8 @@
 		<copy todir="${war.build}/WEB-INF/classes">		
 			<fileset dir="${bin}" includes = "**/*" />
 		</copy>
+		<delete file ="${war.build}/WEB-INF/classes/net/sf/wubiq/reports/TestPage-50.pdf" />
+		<delete file ="${war.build}/WEB-INF/classes/net/sf/wubiq/reports/TestPage-50x2.pdf" />
 	</target>
 	
 	<target name="clean">
