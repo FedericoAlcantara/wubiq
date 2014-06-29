@@ -435,17 +435,19 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		StringBuffer parametersQuery = new StringBuffer("")
 				.append(ParameterKeys.UUID)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(getUuid())
-				.append('&')
-				.append(ParameterKeys.GROUPS)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(getGroups());
+				.append(getUuid());
+			if (!Is.emptyString(getGroups())) {
+				parametersQuery.append('&')
+						.append(ParameterKeys.GROUPS)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(getGroups());
+			}
 				
 			if (!Is.emptyString(command)) {
 				parametersQuery.append('&')
-				.append(ParameterKeys.COMMAND)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(command);
+						.append(ParameterKeys.COMMAND)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(command);
 			}
 		
 			for (String parameter: parameters) {

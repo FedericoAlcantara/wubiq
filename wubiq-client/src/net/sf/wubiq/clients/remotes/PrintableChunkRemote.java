@@ -33,7 +33,7 @@ import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.utils.GraphicsUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
-import net.sf.wubiq.wrappers.GlyphVectorWrapper;
+import net.sf.wubiq.wrappers.GlyphChunkVectorWrapper;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicParameter;
 import net.sf.wubiq.wrappers.ImageObserverWrapper;
@@ -67,6 +67,8 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	private int printed = 0;
 	private Integer returnValue = -1;
 	private static Set<GraphicCommand>graphicCommands = new TreeSet<GraphicCommand>();
+	private String slowerMethod;
+	private long slowerTime;
 
 	public PrintableChunkRemote() {
 		initialize();
@@ -134,12 +136,16 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	private void executeGraphics(Graphics2D graph, PageFormat pageFormat,
 			Set<GraphicCommand> graphicCommands) {
 		if (graphicCommands != null) {
+			long startTime = new Date().getTime();
 			Iterator<GraphicCommand> it = graphicCommands.iterator();
+			int count = 0;
 			while (it.hasNext()) {
 				GraphicCommand graphicCommand = it.next();
-	
+				count++; 
 				executeMethod(graph, graphicCommand);
 			}
+			long diff = new Date().getTime() - startTime;
+			manager().doLog("Took:" + diff + "ms, processed count:" + count + ", slower method:" + slowerMethod + " took:" + slowerTime, 5);
 		}
 	}
 	
@@ -156,6 +162,7 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		Method method = null;
 		Class[] parameterTypes = new Class[]{};
 		Object[] parameterValues = new Object[]{};
+		long startTime = new Date().getTime();
 
 		if ("setFont".equalsIgnoreCase(graphicCommand.getMethodName())) {
 			Font originalFont = (Font)graphicCommand.getParameters()[0].getParameterValue();
@@ -199,13 +206,19 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 						parameterTypes[index] = Paint.class;
 					}
 					
-				} else if (parameterTypes[index].equals(GlyphVectorWrapper.class)) {
+				} else if (parameterTypes[index].equals(GlyphChunkVectorWrapper.class)) {
 					parameterTypes[index] = GlyphVector.class;
-					GlyphVectorWrapper glyphVectorWrapper = (GlyphVectorWrapper)parameterValues[index];
-					GlyphVector glyphVector = glyphVectorWrapper.getFont().createGlyphVector(graph.getFontRenderContext(), 
-							glyphVectorWrapper.getCodes());
-					parameterValues[index] = glyphVector;
+					GlyphChunkVectorWrapper glyphVectorWrapper = (GlyphChunkVectorWrapper)parameterValues[index];
+					Font font = GraphicsUtils.INSTANCE.properFont(glyphVectorWrapper.getFont(), printerType);
+					GlyphVector glyphVector = font.createGlyphVector(graph.getFontRenderContext(), 
+							glyphVectorWrapper.getCharacters());
+					AffineTransform transform = new AffineTransform();
 					
+					transform.scale(0.99d, 0.99d);
+					for (int glyphIndex = 0; glyphIndex < glyphVector.getNumGlyphs(); glyphIndex++) {
+						glyphVector.setGlyphTransform(glyphIndex, transform);
+					}
+					parameterValues[index] = glyphVector;
 				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
 					parameterTypes[index] = Stroke.class;
 					parameterValues[index] = ((StrokeWrapper) parameterValues[index]).getStroke(xScale, yScale);
@@ -233,6 +246,7 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		method = findMethod(graph.getClass(), graphicCommand.getMethodName(), parameterTypes);
 		if (method != null) {
 			try {
+				startTime = new Date().getTime();
 				method.setAccessible(true);
 				method.invoke(graph, parameterValues);
 			} catch (Exception e) {
@@ -241,6 +255,11 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 			}
 		} else {
 			LOG.info("Method not FOUND:" + graphicCommand.getMethodName());
+		}
+		long diff = new Date().getTime() - startTime;
+		if (diff > slowerTime) {
+			slowerTime = diff;
+			slowerMethod = graphicCommand.getMethodName();
 		}
 	}
 	

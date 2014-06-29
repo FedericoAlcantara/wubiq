@@ -662,6 +662,8 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			testPageName = "MobileTestPage.pdf";
 		}
+//testPageName = "TestPage-calibrate.pdf";
+
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
 		printServiceName = WebUtils.INSTANCE.decodeHtml(printServiceName);
@@ -675,8 +677,7 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
 			if (((printService instanceof RemotePrintService) &&
-					((RemotePrintService)printService).isMobile()) ||
-					PrintServiceUtils.isSameVersion(printService)) {
+					((RemotePrintService)printService).isMobile())) {
 				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
 				DocPrintJob printJob = printService.createPrintJob();
 				try {
