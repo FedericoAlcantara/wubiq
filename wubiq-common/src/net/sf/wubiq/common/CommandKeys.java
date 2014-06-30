@@ -37,4 +37,5 @@ public final class CommandKeys {
 	public static final String PAUSE_MANAGER = "pm";
 	public static final String RESUME_MANAGER = "rm";
 	public static final String REMOVE_ALL_PRINT_JOBS = "j4";
+	public static final String READ_VERSION = "v1";
 }

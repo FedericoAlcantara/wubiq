@@ -51,6 +51,7 @@ import net.sf.wubiq.remote.RemoteClientManager;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
@@ -82,10 +83,11 @@ public class RemotePrintServlet extends HttpServlet {
 			if (command.equalsIgnoreCase(CommandKeys.IS_ACTIVE)) {
 				isActiveCommand(uuid, request, response);
 			} else  {
-				notifyRemote(uuid, request);
-				if (!Is.emptyString(uuid)) {
+				if (CommandKeys.READ_VERSION.equalsIgnoreCase(command)) {
+					respond(Labels.VERSION, response);
+				} else if (!Is.emptyString(uuid)) {
 					LOG.debug("accesing:" + uuid);
-					
+					notifyRemote(uuid, request);
 					manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
 					
 					if (!Is.emptyString(command)) {

@@ -212,7 +212,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
 			doLog("Register computer name:" + computerName, 0);
-			doLog("Force Serialized Communication:" + System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY), 0);
+			doLog("Force Serialized Communication:" + System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION), 0);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
 		}
