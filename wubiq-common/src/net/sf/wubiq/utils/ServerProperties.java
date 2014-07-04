@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 
-import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.common.ConfigurationKeys;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -23,7 +23,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class ServerProperties {
+public class ServerProperties extends BaseProperties {
 	private static final Log LOG = LogFactory.getLog(ServerProperties.class);
 	private static Properties properties;
 	private static Map<String, String> users;
@@ -33,27 +33,28 @@ public class ServerProperties {
 	}
 
 	public static String getHsqldbHost() {
-		return get("host", "file:");
+		return get(ConfigurationKeys.PROPERTY_HSQLDB_HOST, 
+				ConfigurationKeys.DEFAULT_HSQLDB_HOST);
 	}
 	
 	public static String getHsqldbPort() {
-		return get("hsqldb.port", "");
+		return get(ConfigurationKeys.PROPERTY_HSQLDB_PORT, "");
 	}
 	
 	public static String getHsqldbDatabaseName() {
-		return get("hsqldb.database", WebKeys.DEFAULT_HSQLDB_DATABASE_NAME);
+		return get(ConfigurationKeys.PROPERTY_HSQLDB_DATABASE_NAME, ConfigurationKeys.DEFAULT_HSQLDB_DATABASE_NAME);
 	}
 	
 	public static String getHsqldbDbName() {
-		return get("hsqldb.dbname", WebKeys.DEFAULT_HSQLDB_DB_ALIAS);
+		return get(ConfigurationKeys.PROPERTY_HSQLDB_DB_ALIAS, ConfigurationKeys.DEFAULT_HSQLDB_DB_ALIAS);
 	}
 	
 	public static String getPrintJobManager() {
-		return get("manager", "net.sf.wubiq.print.managers.impl.HsqldbPrintJobManager");
+		return get(ConfigurationKeys.PROPERTY_PRINT_JOB_MANAGER, ConfigurationKeys.DEFAULT_PRINT_JOB_MANAGER);
 	}
 
 	public static String getRemotePrintJobManager() {
-		return get("remoteManager", "net.sf.wubiq.print.managers.impl.DirectConnectPrintJobManager");
+		return get(ConfigurationKeys.PROPERTY_REMOTE_PRINT_JOB_MANAGER, ConfigurationKeys.DEFAULT_REMOTE_PRINT_JOB_MANAGER);
 	}
 	
 	/**
@@ -64,7 +65,7 @@ public class ServerProperties {
 	public static Map<String, String> getUsers() {
 		if (users == null) {
 			users = new HashMap<String, String>();
-			String usersList = get("users", "");
+			String usersList = get(ConfigurationKeys.PROPERTY_USERS, "");
 			for (String userPassword : usersList.split("[,;]")) {
 				if (userPassword.contains(":")) {
 					String[] data = userPassword.split(":");
@@ -89,15 +90,6 @@ public class ServerProperties {
 				getUsers().get(userId).equals(ServerUtils.INSTANCE.normalizedPassword(password));
 	}
 
-	
-	private static String get(String key, String defaultValue) {
-		String returnValue = getProperties().getProperty(key);
-		if (returnValue == null) {
-			returnValue = defaultValue;
-		}
-		return returnValue;
-	}
-
 	/**
 	 * It lookup for wubiq-server.properties file.
 	 * First it searches in ../tomcat/webapps/wubiq-server/WEB-INF/classes. Then searches in:<br/>
@@ -109,22 +101,22 @@ public class ServerProperties {
 	 * 
 	 * @return the properties.
 	 */
-	private static Properties getProperties() {
+	protected static Properties getProperties() {
 		if (properties == null) {
 			try {
 				properties = new Properties();
 				
-				File propertyFile = new File(getRealPath() + "/WEB-INF/classes/" + WebKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
+				File propertyFile = new File(getRealPath() + "/WEB-INF/classes/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
 				if (!propertyFile.exists()) {
 					propertyFile = propertyFile.getParentFile();
 					for (int i = 0; i < 5; i++) {
 						propertyFile = propertyFile.getParentFile();
-						File testFile = new File(propertyFile.getParent() + "/" + WebKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
+						File testFile = new File(propertyFile.getParent() + "/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
 						if (testFile.exists()) {
 							propertyFile = testFile;
 							break;
 						} else {
-							testFile = new File(propertyFile.getParent() + "/conf/" + WebKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
+							testFile = new File(propertyFile.getParent() + "/conf/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
 							if (testFile.exists()) {
 								propertyFile = testFile;
 								break;

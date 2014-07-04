@@ -1,0 +1,3 @@
+La configuración de las impresoras puede ser nuevamente realizada ejecutando
+"Configurar" del menú de programas "Wubiq"
+

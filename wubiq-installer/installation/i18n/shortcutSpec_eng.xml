@@ -1,0 +1,66 @@
+<shortcuts>
+    <programGroup 
+        defaultName="Wubiq" 
+        iconFile="${INSTALL_PATH}\icons\wubiq.bmp"
+        location="applications"/>
+    
+    <shortcut
+        name="Configure Wubiq Service " 
+        description="Wubiq service configuration"
+        target="${JAVA_HOME}\bin\javaw"
+        commandLine='-cp "${INSTALL_PATH}\bin" -splash:splash.png net.sf.wubiq.clients.WubiqConfigurator'
+        workingDirectory="${INSTALL_PATH}\bin"
+        iconFile="${INSTALL_PATH}\icons\wubiq.bmp"
+        initialState="noShow"
+        programGroup="yes"
+        applications="no"
+        desktop="no"
+        startMenu="yes"
+        startup="no"
+        />
+	<shortcut
+        name="Stop Wubiq Service"
+        description="Stops Wubiq service"
+        target="net"
+        commandLine="stop wubiq"
+        workingDirectory="${INSTALL_PATH}"
+        iconFile="${INSTALL_PATH}\icons\stop.bmp"
+        initialState="noShow"
+        programGroup="yes"
+        applications="no"
+        desktop="no"
+        startMenu="yes"
+        startup="no" 
+        />    
+    
+	<shortcut
+        name="Start Wubiq Service"
+        description="Starts Wubiq service"
+        target="net"
+        commandLine="start wubiq"
+        workingDirectory="${INSTALL_PATH}"
+        iconFile="${INSTALL_PATH}\icons\start.bmp"
+        initialState="noShow"
+        programGroup="yes"
+        applications="no"
+        desktop="no"
+        startMenu="yes"
+        startup="no"
+		/>
+    
+	<shortcut
+        name="Uninstall Wubiq"
+        description="Wubiq uninstallation"
+        target="${JAVA_HOME}\bin\javaw"
+        commandLine="-jar uninstaller.jar"
+        workingDirectory="${INSTALL_PATH}\Uninstaller"
+        iconFile="${INSTALL_PATH}/icons\wubiq_uninstall.bmp"
+        initialState="noShow"
+        programGroup="yes"
+        applications="no"
+        desktop="no"
+        startMenu="yes"
+        startup="no"
+        />
+    
+</shortcuts>

@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+
+<!-- 
+    Suite installation.
+-->
+
+<installation version="1.0" xmlns:xi="http://www.w3.org/2001/XInclude">
+
+    <!-- 
+        The info section.
+        The meaning of the tags should be natural ...
+    -->
+    <info>
+        <appname>wubiq</appname>
+        <authors>
+            <author name="Federico Alcantara" email="falcantara@users.sf.net"/>
+        </authors>
+        <url>http://sourceforge.net/projects/wubiq/</url>
+        <writeinstallationinformation>yes</writeinstallationinformation>
+        <run-privileged/>
+	    <appversion>2.0.0</appversion>
+	    <webdir>https://sourceforge.net/p/wubiq/wiki/Main_Page/</webdir>
+	    <uninstaller write="yes"/>  
+    </info>
+
+    <variables>
+    </variables>
+    
+    <dynamicvariables>
+        <variable name="module_os" value="linux" condition="izpack.linuxinstall" />
+        <variable name="module_os" value="windows" condition="izpack.windowsinstall" />
+    </dynamicvariables>
+    
+    <native type="izpack" name="ShellLink.dll" />
+    
+    <conditions>
+    </conditions>
+    
+    <!-- 
+        The gui preferences indication.
+        Sets the installer window to 640x480. It will not be able to change the size.
+    -->
+    <guiprefs width="640" height="480" resizable="yes"/>
+
+    <!-- 
+        The locale section.
+        Asks here to include the English and French langpacks.
+    -->
+    <locale>
+        <langpack iso3="spa"/>
+        <langpack iso3="eng"/>
+    </locale>
+
+    <!-- 
+        The resources section.
+        The ids must be these ones if you want to use the LicencePanel and/or the InfoPanel.
+    -->
+    <resources>
+        <res id="HTMLInfoPanel.info_eng" src="i18n/readme_eng.html"/>
+        <res id="HTMLInfoPanel.info_spa" src="i18n/readme_spa.html"/>
+	    <res id="userInputSpec.xml" src="userInputSpec.xml" />
+	    <res id="packsLang.xml_eng" src="i18n/packsLang_eng.xml" />
+	    <res id="packsLang.xml_spa" src="i18n/packsLang_spa.xml" />
+	    <res id="userInputLang.xml_eng" src="i18n/userInputLang_eng.xml" />
+	    <res id="userInputLang.xml_spa" src="i18n/userInputLang_spa.xml" />
+	    <res id="shortcutSpec.xml" src="i18n/shortcutSpec_eng.xml" />
+	    <res id="shortcutSpec.xml_spa" src="i18n/shortcutSpec_spa.xml" />
+	    <res id="XInfoPanel.info" src="i18n/XInfoPanel_eng.txt" />
+	    <res id="XInfoPanel.info_spa" src="i18n/XInfoPanel_spa.txt" />
+	   	<res id="Unix_shortcutSpec.xml" src="i18n/shortcutSpec_unix_eng.xml" />
+	   	<res id="Unix_shortcutSpec.xml_spa" src="i18n/shortcutSpec_unix_spa.xml" />
+	</resources>
+
+    <!-- 
+        The panels section.
+        We indicate here which panels we want to use. The order will be respected.
+    -->
+    <panels>
+        <panel classname="HTMLInfoPanel" />
+        <panel classname="UserInputPanel" id="panel.installables"/>
+        <panel classname="TargetPanel"/>
+        <panel classname="PacksPanel"/>
+        <panel classname="ShortcutPanel"/>
+        <panel classname="SummaryPanel"/>
+        <panel classname="InstallPanel"/>
+        <panel classname="XInfoPanel" />
+        <panel classname="SimpleFinishPanel"/>
+    </panels>
+
+    <!-- 
+        The packs section.
+        We specify here our packs.
+    -->
+    <packs>
+        
+        <pack name="Installation Base" id="base" required = "yes" loose = "false" 
+            hidden="false">
+            <description>.</description>
+            <file src="./build/com" override="true"
+                targetdir="${INSTALL_PATH}/bin">
+            </file>
+            <file src="./build/jssc" override="true"
+                targetdir="${INSTALL_PATH}/bin">
+            </file>
+            <file src="./build/libs" override="true"
+                targetdir="${INSTALL_PATH}/bin">
+            </file>
+			<file src="./build/net" override="true"
+                targetdir="${INSTALL_PATH}/bin">
+            </file>
+            <file src="./build/org" override="true"
+                targetdir="${INSTALL_PATH}/bin">
+            </file>
+
+            <!-- Install windows service -->            
+           	<singlefile src="./resources/wubiq.bmp" override="true"
+                target="${INSTALL_PATH}/icons/wubiq.bmp">
+                <os family="windows"/>
+           	</singlefile>
+           	
+           	<singlefile src="./resources/stop.bmp" override="true"
+                target="${INSTALL_PATH}/icons/stop.bmp">
+                <os family="windows"/>
+           	</singlefile>
+           
+           	<singlefile src="./resources/start.bmp" override="true"
+                target="${INSTALL_PATH}/icons/start.bmp">
+                <os family="windows"/>
+           	</singlefile>
+          
+          	<singlefile src="./resources/wubiq_uninstall.bmp" override="true"
+                target="${INSTALL_PATH}/icons/wubiq_uninstall.bmp">
+                <os family="windows"/>
+          	</singlefile>
+          			
+            <singlefile src="./resources/prunsrv-i386.exe" override="true"
+                target="${INSTALL_PATH}/bin/prunsrv.exe">
+                <os family="windows" arch="i386"/>
+                <os family="windows" arch="x86"/>
+            </singlefile>
+            
+            <singlefile src="./resources/prunsrv-amd64.exe" override="true"
+                target="${INSTALL_PATH}/bin/prunsrv.exe">
+                <os family="windows" arch="amd64"/>
+            </singlefile>
+
+            <singlefile src="./resources/install_service.bat" override="true"
+                target="${INSTALL_PATH}/bin/install_service.bat">
+                <os family="windows"/>
+            </singlefile>
+
+            <singlefile src="./resources/remove_service.bat" override="true"
+                target="${INSTALL_PATH}/bin/remove_service.bat">
+                <os family="windows"/>
+            </singlefile>
+            
+            <parsable targetfile="${INSTALL_PATH}/bin/install_service.bat" override="true">
+                <os family="windows"/>
+            </parsable>
+            
+            <parsable targetfile="${INSTALL_PATH}/bin/remove_service.bat" override="true">
+                <os family="windows"/>
+            </parsable>
+            
+            <executable targetfile='"${INSTALL_PATH}/bin/remove_service.bat"' stage="uninstall" 
+                keep="true">
+                <os family="windows" />
+            </executable>
+            
+            <singlefile src="./resources/post_install.bat" override="true"
+                target="${INSTALL_PATH}/bin/post_install.bat">
+                <os family="windows" />
+            </singlefile>
+            
+           	<parsable targetfile="${INSTALL_PATH}/bin/post_install.bat">
+                <os family="windows" />
+            </parsable>
+            
+            
+            <!-- Install Linux / Mac Service -->
+           	<singlefile src="./resources/wubiq.png" override="true"
+                target="${INSTALL_PATH}/icons/wubiq.png">
+                <os family="unix"/>
+                <os family="mac"/>
+           	</singlefile>
+           	
+           	<singlefile src="./resources/stop.png" override="true"
+                target="${INSTALL_PATH}/icons/stop.png">
+                <os family="unix"/>
+                <os family="mac"/>
+           	</singlefile>
+           
+           	<singlefile src="./resources/start.png" override="true"
+                target="${INSTALL_PATH}/icons/start.png">
+                <os family="unix"/>
+                <os family="mac"/>
+           	</singlefile>
+          
+          	<singlefile src="./resources/wubiq_uninstall.png" override="true"
+                target="${INSTALL_PATH}/icons/wubiq_uninstall.png">
+                <os family="unix"/>
+                <os family="mac"/>
+          	</singlefile>
+
+            <file src="./resources/wubiq" 
+                    targetdir="/etc/init.d" override="true">
+                <os family="unix"/>
+                <os family="mac"/>
+            </file>
+            
+            <parsable targetfile="/etc/init.d/wubiq">
+                <os family="unix"/>
+                <os family="mac"/>
+            </parsable>
+            
+            <executable targetfile="/etc/init.d/wubiq" keep="true" stage="never">
+                <os family="unix"/>
+                <os family="mac"/>
+            </executable>
+            
+           	<singlefile src="./resources/install_service.sh" override="true"
+                target="${INSTALL_PATH}/bin/install_service.sh">
+                <os family="unix"/>
+                <os family="mac"/>
+            </singlefile>
+           
+           	<parsable targetfile="${INSTALL_PATH}/bin/install_service.sh">
+                <os family="unix"/>
+                <os family="mac"/>
+            </parsable>
+            
+           	<singlefile src="./resources/remove_service.sh" override="true"
+                target="${INSTALL_PATH}/bin/remove_service.sh">
+                <os family="unix"/>
+                <os family="mac"/>
+            </singlefile>
+           
+           	<parsable targetfile="${INSTALL_PATH}/bin/remove_service.sh">
+                <os family="unix"/>
+                <os family="mac"/>
+            </parsable>
+            
+            <executable targetfile="${INSTALL_PATH}/bin/remove_service.sh" keep="true" stage="uninstall">
+                <os family="unix"/>
+                <os family="mac"/>
+            </executable>
+            
+           	<singlefile src="./resources/post_install.sh" override="true"
+                target="${INSTALL_PATH}/bin/post_install.sh">
+                <os family="unix"/>
+                <os family="mac"/>
+            </singlefile>
+            
+           	<parsable targetfile="${INSTALL_PATH}/bin/post_install.sh">
+                <os family="unix"/>
+                <os family="mac"/>
+            </parsable>
+           	
+            <!-- Run the configurator -->
+            
+            <executable targetfile='"${INSTALL_PATH}/bin/post_install.bat"' keep="true" stage="postinstall">
+                <os family="windows" />
+            </executable>
+            
+            <executable targetfile="${INSTALL_PATH}/bin/post_install.sh" keep="true" stage="postinstall">
+                <os family="unix"/>
+                <os family="mac"/>
+            </executable>
+            
+            <executable targetfile='"${JAVA_HOME}/bin/javaw"'
+                keep="true" stage="postinstall">
+                <args>
+                    <arg value="-cp" />
+                    <arg value='"${INSTALL_PATH}/bin"' />
+                    <arg value="-splash:splash.png" />
+                    <arg value="net.sf.wubiq.clients.WubiqConfigurator" />
+                </args>
+                <os family="windows"/>
+            </executable>
+            
+            <executable targetfile="${JAVA_HOME}/bin/java"
+                keep="true" stage="postinstall">
+                <args>
+                    <arg value="-cp" />
+                    <arg value="${INSTALL_PATH}/bin" />
+                    <arg value="-splash:splash.png" />
+                    <arg value="net.sf.wubiq.clients.WubiqConfigurator" />
+                </args>
+                <os family="unix"/>
+                <os family="mac"/>
+            </executable>
+            
+           	<executable targetfile='"${INSTALL_PATH}/bin/install_service.bat"' stage="postinstall"
+                keep="true">
+                <os family="windows" />
+            </executable>
+            
+            <executable targetfile="${INSTALL_PATH}/bin/install_service.sh" keep="true" stage="postinstall">
+                <os family="unix"/>
+                <os family="mac"/>
+            </executable>
+           	
+		</pack>
+		        
+	</packs>
+
+</installation>

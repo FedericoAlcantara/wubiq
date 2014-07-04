@@ -1,7 +1,6 @@
 package net.sf.wubiq.clients;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -9,8 +8,6 @@ import java.net.InetAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.UnknownHostException;
-import java.util.HashMap;
-import java.util.Map;
 
 import net.sf.wubiq.enums.ServiceCommandType;
 import net.sf.wubiq.enums.ServiceReturnStatus;
@@ -20,7 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
- * Takes care of handling the printers as services.
+ * Takes care of handling the wubiq client as a service.
  * @author Federico Alcantara
  *
  */
@@ -28,31 +25,19 @@ public class WubiqLauncher implements Runnable {
 	private static final Log LOG = LogFactory.getLog(WubiqLauncher.class);
 	public boolean notAcceptingCommands = false;
 	private boolean stop = false;
+	private RunningClient runningClient;
+	private boolean keepRunning = false;
 	
-	/**
-	 * Contains the fiscal printer remote wrapper and its associated thread.
-	 * @author Federico Alcantara
-	 *
-	 */
-	private class RunningComponent {
-		private Thread thread;
-		
-		private RunningComponent(Thread thread) {
-			this.thread = thread;
-		}
-	}
-	
-	private static Map<String, RunningComponent> clients;
 	
 	public static void start(String[] args) throws Exception {
-		LOG.info("Starting the service and printers");
+		LOG.info("Starting the Wubiq Client");
 		ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.START);
 		LOG.info(currentServiceStatus.getLabel());
 		
 	}
 	
 	public static void stop(String[] args) throws Exception {
-		LOG.info("Stopping the services");
+		LOG.info("Stopping the Wubiq Client");
 		ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.STOP);
 		LOG.info(currentServiceStatus.getLabel());
 	}
@@ -68,13 +53,13 @@ public class WubiqLauncher implements Runnable {
 			if (ServiceReturnStatus.NO_SERVICE.equals(currentServiceStatus) &&
 					!"stop".equalsIgnoreCase(args[0])) {
 				WubiqLauncher launcher = new WubiqLauncher();
-				Thread thread = new Thread(launcher, "FiscalPrinterLauncher");
+				Thread thread = new Thread(launcher, "WubiqLauncher");
 				thread.start();
 			} 
 			Thread.sleep(1000);
 			if ("start".equalsIgnoreCase(args[0])) {
 				if (ServiceReturnStatus.OKEY.equals(currentServiceStatus)) {
-					LOG.info("Service and printers already running!");
+					LOG.info("Wubiq service already running!");
 				} else {
 					start(new String[]{});
 				}
@@ -82,10 +67,10 @@ public class WubiqLauncher implements Runnable {
 				if (ServiceReturnStatus.OKEY.equals(currentServiceStatus)) {
 					stop(new String[]{});
 				} else {
-					LOG.info("Service and printers already stopped");
+					LOG.info("Wubiq service already stopped");
 				}
 			} else if ("restart".equalsIgnoreCase(args[0])) {
-				LOG.info("Restarting the service and printers");
+				LOG.info("Restarting the Wubiq service");
 				currentServiceStatus = requestServiceCommand(ServiceCommandType.RESTART);
 				LOG.info(currentServiceStatus.getLabel());
 			}
@@ -155,97 +140,37 @@ public class WubiqLauncher implements Runnable {
 	 * Starts all printer clients.
 	 */
 	private void startWubiqClient()  {
-		File wubiqClientJar = new File("./wubiq-client.jar");
-		/*
-		for (String fiscalPrinterId : FiscalPrinterUtils.INSTANCE.fiscalPrinterProperties()) {
-			Properties properties = new Properties();
-			File propertiesFile = FiscalPrinterUtils.INSTANCE.getFiscalPrinterProperty(fiscalPrinterId);
-			if (propertiesFile != null && propertiesFile.exists()) {
-				try {
-					properties.load(new FileInputStream(propertiesFile));
-					String fiscalPrinterDescription = properties.getProperty(Constants.PROPERTY_DESCRIPTION);
-					String groupId = properties.getProperty(Constants.PROPERTY_GROUP_ID);
-					String internetAddresses = properties.getProperty(Constants.PROPERTY_INTERNET_ADDRESSES);
-					String[] connections = new String[]{};
-					if (!Is.emptyString(internetAddresses)) {
-						connections = internetAddresses.split("[,;]");
-					}
-					String serialPortId = properties.getProperty(Constants.PROPERTY_PORT);
-					String type = properties.getProperty(Constants.PROPERTY_TYPE);
-					FiscalPrinterType fiscalPrinterType = FiscalPrinterType.valueOf(type);
-					IFiscalPrinter fiscalPrinter = 
-							FiscalPrinterUtils.INSTANCE.createLocalFiscalPrinterInstance(fiscalPrinterType, fiscalPrinterId, fiscalPrinterDescription);
-					if (fiscalPrinter instanceof AbstractSerialDriver) {
-						((AbstractSerialDriver)fiscalPrinter).setSerialPortId(serialPortId);
-					}
-					
-					RemoteFiscalPrinterWrapper remotePrinter = 
-							new RemoteFiscalPrinterWrapper(groupId, fiscalPrinter, connections);
-					Thread tr = new Thread(remotePrinter, remotePrinter.getFiscalPrinterId() + ":" + remotePrinter.getFiscalPrinterDescription());
-					RunningComponent old = getDrivers().put(fiscalPrinterId, new RunningComponent(remotePrinter, tr));
-					stopPrinterDriver(old);
-					LOG.info("Starting printer:" 
-					+ fiscalPrinterId
-					+ " "
-					+ fiscalPrinterDescription + "\n");
-					tr.start();
-				} catch (IOException e) {
-					LOG.error(e.getMessage() + ":" + propertiesFile);
-				}
-
-			}
-		}
-		*/
+		stopWubiqClient();
+		keepRunning = true;
+		runningClient = new RunningClient(this);
+		Thread thread = new Thread(runningClient, "RunningClient");
+		thread.start();
 	}
-	
-	/**
-	 * Stops all clients.
-	 */
-	private void stopPrinterDrivers() {
-		for (RunningComponent component : getClients().values()) {
-			stopPrinterDriver(component);
-		}
-		getClients().clear();
-	}
-	
+		
 	/**
 	 * Stops specific printer driver.
 	 * @param component Printer driver to stop.
 	 */
-	private void stopPrinterDriver(RunningComponent component) {
-		/*
-		if (component != null) {
-			LOG.info("Stopping printer:" 
-					+ component.remote.getFiscalPrinterId() 
-					+ " " 
-					+ component.remote.getFiscalPrinterDescription() + "\n");
-			component.remote.stop();
+	private void stopWubiqClient() {
+		keepRunning = false;
+		if (runningClient != null) {
+			runningClient.stop();
 			try {
-				component.thread.join();
+				Thread.sleep(5000);
 			} catch (InterruptedException e) {
-				LOG.error(e.getMessage(), e);
+				LOG.fatal(e.getMessage(), e);
+				throw new RuntimeException(e);
 			}
 		}
-		*/
+		runningClient = null;
 	}
 	
-	/**
-	 * Creates or return an instance of the clients' map.
-	 * @return Instance of the clients' map.
-	 */
-	private Map<String, RunningComponent> getClients() {
-		if (clients == null) {
-			clients = new HashMap<String, RunningComponent>();
-		}
-		return clients;
-	}
-
 	/**
 	 * @see java.lang.Runnable#run()
 	 */
 	@Override
 	public void run() {
-		LOG.info("Service and printers started");
+		LOG.info("Wubiq client started");
 		ServerSocket serverSocket = null;
 		try {
 			serverSocket = new ServerSocket(InstallerUtils.INSTANCE.getPortAddress());
@@ -315,12 +240,12 @@ public class WubiqLauncher implements Runnable {
 						break;
 					case STOP:
 						notAcceptingCommands = true;
-						stopPrinterDrivers();
+						stopWubiqClient();
 						stop = true;
 						break;
 					case RESTART:
 						notAcceptingCommands = true;
-						stopPrinterDrivers();
+						stopWubiqClient();
 						startWubiqClient();
 						notAcceptingCommands = false;
 						break;
@@ -345,6 +270,11 @@ public class WubiqLauncher implements Runnable {
 		} catch (IOException e) {
 			LOG.error(e.getMessage());
 		}				
-
+	}
+	
+	public void notifyThreadStopped() {
+		if (keepRunning) {
+			startWubiqClient();
+		}
 	}
 }

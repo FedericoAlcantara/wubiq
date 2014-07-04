@@ -78,6 +78,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		connections = new HashSet<String>();
 		preferredURL = null;
 		setDebugLevel(0);
+		String retries = System.getProperty(PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES);
+		if (!Is.emptyString(retries)) {
+			try {
+				connectionErrorRetries = Integer.parseInt(retries);
+			} catch (NumberFormatException e) {
+				connectionErrorRetries = -1;
+			}
+		}
 	}
 	
 	@Override
@@ -359,6 +367,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					} else {
 						doLog("Connected! to:" + url, 5);
 					}
+					preferredURL = webUrl;
 				} catch (IOException e) {
 					LOG.debug(e.getMessage() + ":" + address);
 					connection = null;
@@ -423,6 +432,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 		}
 		return urls;
+	}
+	
+	/**
+	 * The last successfully connected URL.
+	 * @return Last successfully connected URL or null.
+	 */
+	protected URL getPreferredURL() {
+		return preferredURL;
 	}
 	
 	/**

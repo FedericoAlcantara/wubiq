@@ -1,0 +1,76 @@
+<project name="Wubiq-client" basedir="." default="make_install">
+	<property name="dist.dir" value = "${basedir}/dist"/>
+	<property name="build" value="${basedir}/build" />
+    <property name="bin" value="${basedir}/bin"/>
+	<property name="lib" value="${basedir}/lib"/>
+	<property name="name.jar" value="wubiq" />
+	<property name="doc.dir" value="${basedir}/lib" />
+
+	<property file="izpack-settings.properties" />
+	<property name="install.dir" value="${basedir}/installation" />
+    <property name="resources" value="${install.dir}/resources" />
+	
+	<target name="clean">
+		<delete dir="${build}" failonerror="false" />
+		<mkdir dir="${build}"/>
+		<copy todir="${build}">
+			<fileset dir="${bin}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<unjar dest="${build}">
+			<fileset dir="${lib}">
+				<include name="**/*" />
+			</fileset>
+		</unjar>
+		<delete dir="${build}/META-INF"/>
+		<delete>
+			<fileset dir="${build}">
+				<include name="overview.html" />
+			</fileset>
+		</delete>
+		<delete dir="${install.dir}/build" />
+		<mkdir dir="${install.dir}/build" />
+		<copy todir="${install.dir}/build" >
+			<fileset dir="${build}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<delete dir="${install.dir}/build/tests" />
+		
+		<delete>
+			<fileset dir="${install.dir}/build">
+				<include name="wubiq-installer*.properties" />
+				<include name="tests-build.xml" />
+				<include name="tests*.properties" />
+			</fileset>
+		</delete>
+	</target>
+	
+	<target name="distribute" description="Distribute the application" depends="clean">
+		<jar jarfile="${dist.dir}/${name.jar}.jar" basedir="${build}" 
+			manifest="${basedir}/manifest.mf" manifestencoding="UTF-8"/>
+	</target>
+	
+	
+    <path id="izpack.classpath">
+		<fileset dir="${izpack.dir}/lib">
+			<include name = "*.jar" />
+		</fileset>
+	</path>
+
+    <taskdef name="IzPack" classpath="${izpack.dir}/lib/compiler.jar"
+        classname="com.izforge.izpack.ant.IzPackTask"
+        classpathref="izpack.classpath"
+    />
+	
+	<target name="make_install" depends="distribute">
+	    <IzPack input="${install.dir}/install.xml"
+	        output="${dist.dir}/fiscalprinters-setup.jar"
+	        installerType="standard"
+	        basedir="${install.dir}"
+	        IzPackDir="${izpack.dir}" />
+		<chmod file="${dist.dir}/wubiq-setup.jar" perm="ugo+rx" />
+	</target>
+	
+</project>
