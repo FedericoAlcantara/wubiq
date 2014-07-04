@@ -2,3 +2,5 @@
 /izpack-settings.properties
 /build/
 /installation/build/
+/properties-src/wubiq-installer.properties
+
