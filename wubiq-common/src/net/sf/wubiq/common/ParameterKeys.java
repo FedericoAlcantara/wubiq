@@ -34,4 +34,5 @@ public final class ParameterKeys {
 	public static final String ATTRIBUTE_TYPE_MEDIA_TRAY = "T";
 	public static final String PENDING_JOB_SIGNATURE = "pending_jobs";
 	public static final String PRINT_JOB_ID = "printJob";
+	public static final String CONNECTION_TEST_STRING = "WUBIQ_CONNECTED";
 }

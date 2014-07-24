@@ -8,10 +8,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
-import java.awt.event.ItemEvent;
-import java.awt.event.ItemListener;
 import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
@@ -24,36 +23,51 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.text.NumberFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
+import javax.swing.DefaultComboBoxModel;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
+import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JSpinner;
 import javax.swing.JSplitPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
+import javax.swing.ListSelectionModel;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.border.LineBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
-import javax.swing.table.TableModel;
+import javax.swing.table.DefaultTableModel;
 
 import net.miginfocom.swing.MigLayout;
+import net.sf.wubiq.common.CommandKeys;
+import net.sf.wubiq.common.ConfigurationKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.AddressStatus;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.InstallerBundle;
 import net.sf.wubiq.utils.InstallerProperties;
+import net.sf.wubiq.utils.InstallerUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.Labels;
+import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -68,32 +82,68 @@ public class WubiqConfigurator {
 	
 	private JFrame frame;
 	private JPanel contentPane;
-	private JLabel lblId;
-	private JLabel lblDescription;
-	private JLabel lblSchema;
-	private JComboBox fldId;
-	private JTextField fldDescription;
-	private JTextField fldSchema;
+	private JLabel lblUuid;
+	private JTextField fldUuid;
 	private JButton btnSave;
 	private JButton btnInstall;
-	private JButton btnEsDo;
-	private JButton btnEnUs;
+	private JButton btnEsFlag;
+	private JButton btnEnFlag;
 	private JButton btnTestInternetAddresses;
 	private JButton btnReset;
-	private JScrollPane scrollPane;
+	private JScrollPane scrollPaneAddresses;
 	private JButton btnAddAddress;
 	private JButton btnDeleteAddress;
 	private JTable fldInternetAddresses;
 	private JSplitPane saveSplitPane;
 	private JSplitPane addressSplitPane;
-	private JSplitPane idSplitPane;
-	private JButton btnAddPrinter;
-	private JButton btnDeletePrinter;
 	private boolean changed;
-	private Object oldValue;
-	private Object newValue;
 	private boolean changingId;
 	private JCheckBox chkChangedState;
+	private final String[] TEST_PORTS = new String[]{"", ":8090", ":8080", ":8181"};
+	private final Pattern URI_PORT = Pattern.compile(".+\\:\\d{1,6}.*");
+	private TableModelListener tableListener;
+	private JTabbedPane tabbedPane;
+	private JScrollPane scrollPaneGroups;
+	private JPanel general;
+	private JTable fldGroups;
+	private JSplitPane groupsSplitPane;
+	private JButton btnAddGroup;
+	private JButton btnDeleteGroup;
+	private JPanel clientParameters;
+	private JLabel lblApplicationName;
+	private JTextField fldApplicationName;
+	private JLabel lblServletName;
+	private JTextField fldServletName;
+	private JCheckBox fldEnableVerbosedLog;
+	private JSpinner fldLogLevel;
+	private JLabel lblLogLevel;
+	private JPanel printers;
+	private JScrollPane scrollPanePhotoPrinters;
+	private JTable fldPhotoPrinters;
+	private JSplitPane photoPrintersSplitPane;
+	private JScrollPane scrollPaneDmPrinters;
+	private JTable fldDmPrinters;
+	private JSplitPane dmPrintersSplitPane;
+	private JButton btnAddDmPrinter;
+	private JButton btnDeleteDmPrinter;
+	private JButton btnAddPhotoPrinter;
+	private JButton btnDeletePhotoPrinter;
+	private JScrollPane scrollPaneDmHqPrinters;
+	private JTable fldDmHqPrinters;
+	private JSplitPane dmPrintersHqSplitPane;
+	private JButton btnAddDmHq;
+	private JButton btnDeleteDmHq;
+	private JLabel lblDmDefaultFont;
+	private JComboBox fldDmDefaultFont;
+	private JSplitPane flagsSplitPane;
+	private JPanel advanced;
+	private JLabel lblPollInterval;
+	private JFormattedTextField fldPollInterval;
+	private JLabel lblPrintJobWait;
+	private JFormattedTextField fldPrintJobWait;
+	private JLabel lblAdditionalJvmParameters;
+	private JTextField fldAdditionalJvmParameters;
+	private JCheckBox fldForceLogicalFonts;
 	
 	/**
 	 * Launch the application.
@@ -118,36 +168,72 @@ public class WubiqConfigurator {
 		initialize();
 	}
 
+	public JFrame getFrame() {
+		return frame;
+	}
+	
 	/**
 	 * Initialize the contents of the frame.
 	 */
 	private void initialize() throws IOException {
+		tableListener = 
+				new TableModelListener(){
+					@Override
+					public void tableChanged(TableModelEvent event) {
+						if (TableModelEvent.DELETE == event.getType() ||
+								TableModelEvent.INSERT == event.getType() ||
+								TableModelEvent.UPDATE == event.getType()) {
+							setChangedState(true);
+						}
+					}
+				};
+		
 		frame = new JFrame();
+		frame.setName("frame");
 		frame.setTitle("Version:" + Labels.VERSION);
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setBounds(100, 100, 628, 414);
+		frame.setBounds(100, 100, 628, 493);
 		contentPane = new JPanel();
+		contentPane.setName("contentPane");
 		contentPane.addComponentListener(new ComponentAdapter() {
 			@Override
 			public void componentResized(ComponentEvent e) {
-				idSplitPane.setDividerLocation(0.5d);
 				addressSplitPane.setDividerLocation(0.5d);
 				saveSplitPane.setDividerLocation(0.5d);
 			}
 		});
 		contentPane.setBorder(new LineBorder(new Color(0, 0, 0)));
 		frame.setContentPane(contentPane);
-		contentPane.setLayout(new MigLayout("", "[grow][grow][][grow]", "[][grow][][][][][][][][][grow][][][][grow][grow][grow][grow]"));
+		contentPane.setLayout(new MigLayout("", "[grow][grow][]", "[][grow][grow][grow]"));
 		
 		chkChangedState = new JCheckBox("");
+		chkChangedState.setName("chkChangedState");
 		chkChangedState.setEnabled(false);
 		contentPane.add(chkChangedState, "cell 0 0,alignx left,aligny center");
 		
-		btnEsDo = new JButton("");
-		btnEsDo.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/com/sicflex/fiscalprinters/client/es_DO.png")));
-		contentPane.add(btnEsDo, "cell 2 0,grow");
+		flagsSplitPane = new JSplitPane();
+		flagsSplitPane.setName("flagsSplitPane");
+		contentPane.add(flagsSplitPane, "cell 2 0,alignx right,growy");
 		
-		btnEsDo.addActionListener(new ActionListener() {
+		btnEsFlag = new JButton("");
+		btnEsFlag.setName("btnEsFlag");
+		flagsSplitPane.setLeftComponent(btnEsFlag);
+		btnEsFlag.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/es.png")));
+		
+		btnEnFlag = new JButton("");
+		btnEnFlag.setName("btnEnFlag");
+		flagsSplitPane.setRightComponent(btnEnFlag);
+		btnEnFlag.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/en.png")));
+		
+				btnEnFlag.addActionListener(new ActionListener() {
+					public void actionPerformed(ActionEvent event) {
+						Locale.setDefault(Locale.ENGLISH);
+						localize();
+					}
+					
+				});
+		
+		btnEsFlag.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
 				Locale.setDefault(new Locale("es", "DO"));
 				localize();
@@ -155,177 +241,356 @@ public class WubiqConfigurator {
 			
 		});
 		
-		btnEnUs = new JButton("");
-		btnEnUs.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/com/sicflex/fiscalprinters/client/us_EN.png")));
-		contentPane.add(btnEnUs, "cell 3 0,grow");
+		lblUuid = new JLabel("Group Id (Schema)");
+		lblUuid.setName("lblUuid");
+		contentPane.add(lblUuid, "cell 0 1,alignx trailing");
 		
-		btnEnUs.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				Locale.setDefault(Locale.ENGLISH);
-				localize();
-			}
-			
-		});
-		
-		lblId = new JLabel();
-		contentPane.add(lblId, "cell 0 1,alignx trailing,aligny baseline");
-		
-		fldId = new JComboBox();
-		lblId.setLabelFor(fldId);
-		fldId.setToolTipText("");
-		fldId.setEditable(true);
-		contentPane.add(fldId, "cell 1 1,growx");
-		
-		fldId.addItemListener(new ItemListener(){
+		fldUuid = new JTextField();
+		fldUuid.setName("fldUuid");
+		lblUuid.setLabelFor(fldUuid);
+		contentPane.add(fldUuid, "cell 1 1,growx");
+		fldUuid.setColumns(10);
+		fldUuid.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
-			public void itemStateChanged(ItemEvent event) {
-				onChangeId(event);
+			public void changedUpdate(DocumentEvent event) {
+				setChangedState(true);
+			}
+
+			@Override
+			public void insertUpdate(DocumentEvent event) {
+				setChangedState(true);
+			}
+
+			@Override
+			public void removeUpdate(DocumentEvent event) {
+				setChangedState(true);
 			}
 		});
-		
-		idSplitPane = new JSplitPane();
-		contentPane.add(idSplitPane, "cell 3 1,growx,aligny center");
-		
-		btnAddPrinter = new JButton("");
-		btnAddPrinter.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/com/sicflex/fiscalprinters/client/plus.png")));
-		btnAddPrinter.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				addNewPrinter(event);
-			}
-		});
-		idSplitPane.setLeftComponent(btnAddPrinter);
-		
-		btnDeletePrinter = new JButton("");
-		btnDeletePrinter.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/com/sicflex/fiscalprinters/client/minus.png")));
-		btnDeletePrinter.addActionListener(new ActionListener() {
-			public void actionPerformed(ActionEvent event) {
-				deletePrinter(event);
-			}
-		});
-		idSplitPane.setRightComponent(btnDeletePrinter);
 		
 		btnReset = new JButton("Reset");
+		btnReset.setName("btnReset");
 		contentPane.add(btnReset, "cell 2 1");
 		btnReset.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent event) {
 				resetData(event);
 			}
 		});
-		lblDescription = new JLabel("Description");
-		contentPane.add(lblDescription, "cell 0 3,alignx trailing");
 		
-		fldDescription = new JTextField();
-		lblDescription.setLabelFor(fldDescription);
-		contentPane.add(fldDescription, "cell 1 3,growx");
-		fldDescription.setColumns(10);
-		fldDescription.getDocument().addDocumentListener(new DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent event) {
-				setChangedState(true);
-			}
-
-			@Override
-			public void insertUpdate(DocumentEvent event) {
-				setChangedState(true);
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent event) {
-				setChangedState(true);
+		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
+		tabbedPane.setName("tabbedPane");
+		contentPane.add(tabbedPane, "cell 0 2 3 1");
+		
+		general = new JPanel();
+		general.setName("general");
+		tabbedPane.addTab("General", null, general, null);
+		general.setLayout(new MigLayout("", "[454px][77px]", "[420px][420px][29px]"));
+		
+		scrollPaneGroups = new JScrollPane();
+		scrollPaneGroups.setName("scrollPaneGroups");
+		general.add(scrollPaneGroups, "cell 0 0,alignx left,aligny top");
+		
+		fldGroups = new JTable(new TextStringTableModel("groups"));
+		fldGroups.setName("fldGroups");
+		fldGroups.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		fldGroups.getColumnModel().getColumn(0).setResizable(true);
+		fldGroups.getColumnModel().getColumn(0).setPreferredWidth(400);
+		fldGroups.getColumnModel().getColumn(0).setMaxWidth(12312312);
+		fldGroups.setCellSelectionEnabled(true);
+		fldGroups.getModel().addTableModelListener(tableListener);
+		scrollPaneGroups.setViewportView(fldGroups);
+		
+		groupsSplitPane = new JSplitPane();
+		groupsSplitPane.setName("groupsSplitPane");
+		general.add(groupsSplitPane, "cell 1 0,alignx left,aligny center");
+		
+		btnAddGroup = new JButton("");
+		btnAddGroup.setName("btnAddGroup");
+		btnAddGroup.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				addText(fldGroups);
 			}
 		});
+		btnAddGroup.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/plus.png")));
+		groupsSplitPane.setLeftComponent(btnAddGroup);
 		
-		lblSchema = new JLabel("Group Id (Schema)");
-		contentPane.add(lblSchema, "cell 0 5,alignx trailing");
+		btnDeleteGroup = new JButton("");
+		btnDeleteGroup.setName("btnDeleteGroup");
 		
-		fldSchema = new JTextField();
-		lblSchema.setLabelFor(fldSchema);
-		contentPane.add(fldSchema, "cell 1 5,growx");
-		fldSchema.setColumns(10);
-		fldSchema.getDocument().addDocumentListener(new DocumentListener() {
-			@Override
-			public void changedUpdate(DocumentEvent event) {
-				setChangedState(true);
-			}
-
-			@Override
-			public void insertUpdate(DocumentEvent event) {
-				setChangedState(true);
-			}
-
-			@Override
-			public void removeUpdate(DocumentEvent event) {
-				setChangedState(true);
+		btnDeleteGroup.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				deleteRow(fldGroups);
 			}
 		});
-		scrollPane = new JScrollPane();
-		contentPane.add(scrollPane, "cell 0 6 2 7,grow");
+		btnDeleteGroup.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/minus.png")));
+		groupsSplitPane.setRightComponent(btnDeleteGroup);
+
+		scrollPaneAddresses = new JScrollPane();
+		scrollPaneAddresses.setName("scrollPaneAddresses");
+		general.add(scrollPaneAddresses, "cell 0 1,alignx left,aligny top");
 		
-		fldInternetAddresses = new JTable(new AddressesTableModel());
+		fldInternetAddresses = new JTable(new AddressesTableModel("host"));
+		fldInternetAddresses.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		fldInternetAddresses.setName("fldInternetAddresses");
 		fldInternetAddresses.getColumnModel().getColumn(0).setResizable(true);
 		fldInternetAddresses.getColumnModel().getColumn(0).setPreferredWidth(300);
 		fldInternetAddresses.getColumnModel().getColumn(0).setMaxWidth(12312312);
 		fldInternetAddresses.getColumnModel().getColumn(1).setMaxWidth(90);
 		fldInternetAddresses.setCellSelectionEnabled(true);
-		fldInternetAddresses.getModel().addTableModelListener(new TableModelListener(){
-			@Override
-			public void tableChanged(TableModelEvent event) {
-				if (TableModelEvent.DELETE == event.getType() ||
-						TableModelEvent.INSERT == event.getType() ||
-						TableModelEvent.UPDATE == event.getType()) {
-					setChangedState(true);
-				}
-			}
-		});
-		scrollPane.setViewportView(fldInternetAddresses);
+		fldInternetAddresses.getModel().addTableModelListener(tableListener);
+		scrollPaneAddresses.setViewportView(fldInternetAddresses);
 		
 		addressSplitPane = new JSplitPane();
-		contentPane.add(addressSplitPane, "flowx,cell 3 6,growx,aligny center");
-		
-		btnAddAddress = new JButton("");
-		btnAddAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/com/sicflex/fiscalprinters/client/plus.png")));
-		addressSplitPane.setLeftComponent(btnAddAddress);
-		btnAddAddress.addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent event) {
-				addConnection(event);
-			}
-		});
+		addressSplitPane.setName("addressSplitPane");
+		general.add(addressSplitPane, "cell 1 1,alignx left,aligny center");
 
-		btnDeleteAddress = new JButton("");
-		btnDeleteAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/com/sicflex/fiscalprinters/client/minus.png")));
-		addressSplitPane.setRightComponent(btnDeleteAddress);
-		
-		btnDeleteAddress.addActionListener(new ActionListener(){
-			@Override
-			public void actionPerformed(ActionEvent event) {
-				deleteConnection(event);
-			}
-		});
-		
 		btnTestInternetAddresses = new JButton("Test");
-		contentPane.add(btnTestInternetAddresses, "cell 2 6 1 2,aligny center");
+		btnTestInternetAddresses.setName("btnTestInternetAddresses");
 		btnTestInternetAddresses.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				testConnections();
 			}
 		});
+		general.add(btnTestInternetAddresses, "cell 0 2,alignx center,aligny top");
+
+		btnAddAddress = new JButton("");
+		btnAddAddress.setName("btnAddAddress");
+		btnAddAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/plus.png")));
+		btnAddAddress.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				addConnection(event);
+			}
+		});
+		addressSplitPane.setLeftComponent(btnAddAddress);
+
+		btnDeleteAddress = new JButton("");
+		btnDeleteAddress.setName("btnDeleteAddress");
+		btnDeleteAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/minus.png")));
+		btnDeleteAddress.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				deleteRow(fldInternetAddresses);
+			}
+		});
+		addressSplitPane.setRightComponent(btnDeleteAddress);
+		
+		clientParameters = new JPanel();
+		clientParameters.setName("clientParameters");
+		tabbedPane.addTab("Client Parameters", null, clientParameters, null);
+		clientParameters.setLayout(new MigLayout("", "[][grow]", "[][][][]"));
+		
+		lblApplicationName = new JLabel("Application Name");
+		lblApplicationName.setName("lblApplicationName");
+		clientParameters.add(lblApplicationName, "cell 0 0,alignx right");
+		
+		fldApplicationName = new JTextField();
+		fldApplicationName.setName("fldApplicationName");
+		fldApplicationName.setText("wubiq-server");
+		clientParameters.add(fldApplicationName, "cell 1 0,growx");
+		fldApplicationName.setColumns(10);
+		
+		lblServletName = new JLabel("Servlet Name");
+		lblServletName.setName("lblServletName");
+		clientParameters.add(lblServletName, "cell 0 1,alignx trailing");
+		
+		fldServletName = new JTextField();
+		fldServletName.setName("fldServletName");
+		fldServletName.setText("wubiq.do");
+		clientParameters.add(fldServletName, "cell 1 1,growx");
+		fldServletName.setColumns(10);
+		
+		fldEnableVerbosedLog = new JCheckBox("Enable Verbosed Log");
+		fldEnableVerbosedLog.setName("fldEnableVerbosedLog");
+		clientParameters.add(fldEnableVerbosedLog, "cell 1 2");
+		
+		lblLogLevel = new JLabel("Log Level");
+		lblLogLevel.setName("lblLogLevel");
+		clientParameters.add(lblLogLevel, "cell 0 3,alignx right");
+		
+		fldLogLevel = new JSpinner();
+		fldLogLevel.setName("fldLogLevel");
+		fldLogLevel.setModel(new SpinnerNumberModel(0, 0, 5, 1));
+		clientParameters.add(fldLogLevel, "cell 1 3");
+		
+		printers = new JPanel();
+		printers.setName("printers");
+		tabbedPane.addTab("Printers", null, printers, null);
+		printers.setLayout(new MigLayout("", "[grow][grow][grow]", "[grow][grow][grow][grow][][][]"));
+		
+		scrollPanePhotoPrinters = new JScrollPane();
+		scrollPanePhotoPrinters.setName("scrollPanePhotoPrinters");
+		printers.add(scrollPanePhotoPrinters, "cell 0 0 2 1,grow");
+		
+		fldPhotoPrinters = new JTable(new TextStringTableModel("printers.photo"));
+		fldPhotoPrinters.setName("fldPhotoPrinters");
+		fldPhotoPrinters.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		fldPhotoPrinters.getColumnModel().getColumn(0).setResizable(true);
+		fldPhotoPrinters.getColumnModel().getColumn(0).setPreferredWidth(400);
+		fldPhotoPrinters.getColumnModel().getColumn(0).setMaxWidth(12312312);
+		fldPhotoPrinters.setCellSelectionEnabled(true);
+		fldPhotoPrinters.getModel().addTableModelListener(tableListener);
+		scrollPanePhotoPrinters.setViewportView(fldPhotoPrinters);
+		
+		photoPrintersSplitPane = new JSplitPane();
+		photoPrintersSplitPane.setName("photoPrintersSplitPane");
+		printers.add(photoPrintersSplitPane, "cell 2 0,alignx center,aligny center");
+		
+		btnAddPhotoPrinter = new JButton("");
+		btnAddPhotoPrinter.setName("btnAddPhotoPrinter");
+		btnAddPhotoPrinter.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				addText(fldPhotoPrinters);
+			}
+		});
+		btnAddPhotoPrinter.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/plus.png")));
+		photoPrintersSplitPane.setLeftComponent(btnAddPhotoPrinter);
+		
+		btnDeletePhotoPrinter = new JButton("");
+		btnDeletePhotoPrinter.setName("btnDeletePhotoPrinter");
+		btnDeletePhotoPrinter.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				deleteRow(fldPhotoPrinters);
+			}
+		});
+		btnDeletePhotoPrinter.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/minus.png")));
+		photoPrintersSplitPane.setRightComponent(btnDeletePhotoPrinter);
+		
+		scrollPaneDmPrinters = new JScrollPane();
+		scrollPaneDmPrinters.setName("scrollPaneDmPrinters");
+		printers.add(scrollPaneDmPrinters, "cell 0 1 2 1,grow");
+		
+		fldDmPrinters = new JTable(new TextStringTableModel("printers.dot_matrix"));
+		fldDmPrinters.setName("fldDmPrinters");
+		fldDmPrinters.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		fldDmPrinters.getColumnModel().getColumn(0).setResizable(true);
+		fldDmPrinters.getColumnModel().getColumn(0).setPreferredWidth(400);
+		fldDmPrinters.getColumnModel().getColumn(0).setMaxWidth(12312312);
+		fldDmPrinters.setCellSelectionEnabled(true);
+		fldDmPrinters.getModel().addTableModelListener(tableListener);
+		scrollPaneDmPrinters.setViewportView(fldDmPrinters);
+
+		scrollPaneDmHqPrinters = new JScrollPane();
+		scrollPaneDmHqPrinters.setName("scrollPaneDmHqPrinters");
+		printers.add(scrollPaneDmHqPrinters, "cell 0 2 2 1,grow");
+
+		dmPrintersSplitPane = new JSplitPane();
+		dmPrintersSplitPane.setName("dmPrintersSplitPane");
+		printers.add(dmPrintersSplitPane, "cell 2 1,alignx center,aligny center");
+		
+		btnAddDmPrinter = new JButton("");
+		btnAddDmPrinter.setName("btnAddDmPrinter");
+		btnAddDmPrinter.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				addText(fldDmPrinters);
+			}
+		});
+		btnAddDmPrinter.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/plus.png")));
+		dmPrintersSplitPane.setLeftComponent(btnAddDmPrinter);
+		
+		btnDeleteDmPrinter = new JButton("");
+		btnDeleteDmPrinter.setName("btnDeleteDmPrinter");
+		btnDeleteDmPrinter.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				deleteRow(fldDmPrinters);
+			}
+		});
+		btnDeleteDmPrinter.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/minus.png")));
+		dmPrintersSplitPane.setRightComponent(btnDeleteDmPrinter);
+		
+		fldDmHqPrinters = new JTable(new TextStringTableModel("printers.dot_matrix_hq"));
+		fldDmHqPrinters.setName("fldDmHqPrinters");
+		fldDmHqPrinters.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		fldDmHqPrinters.getColumnModel().getColumn(0).setResizable(true);
+		fldDmHqPrinters.getColumnModel().getColumn(0).setPreferredWidth(400);
+		fldDmHqPrinters.getColumnModel().getColumn(0).setMaxWidth(12312312);
+		fldDmHqPrinters.setCellSelectionEnabled(true);
+		fldDmHqPrinters.getModel().addTableModelListener(tableListener);
+		scrollPaneDmHqPrinters.setViewportView(fldDmHqPrinters);
+		
+		dmPrintersHqSplitPane = new JSplitPane();
+		dmPrintersHqSplitPane.setName("dmPrintersHqSplitPane");
+		printers.add(dmPrintersHqSplitPane, "cell 2 2,alignx center,aligny center");
+		
+		btnAddDmHq = new JButton("");
+		btnAddDmHq.setName("btnAddDmHq");
+		btnAddDmHq.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				addText(fldDmHqPrinters);
+			}
+		});
+		btnAddDmHq.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/plus.png")));
+		dmPrintersHqSplitPane.setLeftComponent(btnAddDmHq);
+		
+		btnDeleteDmHq = new JButton("");
+		btnDeleteDmHq.setName("btnDeleteDmHq");
+		btnDeleteDmHq.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				deleteRow(fldDmHqPrinters);
+			}
+		});
+		btnDeleteDmHq.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/minus.png")));
+		dmPrintersHqSplitPane.setRightComponent(btnDeleteDmHq);
+		
+		lblDmDefaultFont = new JLabel("Dot Matrix Default Font");
+		lblDmDefaultFont.setName("lblDmDefaultFont");
+		printers.add(lblDmDefaultFont, "cell 0 3,alignx trailing");
+		
+		fldDmDefaultFont = new JComboBox();
+		fldDmDefaultFont.setName("fldDmDefaultFont");
+		fldDmDefaultFont.setModel(new DefaultComboBoxModel(new String[] {"Times New Roman", "Sans Serif", "Serif"}));
+		fldDmDefaultFont.setEditable(true);
+		printers.add(fldDmDefaultFont, "cell 1 3,growx");
+		
+		fldForceLogicalFonts = new JCheckBox("Force Logical Fonts");
+		fldForceLogicalFonts.setName("fldForceLogicalFonts");
+		printers.add(fldForceLogicalFonts, "cell 1 4");
+		
+		advanced = new JPanel();
+		advanced.setName("advanced");
+		tabbedPane.addTab("Advanced", null, advanced, null);
+		advanced.setLayout(new MigLayout("", "[][grow]", "[][][][grow]"));
+		
+		lblPollInterval = new JLabel("Poll Interval");
+		lblPollInterval.setName("lblPollInterval");
+		advanced.add(lblPollInterval, "cell 0 0,alignx trailing");
+		
+		fldPollInterval = new JFormattedTextField(NumberFormat.getIntegerInstance());
+		advanced.add(fldPollInterval, "cell 1 0,growx");
+		
+		lblPrintJobWait = new JLabel("Print Job Wait Time");
+		lblPrintJobWait.setName("lblPrintJobWait");
+		advanced.add(lblPrintJobWait, "cell 0 1,alignx trailing");
+		
+		fldPrintJobWait = new JFormattedTextField();
+		fldPrintJobWait.setName("lblPrintJobWait");
+		advanced.add(fldPrintJobWait, "cell 1 1,growx");
+		
+		lblAdditionalJvmParameters = new JLabel("Additional JVM Parameters");
+		lblAdditionalJvmParameters.setName("lblAdditionalJvmParameters");
+		advanced.add(lblAdditionalJvmParameters, "cell 0 2,alignx trailing");
+		
+		fldAdditionalJvmParameters = new JTextField();
+		fldAdditionalJvmParameters.setName("fldAdditionalJvmParameters");
+		advanced.add(fldAdditionalJvmParameters, "cell 1 2,growx");
+		fldAdditionalJvmParameters.setColumns(10);
 		
 		saveSplitPane = new JSplitPane();
+		saveSplitPane.setName("saveSplitPane");
 		saveSplitPane.setResizeWeight(0.5);
-		contentPane.add(saveSplitPane, "cell 0 14 2 1,growx,aligny center");
+		contentPane.add(saveSplitPane, "cell 0 3 3 1,alignx center,aligny center");
 		
 		btnSave = new JButton("Save");
+		btnSave.setName("btnSave");
 		btnSave.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
-				save(event);
+				save();
 			}
 		});
 		saveSplitPane.setLeftComponent(btnSave);
 		
-		
 		btnInstall = new JButton("Install");
+		btnInstall.setName("btnInstall");
 		saveSplitPane.setRightComponent(btnInstall);
 		
 		btnInstall.addActionListener(new ActionListener() {
@@ -341,92 +606,9 @@ public class WubiqConfigurator {
 			splashScreen();
 			clear();
 			localize();
+			loadProperties();
 		} finally {
 			changingId = false;
-		}
-	}
-
-	/**
-	 * Triggered upon change of id.
-	 * @param event Thrown when field id has a change.
-	 */
-	private boolean onChangeId(ItemEvent event) {
-		boolean returnValue = false;
-		if (changingId) {
-			return returnValue;
-		}
-		if (ItemEvent.SELECTED == event.getStateChange()) {
-			changingId = true;
-			try {
-				newValue = event.getItem();
-				boolean loadNewValue = true;
-				if (oldValue != null && !Is.emptyString(oldValue.toString().trim())) {
-					if (changed) {
-						int ask = JOptionPane.showConfirmDialog(null, InstallerBundle.getMessage("info.fiscal_printer.modified.text"),
-								InstallerBundle.getMessage("info.fiscal_printer.modified.title"), 
-								JOptionPane.YES_NO_CANCEL_OPTION, 
-								JOptionPane.INFORMATION_MESSAGE);
-						if (ask == JOptionPane.YES_OPTION) {
-							save(oldValue.toString());
-						} else if (ask == JOptionPane.CANCEL_OPTION) {
-							loadNewValue = false;
-							String description = fldDescription.getText();
-							String schema = fldSchema.getText();
-							TableModel addresses = fldInternetAddresses.getModel();
-							fldId.setSelectedItem(oldValue);
-							fldDescription.setText(description);
-							fldSchema.setText(schema);
-							fldInternetAddresses.setModel(addresses);
-						}
-					}
-				}
-				returnValue = loadNewValue;
-				if (loadNewValue) {
-					try {
-						loadProperties((String)newValue);
-						oldValue = newValue;
-					} catch (IOException e) {
-						LOG.error(e.getMessage());
-						handleException(e);
-					}
-				}
-			} finally {
-				changingId = false;
-			}
-		}
-		return returnValue;
-	}
-	
-	/**
-	 * Saves current printer data and adds a new printer.
-	 * @param event Click event.
-	 */
-	private void addNewPrinter(ActionEvent event) {
-		fldId.setSelectedItem("");
-	}
-	
-	/**
-	 * Deletes current printer.
-	 * @param event Click event.
-	 */
-	private void deletePrinter(ActionEvent event) {
-		if (!Is.emptyString((String)fldId.getSelectedItem())) {
-			int ask = JOptionPane.showConfirmDialog(null, InstallerBundle.getMessage("warning.reset.text"),
-					InstallerBundle.getMessage("warning.reset.title"), 
-					JOptionPane.YES_NO_OPTION, 
-					JOptionPane.WARNING_MESSAGE);
-			if (ask == JOptionPane.YES_OPTION) {
-				File propertiesFile = InstallerProperties.getPropertiesFile();
-				if (propertiesFile != null && 
-						propertiesFile.exists()) {
-					propertiesFile.delete();
-					JOptionPane.showMessageDialog(null, InstallerBundle.getMessage("info.printer_deleted_successfully"));
-					setChangedState(false);
-					clear();
-				} else {
-					JOptionPane.showMessageDialog(null, InstallerBundle.getMessage("info.printer_not_registered_yet"));
-				}
-			}
 		}
 	}
 	
@@ -441,7 +623,7 @@ public class WubiqConfigurator {
 				JOptionPane.WARNING_MESSAGE);
 		if (ask == JOptionPane.YES_OPTION) {
 			try {
-				loadProperties((String)fldId.getSelectedItem());
+				loadProperties();
 			} catch (IOException e) {
 				LOG.error(e.getMessage());
 				handleException(e);
@@ -463,102 +645,87 @@ public class WubiqConfigurator {
 			URI uri;
 			try {
 				uri = new URI(writtenHost);
-				if (uri.getScheme() == null) {
+				if (uri.getScheme() == null || !writtenHost.contains("://")) {
 					uri = new URI("http://" + writtenHost);
 				}
 				String host = uri.toASCIIString();
-				if (!tryConnections(host)) {
+				boolean added = false;
+				if (!testConnection(host) && !hasPort(host)) {
 					String plainHost = host.split(":[0-9]").length > 1 ? host.substring(0, host.lastIndexOf(':')) : host;
-					if (!tryConnections(plainHost)) {
-						if (!tryConnections(plainHost + ":8090")) {
-							if (!tryConnections(plainHost + ":8080")) {
-								if (!tryConnections(plainHost + ":8181")) {
-									JOptionPane.showMessageDialog(null, InstallerBundle.getMessage("warning.address_not_found", writtenHost));
-								}
-							}
+					for (String testPort : TEST_PORTS) {
+						String connectionString = plainHost + testPort;
+						if (testConnection(connectionString)) {
+							addUniqueText(tableModel, connectionString);
+							added = true;
+							break;
 						}
 					}
+				} 
+				if (!added){
+					addUniqueText(tableModel, host);
 				}
 			} catch (URISyntaxException e) {
 				LOG.error(e);
 				handleException(e);
 			}
 		} else {
-			tableModel.addRow(new Object[]{"http://"});
+			addUniqueText(tableModel, "http://");
 		}
 	}
 	
 	/**
-	 * Validates if the connection is possible and polls the server about
-	 * its possible connection.
-	 * @param sentHost Connection to test.
-	 * @return True if the host was contacted.
+	 * Adds a text to the model.
+	 * @param event Originating event.
+	 * @param tableModel Associated table model.
 	 */
-	private boolean tryConnections(String sentHost) {
-		boolean returnValue = false;
-		try {
-			URI uri = new URI(sentHost);
-			String host = uri.toASCIIString();
-			String serverInfos = readCommandConnection(host);
-			if (!Is.emptyString(serverInfos) &&
-					serverInfos.contains(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)){
-				String[] serverInfo = serverInfos.split("\\" + ParameterKeys.ATTRIBUTE_SET_SEPARATOR);
-				returnValue = true;
-				AddressesTableModel tableModel = (AddressesTableModel)fldInternetAddresses.getModel();
-				for (String connection : serverInfo[1].split("[,;\n]")) {
-					if (!Is.emptyString(connection.trim())) {
-						if (testConnection(connection.trim())) {
-							tableModel.addRow(new Object[]{connection.trim()});
-						}
-					}
-				}
-				if (Is.emptyString(fldSchema.getText())) {
-					String[] company = serverInfo[0].split("[.;\n]");
-					if (company.length > 0) {
-						if (company.length == 0) {
-							fldSchema.setText(extractSchema(company[0]));
-						} else {
-							String selectedCompany = (String)JOptionPane.showInputDialog(null, 
-									InstallerBundle.getMessage("info.schemas.select"), 
-									InstallerBundle.getLabel("lblSchema.text"),
-									JOptionPane.PLAIN_MESSAGE,
-									null,
-									company,
-									"");
-							if (selectedCompany != null) {
-								fldSchema.setText(extractSchema(selectedCompany));
-							}
-						}
-					}
-					
-				}
+	private void addText(JTable table) {
+		TextStringTableModel model = (TextStringTableModel) table.getModel();
+		String text = (String)JOptionPane.showInputDialog(frame, 
+				model.getTextLabel(), 
+				model.getTitleLabel(),
+				JOptionPane.PLAIN_MESSAGE, null, null, "");
+		if (!Is.emptyString(text)) {
+			addUniqueText(model, text);
+		}
+	}
+	
+	/**
+	 * Checks if the connection string has a port in it.
+	 * @param connection Connection string.
+	 * @return True if the port is defined in the connection.
+	 */
+	private boolean hasPort(String connection) {
+		Matcher match = URI_PORT.matcher(connection);
+		return match.matches();
+	}
+	
+	/**
+	 * Adds the connection to the table model. Avoids duplicated connections.
+	 * @param tableModel AddressesTableModel instance.
+	 * @param sentText Connection to be added.
+	 */
+	private void addUniqueText(BaseTableModel tableModel, String sentText) {
+		String text = tableModel.cleanText(sentText);
+		boolean found = false;
+		for (int index = 0; index < tableModel.getRowCount(); index++) {
+			if (text.equals(tableModel.getValueAt(index, 0))) {
+				found = true;
+				break;
 			}
-		} catch (URISyntaxException e) {
-			LOG.error(e); // just log it.
 		}
-		return returnValue;
+		if (!found) {
+			tableModel.addRow(new Object[]{text});
+		}
 	}
 	
 	/**
-	 * Extract company schema from the company information.
-	 * @param company Company information.
-	 * @return Company schema.
-	 */
-	private String extractSchema(String company) {
-		String returnValue = company.contains(ParameterKeys.ATTRIBUTE_SET_SEPARATOR)
-				? company.substring(0, company.indexOf(ParameterKeys.ATTRIBUTE_SET_SEPARATOR))
-				: company;
-		return returnValue;
-	}
-	/**
-	 * Deletes a connection.
+	 * Deletes the texts.
 	 * @param event Click event.
 	 */
-	private void deleteConnection(ActionEvent event) {
-		AddressesTableModel tableModel = (AddressesTableModel)fldInternetAddresses.getModel();
-		for (int index = 1 ; index <= fldInternetAddresses.getSelectedRowCount(); index++) {
-			int selectedIndex = fldInternetAddresses.getSelectedRowCount() - index;
-			int row = fldInternetAddresses.getSelectedRows()[selectedIndex];
+	private void deleteRow(JTable table) {
+		DefaultTableModel tableModel = (DefaultTableModel)table.getModel();
+		for (int index = table.getSelectedRowCount() - 1 ; index >= 0; index--) {
+			int row = table.getSelectedRows()[index];
 			tableModel.removeRow(row);
 		}
 	}
@@ -567,21 +734,62 @@ public class WubiqConfigurator {
 	 * Loads the properties according to the current selected item.
 	 * @throws IOException
 	 */
-	private void loadProperties(String fiscalPrinterId) throws IOException {
-		if (!Is.emptyString(fiscalPrinterId)) {
-			fldSchema.setText(InstallerProperties.getGroups());
-			AddressesTableModel tableModel = (AddressesTableModel) fldInternetAddresses.getModel();
-			tableModel.removeAll();
-			if (!Is.emptyString(InstallerProperties.getConnections())) {
-				for (String internetAddress : InstallerProperties.getConnections().split("[,;]")) {
-					tableModel.addRow(new Object[]{internetAddress});
+	private void loadProperties() throws IOException {
+		// Untabbed
+		fldUuid.setText(InstallerProperties.INSTANCE.getGroups());
+		
+		// Tab General
+		loadTableModel(fldGroups, InstallerProperties.INSTANCE.getGroups());
+		loadTableModel(fldInternetAddresses, InstallerProperties.INSTANCE.getConnections());
+		
+		// Tab Client Parameters
+		String applicationName = InstallerProperties.INSTANCE.getApplicationName();
+		if (!ConfigurationKeys.DEFAULT_APPLICATION_NAME.equals(applicationName)) {
+			fldApplicationName.setText(applicationName);
+		}
+		
+		String servletName = InstallerProperties.INSTANCE.getServletName();
+		if (!ConfigurationKeys.DEFAULT_SERVLET_NAME.equals(servletName)) {
+			fldServletName.setText(servletName);
+		}
+		
+		fldEnableVerbosedLog.setSelected(InstallerProperties.INSTANCE.isDebugMode());
+		fldLogLevel.setValue(InstallerProperties.INSTANCE.getDebugLogLevel());
+		
+		// Tab Printers
+		loadTableModel(fldPhotoPrinters, InstallerProperties.INSTANCE.getPhotoPrinters());
+		loadTableModel(fldDmPrinters, InstallerProperties.INSTANCE.getDmPrinters());
+		loadTableModel(fldDmHqPrinters, InstallerProperties.INSTANCE.getDmHqPrinters());
+		fldDmDefaultFont.setSelectedItem(InstallerProperties.INSTANCE.getDefaultDmFont());
+		
+		// Tab Advanced
+		Integer pollInterval = InstallerProperties.INSTANCE.getPollInterval();
+		if (!ConfigurationKeys.DEFAULT_POLL_INTERVAL.equals(pollInterval)) {
+			fldPollInterval.setValue(pollInterval);
+		}
+		Integer printJobWait = InstallerProperties.INSTANCE.getPrintJobWait();
+		if (!ConfigurationKeys.DEFAULT_PRINT_JOB_WAIT.equals(printJobWait)) {
+			fldPrintJobWait.setValue(printJobWait);
+		}
+		fldAdditionalJvmParameters.setText(InstallerProperties.INSTANCE.getJvmParameters());
+		setChangedState(false);
+	}
+	
+	/**
+	 * Loads the table model with a comma separated list of texts.
+	 * @param table Table to be filled.
+	 * @param readString String to parse.
+	 */
+	private void loadTableModel(JTable table, String readString) {
+		BaseTableModel textModel = (BaseTableModel) fldGroups.getModel();
+		textModel.removeAll();
+		if (!Is.emptyString(readString)) {
+			for (String text : readString.split("[,;]")) {
+				if (!Is.emptyString(text)) {
+					textModel.addRow(new Object[]{text});
 				}
 			}
-		
-		} else {
-			clear();
 		}
-		setChangedState(false);
 	}
 	
 	/**
@@ -590,82 +798,92 @@ public class WubiqConfigurator {
 	 */
 	private void localize() {
 		InstallerBundle.resetLocale();
-		lblId.setText(InstallerBundle.getLabel("lblId.text"));
-		lblDescription.setText(InstallerBundle.getLabel("lblDescription.text"));
-		lblSchema.setText(InstallerBundle.getLabel("lblSchema.text"));
-		btnTestInternetAddresses.setText(InstallerBundle.getLabel("btnTest.text"));
+		// Untabbed
+		lblUuid.setText(InstallerBundle.getLabel("lblUuid.text"));
 		btnSave.setText(InstallerBundle.getLabel("btnSave.text"));
 		btnInstall.setText(InstallerBundle.getLabel("btnInstall.text"));
 		btnReset.setText(InstallerBundle.getLabel("btnReset.text"));
+
+		// Tab General
+		tabbedPane.setTitleAt(0, InstallerBundle.getLabel("tab.general.text"));
+		fldGroups.getColumnModel().getColumn(0).setHeaderValue(InstallerBundle.getLabel("lblGroups.text"));
 		fldInternetAddresses.getColumnModel().getColumn(0).setHeaderValue(InstallerBundle.getLabel("lblInternetAddresses.text"));
 		fldInternetAddresses.getColumnModel().getColumn(1).setHeaderValue(InstallerBundle.getLabel("lblInternetAddressStatus.text"));
+		btnTestInternetAddresses.setText(InstallerBundle.getLabel("btnTest.text"));
+		
+		// Tab Client Parameters
+		tabbedPane.setTitleAt(1, InstallerBundle.getLabel("tab.client_parameters.text"));
+		lblApplicationName.setText(InstallerBundle.getLabel("lblApplicationName.text"));
+		lblServletName.setText(InstallerBundle.getLabel("lblServletName.text"));
+		fldEnableVerbosedLog.setText(InstallerBundle.getLabel("lblEnableVerbosedLog.text"));
+		lblLogLevel.setText(InstallerBundle.getLabel("lblLogLevel.text"));
+		
+		// Tab Printers
+		tabbedPane.setTitleAt(2, InstallerBundle.getLabel("tab.printers.text"));
+		fldPhotoPrinters.getColumnModel().getColumn(0).setHeaderValue(InstallerBundle.getLabel("lblPhotoPrinters.text"));
+		fldDmPrinters.getColumnModel().getColumn(0).setHeaderValue(InstallerBundle.getLabel("lblDmPrinters.text"));
+		fldDmHqPrinters.getColumnModel().getColumn(0).setHeaderValue(InstallerBundle.getLabel("lblDmHqPrinters.text"));
+		lblDmDefaultFont.setText(InstallerBundle.getLabel("lblDmDefaultFont.text"));
+		fldForceLogicalFonts.setText(InstallerBundle.getLabel("lblForceLogicalFonts"));
+		
+		// Tab Advanced
+		tabbedPane.setTitleAt(3, InstallerBundle.getLabel("tab.advanced.text"));
+		lblPollInterval.setText(InstallerBundle.getLabel("lblPollInterval"));
+		lblPrintJobWait.setText(InstallerBundle.getLabel("lblPrintJobWait"));
+		lblAdditionalJvmParameters.setText(InstallerBundle.getLabel("lblAdditionalJvmParameters"));
 	}
 	
 	/**
 	 * Saves the current information, after validation.
-	 * @param event Click event.
 	 * @return True if it was properly saved.
 	 */
-	private boolean save(ActionEvent event) {
-		if (fldId.getSelectedItem() == null ||
-				Is.emptyString(fldId.getSelectedItem().toString().trim())) {
-			JOptionPane.showMessageDialog(null, InstallerBundle.getMessage("error.no_id"));
-			return false;
-		}
-		return save(fldId.getSelectedItem().toString());
-	}
-	
-	/**
-	 * Saves the current information, after validation.
-	 * @return True if it was properly saved.
-	 */
-	private boolean save(String fiscalPrinterId) {
-		if (validate(fiscalPrinterId)) {
+	private boolean save() {
+		if (validate()) {
 			String message = null;
 			Properties properties = new Properties();
-			// Save description
-			String description = fldDescription.getText();
-			if (description == null) {
-				description = "";
-			}
-			properties.setProperty(Constants.PROPERTY_DESCRIPTION, description);
-			
+
+			// Untabbed
 			// Save schema
-			String schema = fldSchema.getText();
-			if (schema == null) {
-				schema = "";
-			}
-			properties.setProperty(Constants.PROPERTY_GROUP_ID, schema);
+			save(properties, ConfigurationKeys.PROPERTY_UUID, fldUuid.getText(), "");
 			
-			// Save Addresses
-			StringBuffer addresses = new StringBuffer("");
-			AddressesTableModel tableModel = (AddressesTableModel)fldInternetAddresses.getModel();
-			for (int row = 0; row < tableModel.getRowCount(); row++) {
-				String address = (String) tableModel.getValueAt(row, 0);
-				if (addresses.length() > 0) {
-					addresses.append(';');
-				}
-				addresses.append(address.trim());
-			}
-			properties.setProperty(Constants.PROPERTY_INTERNET_ADDRESSES, addresses.toString());
+			// Tab General
+			save(properties, ConfigurationKeys.PROPERTY_GROUPS, fldGroups);
+			save(properties, ConfigurationKeys.PROPERTY_CONNECTIONS, fldInternetAddresses);
+			
+			// Tab Client Parameters
+			save(properties, ConfigurationKeys.PROPERTY_APPLICATION_NAME, fldApplicationName.getText(), ConfigurationKeys.DEFAULT_APPLICATION_NAME);
+			save(properties, ConfigurationKeys.PROPERTY_SERVLET_NAME, fldServletName.getText(), ConfigurationKeys.DEFAULT_SERVLET_NAME);
+			save(properties, ConfigurationKeys.PROPERTY_DEBUG_ENABLED, fldEnableVerbosedLog.isSelected());
+			save(properties, ConfigurationKeys.PROPERTY_DEBUG_LOG_LEVEL, (Integer)fldLogLevel.getValue());
+			
+			// Tab Printers
+			save(properties, PropertyKeys.WUBIQ_PRINTERS_PHOTO, fldPhotoPrinters);
+			save(properties, PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX, fldDmPrinters);
+			save(properties, PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ, fldDmHqPrinters);
+			save(properties, PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT, (String)fldDmDefaultFont.getSelectedItem(), "");
+			save(properties, PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL, fldForceLogicalFonts.isSelected());
+			
+			// Tab Advanced
+			save(properties, ConfigurationKeys.PROPERTY_POLL_INTERVAL, (Integer)fldPollInterval.getValue());
+			save(properties, ConfigurationKeys.PROPERTY_PRINT_JOB_WAIT, (Integer)fldPrintJobWait.getValue());
+			save(properties, ConfigurationKeys.PROPERTY_JVM_PARAMETERS, fldAdditionalJvmParameters.getText(), "");
 			
 			try {
-				if (!Is.emptyString(fiscalPrinterId)) {
-					properties.setProperty(Constants.PROPERTY_ID, fiscalPrinterId);
-					File propertiesFile = FiscalPrinterUtils.INSTANCE.getFiscalPrinterProperty(fiscalPrinterId);
-					if (propertiesFile.exists()) {
-						message = InstallerBundle.getMessage("info.printer_updated_successfully", fiscalPrinterId);
-					} else {
-						message = InstallerBundle.getMessage("info.printer_created_successfully", fiscalPrinterId);
-					}
-					OutputStream outputStream = new FileOutputStream(propertiesFile);
-					properties.store(outputStream, new Date().toString());
-					outputStream.flush();
-					outputStream.close();
-					JOptionPane.showMessageDialog(null, message);
-					setChangedState(false);
-					reloadIds();
+				File propertiesFile = InstallerProperties.INSTANCE.getPropertiesFile();
+				if (propertiesFile != null && propertiesFile.exists()) {
+					message = InstallerBundle.getMessage("info.wubiq.updated_successfully");
+				} else {
+					message = InstallerBundle.getMessage("info.wubiq.created_successfully");
 				}
+				if (propertiesFile == null) {
+					propertiesFile = new File("./" + ConfigurationKeys.INSTALLER_PROPERTIES_FILE_NAME + ".properties");
+				}
+				OutputStream outputStream = new FileOutputStream(propertiesFile);
+				properties.store(outputStream, new Date().toString());
+				outputStream.flush();
+				outputStream.close();
+				JOptionPane.showMessageDialog(null, message);
+				setChangedState(false);
 			} catch (FileNotFoundException e) {
 				LOG.error(e.getMessage());
 				handleException(e);
@@ -679,15 +897,69 @@ public class WubiqConfigurator {
 	}
 	
 	/**
+	 * Save the table rows in the properties object.
+	 * @param properties Properties container.
+	 * @param propertyName Name of the property name.
+	 * @param table Table Table to read the rows from.
+	 */
+	private void save(Properties properties, String propertyName, JTable table) {
+		BaseTableModel tableModel = (BaseTableModel) table.getModel();
+		StringBuffer text = new StringBuffer("");
+		for (int row = 0; row < tableModel.getRowCount(); row++) {
+			String data = (String)tableModel.getValueAt(row, 0);
+			if (!Is.emptyString(data)) {
+				if (text.length() > 0) {
+					text.append(';');
+				}
+				text.append(data);
+			}
+		}
+		save(properties, propertyName, text.toString(), "");
+	}
+	
+	/**
+	 * Saves the state to the properties object.
+	 * @param properties Properties container.
+	 * @param propertyName Name of the property name.
+	 * @param value True or false value.
+	 */
+	private void save(Properties properties, String propertyName, boolean value) {
+		if (value) {
+			save(properties, propertyName, "true", "false");
+		}
+	}
+
+	/**
+	 * Saves the state to the properties object.
+	 * @param properties Properties container.
+	 * @param propertyName Name of the property name.
+	 * @param value Integer value to save.
+	 */
+	private void save(Properties properties, String propertyName, Integer value) {
+		save(properties, propertyName, value.toString(), "0");
+	}
+
+	/**
+	 * Saves the property value. In order to be saved the value must not be blank and must be different than defaultValue.
+	 * @param properties Properties container.
+	 * @param propertyName Name of the property name.
+	 * @param value Value to be saved.
+	 * @param defaultValue Filter for avoiding saving default values in the properties object.
+	 */
+	private void save(Properties properties, String propertyName, String value, String defaultValue) {
+		if (!Is.emptyString(value) && !value.equalsIgnoreCase(defaultValue)) {
+			properties.put(propertyName, value);
+		}
+	}
+	
+	
+	
+	/**
 	 * Installs the fiscal printer.
 	 * @param event Click event.
 	 * Saves the values, register the service, and start the service.
 	 */
 	private void install(ActionEvent event) {
-		if (fldId.getSelectedItem() == null ||
-				Is.emptyString(fldId.getSelectedItem().toString().trim())) {
-			JOptionPane.showMessageDialog(null, InstallerBundle.getMessage("error.no_id"));
-		}
 		install();
 	}
 
@@ -696,7 +968,7 @@ public class WubiqConfigurator {
 	 * Saves the values, register the service, and start the service.
 	 */
 	private void install() {
-		if (save(fldId.getSelectedItem().toString())) {
+		if (save()) {
 			frame.dispatchEvent(new WindowEvent(frame, WindowEvent.WINDOW_CLOSING));
 		}
 	}
@@ -705,21 +977,42 @@ public class WubiqConfigurator {
 	 * Clears the current data.
 	 */
 	private void clear() {
-		fldId.setSelectedItem("");
-		fldDescription.setText("");
-		fldSchema.setText("");
-		AddressesTableModel tableModel = (AddressesTableModel)fldInternetAddresses.getModel();
-		tableModel.removeAll();
+		// Untabbed
+		fldUuid.setText("");
+		// Tab General
+		((TextStringTableModel)fldGroups.getModel()).removeAll();
+		((AddressesTableModel)fldInternetAddresses.getModel()).removeAll();
+		
+		// Tab Client Parameters
+		fldApplicationName.setText("");
+		fldServletName.setText("");
+		fldEnableVerbosedLog.setSelected(false);
+		fldLogLevel.setValue(0);
+		
+		// Tab Printers
+		((TextStringTableModel)fldPhotoPrinters.getModel()).removeAll();
+		((TextStringTableModel)fldDmPrinters.getModel()).removeAll();
+		((TextStringTableModel)fldDmHqPrinters.getModel()).removeAll();
+		fldDmDefaultFont.setSelectedIndex(-1);
+		fldForceLogicalFonts.setSelected(false);
+		
+		// Tab Advanced
+		fldPollInterval.setValue(0);
+		fldPrintJobWait.setValue(0);
+		fldAdditionalJvmParameters.setText("");
 	}
 	
 	/**
 	 * Validates the data.
 	 * @return True if all pertinent data is valid. False otherwise.
 	 */
-	private boolean validate(String fiscalPrinterId) {
-		String id = fiscalPrinterId != null ? fiscalPrinterId : null;
-		if (id == null ||
-				Is.emptyString(id.toString())) {
+	private boolean validate() {
+		// validates UUID
+		if (Is.emptyString(fldUuid.getText())) {
+			JOptionPane.showMessageDialog(null, 
+					InstallerBundle.getMessage("error.uuid.required"),
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
 			return false;
 		}
 		// validates the addresses
@@ -727,7 +1020,7 @@ public class WubiqConfigurator {
 		AddressesTableModel tableModel = (AddressesTableModel)fldInternetAddresses.getModel();
 		for (int row = 0; row < tableModel.getRowCount(); row++) {
 			String address = (String) tableModel.getValueAt(row, 0);
-			if (!FiscalPrinterUtils.INSTANCE.validateAddress(address)) {
+			if (!InstallerUtils.INSTANCE.validateAddress(address)) {
 				tableModel.setValueAt(AddressStatus.NOT_VALID, row, 1);
 				if (invalidAddresses.length() > 0) {
 					invalidAddresses.append('\n');
@@ -757,7 +1050,7 @@ public class WubiqConfigurator {
 		for (int row = 0; row < tableModel.getRowCount(); row++) {
 			String address = (String) tableModel.getValueAt(row, 0);
 			tableModel.setValueAt(AddressStatus.TESTING, row, 1);
-			if (!FiscalPrinterUtils.INSTANCE.validateAddress(address)) {
+			if (!InstallerUtils.INSTANCE.validateAddress(address)) {
 				tableModel.setValueAt(AddressStatus.NOT_VALID, row, 1);
 			} else {
 				boolean status = testConnection(address);
@@ -773,8 +1066,8 @@ public class WubiqConfigurator {
 	 */
 	private boolean testConnection(String address) {
 		boolean returnValue = false;
-		String testString = readCommandConnection(address, RemoteDataCommand.TEST);
-		if (Constants.TEST_STRING.equalsIgnoreCase(testString)) {
+		String testString = readCommandConnection(address, CommandKeys.CONNECTION_TEST);
+		if (ParameterKeys.CONNECTION_TEST_STRING.equalsIgnoreCase(testString)) {
 			returnValue = true;
 		}
 
@@ -787,18 +1080,23 @@ public class WubiqConfigurator {
 	 * @param command Command to use for the connection.
 	 * @return Webpage content, null value if invalid connection.
 	 */
-	private String readCommandConnection(String address) {
+	private String readCommandConnection(String address, String command) {
 		String returnValue = null;
 		try {
-			URL url = new URL(RemoteFiscalPrinterWrapper.getConnectionString(address) 
-					+ "?"
-					+ RemoteDataCommand.PARAMETER_COMMAND
-					+ RemoteDataCommand.PARAMETER_SEPARATOR
-					+ command.ordinal());
+			URL url = hostServletUrl(address);
+			String encodedParameters = encodedParameters(command);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setDoOutput(true);
+			connection.setDoInput(true);
 			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 			connection.setRequestMethod("POST");
+			connection.setRequestProperty("charset", "utf-8");
+			connection.setRequestProperty("ContentType", "text/html");
+			connection.setRequestProperty("Content-Length", "" + Integer.toString(encodedParameters.getBytes().length));
 			connection.setConnectTimeout(1000);
+			ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes());
+			connection.setUseCaches (false);
+			IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 			Object content = connection.getContent();
 
 			if (content != null && content instanceof InputStream) {
@@ -811,6 +1109,78 @@ public class WubiqConfigurator {
 			returnValue = null;
 		}
 		return returnValue;
+	}
+	
+	/**
+	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
+	 * @param command Command to be encoded as part of the url.
+	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
+	 * @return Url string with parameterValues encoded.
+	 */
+	private String encodedParameters(String command, String... parameters) {
+		StringBuffer parametersQuery = new StringBuffer("");
+		if (!Is.emptyString(command)) {
+			parametersQuery
+				.append(ParameterKeys.COMMAND)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(command);
+		}
+		for (String parameter: parameters) {
+			String parameterString = parameter;
+			if (parameter.contains("=")) {
+				String parameterName = parameter.substring(0, parameter.indexOf("="));
+				String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
+				parameterValue = WebUtils.INSTANCE.encode(parameterValue);
+				parameterString = parameterName + "=" + parameterValue;
+			}
+			parametersQuery.append('&')
+					.append(parameterString);
+		}
+		return parametersQuery.toString();
+	}
+	
+	/**
+	 * Creates a valid url with the given connection.
+	 * @param connection Connection to encapsulate.
+	 * @return Valid URL or null.
+	 */
+	private URL hostServletUrl(String connection) {
+		URL returnValue = null;
+		StringBuffer buffer = new StringBuffer("");
+		if (!Is.emptyString(connection)) {
+			buffer.append(connection);
+		}
+		if (!Is.emptyString(InstallerProperties.INSTANCE.getApplicationName())) {
+			appendWebChar(buffer, '/')
+					.append(InstallerProperties.INSTANCE.getApplicationName());
+		}
+		if (!Is.emptyString(InstallerProperties.INSTANCE.getServletName())) {
+			appendWebChar(buffer, '/')
+					.append(InstallerProperties.INSTANCE.getServletName());
+		}
+		if (buffer.length() > 0) {
+			try {
+				returnValue = new URL(buffer.toString());
+			} catch (MalformedURLException e) {
+				LOG.error(e.getMessage());
+			}
+		}
+		return returnValue;
+	}	
+	
+	/**
+	 * Appends a character to the buffer only if the buffer doesn't end with that character.
+	 * @param buffer Buffer to be appended.
+	 * @param webChar Character to be appended.
+	 * @return The StringBuffer ending with the char.
+	 */
+	private StringBuffer appendWebChar(StringBuffer buffer, char webChar) {
+		if (buffer.length() == 0) {
+			buffer.append(webChar);
+		} else if (buffer.charAt(buffer.length() - 1) != webChar) {
+			buffer.append(webChar);
+		}
+		return buffer;
 	}
 	
 	/**

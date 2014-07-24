@@ -57,10 +57,10 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		this.bAdapter = getBAdapter();
 		printServicesName = new HashMap<String, BluetoothDevice>();
 
+		initializeDefault(this);
 		setCheckPendingJobInterval(preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default)));
 		setPrintingJobInterval(preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default)));
 		setConnectionErrorRetries(preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default)));
-		initializeDefault(this);
 		String host = preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default));
 		String port = preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default));
 		String connectionsString = preferences.getString(WubiqActivity.CONNECTIONS_KEY, resources.getString(R.string.server_connection_default));

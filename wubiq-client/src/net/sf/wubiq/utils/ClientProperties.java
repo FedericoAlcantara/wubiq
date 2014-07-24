@@ -22,12 +22,15 @@ public class ClientProperties extends BaseProperties {
 	private static final Log LOG = LogFactory.getLog(ClientProperties.class);
 	private static Properties properties;
 	
-	protected ClientProperties() {
+	public static final ClientProperties INSTANCE = new ClientProperties();
+
+	protected ClientProperties(){
+		
 	}
 	
-	protected static Properties getProperties() {
+	protected Properties getProperties() {
 		if (properties == null) {
-			properties = BaseProperties.getProperties();
+			properties = super.getProperties();
 		}
 		return properties;
 	}
@@ -36,21 +39,21 @@ public class ClientProperties extends BaseProperties {
 	 * Must produce a file where the properties reside. Should return null if not found.
 	 * @return Found file or null.
 	 */
-	protected static File getPropertiesFile() {
-		return BaseProperties.getPropertiesFile(ConfigurationKeys.CLIENT_PROPERTIES_FILE_NAME);
+	protected File getPropertiesFile() {
+		return super.getPropertiesFile(ConfigurationKeys.CLIENT_PROPERTIES_FILE_NAME);
 	}
 	
 	/**
 	 * Shows a message indicating that a properties file was found.
 	 */
-	protected static void showPropertiesFileFound(){
+	protected void showPropertiesFileFound(){
 		LOG.info(ClientLabels.get("client.info_client_properties_found_file"));
 	}
 	
 	/**
 	 * Shows a message indicating that the properties file was not found.
 	 */
-	protected static void showPropertiesFileNotFound(){
+	protected void showPropertiesFileNotFound(){
 		LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
 	}
 
@@ -58,7 +61,7 @@ public class ClientProperties extends BaseProperties {
 	 * Shows a message indicating that a properties element was found.
 	 * This might be a different message, since the properties file might be inside a jar object.
 	 */
-	protected static void showPropertiesFound(){
+	protected void showPropertiesFound(){
 		LOG.info(ClientLabels.get("client.info_client_properties_found"));
 	}
 	
@@ -66,7 +69,7 @@ public class ClientProperties extends BaseProperties {
 	 * Shows a message indicating that a properties element was not found.
 	 * This might be a different message, since the properties file might be inside a jar object.
 	 */
-	protected static void showPropertiesNotFound(){
+	protected void showPropertiesNotFound(){
 		LOG.info(ClientLabels.get("client.info_no_client_properties_found"));
 	}	
 }

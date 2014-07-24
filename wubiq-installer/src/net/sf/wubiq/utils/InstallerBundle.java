@@ -78,7 +78,7 @@ public final class InstallerBundle {
 	 */
 	private static ResourceBundle getMessagesBundle() {
 		if (messagesBundle == null) {
-			messagesBundle = ResourceBundle.getBundle("installer_messagess");
+			messagesBundle = ResourceBundle.getBundle("installer_messages");
 		}
 		return messagesBundle;
 	}

@@ -7,6 +7,8 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.net.MalformedURLException;
+import java.net.URL;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -19,6 +21,8 @@ public enum InstallerUtils {
 	INSTANCE;
 	
 	private final Log LOG = LogFactory.getLog(InstallerUtils.class);
+	private final String VALID_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_-";
+	private final String VALID_INTERNET_CHARACTERS = VALID_CHARACTERS + "./:";
 	
 	public String jrePath() {
 		if (System.getProperty("os.name").toLowerCase().startsWith("win")) {
@@ -63,4 +67,68 @@ public enum InstallerUtils {
 		}
 		return returnValue;
 	}
+	
+	/**
+	 * Validates the given address.
+	 * @param address Address to be validated.
+	 * @return True if the address has a valid format. False otherwise.
+	 */
+	public boolean validateAddress(String address) {
+		boolean returnValue = false;
+		if (!Is.emptyString(address)) {
+			try {
+				URL url = new URL(address);
+				String protocol = url.getProtocol();
+				String host = url.getHost();
+				if (!Is.emptyString(protocol) &&
+						!Is.emptyString(host)) {
+					returnValue = true;
+				}
+			} catch (MalformedURLException e) {
+				LOG.debug(e.getMessage());
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Cleans the string.
+	 * @param sentText Text sent.
+	 * @return Text without invalid characters.
+	 */
+	public String cleanString(String sentText) {
+		return cleanText(VALID_CHARACTERS, sentText);
+	}
+	
+	/**
+	 * Cleans the text and anly allows internet valid characters.
+	 * @param sentText Text sent.
+	 * @return Clean address and converted to lower case.
+	 */
+	public String cleanInternetAddress(String sentText) {
+		return cleanText(VALID_INTERNET_CHARACTERS, sentText).toLowerCase();
+	}
+	
+
+	/**
+	 * Cleans the text. Leading and trailing text are eliminated.
+	 * Spaces are replaced with _, other characters are deleted.
+	 * @param validChars String of valid characters.
+	 * @param sentText Input text.
+	 * @return Parsed text.
+	 */
+	private String cleanText(String validChars, String sentText) {
+		StringBuffer returnValue = new StringBuffer("");
+		String text = sentText.trim();
+		for (int index = 0; index < text.length(); index++) {
+			char charAt = text.charAt(index);
+			if (charAt == ' ' ||
+					validChars.indexOf(charAt) > -1) {
+				returnValue.append(charAt);
+			}
+		}
+		
+		return returnValue.toString().trim().replaceAll(" ", "_");
+	}
+	
 }

@@ -78,7 +78,7 @@ public final class RemotePrintJobManagerFactory {
 	 */
 	private static IDirectConnectPrintJobManager getDirectConnectPrintJobManager() {
 		if (directInstance == null) {
-			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(ServerProperties.getRemotePrintJobManager());
+			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(ServerProperties.INSTANCE.getRemotePrintJobManager());
 		}
 		return directInstance;
 	}
@@ -88,7 +88,7 @@ public final class RemotePrintJobManagerFactory {
 	 */
 	private static IRemotePrintJobManager getRemotePrintJobManager() {
 		if (instance == null) {
-			instance = getPrintJobManager(ServerProperties.getPrintJobManager());
+			instance = getPrintJobManager(ServerProperties.INSTANCE.getPrintJobManager());
 		}
 		return instance;
 	}

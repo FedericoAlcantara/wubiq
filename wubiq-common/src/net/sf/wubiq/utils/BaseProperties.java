@@ -27,34 +27,27 @@ import org.apache.commons.logging.LogFactory;
 public abstract class BaseProperties {
 	private static final Log LOG = LogFactory.getLog(BaseProperties.class);
 	
-	protected BaseProperties() {
-	}
-	
-	public static String getApplicationName() {
+	public String getApplicationName() {
 		return get(ConfigurationKeys.PROPERTY_APPLICATION_NAME, ConfigurationKeys.DEFAULT_APPLICATION_NAME).trim();
 	}
 	
-	public static String getServletName() {
+	public String getServletName() {
 		return get(ConfigurationKeys.PROPERTY_SERVLET_NAME, ConfigurationKeys.DEFAULT_SERVLET_NAME).trim();
 	}
 	
-	public static String getUuid() {
+	public String getUuid() {
 		return get(ConfigurationKeys.PROPERTY_UUID, UUID.randomUUID().toString()).trim();
 	}
 
-	public static String getGroups() {
+	public String getGroups() {
 		return get(ConfigurationKeys.PROPERTY_GROUPS, "").trim();
-	}
-	
-	public static String getClientParameters() {
-		return get(ConfigurationKeys.PROPERTY_CLIENT_PARAMETERS, "");
 	}
 	
 	/**
 	 * @deprecated Use getConnections instead.
 	 * @return Current host.
 	 */
-	public static String getHost() {
+	public String getHost() {
 		return get(ConfigurationKeys.PROPERTY_HOST, "").trim();
 	}
 	
@@ -62,40 +55,24 @@ public abstract class BaseProperties {
 	 * @deprecated Use getConnections instead.
 	 * @return Current port.
 	 */
-	public static Integer getPort() {
-		int returnValue = ConfigurationKeys.DEFAULT_PORT_ADDRESS;
-		String portAddressString = get(ConfigurationKeys.PROPERTY_PORT, "");
-		try {
-			returnValue = Integer.parseInt(portAddressString);
-		} catch (NumberFormatException e) {
-			returnValue = ConfigurationKeys.DEFAULT_PORT_ADDRESS;
-		}
-		return returnValue;
+	public Integer getPort() {
+		return getInt(ConfigurationKeys.PROPERTY_PORT, ConfigurationKeys.DEFAULT_PORT_ADDRESS);
 	}
 	
 	/**
-	 * Gets the installer port address.
-	 * @return The installer port address read or the default one.
+	 * A value indicating the number of times to keep trying to connect before
+	 * aborting client.
+	 * @return Connection retries count.
 	 */
-	public static Integer getInstallerPortAddress() {
-		int returnValue = ConfigurationKeys.DEFAULT_INSTALLER_PORT_ADDRESS;
-		String portAddressString = get(ConfigurationKeys.PROPERTY_INSTALLER_PORT_ADDRESS, 
-				"");
-		try {
-			returnValue = Integer.parseInt(portAddressString);
-		} catch (NumberFormatException e) {
-			returnValue = ConfigurationKeys.DEFAULT_INSTALLER_PORT_ADDRESS;
-		}
-		return returnValue;
+	public Integer getConnectionRetries() {
+		return getInt(ConfigurationKeys.PROPERTY_CONNECTION_RETRIES, ConfigurationKeys.DEFAULT_CONNECTION_RETRIES);
 	}
-	
-	
-	
+		
 	/**
 	 * Reads the possible connections from the client properties. This should be the preferred method.
 	 * @return A comma separated list of connections.
 	 */
-	public static String getConnections() {
+	public String getConnections() {
 		StringBuffer returnValue = new StringBuffer("");
 		String host = getHost();
 		String port = getPort().toString();
@@ -122,12 +99,60 @@ public abstract class BaseProperties {
 	}
 	
 	/**
+	 * If true the debug mode is enabled (verbosed).
+	 * @return Debug mode.
+	 */
+	public boolean isDebugMode() {
+		return "true".equalsIgnoreCase(get(ConfigurationKeys.PROPERTY_DEBUG_ENABLED, "false"));
+	}
+	
+	/**
+	 * The level to use for log output.
+	 * @return Integer value between 0 - 5.
+	 */
+	public Integer getDebugLogLevel() {
+		return getInt(ConfigurationKeys.PROPERTY_DEBUG_LOG_LEVEL, ConfigurationKeys.DEFAULT_LOG_LEVEL);
+	}
+	
+	/**
+	 * Gets the interval for polling the server about pending jobs.
+	 * @return Integer with the value. Never null.
+	 */
+	public Integer getPollInterval() {
+		return getInt(ConfigurationKeys.PROPERTY_POLL_INTERVAL, ConfigurationKeys.DEFAULT_POLL_INTERVAL);
+	}
+	
+	/**
+	 * Gets the print job wait value. This is the time (in milliseconds) to wait after a successful print job handling.
+	 * @return Integer with the value. Never null.
+	 */
+	public Integer getPrintJobWait() {
+		return getInt(ConfigurationKeys.PROPERTY_PRINT_JOB_WAIT, ConfigurationKeys.DEFAULT_PRINT_JOB_WAIT);
+	}
+	
+	/**
+	 * Gets an integer value out of a property.
+	 * @param key Key for the property. 
+	 * @param defaultValue Default value to use.
+	 * @return Property value as string.
+	 */
+	public Integer getInt(String key, Integer defaultValue) {
+		Integer returnValue = defaultValue;
+		try {
+			returnValue = Integer.parseInt(get(key, ""));
+		} catch (NumberFormatException e) {
+			returnValue = defaultValue;
+		}
+		return returnValue;
+	}
+	
+	/**
 	 * Gets a value from properties file.
 	 * @param key Key to search for.
 	 * @param defaultValue Value to return in case key is not found in properties.
 	 * @return Found value or default value.
 	 */
-	protected static String get(String key, String defaultValue) {
+	protected String get(String key, String defaultValue) {
 		String returnValue = getProperties().getProperty(key);
 		if (returnValue == null) {
 			returnValue = defaultValue;
@@ -140,7 +165,7 @@ public abstract class BaseProperties {
 	 * @param reload If true reloads the file.
 	 * @return Properties according to the file contents.
 	 */
-	protected static Properties getProperties() {
+	protected Properties getProperties() {
 		Properties properties = new Properties();
 		File propertyFile = getPropertiesFile();
 		if (propertyFile != null) {
@@ -170,10 +195,10 @@ public abstract class BaseProperties {
 	 * @param reload If true reloads the file.
 	 * @return Properties according to file contents.
 	 */
-	protected static File getPropertiesFile(String filePrefix) {
+	protected File getPropertiesFile(String filePrefix) {
 		File propertyFile = null;
 		propertyFile = new File("./" + filePrefix +".properties");
-		if (propertyFile.exists() && propertyFile.isDirectory()) {
+		if (propertyFile.exists() && !propertyFile.isDirectory()) {
 			showPropertiesFileFound();
 		} else {
 			propertyFile = null;
@@ -191,37 +216,27 @@ public abstract class BaseProperties {
 	 * Must produce a file where the properties reside. Should return null if not found.
 	 * @return Found file or null.
 	 */
-	protected static File getPropertiesFile() {
-		throw new UnsupportedOperationException("getPropertiesFile");
-	}
+	protected abstract File getPropertiesFile();
 	
 	/**
 	 * Shows a message indicating that a properties file was found.
 	 */
-	protected static void showPropertiesFileFound(){
-		throw new UnsupportedOperationException("showPropertiesFileFound");
-	}
+	protected abstract void showPropertiesFileFound();
 	
 	/**
 	 * Shows a message indicating that the properties file was not found.
 	 */
-	protected static void showPropertiesFileNotFound(){
-		throw new UnsupportedOperationException("showPropertiesFileNotFound");
-	}
+	protected abstract void showPropertiesFileNotFound();
 
 	/**
 	 * Shows a message indicating that a properties element was found.
 	 * This might be a different message, since the properties file might be inside a jar object.
 	 */
-	protected static void showPropertiesFound(){
-		throw new UnsupportedOperationException("showPropertiesFound");
-	}
+	protected abstract void showPropertiesFound();
 	
 	/**
 	 * Shows a message indicating that a properties element was not found.
 	 * This might be a different message, since the properties file might be inside a jar object.
 	 */
-	protected static void showPropertiesNotFound(){
-		throw new UnsupportedOperationException("showPropertiesNotFound");
-	}
+	protected abstract void showPropertiesNotFound();
 }

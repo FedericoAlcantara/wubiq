@@ -333,7 +333,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	protected Object pollServer(String command, String... parameters) throws ConnectException {
 		Object returnValue = "";
-		String url = null;
+		String encodedParameters = null;
 		URL webUrl = null;
 		HttpURLConnection connection = null;
 		Object content = null;
@@ -348,7 +348,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			for (URL address : actualURLs) {
 				try {
 					webUrl = address;
-					url = getEncodedParameters(command, parameters);
+					encodedParameters = getEncodedParameters(command, parameters);
 					connection = (HttpURLConnection) webUrl.openConnection();
 					connection.setDoOutput(true);
 					connection.setDoInput(true);
@@ -356,16 +356,16 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 					connection.setRequestProperty("charset", "utf-8");
 					connection.setRequestProperty("ContentType", "text/html");
-					connection.setRequestProperty("Content-Length", "" + Integer.toString(url.getBytes().length));
-					ByteArrayInputStream input = new ByteArrayInputStream(url.getBytes());
+					connection.setRequestProperty("Content-Length", "" + Integer.toString(encodedParameters.getBytes().length));
+					ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes());
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 					content = connection.getContent();
 					if (!connected) {
-						doLog("\nConnected! to:" + url + "\n", 0);
+						doLog("\nConnected! to:" + encodedParameters + "\n", 0);
 						connected = true;
 					} else {
-						doLog("Connected! to:" + url, 5);
+						doLog("Connected! to:" + encodedParameters, 5);
 					}
 					preferredURL = webUrl;
 				} catch (IOException e) {
@@ -374,7 +374,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				}
 			}
 			if (connection == null) {
-				url = null;
+				encodedParameters = null;
 				connected = false;
 				throw new IOException("Couldn't connect to any of the addresses:" + getUrls());
 			}
@@ -394,7 +394,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 		} catch (MalformedURLException e) {
 			preferredURL = null;
-			LOG.error(e.getMessage() + "->" + url);
+			LOG.error(e.getMessage() + "->" + encodedParameters);
 		} catch (UnknownServiceException e) {
 			preferredURL = null;
 			doLog(e.getMessage(), 5);
@@ -406,7 +406,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			throw new ConnectException(e.getMessage());
 		} catch (Exception e) {
 			preferredURL = null;
-			LOG.error(e.getMessage() + "->" + url);
+			LOG.error(e.getMessage() + "->" + encodedParameters);
 		} finally {			
 			if (reader != null) {
 				try {
@@ -745,11 +745,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	protected static void initializeDefault(AbstractLocalPrintManager manager) {
 		// Set values based on wubiq-client.properties
-		manager.setApplicationName(ClientProperties.getApplicationName());
-		manager.setServletName(ClientProperties.getServletName());
-		manager.setUuid(ClientProperties.getUuid());
-		String connectionsString = ClientProperties.getConnections();
+		manager.setApplicationName(ClientProperties.INSTANCE.getApplicationName());
+		manager.setServletName(ClientProperties.INSTANCE.getServletName());
+		manager.setUuid(ClientProperties.INSTANCE.getUuid());
+		String connectionsString = ClientProperties.INSTANCE.getConnections();
 		addConnectionsString(manager, connectionsString);
+		manager.setDebugMode(ClientProperties.INSTANCE.isDebugMode());
+		manager.setCheckPendingJobInterval(ClientProperties.INSTANCE.getPollInterval());
+		manager.setPrintingJobInterval(ClientProperties.INSTANCE.getPrintJobWait());
 	}
 	
 	/**

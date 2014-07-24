@@ -85,6 +85,8 @@ public class RemotePrintServlet extends HttpServlet {
 			} else  {
 				if (CommandKeys.READ_VERSION.equalsIgnoreCase(command)) {
 					respond(Labels.VERSION, response);
+				} else if (CommandKeys.CONNECTION_TEST.equalsIgnoreCase(command)) {
+					respond(ParameterKeys.CONNECTION_TEST_STRING, response);
 				} else if (!Is.emptyString(uuid)) {
 					LOG.debug("accesing:" + uuid);
 					notifyRemote(uuid, request);

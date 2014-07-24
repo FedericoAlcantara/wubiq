@@ -86,9 +86,15 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 		File wubiqClientJar = InstallerUtils.INSTANCE.wubiqClientFile();
 
 		javaRun = new JavaRun();
-		javaRun.setFixedParameters("-u", InstallerProperties.getUuid(), 
-				InstallerProperties.getClientParameters());
-		javaRun.setJvmParameters("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=3");
+		javaRun.setFixedParameters("-u", InstallerProperties.INSTANCE.getUuid(), 
+				InstallerProperties.INSTANCE.getClientParameters());
+		StringBuffer jvmParameters = new StringBuffer(InstallerProperties.INSTANCE.getJvmParameters());
+		if (!jvmParameters.toString().contains("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=")) {
+			jvmParameters
+					.append(' ')
+					.append("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=3");
+		}
+		javaRun.setJvmParameters(jvmParameters.toString());
 		javaRun.setJarFile(wubiqClientJar.getPath());
 		boolean loadNewJar = true;
 		
@@ -158,23 +164,23 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	
 	@Override
 	public String getApplicationName() {
-		return InstallerProperties.getApplicationName();
+		return InstallerProperties.INSTANCE.getApplicationName();
 	}
 	
 	@Override
 	public String getServletName() {
-		return InstallerProperties.getServletName();
+		return InstallerProperties.INSTANCE.getServletName();
 	}
 	
 	@Override
 	public String getUuid() {
-		return InstallerProperties.getUuid();
+		return InstallerProperties.INSTANCE.getUuid();
 	}
 	
 	@Override
 	public Set<String> getConnections() {
 		Set<String> returnValue = new HashSet<String>();
-		for (String connection : InstallerProperties.getConnections().split("[,;]")) {
+		for (String connection : InstallerProperties.INSTANCE.getConnections().split("[,;]")) {
 			if (!"".equals(connection)) {
 				returnValue.add(connection);
 			}

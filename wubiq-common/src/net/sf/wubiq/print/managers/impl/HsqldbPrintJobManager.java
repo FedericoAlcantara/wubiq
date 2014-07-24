@@ -29,7 +29,6 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
-import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
@@ -267,7 +266,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			throw new SQLException (e.getMessage());
 		}
 		StringBuffer buffer = new StringBuffer("jdbc:hsqldb:");
-		if ("file:".equals(ServerProperties.getHsqldbHost())) {
+		if ("file:".equals(ServerProperties.INSTANCE.getHsqldbHost())) {
 			if (hostFolder == null ||
 					!hostFolder.exists()) {
 				try {
@@ -285,18 +284,18 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			}
 		} 
 		if (hostFolder == null) {
-			if ("file:".equals(ServerProperties.getHsqldbHost())) {
+			if ("file:".equals(ServerProperties.INSTANCE.getHsqldbHost())) {
 				buffer.append("hsql://localhost"); // because it failed to create a temp file
 			} else {
-				buffer.append(ServerProperties.getHsqldbHost());
+				buffer.append(ServerProperties.INSTANCE.getHsqldbHost());
 			}
-			if (!Is.emptyString(ServerProperties.getHsqldbPort())) {
+			if (!Is.emptyString(ServerProperties.INSTANCE.getHsqldbPort())) {
 				buffer.append(':')
-				.append(ServerProperties.getHsqldbPort());
+				.append(ServerProperties.INSTANCE.getHsqldbPort());
 			}
 		}
 		buffer.append('/')
-				.append(ServerProperties.getHsqldbDbName());
+				.append(ServerProperties.INSTANCE.getHsqldbDbName());
         returnValue = DriverManager.getConnection(buffer.toString(), "SA", "");
 	    return returnValue;
 	}

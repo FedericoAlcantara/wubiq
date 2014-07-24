@@ -64,6 +64,7 @@ public class PrintServiceUtils {
 	private static Set<String>photoPrinters;
 	private static Set<String>dotMatrixHqPrinters;
 	private static Set<String>dotMatrixPrinters;
+	private static final String VALID_PRINT_SERVICE_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	
 	/**
 	 * Tries to refresh print services.
@@ -786,7 +787,7 @@ public class PrintServiceUtils {
 		StringBuffer returnValue = new StringBuffer("");
 		for (int index = 0; index < printServiceName.length(); index++) {
 			char charAt = printServiceName.charAt(index);
-			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".indexOf(charAt) >= 0) {
+			if (VALID_PRINT_SERVICE_CHARACTERS.indexOf(charAt) >= 0) {
 				returnValue.append(charAt);
 			} else {
 				returnValue.append("_");

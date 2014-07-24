@@ -39,4 +39,5 @@ public final class CommandKeys {
 	public static final String REMOVE_ALL_PRINT_JOBS = "j4";
 	public static final String READ_VERSION = "v1";
 	public static final String READ_CONNECTIONS = "rc";
+	public static final String CONNECTION_TEST = "ct";
 }

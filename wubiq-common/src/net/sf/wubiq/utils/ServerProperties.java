@@ -29,31 +29,33 @@ public class ServerProperties extends BaseProperties {
 	private static Map<String, String> users;
 	private static String realPath;
 	
-	private ServerProperties() {
+	public static final ServerProperties INSTANCE = new ServerProperties();
+	
+	private ServerProperties(){
 	}
-
-	public static String getHsqldbHost() {
-		return get(ConfigurationKeys.PROPERTY_HSQLDB_HOST, 
+	
+	public String getHsqldbHost() {
+		return INSTANCE.get(ConfigurationKeys.PROPERTY_HSQLDB_HOST, 
 				ConfigurationKeys.DEFAULT_HSQLDB_HOST);
 	}
 	
-	public static String getHsqldbPort() {
+	public String getHsqldbPort() {
 		return get(ConfigurationKeys.PROPERTY_HSQLDB_PORT, "");
 	}
 	
-	public static String getHsqldbDatabaseName() {
+	public String getHsqldbDatabaseName() {
 		return get(ConfigurationKeys.PROPERTY_HSQLDB_DATABASE_NAME, ConfigurationKeys.DEFAULT_HSQLDB_DATABASE_NAME);
 	}
 	
-	public static String getHsqldbDbName() {
+	public String getHsqldbDbName() {
 		return get(ConfigurationKeys.PROPERTY_HSQLDB_DB_ALIAS, ConfigurationKeys.DEFAULT_HSQLDB_DB_ALIAS);
 	}
 	
-	public static String getPrintJobManager() {
+	public String getPrintJobManager() {
 		return get(ConfigurationKeys.PROPERTY_PRINT_JOB_MANAGER, ConfigurationKeys.DEFAULT_PRINT_JOB_MANAGER);
 	}
 
-	public static String getRemotePrintJobManager() {
+	public String getRemotePrintJobManager() {
 		return get(ConfigurationKeys.PROPERTY_REMOTE_PRINT_JOB_MANAGER, ConfigurationKeys.DEFAULT_REMOTE_PRINT_JOB_MANAGER);
 	}
 	
@@ -62,7 +64,7 @@ public class ServerProperties extends BaseProperties {
 	 * list of elements in the form userid:password.
 	 * @return List of users.
 	 */
-	public static Map<String, String> getUsers() {
+	public Map<String, String> getUsers() {
 		if (users == null) {
 			users = new HashMap<String, String>();
 			String usersList = get(ConfigurationKeys.PROPERTY_USERS, "");
@@ -85,7 +87,7 @@ public class ServerProperties extends BaseProperties {
 	 * @param password Password.
 	 * @return True if the user/password combination.
 	 */
-	public static boolean isValidUser(String userId, String password) {
+	public boolean isValidUser(String userId, String password) {
 		return getUsers().containsKey(userId) &&
 				getUsers().get(userId).equals(ServerUtils.INSTANCE.normalizedPassword(password));
 	}
@@ -101,7 +103,7 @@ public class ServerProperties extends BaseProperties {
 	 * 
 	 * @return the properties.
 	 */
-	protected static Properties getProperties() {
+	protected Properties getProperties() {
 		if (properties == null) {
 			try {
 				properties = new Properties();
@@ -139,12 +141,33 @@ public class ServerProperties extends BaseProperties {
 		return properties;
 	}
 
-	public static String getRealPath() {
+	public String getRealPath() {
 		return realPath;
 	}
 
-	public static void setRealPath(String realPath) {
+	public void setRealPath(String realPath) {
 		ServerProperties.realPath = realPath;
+	}
+
+	@Override
+	protected File getPropertiesFile() {
+		return null;
+	}
+
+	@Override
+	protected void showPropertiesFileFound() {
+	}
+
+	@Override
+	protected void showPropertiesFileNotFound() {
+	}
+
+	@Override
+	protected void showPropertiesFound() {
+	}
+
+	@Override
+	protected void showPropertiesNotFound() {
 	}
 	
 }

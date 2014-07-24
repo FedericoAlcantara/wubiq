@@ -11,7 +11,7 @@ import java.net.UnknownHostException;
 
 import net.sf.wubiq.enums.ServiceCommandType;
 import net.sf.wubiq.enums.ServiceReturnStatus;
-import net.sf.wubiq.utils.InstallerUtils;
+import net.sf.wubiq.utils.InstallerProperties;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -87,7 +87,7 @@ public class WubiqLauncher implements Runnable {
 		Socket socket = null;
 		PrintWriter out = null;
 		try {
-			socket = new Socket(InetAddress.getLocalHost(), InstallerUtils.INSTANCE.getPortAddress());
+			socket = new Socket(InetAddress.getLocalHost(), InstallerProperties.INSTANCE.getInstallerPortAddress());
 			out = new PrintWriter(socket.getOutputStream(), true);
 			out.write(command.ordinal() + "\n");
 			out.flush();
@@ -173,7 +173,7 @@ public class WubiqLauncher implements Runnable {
 		LOG.info("Wubiq client started");
 		ServerSocket serverSocket = null;
 		try {
-			serverSocket = new ServerSocket(InstallerUtils.INSTANCE.getPortAddress());
+			serverSocket = new ServerSocket(InstallerProperties.INSTANCE.getInstallerPortAddress());
 			while (!stop) {
 				Socket clientSocket = null;
 				try {

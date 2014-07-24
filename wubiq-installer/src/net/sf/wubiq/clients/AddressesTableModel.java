@@ -6,18 +6,18 @@ package net.sf.wubiq.clients;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.table.DefaultTableModel;
-
 import net.sf.wubiq.enums.AddressStatus;
 import net.sf.wubiq.utils.InstallerBundle;
+import net.sf.wubiq.utils.InstallerUtils;
 
 /**
  * Represents a set of possible server connection addresses.
  * @author Federico Alcantara
  *
  */
-public class AddressesTableModel extends DefaultTableModel {
+public class AddressesTableModel extends BaseTableModel {
 	private static final long serialVersionUID = 1L;
+	
 	private class RowValue {
 		private String address;
 		private AddressStatus status;
@@ -28,6 +28,10 @@ public class AddressesTableModel extends DefaultTableModel {
 	}
 	
 	private List<RowValue> rowValues;
+	
+	public AddressesTableModel(String labelPrefix) {
+		super(labelPrefix);
+	}
 	
 	@Override
 	public void addRow(Object[] rowData) {
@@ -48,9 +52,13 @@ public class AddressesTableModel extends DefaultTableModel {
 		fireTableRowsDeleted(row, row);
 	}
 	
+	/**
+	 * @see net.sf.wubiq.clients.BaseTableModel#removeAll()
+	 */
 	public void removeAll() {
 		getRowValues().clear();
 	}
+	
 	@Override
 	public boolean isCellEditable(int row, int column) {
 		return (column == 0);
@@ -73,6 +81,7 @@ public class AddressesTableModel extends DefaultTableModel {
 		}
 		fireTableCellUpdated(row, column);
 	}
+	
 	@Override
 	public int getColumnCount() {
 		return 2;
@@ -92,4 +101,12 @@ public class AddressesTableModel extends DefaultTableModel {
 		}
 		return rowValues;
 	}
+	
+	/**
+	 * @see net.sf.wubiq.clients.BaseTableModel#cleanText(java.lang.String)
+	 */
+	public String cleanText(String sentText) {
+		return InstallerUtils.INSTANCE.cleanInternetAddress(sentText);
+	}
+
 }

@@ -161,7 +161,7 @@ public class ServerTest extends WubiqBaseTest {
 			count++;
 		} while (value != -1);
 	
-		assertTrue("Size should be bigger than " + TestClientProperties.get("minimum_file_size", "20000") + " (" + count + ")", 
-				count > TestClientProperties.getInt("minimum_file_size", 20000));
+		assertTrue("Size should be bigger than " + TestClientProperties.INSTANCE.get("minimum_file_size", "20000") + " (" + count + ")", 
+				count > TestClientProperties.INSTANCE.getInt("minimum_file_size", 20000));
 	}
 }
