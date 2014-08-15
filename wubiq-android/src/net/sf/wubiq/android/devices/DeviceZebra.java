@@ -5,8 +5,11 @@ package net.sf.wubiq.android.devices;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.net.ConnectException;
 
 import net.sf.wubiq.android.enums.DeviceStatus;
+import net.sf.wubiq.android.utils.BluetoothUtils;
+import android.content.Context;
 import android.util.Log;
 
 import com.zebra.android.comm.BluetoothPrinterConnection;
@@ -76,10 +79,9 @@ public class DeviceZebra extends BaseWubiqDevice {
 	 * @param deviceAddress Device address.
 	 * @return Current device status.
 	 */
-	@Override
-	public DeviceStatus deviceStatus(String deviceAddress) {
+	public DeviceStatus deviceStatus(Context context, String deviceAddress) throws ConnectException {
 		DeviceStatus returnValue = DeviceStatus.NOT_FOUND;
-		if (btDevice(deviceAddress) != null) {
+		if (BluetoothUtils.device(context, deviceAddress) != null) {
 			ZebraPrinterConnection connection = null;
 			try {
 				connection = new BluetoothPrinterConnection(deviceAddress);

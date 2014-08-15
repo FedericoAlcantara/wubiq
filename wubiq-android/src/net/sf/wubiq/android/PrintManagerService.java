@@ -33,6 +33,7 @@ public class PrintManagerService extends Service {
 	private BluetoothPrintManager manager;
 	private boolean cancelManager;
 	private Handler timerHandler = new Handler();
+	
 	private Runnable timerRunnable = new Runnable() {
 		public void run() {
 			checkPrintManagerStatus();

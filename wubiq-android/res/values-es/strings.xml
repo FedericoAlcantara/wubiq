@@ -7,7 +7,7 @@
     <string name="select_driver">Seleccione Controlador</string>
     <string name="configure_server">Configurar Conexión a Servidor</string>
     <string name="connections">Conexiones</string>
-    <string name="compatibility">\nCompatibilidad</string>
+    <string name="compatibility">Compatibilidad</string>
     <string name="server_host">Host</string>
     <string name="server_port">Puerto</string>
     <string name="server_port_default">8080</string>

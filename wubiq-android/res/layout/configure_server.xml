@@ -69,36 +69,58 @@
 	    android:text="@string/compatibility"
 	    android:textAppearance="?android:attr/textAppearanceSmall" />
 
-	<TextView
-	    android:id="@+id/textView2"
+	<TableLayout
 	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:text="@string/server_host"
-	    android:textAppearance="?android:attr/textAppearanceSmall" />
+	    android:layout_height="wrap_content" >
 
-	<EditText
-	    android:id="@+id/hostField"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:ems="10"
-	    android:inputType="textEmailAddress|textWebEditText"
-	    android:text="@string/server_host_default"
-	    android:textAppearance="?android:attr/textAppearanceSmall" />
+	    <TableRow
+	        android:id="@+id/tableRow1"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content" >
 
-	<TextView
-	    android:id="@+id/textView3"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:text="@string/server_port"
-	    android:textAppearance="?android:attr/textAppearanceSmall" />
+	        <TextView
+	            android:id="@+id/textView2"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:text="@string/server_host"
+	            android:textAppearance="?android:attr/textAppearanceSmall" />
 
-	<EditText
-	    android:id="@+id/portField"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:ems="10"
-	    android:inputType="text"
-	    android:text="@string/server_port_default"
-	    android:textAppearance="?android:attr/textAppearanceSmall" />
+	        <TextView
+	            android:id="@+id/textView3"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:text="@string/server_port"
+	            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+	    </TableRow>
+
+	    <TableRow
+	        android:id="@+id/tableRow2"
+	        android:layout_width="wrap_content"
+	        android:layout_height="wrap_content" >
+
+	        <EditText
+	            android:id="@+id/hostField"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:ems="10"
+	            android:inputType="textEmailAddress|textWebEditText"
+	            android:text="@string/server_host_default"
+	            android:textAppearance="?android:attr/textAppearanceSmall" >
+
+	            <requestFocus />
+	        </EditText>
+
+	        <EditText
+	            android:id="@+id/portField"
+	            android:layout_width="fill_parent"
+	            android:layout_height="wrap_content"
+	            android:ems="10"
+	            android:inputType="text"
+	            android:text="@string/server_port_default"
+	            android:textAppearance="?android:attr/textAppearanceSmall" />
+
+	    </TableRow>
+	</TableLayout>
 
 </LinearLayout>
