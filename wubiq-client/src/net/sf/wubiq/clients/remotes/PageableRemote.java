@@ -30,7 +30,9 @@ public class PageableRemote implements Pageable, IProxyClient {
 	public static final String[] FILTERED_METHODS = new String[]{
 		"getNumberOfPages",
 		"getPageFormat",
-		"getPrintable"
+		"getPrintable",
+		"getPrintableClass",
+		"getPrintableFilteredMethods"
 		};
 
 	public PageableRemote() {
@@ -75,17 +77,33 @@ public class PageableRemote implements Pageable, IProxyClient {
 					new GraphicParameter(int.class, pageIndex)));
 			UUID printableObjectUUID = (UUID) manager().readFromRemote(new RemoteCommand(objectUUID(),
 					"getLastPrintableObjectUUID"));
-			printable = (PrintableChunkRemote) Enhancer.create(PrintableChunkRemote.class,
+			printable = (PrintableChunkRemote) Enhancer.create(getPrintableClass(),
 					new ProxyClientSlave(
 							jobId(),
 							manager(),
 							printableObjectUUID,
-							PrintableChunkRemote.FILTERED_METHODS));
+							getPrintableFilteredMethods()));
 		}
 
 		return printable;
 	}
 
+	/**
+	 * Class for printable chunk remote instantiation.
+	 * @return Printable chunk remote default class.
+	 */
+	protected Class<? extends PrintableChunkRemote> getPrintableClass() {
+		return PrintableChunkRemote.class;
+	}
+	
+	/**
+	 * Provides the methods to be bypass by the proxy.
+	 * @return List of methods to be ignored.
+	 */
+	protected String[] getPrintableFilteredMethods() {
+		return PrintableChunkRemote.FILTERED_METHODS;
+	}
+	
 	/* *****************************************
 	 * IProxy interface implementation
 	 * *****************************************

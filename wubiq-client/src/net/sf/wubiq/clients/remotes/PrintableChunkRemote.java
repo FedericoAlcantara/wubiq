@@ -60,7 +60,10 @@ import org.apache.commons.logging.LogFactory;
 public class PrintableChunkRemote implements Printable, IProxyClient {
 	private static final Log LOG = LogFactory.getLog(PrintableChunkRemote.class);
 	public static final String[] FILTERED_METHODS = new String[]{
-		"print"
+		"print",
+		"executeGraphics",
+		"executeMethod",
+		"findMethod"
 	};
 
 	private PrinterType printerType;
@@ -133,7 +136,7 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	 * @param xScale new scale to apply horizontally wise.
 	 * @param yScale new scale to apply vertically wise.
 	 */
-	private void executeGraphics(Graphics2D graph, PageFormat pageFormat,
+	protected void executeGraphics(Graphics2D graph, PageFormat pageFormat,
 			Set<GraphicCommand> graphicCommands) {
 		if (graphicCommands != null) {
 			long startTime = new Date().getTime();
@@ -156,7 +159,7 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	 * @param graphicCommand Specific graphic command.
 	 */
 	@SuppressWarnings("rawtypes")
-	private void executeMethod(Graphics2D graph, GraphicCommand graphicCommand) {
+	protected void executeMethod(Graphics2D graph, GraphicCommand graphicCommand) {
 		double xScale = 1;
 		double yScale = 1;
 		Method method = null;
@@ -328,7 +331,6 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	 */
 	@Override
 	public DirectPrintManager manager() {
-		// TODO Auto-generated method stub
 		return null;
 	}
 	

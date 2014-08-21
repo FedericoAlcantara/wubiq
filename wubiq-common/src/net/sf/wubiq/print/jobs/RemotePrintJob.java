@@ -80,8 +80,8 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 * @see javax.print.DocPrintJob#addPrintJobAttributeListener(javax.print.event.PrintJobAttributeListener, javax.print.attribute.PrintJobAttributeSet)
 	 */
 	@Override
-	public void addPrintJobAttributeListener(PrintJobAttributeListener arg0,
-			PrintJobAttributeSet arg1) {
+	public void addPrintJobAttributeListener(PrintJobAttributeListener listener,
+			PrintJobAttributeSet attributeSet) {
 		throw new UnsupportedOperationException();
 	}
 
@@ -89,7 +89,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 * @see javax.print.DocPrintJob#addPrintJobListener(javax.print.event.PrintJobListener)
 	 */
 	@Override
-	public void addPrintJobListener(PrintJobListener arg0) {
+	public void addPrintJobListener(PrintJobListener listener) {
 		throw new UnsupportedOperationException();
 	}
 

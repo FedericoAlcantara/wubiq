@@ -15,7 +15,7 @@
 	<%
 		String userId=request.getParameter(WebKeys.SERVER_USER_ID);
 		String password=request.getParameter(WebKeys.SERVER_USER_PASSWORD);
-		if (ServerProperties.isValidUser(userId, password)) {
+		if (ServerProperties.INSTANCE.isValidUser(userId, password)) {
 			session.setAttribute(WebKeys.SERVER_USER_ID, userId);
 			response.sendRedirect("index.jsp");
 		} else {

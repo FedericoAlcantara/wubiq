@@ -12,6 +12,7 @@ import java.net.UnknownHostException;
 import net.sf.wubiq.enums.ServiceCommandType;
 import net.sf.wubiq.enums.ServiceReturnStatus;
 import net.sf.wubiq.utils.InstallerProperties;
+import net.sf.wubiq.utils.Is;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,51 +28,89 @@ public class WubiqLauncher implements Runnable {
 	private boolean stop = false;
 	private RunningClient runningClient;
 	private boolean keepRunning = false;
+	private String serviceName;
 	
-	
-	public static void start(String[] args) throws Exception {
-		LOG.info("Starting the Wubiq Client");
-		ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.START);
-		LOG.info(currentServiceStatus.getLabel());
-		
-	}
-	
-	public static void stop(String[] args) throws Exception {
-		LOG.info("Stopping the Wubiq Client");
-		ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.STOP);
+	/**
+	 * Starts the service.
+	 * @param args name of the service to start (optional).
+	 * @throws Exception Throws back any exception.
+	 */
+	public static void restart(String[] args) throws Exception {
+		StringBuffer message = new StringBuffer("Restarting the Wubiq Client");
+		String serviceName = "";
+		if (args.length >= 1) {
+			serviceName = args[0];
+		}
+		if (!Is.emptyString(serviceName)) {
+			message.append("-service:")
+				.append(serviceName);
+		}
+		LOG.info(message.toString());
+		ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.RESTART,
+				serviceName);
 		LOG.info(currentServiceStatus.getLabel());
 	}
 	
 	/**
-	 * Start up the fiscal printer device.
+	 * Stops the services
+	 * @param args Name of the service to be stopped (optional).
+	 * @throws Exception Throws back any exception.
+	 */
+	public static void stop(String[] args) throws Exception {
+		StringBuffer message = new StringBuffer("Stopping the Wubiq Client");
+		String serviceName = "";
+		if (args.length >= 1) {
+			serviceName = args[0];
+		}
+		if (!Is.emptyString(serviceName)) {
+			message.append("-service:")
+				.append(serviceName);
+		}
+		LOG.info(message.toString());
+		ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.STOP,
+				serviceName);
+		LOG.info(currentServiceStatus.getLabel());
+	}
+	
+	public WubiqLauncher(String serviceName) {
+		this.serviceName = serviceName;
+	}
+	
+	/**
+	 * Start up the wubiq service.
 	 * 
 	 * @param args Arguments.
 	 */
 	public static void main(String[] args) throws Exception {
 		if (args.length > 0) {
-			ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.STATUS);
+			String serviceName = "";
+			if (args.length > 1) {
+				serviceName = args[1].toLowerCase();
+			}
+			ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.STATUS, serviceName);
 			if (ServiceReturnStatus.NO_SERVICE.equals(currentServiceStatus) &&
 					!"stop".equalsIgnoreCase(args[0])) {
-				WubiqLauncher launcher = new WubiqLauncher();
+				WubiqLauncher launcher = new WubiqLauncher(serviceName);
 				Thread thread = new Thread(launcher, "WubiqLauncher");
 				thread.start();
 			} 
 			Thread.sleep(1000);
+
 			if ("start".equalsIgnoreCase(args[0])) {
 				if (ServiceReturnStatus.OKEY.equals(currentServiceStatus)) {
 					LOG.info("Wubiq service already running!");
 				} else {
-					start(new String[]{});
+					requestServiceCommand(ServiceCommandType.START, serviceName);
 				}
 			} else if ("stop".equalsIgnoreCase(args[0])) {
 				if (ServiceReturnStatus.OKEY.equals(currentServiceStatus)) {
-					stop(new String[]{});
+					stop(new String[]{serviceName});
 				} else {
 					LOG.info("Wubiq service already stopped");
 				}
 			} else if ("restart".equalsIgnoreCase(args[0])) {
 				LOG.info("Restarting the Wubiq service");
-				currentServiceStatus = requestServiceCommand(ServiceCommandType.RESTART);
+				currentServiceStatus = requestServiceCommand(ServiceCommandType.RESTART, serviceName);
 				LOG.info(currentServiceStatus.getLabel());
 			}
 		}
@@ -82,12 +121,13 @@ public class WubiqLauncher implements Runnable {
 	 * @param command Command to request.
 	 * @return Status returned of the command.
 	 */
-	private static ServiceReturnStatus requestServiceCommand(ServiceCommandType command) {
+	private static ServiceReturnStatus requestServiceCommand(ServiceCommandType command,
+			String serviceName) {
 		ServiceReturnStatus returnValue = ServiceReturnStatus.NO_SERVICE;
 		Socket socket = null;
 		PrintWriter out = null;
 		try {
-			socket = new Socket(InetAddress.getLocalHost(), InstallerProperties.INSTANCE.getInstallerPortAddress());
+			socket = new Socket(InetAddress.getLocalHost(), InstallerProperties.INSTANCE(serviceName).getInstallerPortAddress());
 			out = new PrintWriter(socket.getOutputStream(), true);
 			out.write(command.ordinal() + "\n");
 			out.flush();
@@ -106,7 +146,12 @@ public class WubiqLauncher implements Runnable {
 			}
 
 			try {
-				int serviceReturn = Integer.parseInt(inputLine);
+				int serviceReturn = -1;
+				try {
+					serviceReturn = Integer.parseInt(inputLine);
+				} catch (NumberFormatException e) {
+					serviceReturn = -1;
+				}
 				if (serviceReturn >= 0 &&
 						serviceReturn <= ServiceReturnStatus.values().length) {
 					returnValue = ServiceReturnStatus.values()[serviceReturn];
@@ -173,7 +218,7 @@ public class WubiqLauncher implements Runnable {
 		LOG.info("Wubiq client started");
 		ServerSocket serverSocket = null;
 		try {
-			serverSocket = new ServerSocket(InstallerProperties.INSTANCE.getInstallerPortAddress());
+			serverSocket = new ServerSocket(InstallerProperties.INSTANCE(serviceName).getInstallerPortAddress());
 			while (!stop) {
 				Socket clientSocket = null;
 				try {
@@ -276,5 +321,9 @@ public class WubiqLauncher implements Runnable {
 		if (keepRunning) {
 			startWubiqClient();
 		}
+	}
+	
+	public String getServiceName() {
+		return serviceName;
 	}
 }

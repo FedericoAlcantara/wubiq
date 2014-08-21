@@ -107,7 +107,7 @@ boolean logged =  !Is.emptyString(userId);
 				</td>
 			</tr>
 			<%if (!logged) {
-				if (!ServerProperties.getUsers().isEmpty()) {%>
+				if (!ServerProperties.INSTANCE.getUsers().isEmpty()) {%>
 			<tr>
 				<td colspan="3">
 						<form action="loginCheck.jsp" method="post" style="font-size: smaller;">

@@ -1,2 +1,3 @@
-cp ${installables.dir}/wubiq-installer.properties ${INSTALL_PATH}/bin
+cd ${INSTALL_PATH}/bin
+java -cp . -splash:splash.png net.sf.wubiq.clients.WubiqConfigurator
 exit 0

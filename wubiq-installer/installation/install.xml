@@ -11,7 +11,7 @@
         The meaning of the tags should be natural ...
     -->
     <info>
-        <appname>wubiq</appname>
+        <appname>Wubiq</appname>
         <authors>
             <author name="Federico Alcantara" email="falcantara@users.sf.net"/>
         </authors>
@@ -96,22 +96,15 @@
         <pack name="Installation Base" id="base" required = "yes" loose = "false" 
             hidden="false">
             <description>.</description>
-            <file src="./build/com" override="true"
-                targetdir="${INSTALL_PATH}/bin">
-            </file>
-            <file src="./build/jssc" override="true"
-                targetdir="${INSTALL_PATH}/bin">
-            </file>
-            <file src="./build/libs" override="true"
-                targetdir="${INSTALL_PATH}/bin">
-            </file>
-			<file src="./build/net" override="true"
+            <file src="./build/net" override="true"
                 targetdir="${INSTALL_PATH}/bin">
             </file>
             <file src="./build/org" override="true"
                 targetdir="${INSTALL_PATH}/bin">
             </file>
-
+            <file src="./wubiq-installer.properties" override="true"
+                targetdir="${INSTALL_PATH}/bin">
+            </file>
             <!-- Install windows service -->            
            	<singlefile src="./resources/wubiq.bmp" override="true"
                 target="${INSTALL_PATH}/icons/wubiq.bmp">
@@ -256,41 +249,9 @@
                 <os family="mac"/>
             </parsable>
            	
-            <!-- Run the configurator -->
+            <!-- Install service and run the configurator -->
             
-            <executable targetfile='"${INSTALL_PATH}/bin/post_install.bat"' keep="true" stage="postinstall">
-                <os family="windows" />
-            </executable>
-            
-            <executable targetfile="${INSTALL_PATH}/bin/post_install.sh" keep="true" stage="postinstall">
-                <os family="unix"/>
-                <os family="mac"/>
-            </executable>
-            
-            <executable targetfile='"${JAVA_HOME}/bin/javaw"'
-                keep="true" stage="postinstall">
-                <args>
-                    <arg value="-cp" />
-                    <arg value='"${INSTALL_PATH}/bin"' />
-                    <arg value="-splash:splash.png" />
-                    <arg value="net.sf.wubiq.clients.WubiqConfigurator" />
-                </args>
-                <os family="windows"/>
-            </executable>
-            
-            <executable targetfile="${JAVA_HOME}/bin/java"
-                keep="true" stage="postinstall">
-                <args>
-                    <arg value="-cp" />
-                    <arg value="${INSTALL_PATH}/bin" />
-                    <arg value="-splash:splash.png" />
-                    <arg value="net.sf.wubiq.clients.WubiqConfigurator" />
-                </args>
-                <os family="unix"/>
-                <os family="mac"/>
-            </executable>
-            
-           	<executable targetfile='"${INSTALL_PATH}/bin/install_service.bat"' stage="postinstall"
+            <executable targetfile='"${INSTALL_PATH}/bin/install_service.bat"' stage="postinstall"
                 keep="true">
                 <os family="windows" />
             </executable>
@@ -300,6 +261,15 @@
                 <os family="mac"/>
             </executable>
            	
+            <executable targetfile='"${INSTALL_PATH}/bin/post_install.bat"' keep="true" stage="postinstall">
+                <os family="windows" />
+            </executable>
+            
+            <executable targetfile="${INSTALL_PATH}/bin/post_install.sh" keep="true" stage="postinstall">
+                <os family="unix"/>
+                <os family="mac"/>
+            </executable>
+
 		</pack>
 		        
 	</packs>

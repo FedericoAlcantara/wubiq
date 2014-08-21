@@ -4,6 +4,10 @@
 package net.sf.wubiq.utils;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import net.sf.wubiq.common.ConfigurationKeys;
@@ -22,11 +26,31 @@ import org.apache.commons.logging.LogFactory;
  */
 public class InstallerProperties extends BaseProperties {
 	private static final Log LOG = LogFactory.getLog(InstallerProperties.class);
-	private static Properties properties;
+	private static final Map<String, InstallerProperties> instances =
+			new HashMap<String, InstallerProperties>();
+	private Properties properties;
+	private String serviceName;
 	
-	public static final InstallerProperties INSTANCE = new InstallerProperties();
+	private InstallerProperties(String serviceName){
+		this.serviceName = serviceName;
+	}
+
+	public static InstallerProperties INSTANCE() {
+		return INSTANCE("");
+	}
 	
-	private InstallerProperties(){
+	public static InstallerProperties INSTANCE(String serviceName) {
+		InstallerProperties returnValue = instances.get(serviceName);
+		if (returnValue == null) {
+			returnValue = new InstallerProperties(serviceName);
+			instances.put(serviceName.toLowerCase(), returnValue);
+		}
+		return returnValue;
+	}
+	
+	@Override
+	public String getUuid() {
+		return get(ConfigurationKeys.PROPERTY_UUID, "").trim();
 	}
 	
 	/**
@@ -93,31 +117,23 @@ public class InstallerProperties extends BaseProperties {
 		return returnValue;
 	}
 	
-	public String getClientParameters() {
-		StringBuffer returnValue = new StringBuffer("");
-		addParameter(returnValue, "connections", ConfigurationKeys.PROPERTY_CONNECTIONS);
+	public String[] getClientParameters() {
+		List<String> returnValue = new ArrayList<String>();
 		addParameter(returnValue, "app", ConfigurationKeys.PROPERTY_APPLICATION_NAME);
 		addParameter(returnValue, "servlet", ConfigurationKeys.PROPERTY_SERVLET_NAME);
-		if (returnValue.length() > 0) {
-			returnValue.append(' ');
-		}
-		returnValue
-				.append("--uuid ")
-				.append('"')
-				.append(getUuid())
-				.append('"');
+		returnValue.add("--uuid="
+				+ '"'
+				+ getUuid()
+				+ '"');
 		addParameter(returnValue, "groups", ConfigurationKeys.PROPERTY_GROUPS);
 		if (isDebugMode()) {
-			if (returnValue.length() > 0) {
-				returnValue.append(' ');
-			}
-			returnValue.append("--verbose");
+			returnValue.add("-v");
 			addParameter(returnValue, "logLevel", ConfigurationKeys.PROPERTY_DEBUG_LOG_LEVEL);
 		}
 		addParameter(returnValue, "interval", ConfigurationKeys.PROPERTY_POLL_INTERVAL);
 		addParameter(returnValue, "wait", ConfigurationKeys.PROPERTY_PRINT_JOB_WAIT);
 		
-		return returnValue.toString();
+		return returnValue.toArray(new String[]{});
 	}
 
 	/**
@@ -126,17 +142,15 @@ public class InstallerProperties extends BaseProperties {
 	 * @param parameterName Parameter name.
 	 * @param propertyName Name of the property in the properties file.
 	 */
-	private void addParameter(StringBuffer buffer, String parameterName, String propertyName) {
+	private void addParameter(List<String> buffer, String parameterName, String propertyName) {
 		String value = get(propertyName, "");
 		if (!Is.emptyString(value)) {
-			if (buffer.length() > 0) {
-				buffer.append(' ');
-			}
-			buffer.append("--")
-				.append(parameterName)
-				.append('"')
-				.append(value)
-				.append('"');
+			buffer.add("--"
+				+ parameterName
+				+ '='
+				+ '"'
+				+ value
+				+ '"');
 		}
 	}
 	
@@ -145,29 +159,26 @@ public class InstallerProperties extends BaseProperties {
 	 * Reads property file.
 	 * @return Properties according to the file contents.
 	 */
+	@Override
 	protected Properties getProperties() {
-		return getProperties(false);
-	}
-	
-	/**
-	 * Reads property file.
-	 * @param reload If true reloads the file.
-	 * @return Properties according to the file contents.
-	 */
-	public Properties getProperties(boolean reload) {
-		if (properties == null || reload) {
+		if (properties == null) {
 			properties = super.getProperties();
 		}
 		return properties;
 	}
-	
+		
 	/**
 	 * Reads property file.
 	 * @param reload If true reloads the file.
 	 * @return Properties according to file contents.
 	 */
 	public File getPropertiesFile() {
-		return super.getPropertiesFile(InstallerKeys.INSTALLER_PROPERTIES_FILE_NAME);
+		StringBuffer fileName = new StringBuffer(InstallerKeys.INSTALLER_PROPERTIES_FILE_NAME);
+		if (!Is.emptyString(serviceName)) {
+			fileName.append('-')
+					.append(serviceName);
+		}
+		return super.getPropertiesFile(fileName.toString());
 	}
 	
 	/**
@@ -198,6 +209,13 @@ public class InstallerProperties extends BaseProperties {
 	 */
 	protected void showPropertiesNotFound(){
 		LOG.info(InstallerBundle.getMessage("info.no_properties_found"));
+	}
+	
+	/**
+	 * Resets the properties
+	 */
+	public void resetProperties() {
+		properties = null;
 	}
 
 }

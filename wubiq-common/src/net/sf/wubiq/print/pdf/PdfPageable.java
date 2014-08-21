@@ -12,8 +12,6 @@ import java.io.IOException;
 
 import javax.print.PrintException;
 
-import net.sf.wubiq.print.jobs.PrinterJobManager;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -35,14 +33,17 @@ public class PdfPageable implements Pageable {
 	 * @param document Document to encapsulate.
 	 * @throws PrintException Thrown if errors on the printer job.
 	 */
-	@Deprecated
 	public PdfPageable(PDDocument document) throws PrintException {
 		this.document = document;
-		PrinterJob printerJob = PrinterJob.getPrinterJob();
-		if (printerJob instanceof PrinterJobManager) {
-			printerJob = ((PrinterJobManager)printerJob).getDefaultPrinterJob();
+		try {
+			pageable = new PDPageable(document);
+		} catch (IllegalArgumentException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
+		} catch (PrinterException e) {
+			LOG.error(e.getMessage(), e);
+			throw new PrintException(e);
 		}
-		createPageable(document, printerJob);
 	}
 
 	/**

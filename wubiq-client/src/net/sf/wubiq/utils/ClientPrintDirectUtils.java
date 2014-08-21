@@ -137,7 +137,7 @@ public final class ClientPrintDirectUtils {
 	}
 	
 	/**
-	 * Prints a pageable object.
+	 * Prints a printable object.
 	 * @param jobId Id of the object.
 	 * @param printService Print service.
 	 * @param printRequestAttributeSet Print request Attribute set.

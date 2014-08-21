@@ -1067,7 +1067,7 @@ public class PrintServiceUtils {
 	public static boolean supportDocFlavor(PrintService printService, DocFlavor docFlavor) {
 		boolean returnValue = false;
 		for (DocFlavor psDocFlavor : printService.getSupportedDocFlavors()) {
-			if (psDocFlavor.equals(docFlavor)) {
+			if (psDocFlavor.toString().equals(docFlavor.toString())) {
 				returnValue = true;
 				break;
 			}

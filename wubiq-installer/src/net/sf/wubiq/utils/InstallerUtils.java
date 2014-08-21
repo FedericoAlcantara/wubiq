@@ -74,19 +74,33 @@ public enum InstallerUtils {
 	 * @return True if the address has a valid format. False otherwise.
 	 */
 	public boolean validateAddress(String address) {
-		boolean returnValue = false;
-		if (!Is.emptyString(address)) {
-			try {
-				URL url = new URL(address);
-				String protocol = url.getProtocol();
-				String host = url.getHost();
-				if (!Is.emptyString(protocol) &&
-						!Is.emptyString(host)) {
-					returnValue = true;
-				}
-			} catch (MalformedURLException e) {
-				LOG.debug(e.getMessage());
+		boolean returnValue = true;
+		String message = invalidAddressMessage(address);
+		if (!Is.emptyString(message)) {
+			LOG.debug(message);
+			returnValue = false;
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Generates an invalid address localized message. If address is valid a blank message is returned instead.
+	 * @param address Address to be checked.
+	 * @return Message.
+	 */
+	public String invalidAddressMessage(String address) {
+		String returnValue = "";
+		try {
+			URL url = new URL(address);
+			String protocol = url.getProtocol();
+			String host = url.getHost();
+			if (!Is.emptyString(protocol) &&
+					!Is.emptyString(host)) {
+				returnValue = "";
 			}
+		} catch (MalformedURLException e) {
+			returnValue = InstallerBundle.getMessage("error.invalid_address",
+					address, e.getMessage());
 		}
 		return returnValue;
 	}
@@ -109,7 +123,6 @@ public enum InstallerUtils {
 		return cleanText(VALID_INTERNET_CHARACTERS, sentText).toLowerCase();
 	}
 	
-
 	/**
 	 * Cleans the text. Leading and trailing text are eliminated.
 	 * Spaces are replaced with _, other characters are deleted.

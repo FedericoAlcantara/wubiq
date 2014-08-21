@@ -623,10 +623,15 @@ public class RemotePrintServlet extends HttpServlet {
 		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), true);
 		InputStream input = null;
 		// If it is remote we must convert pdf to image and then scale it to print size
-		if (RemotePrintServiceLookup.isMobile(uuid)) {
-			input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
-		} else {
-			input = printJob.getPrintData();
+		try {
+			if (RemotePrintServiceLookup.isMobile(uuid)) {
+				input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
+			} else {
+				input = printJob.getPrintData();
+			}
+		} catch (Throwable e) {
+			LOG.fatal(e.getMessage(), e);
+			input = null;
 		}
 		if (input != null) {
 			respond("application/pdf", input, response);
@@ -670,6 +675,8 @@ public class RemotePrintServlet extends HttpServlet {
 
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
+		String printTestDirectPageable = request.getParameter(ParameterKeys.PRINT_TEST_DIRECT_PAGEABLE);
+		boolean printDirectPageable = "true".equalsIgnoreCase(printTestDirectPageable);
 		printServiceName = WebUtils.INSTANCE.decodeHtml(printServiceName);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
@@ -680,15 +687,14 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
-			if (((printService instanceof RemotePrintService) &&
-					((RemotePrintService)printService).isMobile())) {
+			if (!printDirectPageable) {
 				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
 				DocPrintJob printJob = printService.createPrintJob();
 				try {
 					printJob.print(doc, requestAttributes);
 				} catch (PrintException e) {
 					throw new ServletException(e);
-				}
+				}				
 			} else {
 				PrinterJobManager.initializePrinterJobManager();
 				PrinterJob printerJob = PrinterJob.getPrinterJob();
@@ -708,7 +714,6 @@ public class RemotePrintServlet extends HttpServlet {
 				} catch (PrintException e) {
 					throw new ServletException(e);
 				}
-		
 			}
 			respond(ServerWebUtils.INSTANCE.backResponse(request, ServerLabels.get("server.test_page_sent", printServiceName)), response);
 		} else {

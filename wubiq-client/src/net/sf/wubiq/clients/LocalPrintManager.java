@@ -94,10 +94,10 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION))  ||
 					!isDirectConnect) {
 				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
-				ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+				print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			} else {
 				directServer(jobId, DirectConnectCommand.START, parameter);
-				DirectPrintManager manager = new DirectPrintManager(
+				DirectPrintManager manager = createDirectPrintManager(
 						jobId,
 						printService,
 						printRequestAttributeSet,
@@ -136,6 +136,53 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		}
 	}
  	
+	/**
+	 * Performs the printing. This is a needed method for fulfilling tests requirements. 
+	 * @param jobId Identifying job id.
+	 * @param printService PrintService to print to.
+	 * @param printRequestAttributeSet Attributes to be set on the print service.
+	 * @param printJobAttributeSet Attributes for the print job.
+	 * @param docAttributeSet Attributes for the document.
+	 * @param docFlavor Document flavor.
+	 * @param printData Document as input stream to sent to the print service.
+	 * @throws IOException if service is not found and no default service.
+	 */
+	protected void print(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			DocFlavor docFlavor,
+			InputStream printData) throws IOException {
+		ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+	}
+	
+	/**
+	 * Creates a direct print manager.
+	 * @param jobId Id of the job.
+	 * @param printService PrintService to print to.
+	 * @param printRequestAttributeSet Attributes to be set on the print service.
+	 * @param printJobAttributeSet Attributes for the print job.
+	 * @param docAttributeSet Attributes for the document.
+	 * @param debugMode The state of the the debug mode.
+	 * @param debugLevel The debug Level.
+	 * @return an instance of a DirectPrintManager.
+	 */
+	protected DirectPrintManager createDirectPrintManager(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet,
+			DocAttributeSet docAttributeSet,
+			boolean debugMode,
+			int debugLevel) {
+		return new DirectPrintManager(
+				jobId,
+				printService,
+				printRequestAttributeSet,
+				printJobAttributeSet,
+				docAttributeSet,
+				isDebugMode(),
+				getDebugLevel());
+	}
+	
 	/**
 	 * Creates the print job poll string.
 	 * @param jobId Id of the print job to pull from the server.
@@ -214,7 +261,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		}
 	}
 
-	private Map<String, PrintService> getPrintServicesName() {
+	protected Map<String, PrintService> getPrintServicesName() {
 		if (printServicesName == null) {
 			printServicesName = new HashMap<String, PrintService>();
 		}
@@ -309,7 +356,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}
 			addConnectionsString(manager, manager.hostPortConnection(host, port));
 			addConnectionsString(manager, connectionsString);
-			Thread r = new Thread(manager);
+			Thread r = new Thread(manager, "LocalPrintManager");
 			r.start();
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());

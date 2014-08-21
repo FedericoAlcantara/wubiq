@@ -25,7 +25,7 @@ public class TestAdapter implements UISpecAdapter {
 
 			@Override
 			public void run() throws Exception {
-				WubiqConfigurator configurator = new WubiqConfigurator();
+				WubiqConfigurator configurator = new WubiqConfigurator("");
 				configurator.getFrame().setVisible(true);
 			}
 			

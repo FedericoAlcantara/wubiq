@@ -31,9 +31,11 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	private JavaRun javaRun;
 	private Process process;
 	private WubiqLauncher launcher;
+	private String serviceName;
 	
 	public RunningClient(WubiqLauncher launcher) {
 		this.launcher = launcher;
+		this.serviceName = launcher.getServiceName();
 	}
 	
 	/**
@@ -43,16 +45,16 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	public void run() {
 		try {
 			while (true) {
-				killClient();
 				if (stopClient) {
 					break;
 				}
 				try {
 					createJavaRun();
+					killClient();
 					runClient();
 				} catch (ConnectException e) {
 					try {
-						Thread.sleep(1000);
+						Thread.sleep(10000);
 					} catch (InterruptedException e1) {
 						doLog(e1.getMessage(), 0);
 					}
@@ -83,12 +85,12 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	 * @throws ConnectException
 	 */
 	private void createJavaRun() throws ConnectException {
+		InstallerProperties.INSTANCE(serviceName).resetProperties();
 		File wubiqClientJar = InstallerUtils.INSTANCE.wubiqClientFile();
 
 		javaRun = new JavaRun();
-		javaRun.setFixedParameters("-u", InstallerProperties.INSTANCE.getUuid(), 
-				InstallerProperties.INSTANCE.getClientParameters());
-		StringBuffer jvmParameters = new StringBuffer(InstallerProperties.INSTANCE.getJvmParameters());
+		javaRun.setFixedParameters(InstallerProperties.INSTANCE(serviceName).getClientParameters());
+		StringBuffer jvmParameters = new StringBuffer(InstallerProperties.INSTANCE(serviceName).getJvmParameters());
 		if (!jvmParameters.toString().contains("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=")) {
 			jvmParameters
 					.append(' ')
@@ -128,14 +130,21 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 				host = new URL(getPreferredURL(), "/");
 				javaRun.setParameters("-k", "-c", host.toString());
 				wubiqClientRun(false, javaRun.command());
+				try {
+					Thread.sleep(10000);
+				} catch (InterruptedException e) {
+					doLog(e.getMessage(), 0);
+				}
 			} catch (MalformedURLException e) {
 				doLog(e.getMessage(), 0);
 				throw new RuntimeException(e);
+			} catch (ConnectException e) {
+				doLog(e.getMessage(), 0);
 			}
 		}
 	}
 	
-	private void runClient() {
+	private void runClient() throws ConnectException {
 		if (javaRun != null &&
 				getPreferredURL() != null) {
 			// run current client;
@@ -164,23 +173,23 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	
 	@Override
 	public String getApplicationName() {
-		return InstallerProperties.INSTANCE.getApplicationName();
+		return InstallerProperties.INSTANCE(serviceName).getApplicationName();
 	}
 	
 	@Override
 	public String getServletName() {
-		return InstallerProperties.INSTANCE.getServletName();
+		return InstallerProperties.INSTANCE(serviceName).getServletName();
 	}
 	
 	@Override
 	public String getUuid() {
-		return InstallerProperties.INSTANCE.getUuid();
+		return InstallerProperties.INSTANCE(serviceName).getUuid();
 	}
 	
 	@Override
 	public Set<String> getConnections() {
 		Set<String> returnValue = new HashSet<String>();
-		for (String connection : InstallerProperties.INSTANCE.getConnections().split("[,;]")) {
+		for (String connection : InstallerProperties.INSTANCE(serviceName).getConnections().split("[,;]")) {
 			if (!"".equals(connection)) {
 				returnValue.add(connection);
 			}
@@ -198,18 +207,25 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	 * @param sentParameters Sent parameters.
 	 * @return Integer value with the command output.
 	 */
-	private int wubiqClientRun(boolean setProcess, String... command) {
+	private int wubiqClientRun(boolean setProcess, String... command) throws ConnectException {
 		int returnValue = 0;
 		ProcessBuilder processBuilder = new ProcessBuilder();
 		processBuilder.command(command);
 		Process currentProcess = null;
 		try {
 			currentProcess = processBuilder.start();
-			Thread stdOut = new Thread(new StreamHandler(currentProcess.getInputStream()), "StdOut");
-			Thread stdErr = new Thread(new StreamHandler(currentProcess.getErrorStream()), "StdErr");
+			StreamHandler stdOutHandler = new StreamHandler(currentProcess.getInputStream());
+			StreamHandler stdErrorHandler = new StreamHandler(currentProcess.getErrorStream());
+			Thread stdOut = new Thread(stdOutHandler, "StdOut");
+			Thread stdErr = new Thread(stdErrorHandler, "StdErr");
 			stdOut.start();
 			stdErr.start();
 			returnValue = currentProcess.waitFor();
+			if (returnValue != 0) {
+				throw new ConnectException(stdErrorHandler.getMessages());
+			}
+		} catch (ConnectException e) {
+			throw e;
 		} catch (Exception e) {
 			doLog(e.getMessage(), 0);
 			returnValue = 1;
@@ -231,17 +247,24 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	 */
 	private class StreamHandler implements Runnable {
 		private InputStream stream;
+		private StringBuffer messages;
 		
 		private StreamHandler(InputStream stream) {
 			this.stream = stream;
 		}
+		
 		public void run() {
 			BufferedReader reader = null;
 			String line = null;
+			messages = new StringBuffer("");
 			try {
 				reader = new BufferedReader(new InputStreamReader(stream));
 				while ((line = reader.readLine()) != null) {
 					doLog(line, 0);
+					if (messages.length() > 0) {
+						messages.append('\n');
+					}
+					messages.append(line);
 					if (stopClient) {
 						break;
 					}
@@ -258,5 +281,13 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 			}
 
 		}
+
+		/**
+		 * @return the messages
+		 */
+		public String getMessages() {
+			return messages.toString();
+		}
+
 	}
 }

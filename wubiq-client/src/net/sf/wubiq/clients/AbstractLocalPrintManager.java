@@ -62,7 +62,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private boolean cancelManager = false;
 	private Set<String> connections;
 	private Set<URL> urls;
-	private URL preferredURL;
+	protected URL preferredURL;
 	private boolean connected = false;
 	
 			

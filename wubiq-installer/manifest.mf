@@ -1,3 +1,2 @@
 Manifest-Version: 1.0
-Main-class: net.sf.wubiq.clients.WubiqConfigurator
-SplashScreen-Image: splash.png
+Main-class: net.sf.wubiq.utils.InstallerSetupUtils

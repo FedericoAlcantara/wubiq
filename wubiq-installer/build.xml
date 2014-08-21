@@ -3,53 +3,101 @@
 	<property name="build" value="${basedir}/build" />
     <property name="bin" value="${basedir}/bin"/>
 	<property name="lib" value="${basedir}/lib"/>
-	<property name="name.jar" value="wubiq" />
-	<property name="doc.dir" value="${basedir}/lib" />
-
-	<property file="izpack-settings.properties" />
+	<property name="common.dir" value = "${basedir}/../wubiq-common" /> 
+	<property name="common.bin" value="${common.dir}/bin" />
+	<property name="common.lib" value="${common.dir}/lib" />
+	<property name="client.dir" value = "${basedir}/../wubiq-client" /> 
+	<property name="client.bin" value="${client.dir}/bin" />
+	<property name="client.lib" value="${client.dir}/lib" />
 	<property name="install.dir" value="${basedir}/installation" />
+	<property name="izpack.dir" value="${install.dir}/IzPack" />
     <property name="resources" value="${install.dir}/resources" />
-	
+	<property name="name.jar" value="wubiq-installer" />
+
 	<target name="clean">
-		<delete dir="${build}" failonerror="false" />
-		<mkdir dir="${build}"/>
-		<copy todir="${build}">
+		<delete dir="${dist.dir}" failonerror="false" />
+		<delete dir="${install.dir}/build" />
+		<mkdir dir="${install.dir}/build" />
+		<mkdir dir="${dist.dir}" />
+		<copy todir="${install.dir}/build">
 			<fileset dir="${bin}">
 				<include name="**/*" />
 			</fileset>
 		</copy>
-		<unjar dest="${build}">
+		<copy todir="${install.dir}/build">
+			<fileset dir="${common.bin}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<copy todir="${install.dir}/build">
+			<fileset dir="${client.bin}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<unjar dest="${install.dir}/build">
 			<fileset dir="${lib}">
 				<include name="**/*" />
 			</fileset>
 		</unjar>
-		<delete dir="${build}/META-INF"/>
+		<unjar dest="${install.dir}/build">
+			<fileset dir="${common.lib}">
+				<include name="**/*" />
+			</fileset>
+		</unjar>
+		<unjar dest="${install.dir}/build">
+			<fileset dir="${client.lib}">
+				<include name="**/*" />
+			</fileset>
+		</unjar>
+		<delete dir="${install.dir}/build/META-INF"/>
+		<delete dir="${install.dir}/build/org/uispec4j" />
+
 		<delete>
-			<fileset dir="${build}">
+			<fileset dir="${install.dir}/build">
 				<include name="overview.html" />
 			</fileset>
 		</delete>
-		<delete dir="${install.dir}/build" />
-		<mkdir dir="${install.dir}/build" />
-		<copy todir="${install.dir}/build" >
-			<fileset dir="${build}">
-				<include name="**/*" />
-			</fileset>
-		</copy>
 		<delete dir="${install.dir}/build/tests" />
+		<delete dir="${install.dir}/build/org/uispec4j" />
 		
 		<delete>
 			<fileset dir="${install.dir}/build">
 				<include name="wubiq-installer*.properties" />
 				<include name="tests-build.xml" />
 				<include name="tests*.properties" />
+				<include name="empty.txt" />
 			</fileset>
 		</delete>
+		<delete file="${install.dir}/wubiq-installer.properties" failonerror="false" />
+		<touch file="${install.dir}/wubiq-installer.properties"/>
 	</target>
 	
-	<target name="distribute" description="Distribute the application" depends="clean">
+	<target name="distribute" description="Distribute the application">
+		<delete dir="${build}" failonerror="false" />
+		<mkdir dir="${build}" />
+		<mkdir dir="${build}/installation" />
+		
+		<copy todir="${build}">
+			<fileset dir="${bin}">
+				<include name="net/sf/wubiq/utils/InstallerSetupUtils*.*" />
+			</fileset>
+			<fileset dir="${common.bin}">
+				<include name="net/sf/wubiq/utils/IOUtils.*" />
+			</fileset>
+		</copy>
+		
+		<copy todir="${build}/installation">
+			<fileset dir="${install.dir}" />
+		</copy>
+		
+		<unjar dest="${build}">
+			<fileset dir="${lib}">
+				<include name="commons-logging*.jar" />
+			</fileset>
+		</unjar>
+
 		<jar jarfile="${dist.dir}/${name.jar}.jar" basedir="${build}" 
-			manifest="${basedir}/manifest.mf" manifestencoding="UTF-8"/>
+				manifest="${basedir}/manifest.mf" manifestencoding="UTF-8"/>
 	</target>
 	
 	
@@ -64,13 +112,14 @@
         classpathref="izpack.classpath"
     />
 	
-	<target name="make_install" depends="distribute">
+	<target name="make_install" depends="clean">
 	    <IzPack input="${install.dir}/install.xml"
-	        output="${dist.dir}/fiscalprinters-setup.jar"
+	        output="${dist.dir}/wubiq-setup.jar"
 	        installerType="standard"
 	        basedir="${install.dir}"
 	        IzPackDir="${izpack.dir}" />
 		<chmod file="${dist.dir}/wubiq-setup.jar" perm="ugo+rx" />
+		<antcall target="distribute" />
 	</target>
-	
+
 </project>

@@ -31,7 +31,7 @@ public class JavaRun {
 		if (jvmParameters != null) {
 			for (String jvmParameter : jvmParameters) {
 				if (!Is.emptyString(jvmParameter)) {
-					returnValue.add(jvmParameter);
+					returnValue.add(jvmParameter.trim());
 				}
 			}
 		}
@@ -40,21 +40,21 @@ public class JavaRun {
 			returnValue.add(jarFile);
 			validJava = true;
 		} else if (!Is.emptyString(mainName)){
-			returnValue.add(mainName);
+			returnValue.add(mainName.trim());
 			validJava = true;
 		}
 		if (validJava) {
 			if (fixedParameters != null) {
 				for (String fixedParameter : fixedParameters) {
 					if (!Is.emptyString(fixedParameter)) {
-						returnValue.add(fixedParameter);
+						returnValue.add(fixedParameter.trim());
 					}
 				}
 			}
 			if (parameters != null) {
 				for (String parameter : parameters) {
 					if (!Is.emptyString(parameter)) {
-						returnValue.add(parameter);
+						returnValue.add(parameter.trim());
 					}
 				}
 			}

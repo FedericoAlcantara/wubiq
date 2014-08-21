@@ -78,7 +78,7 @@ public final class InstallerBundle {
 	 */
 	private static ResourceBundle getMessagesBundle() {
 		if (messagesBundle == null) {
-			messagesBundle = ResourceBundle.getBundle("installer_messages");
+			messagesBundle = ResourceBundle.getBundle("net.sf.wubiq.i18n.installer_messages");
 		}
 		return messagesBundle;
 	}
@@ -88,7 +88,7 @@ public final class InstallerBundle {
 	 */
 	private static ResourceBundle getLabelsBundle() {
 		if (labelsBundle == null) {
-			labelsBundle = ResourceBundle.getBundle("installer_labels");
+			labelsBundle = ResourceBundle.getBundle("net.sf.wubiq.i18n.installer_labels");
 		}
 		return labelsBundle;
 	}

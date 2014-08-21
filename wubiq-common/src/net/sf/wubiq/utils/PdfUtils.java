@@ -105,10 +105,7 @@ public enum PdfUtils {
 	 * Pdf to pageable.
 	 * @param printDocument Converts a pdf into a pageable.
 	 * @return A pageable object. Null if an error occurs.
-	 * @deprecated Use pdfToPageable(InputStream, PrinterJob) or pdfToPageable(InputStream, PrintRequestAttributeSet)
-	 * as these create a properly formatted pdf. 
 	 */
-	@Deprecated
 	public Pageable pdfToPageable(InputStream printDocument) throws PrintException {
 		Pageable pageable = null;
 		try {
@@ -169,7 +166,7 @@ public enum PdfUtils {
 		}
 		return pageable;
 	}
-	
+		
 	/**
 	 * Takes care of closing a PDDocument.
 	 * @param pageable Pageable (probably a PDDocument) to be closed.
