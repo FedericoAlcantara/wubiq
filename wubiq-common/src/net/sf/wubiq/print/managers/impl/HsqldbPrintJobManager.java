@@ -254,8 +254,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 	}
 
 	/**
-	 * Returns a connection to 
-	 * @return
+	 * Returns a connection to the underlying database server. 
 	 * @throws SQLException
 	 */
 	private Connection getConnection() throws SQLException {

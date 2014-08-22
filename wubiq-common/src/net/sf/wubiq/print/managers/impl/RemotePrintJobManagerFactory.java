@@ -73,8 +73,8 @@ public final class RemotePrintJobManagerFactory {
 	}
 	
 	/**
-	 * Gets a singleton of a direct connect print job manager
-	 * @return
+	 * Gets a singleton of a direct connect print job manager.
+	 * @return Job manager for direct connect printing.
 	 */
 	private static IDirectConnectPrintJobManager getDirectConnectPrintJobManager() {
 		if (directInstance == null) {

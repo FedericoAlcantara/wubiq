@@ -90,7 +90,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	/**
 	 * Returns the direct connector queue manager.
 	 * @param jobId Id of the associated job.
-	 * @return
+	 * @return Queue handler for print jobs.
 	 */
 	private synchronized DirectConnectorQueue associatedQueue(long jobId) {
 		String queueId = associatedQueue.get(jobId);

@@ -41,10 +41,7 @@ public enum InstallerUtils {
 	
 	/**
 	 * Wubiq client version.
-	 * @param wubiqClientJar Jar location of the wubiq client.
 	 * @return String containing the client version or blank if client is too old or does not exists.
-	 * @throws IOException
-	 * @throws InterruptedException
 	 */
 	public String wubiqClientVersion() {
 		String returnValue = "";

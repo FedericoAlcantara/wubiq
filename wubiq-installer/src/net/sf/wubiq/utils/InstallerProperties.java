@@ -169,7 +169,6 @@ public class InstallerProperties extends BaseProperties {
 		
 	/**
 	 * Reads property file.
-	 * @param reload If true reloads the file.
 	 * @return Properties according to file contents.
 	 */
 	public File getPropertiesFile() {

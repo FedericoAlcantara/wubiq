@@ -38,7 +38,6 @@ public enum PrintClientUtils {
 	 * @param input Input data as a stream.
 	 * @param resources Application resources.
 	 * @param preferences Shared preferences of the application.
-	 * @param printServicesName Available bluetooth devices.
 	 * @return True if print job is processed.
 	 */
 	public boolean print(Context context, String deviceAddress, InputStream input, Resources resources, 

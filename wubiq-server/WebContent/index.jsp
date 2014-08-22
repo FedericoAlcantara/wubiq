@@ -93,12 +93,9 @@ boolean logged =  !Is.emptyString(userId);
 					</form>
 				</td>
 				<td>
-					<script>
-						var dir = location.href.substring(0, location.href.lastIndexOf('/') + 1);
-					    var url = dir + "wubiq-client-webstart.jsp";
-					    deployJava.launchButtonPNG = "<%=ServerLabels.get("server.jws_image") %>";
-					    deployJava.createWebStartLaunchButton(url, '1.6.0');	
-					</script>
+					<form action="wubiq-setup.jar">
+						<input type="Submit" value ='<%=ServerLabels.get("server.download_wubiq_client")%>'/>
+					</form>
 				</td>
 				<td>
 					<form action="wubiq-client.jar">

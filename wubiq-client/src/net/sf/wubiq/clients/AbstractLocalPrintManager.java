@@ -235,8 +235,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	
 	/**
 	 * Asks the server if this instance of the client should be closed. This will allow for remote cancellation of client.
-	 * (Not yet implemented).
-	 * @return
+	 * @return True if the server responds that this client is already killed.
 	 */
 	protected boolean isKilled() {
 		boolean returnValue = isCancelManager();
@@ -255,8 +254,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	
 	/**
 	 * Asks the server if this instance of the client should be closed. This will allow for remote cancellation of client.
-	 * (Not yet implemented).
-	 * @return
+	 * @return True if the server responds that this client is active.
 	 */
 	protected boolean isActive() {
 		boolean returnValue = false;
@@ -273,7 +271,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 
 	/**
 	 * Asks the server if this instance of the client needs to be refreshed with the list of print services.
-	 * @return
+	 * @return True if the printer information needs to be synchronized with the server.
 	 */
 	protected boolean needsRefresh() {
 		boolean returnValue = true;

@@ -18,12 +18,11 @@ public abstract class BaseWubiqDevice extends Thread {
 	
 	/**
 	 * Outputs to a star micronics portable printer.
-	 * @param deviceInfo Device information
+	 * @param mobileDeviceInfo Device information
 	 * @param deviceAddress Device address (mac address)
 	 * @param printData Data to print
 	 * @param printDelay Delays to apply between data chunks
 	 * @param printPause Pause after print job is finished.
-	 * @return true if everything is okey.
 	 */
 	public void initialize(MobileDeviceInfo mobileDeviceInfo, String deviceAddress,
 			byte[] printData, int printDelay, int printPause) {
