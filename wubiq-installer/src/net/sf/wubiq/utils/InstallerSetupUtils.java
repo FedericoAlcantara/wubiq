@@ -4,8 +4,6 @@
 package net.sf.wubiq.utils;
 
 import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -14,6 +12,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.util.Date;
@@ -48,12 +47,20 @@ public class InstallerSetupUtils {
 		}
 		File outputFile = new File("output.jar");
 		LOG.info(outputFile.getAbsolutePath());
-		IOUtils.INSTANCE.copy(generateSetup(connection, group), new FileOutputStream(outputFile));
+		generateSetup(connection, group, new FileOutputStream(outputFile));
 	}
 	
-	public static InputStream generateSetup(String connection, String group) throws IOException {
+	/**
+	 * Generates setup.
+	 * @param connections Connections to connect to.
+	 * @param group Associated group.
+	 * @param output Where the output is going to be output.
+	 * @throws IOException
+	 */
+	public static void generateSetup(String connections, String group, 
+			OutputStream output) throws IOException {
 		InstallerSetupUtils u = new InstallerSetupUtils();
-		return u.makeSetup(connection, group);
+		u.makeSetup(connections, group, output);
 	}
 	
 	/**
@@ -64,7 +71,7 @@ public class InstallerSetupUtils {
 	 * @throws IOException Thrown on any compilation error.
 	 */
 	@SuppressWarnings("unchecked")
-	private InputStream makeSetup(String connection, String group) throws IOException {
+	private void makeSetup(String connection, String group, OutputStream output) throws IOException {
 		File makeFolder = File.createTempFile("w-make", ""); // make folder
 		File tempFolder = null;
 		try {
@@ -135,11 +142,10 @@ public class InstallerSetupUtils {
 					"-o", setupName,
 					"-k", "standard"};
 			makeSetup(makeFolder, command);
-			ByteArrayOutputStream output = new ByteArrayOutputStream();
 			IOUtils.INSTANCE.copy(new FileInputStream(
 					makeFolder.getAbsolutePath() + File.separator + setupName), output);
 			output.flush();
-			return new ByteArrayInputStream(output.toByteArray());
+			output.close();
 		} finally {
 			if (makeFolder != null) {
 				deleteDir(makeFolder);
