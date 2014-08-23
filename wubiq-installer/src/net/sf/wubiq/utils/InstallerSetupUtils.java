@@ -64,6 +64,14 @@ public class InstallerSetupUtils {
 	}
 	
 	/**
+	 * The current version of wubiq.
+	 * @return The current version of wubiq.
+	 */
+	public static String getVersion() {
+		return Labels.VERSION;
+	}
+	
+	/**
 	 * Generates a setup based on the connection and group.
 	 * @param connection Connection to associate the setup with.
 	 * @param group Associated group.
@@ -74,6 +82,7 @@ public class InstallerSetupUtils {
 	private void makeSetup(String connection, String group, OutputStream output) throws IOException {
 		File makeFolder = File.createTempFile("w-make", ""); // make folder
 		File tempFolder = null;
+		boolean preventConfigurationRun = false;
 		try {
 			String setupName = "wubiq-setup.jar";
 			makeFolder.mkdirs();
@@ -82,54 +91,61 @@ public class InstallerSetupUtils {
 			
 			LOG.info("Generating:" + makeFolder.getAbsolutePath());
 			
-			createPropertyFile(makeFolder, connection, group);
+			preventConfigurationRun = createPropertyFile(makeFolder, connection, group);
 			
-			File currentFolder = new File("./installation");
-			if (!currentFolder.exists()) { // Might be a jar
-				URL folderUrl = this.getClass().getResource("/installation");
-				if (folderUrl != null) {
-					File folder = new File(folderUrl.getFile());
-					folder = folder.getParentFile();
-					if (folder.getName().endsWith("!")) { // it is a jar file let's unjar it
-						tempFolder = File.createTempFile("w-unjarred", "");
-						tempFolder.mkdirs();
-						tempFolder.delete();
-						tempFolder.mkdirs();
-						String tempFolderDest = tempFolder.getAbsolutePath();
-						String jarFileName = folder.getName().substring(0, folder.getName().lastIndexOf('!'));
-						URL jarFileURL = new URL(folder.getParentFile().getPath() + File.separator + jarFileName);
-						
-						File jarFile = new File(jarFileURL.getFile());
-						ZipFile jar = null;
-						try {
-							jar = new ZipFile(jarFile);
-							Enumeration<ZipEntry> entries = (Enumeration<ZipEntry>) jar.entries();
-							// Create folders
-							if (entries != null) {
-								while (entries.hasMoreElements()) {
-									ZipEntry entry = entries.nextElement();
-									if (entry.isDirectory()) {
-										new File(tempFolderDest + File.separator + entry.getName()).mkdirs();
-									}
+			File currentFolder = null;
+			URL folderUrl = this.getClass().getResource("/installation");
+			if (folderUrl != null) {
+				File folder = new File(folderUrl.getFile());
+				folder = folder.getParentFile();
+				if (folder.getName().endsWith("!")) { // it is a jar file let's unjar it
+					tempFolder = File.createTempFile("w-unjarred", "");
+					tempFolder.mkdirs();
+					tempFolder.delete();
+					tempFolder.mkdirs();
+					String tempFolderDest = tempFolder.getAbsolutePath();
+					String jarFileName = folder.getName().substring(0, folder.getName().lastIndexOf('!'));
+					URL jarFileURL = new URL(folder.getParentFile().getPath() + File.separator + jarFileName);
+					
+					File jarFile = new File(jarFileURL.getFile());
+					ZipFile jar = null;
+					try {
+						jar = new ZipFile(jarFile);
+						Enumeration<ZipEntry> entries = (Enumeration<ZipEntry>) jar.entries();
+						// Create folders
+						if (entries != null) {
+							while (entries.hasMoreElements()) {
+								ZipEntry entry = entries.nextElement();
+								if (entry.isDirectory()) {
+									new File(tempFolderDest + File.separator + entry.getName()).mkdirs();
 								}
-								entries =  (Enumeration<ZipEntry>) jar.entries();
-								while (entries.hasMoreElements()) {
-									ZipEntry entry = entries.nextElement();
-									if (!entry.isDirectory()) {
-										IOUtils.INSTANCE.copy(jar.getInputStream(entry), new FileOutputStream(tempFolderDest + File.separator + entry.getName()));
-									}
+							}
+							entries =  (Enumeration<ZipEntry>) jar.entries();
+							while (entries.hasMoreElements()) {
+								ZipEntry entry = entries.nextElement();
+								if (!entry.isDirectory()) {
+									IOUtils.INSTANCE.copy(jar.getInputStream(entry), new FileOutputStream(tempFolderDest + File.separator + entry.getName()));
 								}
-								currentFolder = new File(tempFolder.getAbsolutePath() + File.separator + "installation");
 							}
-						} finally {
-							if (jar != null) {
-								jar.close();
-							}
+							currentFolder = new File(tempFolder.getAbsolutePath() + File.separator + "installation");
+						}
+					} finally {
+						if (jar != null) {
+							jar.close();
 						}
 					}
 				}
 			}
+			if (currentFolder == null) {
+				currentFolder = new File ("./installation");
+			}
 			copyFiles(currentFolder, makeFolder);
+			
+			if (preventConfigurationRun) {
+				// Prevents the launch of the configurator
+				cleanFile(makeFolder, "resources/post_install.bat");
+				cleanFile(makeFolder, "resources/post_install.sh");
+			}
 			
 			String izpackHome = makeFolder.getAbsolutePath() + File.separator + "IzPack";
 			String[]command = new String[]{
@@ -158,17 +174,18 @@ public class InstallerSetupUtils {
 	
 	/**
 	 * Creates a property file named wubiq-installer.jar.
-	 * @param installationFolder Installation folder.
+	 * @param makeFolder Installation folder.
 	 * @param connection Connection to associate with.
 	 * @param group Group Associated group.
 	 * @throws IOException
 	 */
-	private void createPropertyFile(File installationFolder, String connection, String group) 
+	private boolean createPropertyFile(File makeFolder, String connection, String group) 
 				throws IOException {
+		boolean returnValue = false;
 		// Creates the property file
 		if ((connection != null && !connection.equals("")) ||
 				(group != null && !group.equals(""))) {
-			File propertyFile = new File(installationFolder.getAbsolutePath() + File.separator + "wubiq-installer.properties");
+			File propertyFile = new File(makeFolder.getAbsolutePath() + File.separator + "wubiq-installer.properties");
 			PrintWriter writer = null;
 			try {
 				writer = new PrintWriter(new FileWriter(propertyFile));
@@ -185,10 +202,10 @@ public class InstallerSetupUtils {
 					writer.close();
 				}
 			}
-			// Prevents the launch of the configurator
-			cleanFile(installationFolder, "resources/post_install.bat");
-			cleanFile(installationFolder, "resources/post_install.sh");
-		} 
+		} else {
+			returnValue = true;
+		}
+		return returnValue;
 	}
 	
 	/**

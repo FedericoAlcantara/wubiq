@@ -51,6 +51,8 @@ public class PdfPrinterJob extends PrinterJob {
 			
 		} else {
 			paper = new Paper();
+			paper.setSize(printableArea.getWidth(MediaPrintableArea.INCH) * 72,
+					printableArea.getHeight(MediaPrintableArea.INCH) * 72);
 			paper.setImageableArea(printableArea.getX(MediaPrintableArea.INCH) * 72,
 					printableArea.getY(MediaPrintableArea.INCH) * 72,
 					printableArea.getWidth(MediaPrintableArea.INCH) * 72,

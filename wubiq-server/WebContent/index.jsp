@@ -1,39 +1,26 @@
-<%@page import="net.sf.wubiq.utils.WebUtils"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
-<%@ page import="net.sf.wubiq.common.WebKeys"%>
-<%@ page import="net.sf.wubiq.utils.Is"%>
-<%@ page import="net.sf.wubiq.utils.ServerProperties"%>
-<%@ page import="net.sf.wubiq.print.jobs.RemotePrintJobStatus"%>
-<%@ page import="net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory"%>
-<%@ page import="net.sf.wubiq.print.managers.IRemotePrintJobManager"%>
-
-<%@ page import="java.util.Collection" %>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Collection" %>
 
 <%@ page import="javax.print.PrintService" %>    
 
 <%@ page import="net.sf.wubiq.common.CommandKeys" %>
 <%@ page import="net.sf.wubiq.common.ParameterKeys" %>
+<%@ page import="net.sf.wubiq.common.WebKeys"%>
 <%@ page import="net.sf.wubiq.data.RemoteClient" %>
+<%@ page import="net.sf.wubiq.print.jobs.RemotePrintJobStatus"%>
+<%@ page import="net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory"%>
+<%@ page import="net.sf.wubiq.print.managers.IRemotePrintJobManager"%>
 <%@ page import="net.sf.wubiq.print.services.RemotePrintService" %> 
 <%@ page import="net.sf.wubiq.remote.RemoteClientManager" %>
+<%@ page import="net.sf.wubiq.utils.Is"%>
+<%@ page import="net.sf.wubiq.utils.Labels" %>
 <%@ page import="net.sf.wubiq.utils.PrintServiceUtils" %>    
 <%@ page import="net.sf.wubiq.utils.ServerLabels" %>
-<%@ page import="net.sf.wubiq.utils.Labels" %>
+<%@ page import="net.sf.wubiq.utils.ServerProperties"%>
+<%@ page import="net.sf.wubiq.utils.WebUtils"%>
 
-<jsp:useBean id="jspUtils" class="net.sf.wubiq.servlets.JspUtils" scope="request"/>
-<script src="js/jquery.js"></script>
-<script src="js/deployJava.js"></script>
-<script>
-	function runServerCommand(url) {
-		$.get(url, function(data) {
-			$("#output").html($(data).children());
-		});
-		alert(url);
-		location.reload(true);
-	};
-</script>
 <%! 
 	private Collection<String[]> getPrintServices(String uuid) {
 		Collection<String[]> returnValue = new ArrayList<String[]>();
@@ -79,6 +66,16 @@ boolean logged =  !Is.emptyString(userId);
 		<meta http-equiv="Content-Type" content="text/html; charset=ISO-8859-1">
 		<link rel="stylesheet" type="text/css" href="css/wubiq.css" />
 		<title>Wubiq</title>
+		<script src="js/jquery.js"></script>
+		<script src="js/deployJava.js"></script>
+		<script>
+			window.onload=function() {
+				var div = document.getElementById("wubiq-setup-hidden");
+				var a = div.getElementsByTagName("a")[0];
+				var setup = document.getElementById("wubiq-setup-action");
+				setup.action = a.href;
+			}
+		</script>
 	</head>
 	<body>
 	<div align="center">
@@ -93,8 +90,14 @@ boolean logged =  !Is.emptyString(userId);
 					</form>
 				</td>
 				<td>
-					<form action="wubiq-setup.jar">
-						<input type="Submit" value ='<%=ServerLabels.get("server.download_wubiq_client")%>'/>
+					<div id="wubiq-setup-hidden" style="display:none">
+						<script>
+						    var url = "/wubiq-server/wubiq-setup.do";
+						    deployJava.createWebStartLaunchButton(url, '1.6.0');
+						</script>
+					</div>
+					<form id="wubiq-setup-action" action="">
+						<input type="Submit" value ='<%=ServerLabels.get("server.download_setup")%>'/>
 					</form>
 				</td>
 				<td>
