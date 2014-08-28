@@ -117,7 +117,7 @@
 	<target name="sign-setup">
 		<signjar jar="${dist.dir}/wubiq-setup.jar" alias="wubiq-setup" 
 			keystore="${keystore}" storepass="${storepass}" keypass="${keypass}"
-			verbose="true">
+			verbose="true" >
 		</signjar>
 	</target>
 	
@@ -127,8 +127,9 @@
 	        installerType="standard"
 	        basedir="${install.dir}"
 	        IzPackDir="${izpack.dir}" />
-		<antcall target="sign-setup" />
 		<chmod file="${dist.dir}/wubiq-setup.jar" perm="ugo+rx" />
+		<copy file="${dist.dir}/wubiq-setup.jar" tofile="${dist.dir}/wubiq-setup-unsigned.jar" />
+	    <antcall target="sign-setup" />
 		<antcall target="distribute" />
 	</target>
 

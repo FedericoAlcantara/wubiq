@@ -82,7 +82,6 @@ public class InstallerSetupUtils {
 	private void makeSetup(String connection, String group, OutputStream output) throws IOException {
 		File makeFolder = File.createTempFile("w-make", ""); // make folder
 		File tempFolder = null;
-		boolean preventConfigurationRun = false;
 		try {
 			String setupName = "wubiq-setup.jar";
 			makeFolder.mkdirs();
@@ -90,9 +89,7 @@ public class InstallerSetupUtils {
 			makeFolder.mkdirs();
 			
 			LOG.info("Generating:" + makeFolder.getAbsolutePath());
-			
-			preventConfigurationRun = createPropertyFile(makeFolder, connection, group);
-			
+						
 			File currentFolder = null;
 			URL folderUrl = this.getClass().getResource("/installation");
 			if (folderUrl != null) {
@@ -141,11 +138,7 @@ public class InstallerSetupUtils {
 			}
 			copyFiles(currentFolder, makeFolder);
 			
-			if (preventConfigurationRun) {
-				// Prevents the launch of the configurator
-				cleanFile(makeFolder, "resources/post_install.bat");
-				cleanFile(makeFolder, "resources/post_install.sh");
-			}
+			createPropertyFile(makeFolder, connection, group);
 			
 			String izpackHome = makeFolder.getAbsolutePath() + File.separator + "IzPack";
 			String[]command = new String[]{
@@ -173,10 +166,11 @@ public class InstallerSetupUtils {
 	}
 	
 	/**
-	 * Creates a property file named wubiq-installer.jar.
+	 * Creates a property file wubiq-installer.properties.
 	 * @param makeFolder Installation folder.
 	 * @param connection Connection to associate with.
 	 * @param group Group Associated group.
+	 * @return True if the property file was created, false otherwise.
 	 * @throws IOException
 	 */
 	private boolean createPropertyFile(File makeFolder, String connection, String group) 
@@ -190,6 +184,7 @@ public class InstallerSetupUtils {
 			try {
 				writer = new PrintWriter(new FileWriter(propertyFile));
 				writer.println("# " + new Date().toString());
+				writer.println("uuid=${ENV[COMPUTERNAME]}");
 				if (connection != null && !connection.equals("")) {
 					writer.println(ConfigurationKeys.PROPERTY_CONNECTIONS + "=" + connection);
 				}
@@ -202,7 +197,6 @@ public class InstallerSetupUtils {
 					writer.close();
 				}
 			}
-		} else {
 			returnValue = true;
 		}
 		return returnValue;
@@ -214,7 +208,7 @@ public class InstallerSetupUtils {
 	 * @param fileName File name.
 	 * @throws IOException
 	 */
-	private void cleanFile(File installationFolder, String fileName) throws IOException {
+	public void cleanFile(File installationFolder, String fileName) throws IOException {
 		File file = new File(installationFolder.getAbsolutePath() + File.separator + fileName);
 		PrintWriter writer = null;
 		try {

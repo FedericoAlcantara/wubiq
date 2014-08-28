@@ -105,6 +105,8 @@
             <file src="./wubiq-installer.properties" override="true"
                 targetdir="${INSTALL_PATH}/bin">
             </file>
+            <parsable targetfile="${INSTALL_PATH}/bin/wubiq-installer.properties">
+            </parsable>
             <!-- Install windows service -->            
            	<singlefile src="./resources/wubiq.bmp" override="true"
                 target="${INSTALL_PATH}/icons/wubiq.bmp">

@@ -4,7 +4,7 @@
 package net.sf.wubiq.enums;
 
 /**
- * Used to manage remote fiscal printers which are managed by an installed service.
+ * Used to run / stop remote printing manager which are managed by an installed service.
  * @author Federico Alcantara
  *
  */
