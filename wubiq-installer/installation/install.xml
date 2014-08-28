@@ -44,7 +44,7 @@
 
     <!-- 
         The locale section.
-        Asks here to include the English and French langpacks.
+        Asks here to include the English and Spanish langpacks.
     -->
     <locale>
         <langpack iso3="spa"/>
@@ -58,11 +58,8 @@
     <resources>
         <res id="HTMLInfoPanel.info_eng" src="i18n/readme_eng.html"/>
         <res id="HTMLInfoPanel.info_spa" src="i18n/readme_spa.html"/>
-	    <res id="userInputSpec.xml" src="userInputSpec.xml" />
 	    <res id="packsLang.xml_eng" src="i18n/packsLang_eng.xml" />
 	    <res id="packsLang.xml_spa" src="i18n/packsLang_spa.xml" />
-	    <res id="userInputLang.xml_eng" src="i18n/userInputLang_eng.xml" />
-	    <res id="userInputLang.xml_spa" src="i18n/userInputLang_spa.xml" />
 	    <res id="shortcutSpec.xml" src="i18n/shortcutSpec_eng.xml" />
 	    <res id="shortcutSpec.xml_spa" src="i18n/shortcutSpec_spa.xml" />
 	    <res id="XInfoPanel.info" src="i18n/XInfoPanel_eng.txt" />
@@ -77,13 +74,10 @@
     -->
     <panels>
         <panel classname="HTMLInfoPanel" />
-        <panel classname="UserInputPanel" id="panel.installables"/>
         <panel classname="TargetPanel"/>
-        <panel classname="PacksPanel"/>
         <panel classname="ShortcutPanel"/>
         <panel classname="SummaryPanel"/>
         <panel classname="InstallPanel"/>
-        <panel classname="XInfoPanel" />
         <panel classname="SimpleFinishPanel"/>
     </panels>
 
@@ -128,13 +122,13 @@
                 <os family="windows"/>
           	</singlefile>
           			
-            <singlefile src="./resources/prunsrv-i386.exe" override="true"
+            <singlefile src="./resources/prunsrv-i386.exe" override="false"
                 target="${INSTALL_PATH}/bin/prunsrv.exe">
                 <os family="windows" arch="i386"/>
                 <os family="windows" arch="x86"/>
             </singlefile>
             
-            <singlefile src="./resources/prunsrv-amd64.exe" override="true"
+            <singlefile src="./resources/prunsrv-amd64.exe" override="false"
                 target="${INSTALL_PATH}/bin/prunsrv.exe">
                 <os family="windows" arch="amd64"/>
             </singlefile>

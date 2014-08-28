@@ -1,9 +1,0 @@
-<userInput>
-    <panel id="panel.installables">
-        <field type="title" id="installables.panel.title" txt="installables" bold="true"/>
-        <field type="dir" variable="installables.dir">
-            <description id="installables.dir.description" txt="dir" />
-            <spec txt="dir instalables" id="installables.dir.value" size="20" set="${SYSTEM_user_dir}"/>
-        </field>
-    </panel>
-</userInput>

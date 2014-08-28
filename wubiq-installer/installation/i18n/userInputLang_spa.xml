@@ -1,5 +1,0 @@
-<langpack>
-    <str id="installables.panel.title" txt="Instaladores" />
-    <str id="installables.dir.value" txt="Instaladores Locales:" />
-    <str id="installables.dir.description" txt="Carpeta donde estan los instaladores locales" />
-</langpack>

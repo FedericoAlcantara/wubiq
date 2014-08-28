@@ -203,26 +203,6 @@ public class InstallerSetupUtils {
 	}
 	
 	/**
-	 * Makes a completely blank file.
-	 * @param installationFolder Where to create the folder.
-	 * @param fileName File name.
-	 * @throws IOException
-	 */
-	public void cleanFile(File installationFolder, String fileName) throws IOException {
-		File file = new File(installationFolder.getAbsolutePath() + File.separator + fileName);
-		PrintWriter writer = null;
-		try {
-			writer = new PrintWriter(new FileWriter(file));
-			writer.println("");
-			writer.flush();
-		} finally {
-			if (writer != null) {
-				writer.close();
-			}
-		}
-	}
-	
-	/**
 	 * Copy files from source folder to destination folder.
 	 * @param sourceFolder Source folder.
 	 * @param destinationFolder Destination folder.

@@ -1,5 +1,3 @@
-<?xml version="1.0"?>
-
 <project name="wubiq-client" basedir="." default="create-client-jar">
 
 	<property name="project" value="wubiq-client" />

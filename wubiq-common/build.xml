@@ -1,5 +1,3 @@
-<?xml version="1.0"?>
-
 <project name="wubiq-common" basedir="." default="create-common-jar">
 
 	<property name="project" value="wubiq-common" />
