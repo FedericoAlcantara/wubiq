@@ -6,6 +6,7 @@ Wubiq 2.0.0 (---)
 -PdfBox / FontBox libraries upgraded to 1.8.6.
 -Android application notifications bugs fixed.
 -Android application improved connection reliability.
+-Implemented service installer for windows, macos-x and linux. 
 
 ==========================
 Wubiq 1.9.0 (2014-06-20)

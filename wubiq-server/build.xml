@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="wubiq-war" basedir="." default="create-wubiq-server-war">
+<project name="wubiq-war" basedir="." default="distribute">
 
 	<property name="project" value="wubiq-server" />
 	<property name="dist" value="${basedir}/dist" />
@@ -48,5 +48,46 @@
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${war.build}"/>
 		<mkdir dir="${war.build}/WEB-INF/classes"/>
+	</target>
+	
+	<target name="distribute" description="creates the distribution">
+		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
+		<input message="Common has been built. Did you produce the android.apk and generate the documentation (Y/N)?"
+			validargs="y,n"
+		    addproperty="do.continue" />
+		<condition property="do.abort">
+		    <equals arg1="n" arg2="${do.continue}"/>
+		  </condition>
+		<fail if="do.abort">Build android.apk and generate the documentation to continue</fail>
+
+		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
+		<ant antfile="../wubiq-installer/build.xml" inheritall="false" />
+		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />
+		
+		<copy file="../wubiq-android/dist/wubiq-android.apk" todir="${basedir}/WebContent" />
+		<copy file="../wubiq-client/dist/wubiq-client.jar" todir="${basedir}/WebContent" />
+		<copy file="../wubiq-installer/dist/wubiq-setup.jar" todir="${basedir}/WebContent" />
+		
+		<antcall target="create-wubiq-server-war" />
+
+		<zip basedir="../wubiq-android/doc" zipfile="${basedir}/dist/android-doc.zip" />
+		<zip basedir="../wubiq-common/doc" zipfile="${basedir}/dist/doc.zip" />
+		<copy todir="${basedir}/dist" >
+			<fileset dir="../wubiq-android/dist" includes="wubiq-android.apk" />
+			<fileset dir="../wubiq-client/dist" includes="wubiq-client.jar" />
+			<fileset dir="../wubiq-common/dist" includes="wubiq-common.jar" />
+			<fileset dir="../wubiq-printerjob/dist" includes="wubiq-printerjob.jar" />
+			<fileset dir="../wubiq-installer/dist" includes="wubiq-setup.jar" />
+			<fileset dir="../wubiq-installer/dist">
+				<include name="wubiq-setup.jar" />
+				<include name="wubiq-installer.jar" />
+			</fileset>
+			<fileset dir="${basedir}/lib-nondeploy" includes="hsqldb*.*" />
+
+			<fileset dir="../wubiq-common">
+				<include name="ChangeLog.txt" />
+				<include name="README.rst" />
+			</fileset>
+		</copy>
 	</target>
 </project>
