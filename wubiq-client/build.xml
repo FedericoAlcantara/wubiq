@@ -65,6 +65,7 @@
 		<copy todir="${jar.build}" >
 			<fileset dir="${i18n}" includes = "**/*" />
 		</copy>
+		<!-- <delete dir="${jar.build}/META-INF/maven" /> -->
 	</target>
 		
 	<target name="clean">

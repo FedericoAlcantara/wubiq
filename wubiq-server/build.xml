@@ -70,24 +70,29 @@
 		
 		<antcall target="create-wubiq-server-war" />
 
-		<zip basedir="../wubiq-android/doc" zipfile="${basedir}/dist/android-doc.zip" />
-		<zip basedir="../wubiq-common/doc" zipfile="${basedir}/dist/doc.zip" />
-		<copy todir="${basedir}/dist" >
+		<java classname="net.sf.wubiq.utils.VersionInfo" classpath="${bin}" outputproperty="build" />
+		<property name="version" value="wubiq-${build}"/>
+		
+		<zip basedir="../wubiq-android/doc" zipfile="${basedir}/dist/${version}/android-doc.zip" />
+		<zip basedir="../wubiq-common/doc" zipfile="${basedir}/dist/${version}/doc.zip" />
+		<copy todir="${basedir}/dist/${version}" >
 			<fileset dir="../wubiq-android/dist" includes="wubiq-android.apk" />
 			<fileset dir="../wubiq-client/dist" includes="wubiq-client.jar" />
 			<fileset dir="../wubiq-common/dist" includes="wubiq-common.jar" />
 			<fileset dir="../wubiq-printerjob/dist" includes="wubiq-printerjob.jar" />
-			<fileset dir="../wubiq-installer/dist" includes="wubiq-setup.jar" />
 			<fileset dir="../wubiq-installer/dist">
 				<include name="wubiq-setup.jar" />
 				<include name="wubiq-installer.jar" />
 			</fileset>
+			<fileset dir="${basedir}/dist" includes="wubiq-server.war" />
 			<fileset dir="${basedir}/lib-nondeploy" includes="hsqldb*.*" />
-
 			<fileset dir="../wubiq-common">
 				<include name="ChangeLog.txt" />
 				<include name="README.rst" />
 			</fileset>
 		</copy>
+		<zip basedir="${basedir}/dist/${version}" zipfile="${basedir}/dist/${version}.zip" />
+		
+		<delete file="${basedir}/dist/wubiq-server.war" />
 	</target>
 </project>
