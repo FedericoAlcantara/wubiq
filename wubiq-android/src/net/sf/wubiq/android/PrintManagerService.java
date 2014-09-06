@@ -49,6 +49,15 @@ public class PrintManagerService extends Service {
 	}
 	
 	/**
+	 * Keep the service sticky.
+	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
+	 */
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return Service.START_STICKY + Service.START_STICKY_COMPATIBILITY;
+	}
+	
+	/**
 	 * @see android.app.Service#onBind(android.content.Intent)
 	 */
 	@Override

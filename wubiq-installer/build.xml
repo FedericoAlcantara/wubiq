@@ -1,4 +1,4 @@
-<project name="Wubiq-client" basedir="." default="make_install">
+<project name="Wubiq-installer" basedir="." default="make_install">
 	<property name="dist.dir" value = "${basedir}/dist"/>
 	<property name="build" value="${basedir}/build" />
     <property name="bin" value="${basedir}/bin"/>
@@ -115,7 +115,7 @@
     />
 	
 	<target name="sign-setup">
-		<signjar jar="${dist.dir}/wubiq-setup.jar" alias="wubiq-setup" 
+		<signjar jar="${dist.dir}/wubiq-setup.jar" alias="${keyalias}" 
 			keystore="${keystore}" storepass="${storepass}" keypass="${keypass}"
 			verbose="true" >
 		</signjar>

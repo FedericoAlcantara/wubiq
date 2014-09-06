@@ -69,7 +69,7 @@ public enum PrintClientUtils {
 							currentDevice.start();
 						}
 					}
-				} catch (Exception e) {
+				} catch (Throwable e) {
 					Log.e(TAG, e.getMessage());
 					returnValue = false;
 				} finally {

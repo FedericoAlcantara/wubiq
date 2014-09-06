@@ -19,8 +19,10 @@ public class PrintManagerBroadcastReceiver extends BroadcastReceiver {
 	 */
 	@Override
 	public void onReceive(Context context, Intent intent) {
-		Intent printManagerIntent = new Intent(context, PrintManagerService.class);
-		context.startService(printManagerIntent);
+		if (intent.getAction().equalsIgnoreCase(Intent.ACTION_BOOT_COMPLETED)) {
+			Intent printManagerIntent = new Intent(context, PrintManagerService.class);
+			context.startService(printManagerIntent);
+		}
 	}
 
 }

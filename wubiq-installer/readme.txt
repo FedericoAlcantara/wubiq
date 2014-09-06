@@ -1,4 +1,6 @@
-To create installation you must externally install izpack.
-After installing izpack you must create or edit file
-izpack-settings.properties to make sure that the property
-izpack.dir points to the root folder where izpack is installed.
+Setup needs to be signed.
+Create a wubiq-setup.properties with the following elements:
+keystore=Location for the key store
+storepass=Password for the key store
+keyalias=Alias for the key to use
+keypass=Password for the key alias
