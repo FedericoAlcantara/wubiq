@@ -3,6 +3,7 @@ package net.sf.wubiq.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.print.services.RemotePrintService;
+import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -67,15 +69,33 @@ public class PrintServiceUtils {
 	private static final String VALID_PRINT_SERVICE_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 	
 	/**
-	 * Tries to refresh print services.
+	 * Gets the list of possible service providers.
+	 * @return Service providers. Never null.
 	 */
-	@SuppressWarnings("rawtypes")
-	public static void refreshServices(){
+	@SuppressWarnings("unchecked")
+	public static List<PrintServiceLookup> getServiceProviders() {
+		List<PrintServiceLookup> lookupPrintServices = new ArrayList<PrintServiceLookup>();
 		Method method;
 		try {
 			method = PrintServiceLookup.class.getDeclaredMethod("getAllLookupServices", new Class[]{});
 			method.setAccessible(true);
-			List lookupPrintServices = (List) method.invoke(null, new Object[]{});
+			List<PrintServiceLookup> providers = (List<PrintServiceLookup>) method.invoke(null, new Object[]{});
+			if (providers != null) {
+				lookupPrintServices.addAll(providers);
+			}
+		} catch (Exception e) {
+			LOG.fatal(e.getMessage(), e);
+		}
+		return lookupPrintServices;
+	}
+	
+	/**
+	 * Tries to refresh print services.
+	 */
+	@SuppressWarnings("rawtypes")
+	public static void refreshServices(){
+		try {
+			List lookupPrintServices = getServiceProviders();
 			for (Object object : lookupPrintServices) {
 				LOG.debug("Trying to refresh:" + object.getClass());
 				Method refreshServices;
@@ -89,7 +109,7 @@ public class PrintServiceUtils {
 				}
 			}
 		} catch (Exception e) {
-			LOG.debug(e.getMessage());
+			LOG.error(e.getMessage());
 		}
 
 	}
@@ -133,6 +153,52 @@ public class PrintServiceUtils {
 		return returnValue.toArray(new PrintService[0]);
 	}
 	
+	/**
+	 * Replaces a print service from its corresponding lookup with a new one.
+	 * @param printService Print service to replace.
+	 * @param newPrintService New print service to add to the list.
+	 * @return The print service just added.
+	 */
+	@SuppressWarnings("static-access")
+	public static PrintService replacePrintService(PrintService printService, PrintService newPrintService) {
+		PrintService returnValue = newPrintService;
+		for (PrintServiceLookup lookup : getServiceProviders()) {
+			// Just try a simple registration
+			if (!lookup.registerService(newPrintService)) {
+				Field field = null;
+				try {
+					field = lookup.getClass().getDeclaredField("printServices");
+				} catch (Exception e) {
+					LOG.debug(e.getMessage());
+				}
+				if (field == null) {
+					try {
+						field = lookup.getClass().getField("printServices");
+					} catch (Exception e) {
+						LOG.debug(e.getMessage());
+					}
+				}
+				if (field != null) {
+					try {
+						field.setAccessible(true);
+						PrintService[] printServices = (PrintService[])field.get(lookup);
+						for (int index = 0; index < printServices.length; index++) {
+							if (newPrintService.equals(printServices[index])) {
+								printServices[index] = newPrintService;
+							}
+						}
+					} catch (Exception e) {
+						LOG.debug(e.getMessage());
+					}
+				} else if (lookup instanceof RemotePrintServiceLookup) {
+					RemotePrintServiceLookup remote = (RemotePrintServiceLookup) lookup;
+					remote.registerRemoteService(newPrintService);
+				}
+			}
+		}
+		return returnValue;
+	}
+
 	/**
 	 * Based on its name find corresponding printer.
 	 * @param name Name of the printer.
@@ -509,22 +575,41 @@ public class PrintServiceUtils {
 	public static boolean isRemotePrintService(PrintService printService) {
 		boolean returnValue = false;
 		try {
-			Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
-			String uuid = ((String) getUuid.invoke(printService, new Object[]{}));
-			returnValue = !Is.emptyString(uuid);
-		} catch (SecurityException e) {
-			LOG.debug(e.getMessage());
-		} catch (NoSuchMethodException e) {
-			LOG.debug(e.getMessage());
-		} catch (IllegalArgumentException e) {
+			Method getUuid = getRemotePrintServiceUuidMethod(printService.getClass());
+			if (getUuid != null) {
+				String uuid = ((String) getUuid.invoke(printService, new Object[]{}));
+				returnValue = !Is.emptyString(uuid);
+			}
+		} catch (InvocationTargetException e) {
 			LOG.debug(e.getMessage());
 		} catch (IllegalAccessException e) {
 			LOG.debug(e.getMessage());
-		} catch (InvocationTargetException e) {
+		} catch (IllegalArgumentException e) {
 			LOG.debug(e.getMessage());
 		}
 		
 		return returnValue;
+	}
+	
+	/**
+	 * Lookup for getUuid method within the given class or its parent.
+	 * @param clazz Class to be searched.
+	 * @return A method or null if not found.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static Method getRemotePrintServiceUuidMethod(Class clazz) {
+		Method uuid = null;
+		if (clazz !=null) {
+			try {
+				uuid = clazz.getDeclaredMethod("getUuid", new Class[]{});
+			} catch (Exception e) {
+				LOG.debug(e.getMessage());
+			}
+			if (uuid == null) {
+				uuid = getRemotePrintServiceUuidMethod(clazz.getSuperclass());
+			}
+		}
+		return uuid;
 	}
 	
 	/**

@@ -25,6 +25,7 @@ public final class RemotePrintJobManagerFactory {
 	private static IRemotePrintJobManager instance;
 	private static IDirectConnectPrintJobManager directInstance;
 	private static Map<String, RemotePrintJobManagerType> managers;
+	private static long jobId = 0;
 	
 	private RemotePrintJobManagerFactory(){
 	}
@@ -50,6 +51,11 @@ public final class RemotePrintJobManagerFactory {
 		return returnValue;
 	}
 	
+	public synchronized static long nextJobId() {
+		jobId++;
+		return jobId;
+	}
+ 	
 	/**
 	 * Returns the singleton object according to the manager type.
 	 * @param managerType Manager type.

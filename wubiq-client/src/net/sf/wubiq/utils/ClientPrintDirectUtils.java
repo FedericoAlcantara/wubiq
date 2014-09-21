@@ -4,9 +4,10 @@
 package net.sf.wubiq.utils;
 
 import java.awt.print.PageFormat;
-import java.awt.print.Pageable;
 import java.awt.print.Paper;
 import java.awt.print.Printable;
+import java.awt.print.PrinterException;
+import java.awt.print.PrinterJob;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -24,6 +25,7 @@ import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
 
+import net.sf.wubiq.clients.remotes.PageableRemote;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
@@ -125,8 +127,24 @@ public final class ClientPrintDirectUtils {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			Pageable pageable){
+			PageableRemote pageable){
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		PrinterJob printerJob = PrinterJob.getPrinterJob();
+		printerJob.setPageable(pageable);
+		PageFormat pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
+		Paper paper = new Paper();
+		// It might be an already left shifted pdf conversion.
+		paper.setImageableArea(0, 0, pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
+		paper.setSize(pageFormat.getWidth(), pageFormat.getHeight());
+		pageFormat.setPaper(paper);
+		pageable.setPageFormat(pageFormat);
+		try {
+			printerJob.setPrintService(printService);
+			printerJob.print(printRequestAttributeSet);
+		} catch (PrinterException e) {
+			LOG.debug(e.getMessage());
+		}
+		/*
 		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
@@ -134,6 +152,7 @@ public final class ClientPrintDirectUtils {
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		}
+		*/
 	}
 	
 	/**
@@ -151,6 +170,15 @@ public final class ClientPrintDirectUtils {
 			DocAttributeSet docAttributeSet,
 			Printable printable){
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		PrinterJob printerJob = PrinterJob.getPrinterJob();
+		printerJob.setPrintable(printable);
+		try {
+			printerJob.setPrintService(printService);
+			printerJob.print(printRequestAttributeSet);
+		} catch (PrinterException e) {
+			LOG.error(e.getMessage(), e);
+		}
+		/*
 		Doc doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
@@ -158,6 +186,7 @@ public final class ClientPrintDirectUtils {
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		}
+		*/
 	}
 	private static void setJobName(String jobId, PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet) {

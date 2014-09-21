@@ -38,6 +38,7 @@ import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicParameter;
 import net.sf.wubiq.wrappers.ImageObserverWrapper;
 import net.sf.wubiq.wrappers.ImageWrapper;
+import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.RenderableImageWrapper;
 import net.sf.wubiq.wrappers.RenderedImageWrapper;
 import net.sf.wubiq.wrappers.RenderingHintWrapper;
@@ -88,8 +89,49 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
 		Graphics2D graph = (Graphics2D) graphics;
+		long startTime = new Date().getTime();			
+		AffineTransform transform = graph.getTransform();
+		Color background = graph.getBackground();
+		Font font = graph.getFont();
+		PageFormatWrapper remotePageFormat = new PageFormatWrapper(pageFormat);
+		
+		transform.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+		GraphicsUtils.INSTANCE.scaleGraphics(graph, remotePageFormat, false);
+		
+		returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
+				"print",
+				new GraphicParameter(int.class, pageIndex),
+				new GraphicParameter(PageFormatWrapper.class, remotePageFormat),
+				new GraphicParameter(AffineTransform.class, transform),
+				new GraphicParameter(Color.class, background),
+				new GraphicParameter(Font.class, font)));
+		Set<GraphicCommand> commands =
+			(Set<GraphicCommand>)
+			manager().readFromRemote(new RemoteCommand(objectUUID(),
+					"graphicCommands",
+					new GraphicParameter(int.class, pageIndex)));
+		if (commands != null) {
+			startTime = new Date().getTime();
+			printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
+			executeGraphics(graph, remotePageFormat, commands);
+			manager().doLog("Sending page to printer took (step " + ++printed + "):" + (new Date().getTime() - startTime) + "ms", 4); 
+		}
+		manager().doLog("Generating page in server took:" + (new Date().getTime() - startTime) + "ms", 4); 
+		return returnValue;
+	}
+	
+	/**
+	 * This a two stage print method. 
+	 * First it records graphics command into itself by using a GraphicRecorder object.
+	 * After it is de-serialized, then it sends the previously saved command to the
+	 * graphics provided by the local printer object.
+	 */
+	@SuppressWarnings("unchecked")
+	public int oldPrint(Graphics graphics, PageFormat pageFormat, int pageIndex)
+			throws PrinterException {
+		Graphics2D graph = (Graphics2D) graphics;
 		if (printed <= 0) {
-			long startTime = new Date().getTime();
+			long startTime = new Date().getTime();			
 			Rectangle rect = graph.getClipBounds();
 			AffineTransform transform = graph.getTransform();
 			Color background = graph.getBackground();
@@ -109,10 +151,15 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 			
 			try {
 				if (printed > 0) {
-					graphicCommands.addAll((Set<GraphicCommand>)
+					Set<GraphicCommand> newCommands = (Set<GraphicCommand>)
 							manager().readFromRemote(new RemoteCommand(objectUUID(),
 									"graphicCommands",
-									new GraphicParameter(int.class, pageIndex))));
+									new GraphicParameter(int.class, pageIndex)));
+					if (newCommands != null) {
+						graphicCommands.addAll(newCommands);
+					} else {
+						returnValue = Printable.NO_SUCH_PAGE;
+					}
 				}
 			} catch (Exception e) {
 				LOG.fatal(e.getMessage(), e);
@@ -138,7 +185,8 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	 */
 	protected void executeGraphics(Graphics2D graph, PageFormat pageFormat,
 			Set<GraphicCommand> graphicCommands) {
-		if (graphicCommands != null) {
+		if (graphicCommands != null && 
+				!graphicCommands.isEmpty()) {
 			long startTime = new Date().getTime();
 			Iterator<GraphicCommand> it = graphicCommands.iterator();
 			int count = 0;
@@ -162,7 +210,6 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	protected void executeMethod(Graphics2D graph, GraphicCommand graphicCommand) {
 		double xScale = 1;
 		double yScale = 1;
-		Method method = null;
 		Class[] parameterTypes = new Class[]{};
 		Object[] parameterValues = new Object[]{};
 		long startTime = new Date().getTime();
@@ -213,15 +260,26 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 					parameterTypes[index] = GlyphVector.class;
 					GlyphChunkVectorWrapper glyphVectorWrapper = (GlyphChunkVectorWrapper)parameterValues[index];
 					Font font = GraphicsUtils.INSTANCE.properFont(glyphVectorWrapper.getFont(), printerType);
-					GlyphVector glyphVector = font.createGlyphVector(graph.getFontRenderContext(), 
-							glyphVectorWrapper.getCharacters());
-					AffineTransform transform = new AffineTransform();
-					
-					transform.scale(0.99d, 0.99d);
-					for (int glyphIndex = 0; glyphIndex < glyphVector.getNumGlyphs(); glyphIndex++) {
-						glyphVector.setGlyphTransform(glyphIndex, transform);
+					executeMethod(graph, "setFont", new Class[]{Font.class}, new Object[]{font});
+					StringBuffer data = new StringBuffer("");
+					for (char charAt : glyphVectorWrapper.getCharacters()) {
+						data.append(charAt);
 					}
-					parameterValues[index] = glyphVector;
+					graphicCommand.setMethodName("drawString");
+					parameterValues[index] = data.toString();
+					parameterTypes[index] = String.class;
+					/*
+						GlyphVector glyphVector = font.createGlyphVector(graph.getFontRenderContext(), 
+								glyphVectorWrapper.getCharacters());
+						AffineTransform transform = new AffineTransform();
+						
+						transform.scale(1d, 1d);
+						for (int glyphIndex = 0; glyphIndex < glyphVector.getNumGlyphs(); glyphIndex++) {
+							glyphVector.setGlyphTransform(glyphIndex, transform);
+						}
+						parameterValues[index] = glyphVector;
+					}
+					*/
 				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
 					parameterTypes[index] = Stroke.class;
 					parameterValues[index] = ((StrokeWrapper) parameterValues[index]).getStroke(xScale, yScale);
@@ -246,10 +304,21 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 				} 
 			}
 		}
-		method = findMethod(graph.getClass(), graphicCommand.getMethodName(), parameterTypes);
+		startTime = new Date().getTime();
+		executeMethod(graph, graphicCommand.getMethodName(), parameterTypes, parameterValues);
+		long diff = new Date().getTime() - startTime;
+		if (diff > slowerTime) {
+			slowerTime = diff;
+			slowerMethod = graphicCommand.getMethodName();
+		}
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private void executeMethod(Graphics2D graph, String methodName, Class[] parameterTypes, Object[] parameterValues) {
+		Method method = null;
+		method = findMethod(graph.getClass(), methodName, parameterTypes);
 		if (method != null) {
 			try {
-				startTime = new Date().getTime();
 				method.setAccessible(true);
 				method.invoke(graph, parameterValues);
 			} catch (Exception e) {
@@ -257,13 +326,9 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 				throw new RuntimeException(e);
 			}
 		} else {
-			LOG.info("Method not FOUND:" + graphicCommand.getMethodName());
+			LOG.info("Method not FOUND:" + methodName);
 		}
-		long diff = new Date().getTime() - startTime;
-		if (diff > slowerTime) {
-			slowerTime = diff;
-			slowerMethod = graphicCommand.getMethodName();
-		}
+
 	}
 	
 	/**

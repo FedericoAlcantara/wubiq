@@ -26,6 +26,7 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
+import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
@@ -118,7 +119,7 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
 			IOUtils.INSTANCE.copy(inputStream, outputStream);
 			outputStream.close();
-			returnValue = getLastJobId() + 1;
+			returnValue = RemotePrintJobManagerFactory.nextJobId();
 			connection = getConnection();
 			connection.setAutoCommit(false);
 			String query = "insert into PRINT_JOB (" +
@@ -143,6 +144,14 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 			stmt.setBytes(9, outputStream.toByteArray());
 			stmt.executeUpdate();
 			connection.commit();
+			PrintService printService = remotePrintJob.getPrintService();
+			if (printService != null) {
+				if (printService instanceof INotifiablePrintService) {
+					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+					notifiable.printJobCreated(returnValue);
+				}
+			}
+
 		} catch (SQLException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (IOException e) {
@@ -161,6 +170,14 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		Connection connection = null;
 		PreparedStatement stmt = null;
 		try {
+			RemotePrintJob remotePrintJob = getRemotePrintJob(jobId, true);
+			PrintService printService = remotePrintJob.getPrintService();
+			if (printService != null) {
+				if (printService instanceof INotifiablePrintService) {
+					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+					notifiable.printJobFinished(jobId);
+				}
+			}
 			connection = getConnection();
 			stmt = getJobStatement(connection, DELETE_JOB, jobId);
 			stmt.executeUpdate();
@@ -297,24 +314,6 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 				.append(ServerProperties.INSTANCE.getHsqldbDbName());
         returnValue = DriverManager.getConnection(buffer.toString(), "SA", "");
 	    return returnValue;
-	}
-	
-	private long getLastJobId() throws SQLException {
-		long returnValue = 0l;
-		Connection connection = null;
-		Statement stmt = null;
-		ResultSet rs = null;
-		try {
-			connection = getConnection();
-			stmt = connection.createStatement();
-			rs = stmt.executeQuery("select ID from PRINT_JOB order by ID desc limit 1");
-			if (rs.next()) {
-				returnValue = rs.getLong("ID");
-			}
-		} finally {
-			close(rs, stmt, connection);
-		}
-		return returnValue;
 	}
 	
 	/**

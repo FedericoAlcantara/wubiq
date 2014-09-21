@@ -650,8 +650,9 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void closePrintJobCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String jobId = request.getParameter(ParameterKeys.PRINT_JOB_ID);
-		manager.removeRemotePrintJob(Long.parseLong(jobId));
+		String jobIdString = request.getParameter(ParameterKeys.PRINT_JOB_ID);
+		long jobId = Long.parseLong(jobIdString);
+		manager.removeRemotePrintJob(jobId);
 		respond("ok", response);
 	}
 	
@@ -671,7 +672,7 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			testPageName = "MobileTestPage.pdf";
 		}
-//testPageName = "TestPage-calibrate.pdf";
+//testPageName = "TestPage.pdf";
 
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = request.getParameter(ParameterKeys.PRINT_SERVICE_NAME);
@@ -688,9 +689,9 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
 			if (!printDirectPageable) {
-				Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
-				DocPrintJob printJob = printService.createPrintJob();
 				try {
+					Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
+					DocPrintJob printJob = printService.createPrintJob();
 					printJob.print(doc, requestAttributes);
 				} catch (PrintException e) {
 					throw new ServletException(e);

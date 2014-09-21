@@ -12,6 +12,7 @@ import java.util.TreeMap;
 
 import javax.print.PrintService;
 
+import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
@@ -47,9 +48,16 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 	 */
 	@Override
 	public long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
-		lastJobId++;
+		lastJobId = RemotePrintJobManagerFactory.nextJobId();
 		getPrintJobs().put(lastJobId, queueId);
 		getQueue(queueId).put(lastJobId, remotePrintJob);
+		PrintService printService = remotePrintJob.getPrintService();
+		if (printService != null) {
+			if (printService instanceof INotifiablePrintService) {
+				INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+				notifiable.printJobCreated(lastJobId);
+			}
+		}
 		return lastJobId;
 	}
 
@@ -61,6 +69,14 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 		boolean returnValue = true;
 		Map<Long, IRemotePrintJob> queue = getQueue(jobId);
 		if (queue != null) {
+			IRemotePrintJob remotePrintJob = getRemotePrintJob(jobId, true);
+			PrintService printService = remotePrintJob.getPrintService();
+			if (printService != null) {
+				if (printService instanceof INotifiablePrintService) {
+					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+					notifiable.printJobFinished(jobId);
+				}
+			}
 			returnValue = queue.remove(jobId) != null;
 		}
 		getPrintJobs().remove(jobId);

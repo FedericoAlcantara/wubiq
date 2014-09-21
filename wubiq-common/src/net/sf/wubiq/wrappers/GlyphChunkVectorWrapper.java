@@ -112,6 +112,13 @@ public class GlyphChunkVectorWrapper implements Serializable {
 			Character character = characterMap.get(intArrayToString(codes));
 			if (character != null) {
 				converted.add(character);
+			} else { // might be a sequence of letters
+				for (int code : codes) {
+					character = characterMap.get(intArrayToString(new int[]{code}));
+					if (character != null) {
+						converted.add(character);
+					}
+				}
 			}
 		}
 		characters = new char[converted.size()];

@@ -3,7 +3,6 @@
  */
 package net.sf.wubiq.clients;
 
-import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.io.IOException;
 import java.io.InputStream;
@@ -115,6 +114,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				remote);
+		printing = false;
 	}
 	
 	/**
@@ -185,7 +185,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			Pageable pageable) {
+			PageableRemote pageable) {
 		ClientPrintDirectUtils.printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				pageable);

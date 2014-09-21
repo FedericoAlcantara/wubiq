@@ -6,8 +6,6 @@ package net.sf.wubiq.clients.remotes;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.UUID;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -24,20 +22,20 @@ import net.sf.wubiq.wrappers.GraphicParameter;
 public class PageableRemote implements Pageable, IProxyClient {
 	private int lastPrintablePageIndex = -1;
 	private Printable printable;
-	private Map<Integer, PageFormat> pageFormats;
 	private Integer numberOfPages = null;
+	private PageFormat pageFormat = null;
 	
 	public static final String[] FILTERED_METHODS = new String[]{
 		"getNumberOfPages",
 		"getPageFormat",
 		"getPrintable",
 		"getPrintableClass",
-		"getPrintableFilteredMethods"
+		"getPrintableFilteredMethods",
+		"setPageFormat"
 		};
 
 	public PageableRemote() {
 		initialize();
-		pageFormats = new HashMap<Integer, PageFormat>();
 	}
 	
 	/**
@@ -51,16 +49,17 @@ public class PageableRemote implements Pageable, IProxyClient {
 		return numberOfPages;
 	}
 
+	/**
+	 * Sets the overall page format.
+	 * @param pageFormat Page format to use.
+	 */
+	public void setPageFormat(PageFormat pageFormat) {
+		this.pageFormat = pageFormat;
+	}
+	
 	@Override
 	public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
-		PageFormat returnValue = pageFormats.get(pageIndex);
-		if (returnValue == null) {
-			returnValue = (PageFormat)manager().readFromRemote(new RemoteCommand(objectUUID(), "getPageFormat",
-					new GraphicParameter(int.class, pageIndex)));
-			pageFormats.put(pageIndex, returnValue);
-			manager().doLog("Page: " + pageIndex, 4);
-		}
-		return returnValue;
+		return pageFormat;
 	}
 	
 
