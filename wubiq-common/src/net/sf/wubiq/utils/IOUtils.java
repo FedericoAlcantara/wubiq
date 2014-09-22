@@ -7,6 +7,9 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 /**
  * Utility for handling IOs.
  * @author Federico Alcantara
@@ -14,6 +17,7 @@ import java.io.Writer;
  */
 public enum IOUtils {
 	INSTANCE;
+	private final Log LOG = LogFactory.getLog(IOUtils.class);
 	
 	/**
 	 * Copy from input stream to output stream. Doesn't close any of the streams.
@@ -22,10 +26,28 @@ public enum IOUtils {
 	 * @throws IOException If input is not readable or input is not writable.
 	 */
 	public void copy(InputStream input, OutputStream output) throws IOException {
-		int readData = -1;
-		byte[] readBuffer = new byte[65535];
-		while ((readData = input.read(readBuffer)) > -1) {
-			output.write(readBuffer, 0, readData);
+		try {
+			int readData = -1;
+			byte[] readBuffer = new byte[65535];
+			while ((readData = input.read(readBuffer)) > -1) {
+				output.write(readBuffer, 0, readData);
+			}
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
+			if (output != null) {
+				try {
+					output.flush();
+					output.close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
 		}
 	}
 
@@ -36,11 +58,29 @@ public enum IOUtils {
 	 * @throws IOException If input is not readable or input is not writable.
 	 */
 	public void copy(Reader input, OutputStream output) throws IOException {
-		int readData = -1;
-		char[] readBuffer = new char[65535];
-		Writer writer = new OutputStreamWriter(output);
-		while ((readData = input.read(readBuffer)) > -1) {
-			writer.write(readBuffer, 0, readData);
+		try {
+			int readData = -1;
+			char[] readBuffer = new char[65535];
+			Writer writer = new OutputStreamWriter(output);
+			while ((readData = input.read(readBuffer)) > -1) {
+				writer.write(readBuffer, 0, readData);
+			}
+		} finally {
+			if (input != null) {
+				try {
+					input.close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
+			if (output != null) {
+				try {
+					output.flush();
+					output.close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
 		}
 	}
 }

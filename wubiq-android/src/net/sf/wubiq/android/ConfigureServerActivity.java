@@ -38,12 +38,14 @@ public class ConfigureServerActivity extends Activity {
 		EditText host = (EditText) findViewById(R.id.hostField);
 		EditText port = (EditText) findViewById(R.id.portField);
 		EditText uuid = (EditText) findViewById(R.id.clientUUIDField);
+		EditText groups = (EditText) findViewById(R.id.groupsField);
 		EditText connections = (EditText) findViewById(R.id.connectionsField);
 		CheckBox suppressNotifications = (CheckBox) findViewById(R.id.suppressNotifications);
 		Resources resources = getResources();
 		host.setText(preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default)));
 		port.setText(preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default)));
 		uuid.setText(preferences.getString(WubiqActivity.UUID_KEY, UUID.randomUUID().toString()));
+		groups.setText(preferences.getString(WubiqActivity.GROUPS_KEY, ""));
 		connections.setText(preferences.getString(WubiqActivity.CONNECTIONS_KEY, resources.getString(R.string.server_connection_default)));
 		suppressNotifications.setChecked(preferences.getBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS_KEY, false));
 		savePreferences();
@@ -60,11 +62,13 @@ public class ConfigureServerActivity extends Activity {
 		EditText host = (EditText) findViewById(R.id.hostField);
 		EditText port = (EditText) findViewById(R.id.portField);
 		EditText uuid = (EditText) findViewById(R.id.clientUUIDField);
+		EditText groups = (EditText) findViewById(R.id.groupsField);
 		EditText connections = (EditText) findViewById(R.id.connectionsField);
 		CheckBox suppressNotifications = (CheckBox) findViewById(R.id.suppressNotifications);
 		editor.putString(WubiqActivity.HOST_KEY, host.getText().toString());
 		editor.putString(WubiqActivity.PORT_KEY, port.getText().toString());
 		editor.putString(WubiqActivity.UUID_KEY, uuid.getText().toString());
+		editor.putString(WubiqActivity.GROUPS_KEY, groups.getText().toString());
 		editor.putString(WubiqActivity.CONNECTIONS_KEY, connections.getText().toString());
 		editor.putBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS_KEY, suppressNotifications.isChecked());
 		editor.commit();

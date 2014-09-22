@@ -23,7 +23,7 @@ public class PrintableDirectWrapper implements Printable {
 	public PrintableDirectWrapper(Printable printable) {
 		this.printable = printable;
 	}
-	
+
 	/**
 	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
 	 */

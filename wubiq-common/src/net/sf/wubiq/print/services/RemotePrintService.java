@@ -10,9 +10,11 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.print.DocFlavor;
@@ -31,6 +33,7 @@ import javax.print.event.PrintServiceAttributeListener;
 
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
+import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
@@ -57,20 +60,22 @@ public class RemotePrintService extends StreamPrintService {
 	private Map<String, Object> defaultAttributes;
 	private boolean directCommunicationEnabled = true;
 	private String clientVersion = "";
+	private Set<String> groups;
 	
+	public RemotePrintService(OutputStream outputStream) {
+		super(outputStream);
+	}
+
 	public RemotePrintService() {
-		super(new ByteArrayOutputStream());
+		this(new ByteArrayOutputStream());
 		remoteCategories = new ArrayList<Class<?>>();
 		remoteAttributes = new HashMap<String, Object>();
 		supportedDocFlavors = new DocFlavor[]{};
 		attributesPerCategory = new HashMap<String, PrintServiceAttribute>();
 		defaultAttributes = new HashMap<String, Object>();
+		groups = new HashSet<String>();
 	}
-	
-	public RemotePrintService(OutputStream outputStream) {
-		super(outputStream);
-	}
-	
+		
 	@SuppressWarnings("unchecked")
 	public RemotePrintService(PrintService printService) {
 		this();
@@ -275,6 +280,13 @@ public class RemotePrintService extends StreamPrintService {
 	}
 
 	/**
+	 * @return the groups
+	 */
+	public Set<String> getGroups() {
+		return groups;
+	}
+	
+	/**
 	 * Sets a new list of remoteCategories for the print service.
 	 * @param remoteCategories
 	 */
@@ -399,6 +411,21 @@ public class RemotePrintService extends StreamPrintService {
 	@Override
 	public String toString() {
 		return "RemotePrintService [" + remoteName + WebKeys.REMOTE_SERVICE_SEPARATOR + uuid + "]";
+	}
+	
+	/**
+	 * Registers the groups to which this print service belongs.
+	 * @param groups Comma (or semicolon) separated list of group names.
+	 */
+	public void registerGroups(String groups) {
+		if (!Is.emptyString(groups)) {
+			for (String groupRead : groups.split("[,;]")) {
+				String group = groupRead.trim().toLowerCase();
+				if (!Is.emptyString(group)) {
+					this.groups.add(group);
+				}
+			}
+		}
 	}
 
 }

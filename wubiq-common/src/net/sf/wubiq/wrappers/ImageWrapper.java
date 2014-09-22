@@ -95,7 +95,7 @@ public class ImageWrapper implements Serializable {
 	
 	/**
 	 * Sets the image data for serialization.
-	 * @param imageData
+	 * @param imageData Image as byte array.
 	 */
 	protected void setImageData(byte[] imageData) {
 		this.imageData = imageData;
@@ -103,7 +103,7 @@ public class ImageWrapper implements Serializable {
 	
 	/**
 	 * Returns the serialized imageData.
-	 * @return
+	 * @return Returns the image data represented as byte array.
 	 */
 	protected byte[] getImageData() {
 		return imageData;

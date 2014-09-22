@@ -22,6 +22,8 @@ import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
+import net.sf.wubiq.interfaces.INotifiablePrintService;
+import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.wrappers.PageableDirectWrapper;
 import net.sf.wubiq.wrappers.PrintableDirectWrapper;
@@ -146,6 +148,13 @@ public class PrinterJobManager extends PrinterJob {
 		if (PrintServiceUtils.isRemotePrintService(service)) {
 			registerRemotePrintJob(attributes);
 		} else {
+			long jobId = RemotePrintJobManagerFactory.nextJobId();
+			INotifiablePrintService notifiable = null;
+			if (service != null && 
+					service instanceof INotifiablePrintService) {
+				notifiable = (INotifiablePrintService) service;
+				notifiable.printJobCreated(jobId);
+			}
 			if (painter != null) {
 				if (pageFormat != null) {
 					defaultPrinterJob.setPrintable(new PrintableDirectWrapper(painter), pageFormat);
@@ -160,6 +169,9 @@ public class PrinterJobManager extends PrinterJob {
 				defaultPrinterJob.print(attributes);
 			} else {
 				defaultPrinterJob.print();
+			}
+			if (notifiable != null) {
+				notifiable.printJobFinished(jobId);
 			}
 		}
 	}
@@ -235,11 +247,13 @@ public class PrinterJobManager extends PrinterJob {
 
 	@Override
 	public void setPrintService(PrintService service) throws PrinterException {
-		this.service = service;
-		try {
-			defaultPrinterJob.setPrintService(service);
-		} catch (Exception e) {
-			LOG.error(e.getMessage());
+		if (service != null) {
+			this.service = service;
+			try {
+				defaultPrinterJob.setPrintService(service);
+			} catch (Exception e) {
+				LOG.error(e.getMessage());
+			}
 		}
 	}
 

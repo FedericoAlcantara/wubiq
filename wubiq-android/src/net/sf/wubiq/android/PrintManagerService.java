@@ -33,6 +33,7 @@ public class PrintManagerService extends Service {
 	private BluetoothPrintManager manager;
 	private boolean cancelManager;
 	private Handler timerHandler = new Handler();
+	
 	private Runnable timerRunnable = new Runnable() {
 		public void run() {
 			checkPrintManagerStatus();
@@ -47,11 +48,20 @@ public class PrintManagerService extends Service {
 		}
 	}
 	
-	/**	
+	/**
+	 * Keep the service sticky.
+	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
+	 */
+	@Override
+	public int onStartCommand(Intent intent, int flags, int startId) {
+		return Service.START_STICKY + Service.START_STICKY_COMPATIBILITY;
+	}
+	
+	/**
 	 * @see android.app.Service#onBind(android.content.Intent)
 	 */
 	@Override
-	public IBinder onBind(Intent arg0) {
+	public IBinder onBind(Intent intent) {
 		return null;
 	}
 

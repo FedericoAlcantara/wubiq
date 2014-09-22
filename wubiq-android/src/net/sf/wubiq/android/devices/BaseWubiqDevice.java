@@ -1,15 +1,7 @@
 package net.sf.wubiq.android.devices;
 
-import java.io.IOException;
-import java.lang.reflect.Method;
-
 import net.sf.wubiq.android.MobileDeviceInfo;
-import net.sf.wubiq.android.enums.DeviceStatus;
 import net.sf.wubiq.android.enums.PrintingStatus;
-import android.bluetooth.BluetoothAdapter;
-import android.bluetooth.BluetoothDevice;
-import android.bluetooth.BluetoothSocket;
-import android.util.Log;
 
 /**
  * Defines the implementation needed for a wubiq enabled device.
@@ -23,16 +15,14 @@ public abstract class BaseWubiqDevice extends Thread {
 	private int printDelay;
 	private int printPause;
 	private PrintingStatus printingStatus;
-	private String TAG = "BaseWubiqDevice";
 	
 	/**
 	 * Outputs to a star micronics portable printer.
-	 * @param deviceInfo Device information
+	 * @param mobileDeviceInfo Device information
 	 * @param deviceAddress Device address (mac address)
 	 * @param printData Data to print
 	 * @param printDelay Delays to apply between data chunks
 	 * @param printPause Pause after print job is finished.
-	 * @return true if everything is okey.
 	 */
 	public void initialize(MobileDeviceInfo mobileDeviceInfo, String deviceAddress,
 			byte[] printData, int printDelay, int printPause) {
@@ -42,58 +32,6 @@ public abstract class BaseWubiqDevice extends Thread {
 		this.printDelay = printDelay;
 		this.printPause = printPause;
 		this.printingStatus = PrintingStatus.PRINTING;
-	}
-
-	/**
-	 * Finds the bluetooth device.
-	 * @param deviceAddress
-	 * @return Found bluetooth device or null if not bonded.
-	 */
-	protected BluetoothDevice btDevice(String deviceAddress) {
-		BluetoothDevice returnValue = null;
-		BluetoothAdapter adapter = BluetoothAdapter.getDefaultAdapter();
-		for (BluetoothDevice device : adapter.getBondedDevices()) {
-			if (device.getAddress().equals(deviceAddress)) {
-				returnValue = device;
-				break;
-			}
-		}
-		return returnValue;		
-	}
-	
-	/**
-	 * Indicates the connectivity of the device.
-	 * @param deviceAddress Device address.
-	 * @return Status, either not found, cant_connect, ready.
-	 */
-	public DeviceStatus deviceStatus (String deviceAddress) {
-		DeviceStatus returnValue = DeviceStatus.NOT_FOUND;
-		BluetoothDevice device = btDevice(deviceAddress);
-		if (device != null) {
-	        // Get a BluetoothSocket to connect with the given BluetoothDevice
-			BluetoothSocket mmSocket = null;
-			try {
-	            // MY_UUID is the app's UUID string, also used by the server code
-	        	Method m = device.getClass().getMethod("createRfcommSocket", new Class[] {int.class});
-	            mmSocket = (BluetoothSocket) m.invoke(device, 1);
-	            // Connect the device through the socket. This will block
-	            // until it succeeds or throws an exception
-	            mmSocket.connect();
-	            returnValue = DeviceStatus.READY;
-			} catch (Exception e) {
-				returnValue = DeviceStatus.CANT_CONNECT;
-				Log.e(TAG, e.getMessage());
-			} finally {
-				if (mmSocket != null) {
-					try {
-						mmSocket.close();
-					} catch (IOException e) {
-						Log.e(TAG, e.getMessage());
-					}
-				}
-			}
-		}
-		return returnValue;
 	}
 	
 	@Override

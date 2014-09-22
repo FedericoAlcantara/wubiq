@@ -7,7 +7,6 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
-import java.awt.Rectangle;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Rectangle2D;
 import java.awt.image.BufferedImage;
@@ -31,6 +30,7 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicsChunkRecorder;
+import net.sf.wubiq.wrappers.PageFormatWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -86,6 +86,7 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	 * @param pageIndex Page index.
 	 * @throws PrinterException
 	 */
+	/*
 	public int print(int pageIndex) throws PrinterException {
 		long start = new Date().getTime();
 		PageFormat pageFormat = getPageFormat(pageIndex);
@@ -107,34 +108,36 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
 		return returnValue;
 	}
+	*/
 
 	/**
 	 * Starts the printing process. In reality it starts the collection of graphics commands.
 	 * @param pageIndex Page index for the printable.
-	 * @param clipRect Size of the printing area.
+	 * @param pageFormat Format of the page.
 	 * @param transform Initial transform.
 	 * @param backgroundColor Background color.
 	 * @param font Initial font.
 	 * @return Printable.PAGE_EXISTS if the page is rendered successfully or Printable.NO_SUCH_PAGE if pageIndex specifies a non-existent page.
 	 * @throws PrinterException
 	 */
-	public int print(int pageIndex, Rectangle clipRect, AffineTransform transform, 
+	public int print(int pageIndex, PageFormatWrapper pageFormat, 
+			AffineTransform transform, 
 			Color backgroundColor, Font font) throws PrinterException {
 		long start = new Date().getTime();
-		PageFormat pageFormat = pageable.getPageFormat(pageIndex);
-		BufferedImage img = new BufferedImage(new Double(clipRect.getWidth()).intValue(), 
-				new Double(clipRect.getHeight()).intValue(), BufferedImage.TYPE_INT_RGB);
+		BufferedImage img = new BufferedImage((int)Math.round(pageFormat.getWidth()), 
+				(int)Math.round(pageFormat.getHeight()), BufferedImage.TYPE_INT_ARGB_PRE);
 		Graphics2D graph = img.createGraphics();
 		graph.setTransform(transform);
 		graph.setClip(new Rectangle2D.Double(
 				0,
 				0,
-				clipRect.getWidth(), 
-				clipRect.getHeight()));
+				pageFormat.getWidth(), 
+				pageFormat.getHeight()));
 		graph.setBackground(backgroundColor);
-		graph.clearRect(0, 0, 
-				new Double(clipRect.getWidth()).intValue(), 
-				new Double(clipRect.getHeight()).intValue());
+		graph.clearRect(0,
+				0, 
+				(int)Math.round(pageFormat.getWidth()), 
+				(int)Math.round(pageFormat.getHeight()));
 		graph.setFont(font);
 		int returnValue = print(graph, pageFormat, pageIndex);
 		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
@@ -149,14 +152,14 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		return (Printable) decoratedObject();
 	}
 	
-	private PageFormat getPageFormat(int pageIndex) {
+	public PageFormatWrapper getPageFormat(int pageIndex) {
 		if (pageable != null) {
-			return pageable.getPageFormat(pageIndex);
+			return new PageFormatWrapper(pageable.getPageFormat(pageIndex));
 		} else {
 			if (pageFormat == null) {
 				pageFormat = PageableUtils.INSTANCE.getPageFormat(new HashPrintRequestAttributeSet());
 			}
-			return pageFormat;
+			return new PageFormatWrapper(pageFormat);
 		}
 	}
 

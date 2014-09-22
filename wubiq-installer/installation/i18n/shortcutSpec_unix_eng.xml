@@ -1,0 +1,61 @@
+<shortcuts>
+    <programGroup
+        defaultName="Wubiq"
+        iconFile="${INSTALL_PATH}/icons/wubiq.png"
+        location="startMenu"/>
+    
+    <shortcut
+        name="Configure Wubiq Service" 
+		description="Wubiq service configuration"
+        target="gksu"
+        commandLine='"${JAVA_HOME}/bin/java -cp ${INSTALL_PATH}/bin -splash:splash.png net.sf.wubiq.clients.WubiqConfigurator"'
+        workingDirectory="${INSTALL_PATH}/bin"
+        iconFile="${INSTALL_PATH}/icons/wubiq.png"
+        initialState="normal"
+        programGroup="no"
+        applications="true"
+        desktop="yes"
+        startMenu="no"
+        startup="no"
+        type="Application" 
+        encoding="UTF-8"
+        createForAll="true"
+        Categories="Settings" />
+    
+	<shortcut
+        name="Stop Wubiq Service"
+        description="Stops Wubiq service"
+        target="gksu"
+        commandLine='"service wubiq stop"'
+        workingDirectory="${INSTALL_PATH}"
+        iconFile="${INSTALL_PATH}/icons/stop.png"
+        initialState="normal"
+        programGroup="no"
+        applications="true"
+        desktop="yes"
+        startMenu="no"
+        startup="no"
+        type="Application" 
+        encoding="UTF-8"
+        createForAll="true"
+        Categories="Settings" />    
+    
+	<shortcut
+        name="Start Wubiq Service"
+        description="Starts Wubiq service"
+        target="gksu"
+        commandLine='"service wubiq start"'
+        workingDirectory="${INSTALL_PATH}"
+        iconFile="${INSTALL_PATH}/icons/start.png"
+        initialState="normal"
+        programGroup="no"
+        applications="true"
+        desktop="yes"
+        startMenu="no"
+        startup="no"
+        type="Application" 
+        encoding="UTF-8"
+        createForAll="true"
+        Categories="Settings" />
+    
+</shortcuts>

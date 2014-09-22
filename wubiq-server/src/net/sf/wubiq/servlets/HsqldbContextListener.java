@@ -29,7 +29,7 @@ public class HsqldbContextListener implements ServletContextListener {
 	 * @see javax.servlet.ServletContextListener#contextDestroyed(javax.servlet.ServletContextEvent)
 	 */
 	@Override
-	public void contextDestroyed(ServletContextEvent arg0) {
+	public void contextDestroyed(ServletContextEvent event) {
 		hsqlServer.shutdown();
 	}
 
@@ -38,14 +38,15 @@ public class HsqldbContextListener implements ServletContextListener {
 	 */
 	@Override
 	public void contextInitialized(ServletContextEvent event) {
+		ServerProperties.INSTANCE.setRealPath(event.getServletContext().getRealPath(""));
 		Level level = getLevel("org");
 		Logger.getLogger(this.getClass().getName()).info(ServerLabels.get("server.version", Labels.VERSION));
 		Logger.getLogger(this.getClass().getName()).info("http://sourceforge.net/projects/wubiq\n");
 		hsqlServer = new Server();
-		hsqlServer.setDatabasePath(0, event.getServletContext().getRealPath("/WEB-INF/" + ServerProperties.getHsqldbDatabaseName()));
-		hsqlServer.setDatabaseName(0, ServerProperties.getHsqldbDbName());
-		if (!Is.emptyString(ServerProperties.getHsqldbPort())) {
-			hsqlServer.setPort(Integer.parseInt(ServerProperties.getHsqldbPort()));
+		hsqlServer.setDatabasePath(0, event.getServletContext().getRealPath("/WEB-INF/" + ServerProperties.INSTANCE.getHsqldbDatabaseName()));
+		hsqlServer.setDatabaseName(0, ServerProperties.INSTANCE.getHsqldbDbName());
+		if (!Is.emptyString(ServerProperties.INSTANCE.getHsqldbPort())) {
+			hsqlServer.setPort(Integer.parseInt(ServerProperties.INSTANCE.getHsqldbPort()));
 		}
 		hsqlServer.setSilent(true);
 		hsqlServer.setTrace(false);

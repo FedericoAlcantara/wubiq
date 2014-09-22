@@ -34,4 +34,10 @@ public final class CommandKeys {
 	public static final String PRINT_SERVICE_PENDING_JOBS = "j3";
 	public static final String READ_IS_DIRECT_CONNECT = "idc";
 	public static final String DIRECT_CONNECT = "dc";
+	public static final String PAUSE_MANAGER = "mp";
+	public static final String RESUME_MANAGER = "mr";
+	public static final String REMOVE_ALL_PRINT_JOBS = "j4";
+	public static final String READ_VERSION = "v1";
+	public static final String READ_CONNECTIONS = "rc";
+	public static final String CONNECTION_TEST = "ct";
 }

@@ -12,6 +12,7 @@ public final class ParameterKeys {
 	private ParameterKeys () {
 	}
 	public static final String UUID = "uuid";
+	public static final String GROUPS = "grps";
 	public static final String COMMAND = "command";
 	public static final String PARAMETER_SEPARATOR = "=";
 	public static final String COMPUTER_NAME = "computerName";
@@ -33,4 +34,7 @@ public final class ParameterKeys {
 	public static final String ATTRIBUTE_TYPE_MEDIA_TRAY = "T";
 	public static final String PENDING_JOB_SIGNATURE = "pending_jobs";
 	public static final String PRINT_JOB_ID = "printJob";
+	public static final String CONNECTION_TEST_STRING = "WUBIQ_CONNECTED";
+	public static final String PRINT_TEST_DIRECT_PAGEABLE = "TP";
+	public static final String CLIENT_VERSION = "cv";
 }

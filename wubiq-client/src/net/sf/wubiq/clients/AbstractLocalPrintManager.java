@@ -9,15 +9,11 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.InetAddress;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.net.URL;
-import java.net.URLEncoder;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
 import java.util.ArrayList;
@@ -35,6 +31,8 @@ import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.Labels;
+import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -54,6 +52,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private String applicationName;
 	private String servletName;
 	private String uuid;
+	private String groups;
 	private boolean killManager;
 	private boolean refreshServices;
 	private boolean debugMode;
@@ -64,8 +63,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private boolean cancelManager = false;
 	private Set<String> connections;
 	private Set<URL> urls;
-	private URL preferredURL;
+	protected URL preferredURL;
 	private boolean connected = false;
+	
 			
 	/**
 	 * Level of detail for debug output. between 0 and 5.
@@ -79,6 +79,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		connections = new HashSet<String>();
 		preferredURL = null;
 		setDebugLevel(0);
+		String retries = System.getProperty(PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES);
+		if (!Is.emptyString(retries)) {
+			try {
+				connectionErrorRetries = Integer.parseInt(retries);
+			} catch (NumberFormatException e) {
+				connectionErrorRetries = -1;
+			}
+		}
 	}
 	
 	@Override
@@ -209,15 +217,19 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		doLog("Register Computer Name", 5);
 		// Gather computer Name.
 		StringBuffer computerName = new StringBuffer(ParameterKeys.COMPUTER_NAME)
-		.append(ParameterKeys.PARAMETER_SEPARATOR); 
+			.append(ParameterKeys.PARAMETER_SEPARATOR); 
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
 			doLog("Register computer name:" + computerName, 0);
-			doLog("Force Serialized Communication:" + System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY), 0);
+			doLog("Force Serialized Communication:" + System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION), 0);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
+			computerName.append("UNKNOWN");
 		}
-		askServer(CommandKeys.REGISTER_COMPUTER_NAME, computerName.toString());
+		askServer(CommandKeys.REGISTER_COMPUTER_NAME, computerName.toString(),
+				ParameterKeys.CLIENT_VERSION 
+				+ ParameterKeys.PARAMETER_SEPARATOR
+				+ Labels.VERSION);
 	}
 
 
@@ -228,8 +240,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	
 	/**
 	 * Asks the server if this instance of the client should be closed. This will allow for remote cancellation of client.
-	 * (Not yet implemented).
-	 * @return
+	 * @return True if the server responds that this client is already killed.
 	 */
 	protected boolean isKilled() {
 		boolean returnValue = isCancelManager();
@@ -248,8 +259,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	
 	/**
 	 * Asks the server if this instance of the client should be closed. This will allow for remote cancellation of client.
-	 * (Not yet implemented).
-	 * @return
+	 * @return True if the server responds that this client is active.
 	 */
 	protected boolean isActive() {
 		boolean returnValue = false;
@@ -266,7 +276,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 
 	/**
 	 * Asks the server if this instance of the client needs to be refreshed with the list of print services.
-	 * @return
+	 * @return True if the printer information needs to be synchronized with the server.
 	 */
 	protected boolean needsRefresh() {
 		boolean returnValue = true;
@@ -326,7 +336,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	protected Object pollServer(String command, String... parameters) throws ConnectException {
 		Object returnValue = "";
-		String url = null;
+		String encodedParameters = null;
 		URL webUrl = null;
 		HttpURLConnection connection = null;
 		Object content = null;
@@ -340,10 +350,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		try {
 			for (URL address : actualURLs) {
 				try {
-					//url = getEncodedUrl(address, command, parameters);
-					//doLog("URL:" + url, 5);
 					webUrl = address;
-					url = getEncodedParameters(command, parameters);
+					encodedParameters = getEncodedParameters(command, parameters);
 					connection = (HttpURLConnection) webUrl.openConnection();
 					connection.setDoOutput(true);
 					connection.setDoInput(true);
@@ -351,24 +359,25 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 					connection.setRequestProperty("charset", "utf-8");
 					connection.setRequestProperty("ContentType", "text/html");
-					connection.setRequestProperty("Content-Length", "" + Integer.toString(url.getBytes().length));
-					ByteArrayInputStream input = new ByteArrayInputStream(url.getBytes());
+					connection.setRequestProperty("Content-Length", "" + Integer.toString(encodedParameters.getBytes().length));
+					ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes());
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 					content = connection.getContent();
 					if (!connected) {
-						doLog("\nConnected! to:" + url + "\n", 0);
+						doLog("\nConnected! to:" + encodedParameters + "\n", 0);
 						connected = true;
 					} else {
-						doLog("Connected! to:" + url, 5);
+						doLog("Connected! to:" + encodedParameters, 5);
 					}
+					preferredURL = webUrl;
 				} catch (IOException e) {
 					LOG.debug(e.getMessage() + ":" + address);
 					connection = null;
 				}
 			}
 			if (connection == null) {
-				url = null;
+				encodedParameters = null;
 				connected = false;
 				throw new IOException("Couldn't connect to any of the addresses:" + getUrls());
 			}
@@ -388,7 +397,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 		} catch (MalformedURLException e) {
 			preferredURL = null;
-			LOG.error(e.getMessage() + "->" + url);
+			LOG.error(e.getMessage() + "->" + encodedParameters);
 		} catch (UnknownServiceException e) {
 			preferredURL = null;
 			doLog(e.getMessage(), 5);
@@ -400,7 +409,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			throw new ConnectException(e.getMessage());
 		} catch (Exception e) {
 			preferredURL = null;
-			LOG.error(e.getMessage() + "->" + url);
+			LOG.error(e.getMessage() + "->" + encodedParameters);
 		} finally {			
 			if (reader != null) {
 				try {
@@ -429,51 +438,11 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	}
 	
 	/**
-	 * Properly forms the url and encode the parameters so that servers can receive them correctly.
-	 * @param command Command to be encoded as part of the url.
-	 * @param parameters Arrays of parameters in the form parameterName=parameterValue that will be appended to the url.
-	 * @return Url string with parameterValues encoded.
+	 * The last successfully connected URL.
+	 * @return Last successfully connected URL or null.
 	 */
-	protected String getEncodedUrl(URL address, String command, String... parameters) {
-		StringBuffer parametersQuery = new StringBuffer("")
-				.append(ParameterKeys.UUID)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(getUuid());
-			if (!Is.emptyString(command)) {
-				parametersQuery.append('&')
-				.append(ParameterKeys.COMMAND)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(command);
-			}
-		
-			for (String parameter: parameters) {
-				String parameterString = parameter;
-				if (parameter.contains("=")) {
-					String parameterName = parameter.substring(0, parameter.indexOf("="));
-					String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
-					try {
-						parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
-						parameterString = parameterName + "=" + parameterValue;
-					} catch (UnsupportedEncodingException e) {
-						LOG.error(e.getMessage());
-					}
-				}
-				parametersQuery.append('&')
-						.append(parameterString);
-			}
-		String returnValue = "";
-		try {
-			URI uri = new URI(address.getProtocol(), address.getHost() + ":" + address.getPort(), address.getPath(), parametersQuery.toString(), null);
-			returnValue = uri.toASCIIString();
-		} catch (URISyntaxException e) {
-			LOG.error(e.getMessage(), e);
-		}
-		if (command.equals(CommandKeys.PRINT_TEST_PAGE) ||
-				command.equals(CommandKeys.SHOW_PRINT_SERVICES)) {
-			returnValue = returnValue.replace("wubiq.do", "wubiq-print-test.do");
-		}
-
-		return returnValue;
+	protected URL getPreferredURL() {
+		return preferredURL;
 	}
 	
 	/**
@@ -487,11 +456,18 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				.append(ParameterKeys.UUID)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
 				.append(getUuid());
+			if (!Is.emptyString(getGroups())) {
+				parametersQuery.append('&')
+						.append(ParameterKeys.GROUPS)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(getGroups());
+			}
+				
 			if (!Is.emptyString(command)) {
 				parametersQuery.append('&')
-				.append(ParameterKeys.COMMAND)
-				.append(ParameterKeys.PARAMETER_SEPARATOR)
-				.append(command);
+						.append(ParameterKeys.COMMAND)
+						.append(ParameterKeys.PARAMETER_SEPARATOR)
+						.append(command);
 			}
 		
 			for (String parameter: parameters) {
@@ -499,12 +475,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				if (parameter.contains("=")) {
 					String parameterName = parameter.substring(0, parameter.indexOf("="));
 					String parameterValue = parameter.substring(parameter.indexOf("=") + 1);
-					try {
-						parameterValue = URLEncoder.encode(parameterValue, "UTF-8");
-						parameterString = parameterName + "=" + parameterValue;
-					} catch (UnsupportedEncodingException e) {
-						LOG.error(e.getMessage());
-					}
+					parameterValue = WebUtils.INSTANCE.encode(parameterValue);
+					parameterString = parameterName + "=" + parameterValue;
 				}
 				parametersQuery.append('&')
 						.append(parameterString);
@@ -605,6 +577,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return uuid.trim();
 	}
 		
+	public String getGroups() {
+		return groups;
+	}
+
+	public void setGroups(String groups) {
+		this.groups = groups;
+	}
+
 	/**
 	 * @return the connections
 	 */
@@ -768,11 +748,14 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	protected static void initializeDefault(AbstractLocalPrintManager manager) {
 		// Set values based on wubiq-client.properties
-		manager.setApplicationName(ClientProperties.getApplicationName());
-		manager.setServletName(ClientProperties.getServletName());
-		manager.setUuid(ClientProperties.getUuid());
-		String connectionsString = ClientProperties.getConnections();
+		manager.setApplicationName(ClientProperties.INSTANCE.getApplicationName());
+		manager.setServletName(ClientProperties.INSTANCE.getServletName());
+		manager.setUuid(ClientProperties.INSTANCE.getUuid());
+		String connectionsString = ClientProperties.INSTANCE.getConnections();
 		addConnectionsString(manager, connectionsString);
+		manager.setDebugMode(ClientProperties.INSTANCE.isDebugMode());
+		manager.setCheckPendingJobInterval(ClientProperties.INSTANCE.getPollInterval());
+		manager.setPrintingJobInterval(ClientProperties.INSTANCE.getPrintJobWait());
 	}
 	
 	/**

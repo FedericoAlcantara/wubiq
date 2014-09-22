@@ -18,6 +18,7 @@ import net.sf.wubiq.android.PrintManagerService;
 import net.sf.wubiq.android.R;
 import net.sf.wubiq.android.WubiqActivity;
 import net.sf.wubiq.android.enums.NotificationIds;
+import net.sf.wubiq.android.utils.BluetoothUtils;
 import net.sf.wubiq.android.utils.NotificationUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
@@ -38,11 +39,11 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	Resources resources;
 	SharedPreferences preferences;
 	Context context;
-	BluetoothAdapter bAdapter;
 	private Map<String, String> compressionMap;
-	private Map<String, BluetoothDevice> printServicesName;
+	private Map<String, String> printServicesName;
 	private final String TAG = "BluetoothPrintManager";
-	private int bluetoothErrors = 0;
+	private int printingErrors = 0;
+	private boolean needsRefresh = true;
 
 	/**
 	 * Create a new instance of the bluetooth print manager.
@@ -54,13 +55,12 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		this.resources = resources;
 		this.preferences = preferences;
 		this.context = context;
-		this.bAdapter = getBAdapter();
-		printServicesName = new HashMap<String, BluetoothDevice>();
+		printServicesName = new HashMap<String, String>();
 
+		initializeDefault(this);
 		setCheckPendingJobInterval(preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default)));
 		setPrintingJobInterval(preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default)));
 		setConnectionErrorRetries(preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default)));
-		initializeDefault(this);
 		String host = preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default));
 		String port = preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default));
 		String connectionsString = preferences.getString(WubiqActivity.CONNECTIONS_KEY, resources.getString(R.string.server_connection_default));
@@ -69,29 +69,43 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	}
 	
 	/**
-	 * Bluetooth print service registration
+	 * Bluetooth print service registration.
 	 */
 	@Override
 	protected void registerPrintServices() throws ConnectException {
 		registerComputerName();
 		// Gather printServices.
 		doLog("Register Print Services for Wubiq Android: " + Labels.VERSION);
-		if (getBAdapter() != null) {
-			for (BluetoothDevice device : getBAdapter().getBondedDevices()) {
+		BluetoothAdapter adapter = BluetoothUtils.getAdapter(context);
+		printServicesName.clear(); // Release all services
+		if (adapter != null) {
+			for (BluetoothDevice device : adapter.getBondedDevices()) {
 				String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();
 				String selection = preferences.getString(deviceKey, null);
 				if (selection != null && !selection.equals("--")) {
 					StringBuffer printServiceRegister = new StringBuffer(serializeServiceName(device, selection));
-					printServicesName.put(printServiceRegister.toString(), device);
+					printServicesName.put(printServiceRegister.toString(), device.getAddress());
 					printServiceRegister.insert(0, ParameterKeys.PARAMETER_SEPARATOR);
 					printServiceRegister.insert(0, ParameterKeys.PRINT_SERVICE_NAME);
 					StringBuffer categories = new StringBuffer(serializePrintServiceCategories(device));
 					categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 							.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
 					askServer(CommandKeys.REGISTER_MOBILE_PRINT_SERVICE, printServiceRegister.toString(), categories.toString());
+					needsRefresh = false;
 				}
 			}
 		}
+	}
+	
+	/**
+	 * @see net.sf.wubiq.clients.AbstractLocalPrintManager#needsRefresh()
+	 */
+	@Override
+	protected boolean needsRefresh() {
+		if (!needsRefresh) {
+			needsRefresh = printServicesName.isEmpty();
+		}
+		return needsRefresh;
 	}
 	
 	/**
@@ -123,37 +137,40 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				.append(jobId);
 		doLog("Process Pending Job:" + jobId);
 		InputStream stream = null;
+		boolean closePrintJob = false;
+
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
-			boolean closePrintJob = true;
-			if (printServiceName != null && !printServiceName.equals("")) {
-				doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
-				String attributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter.toString());
-				doLog("Job(" + jobId + ") attributesData:" + attributesData);
-				stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
-				doLog("Job(" + jobId + ") stream:" + stream);
-				doLog("Job(" + jobId + ") print pdf");
-				closePrintJob = PrintClientUtils.INSTANCE.print(context, printServiceName, stream, resources, preferences, printServicesName);
+			
+			if (printServiceName != null && !printServiceName.equals("") &&
+					printServicesName.containsKey(printServiceName)) {
+				if (BluetoothUtils.device(context, printServicesName.get(printServiceName)) != null) {
+					doLog("Job(" + jobId + ") printServiceName:" + printServiceName);
+					String attributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter.toString());
+					doLog("Job(" + jobId + ") attributesData:" + attributesData);
+					stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter.toString());
+					doLog("Job(" + jobId + ") stream:" + stream);
+					doLog("Job(" + jobId + ") print pdf");
+					closePrintJob = PrintClientUtils.INSTANCE.print(context, printServicesName.get(printServiceName), stream, resources, preferences);
+				}
 			}
 			if (closePrintJob) {
 				doLog("Job(" + jobId + ") printed.");
 				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter.toString());
 				doLog("Job(" + jobId + ") close print job.");
+				BluetoothUtils.cancelError(context);
+				NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_ERROR_ID);
+				printingErrors = 0;
 			} else {
-				NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
-				NotificationUtils.INSTANCE.notify(context, 
-						NotificationIds.BLUETOOTH_ERROR_ID, 0,
-						context.getString(R.string.error_bluetooth));
+				BluetoothUtils.notifyError(context);
 			}
-			
 		} catch (Exception e) {
 			Log.e(TAG, e.getMessage() != null ? e.getMessage() : "Unspecified error:" + e);
-			NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
-
 			NotificationUtils.INSTANCE.notify(context, 
-					NotificationIds.PRINTING_ERROR_ID, 0,
+					NotificationIds.PRINTING_ERROR_ID, printingErrors++,
 					e.getMessage());
 		} finally {
+			NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
 			try {
 				if (stream != null) {
 					stream.close();
@@ -170,14 +187,25 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	}
 	
 	/** 
-	 * Public for testing purposes
+	 * Public for testing purposes.
 	 */
 	@Override
 	public String askServer(String command, String... parameters)
 			throws ConnectException {
-		return super.askServer(command, parameters);
+		try {
+			return super.askServer(command, parameters);
+		} catch (ConnectException e) {
+			needsRefresh = true;
+			throw e;
+		}
 	}
 	
+	/**
+	 * Serializes the service name for sending the information to the server.
+	 * @param device Device for name serialization.
+	 * @param selection Driver selected.
+	 * @return Serialized name / driver combination.
+	 */
 	private String serializeServiceName(BluetoothDevice device, String selection) {
 		StringBuffer printServiceRegister = new StringBuffer("")
 			.append(cleanPrintServiceName(device.getName()))
@@ -188,6 +216,11 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		return printServiceRegister.toString();
 	}
 	
+	/**
+	 * Serializes the categories of the device.
+	 * @param device Device to be polled about its categories.
+	 * @return List of categories in serialized form.
+	 */
 	private String serializePrintServiceCategories(BluetoothDevice device) {
 		StringBuffer categories = new StringBuffer("" +
 				"javax.print.attribute.standard.Copies=javax.print.attribute.standard.CopiesSupported:S:1,9999;" +
@@ -267,6 +300,11 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		return compressAttributes(categories.toString());
 	}
 	
+	/**
+	 * Replaces all attributes and categories for a compressed representation.
+	 * @param attributeList List of attributes to compress.
+	 * @return Compressed attributes.
+	 */
 	protected String compressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
@@ -275,6 +313,11 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		return returnValue;
 	}
 	
+	/**
+	 * Converts a previously compressed attributes list to the original form.
+	 * @param attributeList Attribute list.
+	 * @return Decompressed files.
+	 */
 	protected String deCompressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
@@ -283,6 +326,10 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		return returnValue;
 	}
 
+	/**
+	 * Map for compression.
+	 * @return Map with pair for translation.
+	 */
 	private  Map<String, String>getCompressionMap() {
 		if (compressionMap == null) {
 			compressionMap = new LinkedHashMap<String, String>();
@@ -300,31 +347,6 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			compressionMap.put("sun.print.CustomMediaSizeName", "xSCMx");
 		}
 		return compressionMap;
-	}
-	
-	/**
-	 * Gets the bluetooth adapter.
-	 * @return Bluetooth adapter or null if an errors occurs.
-	 */
-	private BluetoothAdapter getBAdapter() {
-		if (bAdapter == null) {
-			try {
-				bAdapter = BluetoothAdapter.getDefaultAdapter();
-				NotificationUtils.INSTANCE.cancelNotification(context,
-						NotificationIds.BLUETOOTH_ERROR_ID);
-				bluetoothErrors = 0;
-			} catch (Exception e) {
-				bluetoothErrors++;
-	    		String message = context.getString(R.string.error_bluetooth);
-	    		Log.e(TAG, message);
-	    		NotificationUtils.INSTANCE.notify(context, 
-	    				NotificationIds.BLUETOOTH_ERROR_ID,
-	    				bluetoothErrors,
-	    				message);				
-				bAdapter = null;
-			}
-		}
-		return bAdapter;
 	}
 	
 	/**

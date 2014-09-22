@@ -69,7 +69,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	}
 	
 	/**
-	 * @see android.widget.BaseAdapter#getCount()
+	 * @see android.widget.Adapter#getCount()
 	 */
 	@Override
 	public int getCount() {
@@ -77,7 +77,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	}
 
 	/**
-	 * @see android.widget.BaseAdapter#getItem(int)
+	 * @see android.widget.Adapter#getItem(int)
 	 */
 	@Override
 	public Object getItem(int position) {
@@ -85,7 +85,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	}
 
 	/**
-	 * @see android.widget.BaseAdapter#getItemId(int)
+	 * @see android.widget.Adapter#getItemId(int)
 	 */
 	@Override
 	public long getItemId(int position) {
@@ -93,7 +93,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	}
 
 	/**
-	 * @see android.widget.BaseAdapter#getView(int, android.view.View, android.view.ViewGroup)
+	 * @see android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {

@@ -16,6 +16,10 @@
 		<servlet-name>wubiq-print-test</servlet-name>
 		<servlet-class>net.sf.wubiq.servlets.PrintTestServlet</servlet-class>
 	</servlet>
+	<servlet>
+	    <servlet-name>wubiq-setup</servlet-name>
+	    <servlet-class>net.sf.wubiq.servlets.WubiqSetupServlet</servlet-class>
+	</servlet>
 	<servlet-mapping>
 		<servlet-name>wubiq</servlet-name>
 		<url-pattern>/wubiq.do</url-pattern>
@@ -23,5 +27,9 @@
 	<servlet-mapping>
 		<servlet-name>wubiq-print-test</servlet-name>
 		<url-pattern>/wubiq-print-test.do</url-pattern>
+	</servlet-mapping>
+	<servlet-mapping>
+	    <servlet-name>wubiq-setup</servlet-name>
+	    <url-pattern>/wubiq-setup.do</url-pattern>
 	</servlet-mapping>
 </web-app>

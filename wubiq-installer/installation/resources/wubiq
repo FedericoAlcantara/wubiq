@@ -1,0 +1,28 @@
+#!/bin/bash
+
+cd ${INSTALL_PATH}/bin
+case $1 in
+
+  start)
+  	echo "starting..."
+  	java net.sf.wubiq.clients.WubiqLauncher start >/var/log/wubiq.log 2>&1 &
+  	echo "started."
+  ;;
+  stop)
+  	echo "stopping..."
+  	java net.sf.wubiq.clients.WubiqLauncher stop
+  	echo "stopped."
+  ;;
+  restart)
+  	echo "restarting..."
+  	java net.sf.wubiq.clients.WubiqLauncher stop
+  	java net.sf.wubiq.clients.WubiqLauncher start >/var/log/wubiq.log 2>&1 &
+  	echo "restarted."
+  ;;
+  *)
+    echo "Usage: start|stop|restart"
+  ;;
+  esac
+
+exit 0
+

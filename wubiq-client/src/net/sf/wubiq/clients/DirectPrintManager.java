@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.clients;
 
+import java.awt.print.PrinterException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -49,7 +50,18 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private Map<UUID, Object> registeredObjects;
 	
 	
-	public DirectPrintManager(String jobIdString, PrintService printService, 
+	/**
+	 * Creates an instances of direct print manager.
+	 * @param jobIdString Id of the job.
+	 * @param printService PrintService to print to.
+	 * @param printRequestAttributeSet Attributes to be set on the print service.
+	 * @param printJobAttributeSet Attributes for the print job.
+	 * @param docAttributeSet Attributes for the document.
+	 * @param debugMode The state of the the debug mode.
+	 * @param debugLevel The debug Level.
+	 * @return an instance of a DirectPrintManager.
+	 */
+	protected DirectPrintManager(String jobIdString, PrintService printService, 
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
@@ -80,13 +92,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				final RemoteCommand remoteCommand = 
 						(RemoteCommand) DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
 				if (remoteCommand != null) {
-					// Run it in a separate thread, so it won't block the communication
-					//Thread callCommand = new Thread(new Runnable() {
-						//public void run() {
-							callCommand(remoteCommand);
-						//}
-					//}, remoteCommand.getObjectUUID() + "-" + remoteCommand.getMethodName());
-					//callCommand.start();
+					callCommand(remoteCommand);
 				}
 			} else {
 				try {
@@ -101,26 +107,89 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * Creates a printable object and starts the local printing process.
 	 */
-	public void createPrintable(UUID objectUUID) {
-		PrintableChunkRemote remote = (PrintableChunkRemote) Enhancer.create(PrintableChunkRemote.class, 
+	public void createPrintable(UUID objectUUID) throws PrinterException {
+		PrintableChunkRemote remote = (PrintableChunkRemote) Enhancer.create(getPrintableChunkRemoteClass(), 
 				new ProxyClientSlave(jobId, this, objectUUID, PrintableChunkRemote.FILTERED_METHODS));
-		ClientPrintDirectUtils.printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
-				docAttributeSet, 
-				remote);
-	}
-	
-	/**
-	 * Creates a pageable object and starts the printing process.
-	 */
-	public void createPageable(UUID objectUUID) {
-		PageableRemote remote = (PageableRemote) Enhancer.create(PageableRemote.class, 
-				new ProxyClientSlave(jobId, this, objectUUID, PageableRemote.FILTERED_METHODS));
-		ClientPrintDirectUtils.printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
+		
+		printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				remote);
 		printing = false;
 	}
 	
+	/**
+	 * Default class for remote printable chunk instance.
+	 * @return Class to be used for remote printable.
+	 */
+	protected Class<? extends PrintableChunkRemote> getPrintableChunkRemoteClass() {
+		return PrintableChunkRemote.class;
+	}
+	
+	/**
+	 * Prints a printable object.
+	 * @param jobId Id of the object.
+	 * @param printService Print service.
+	 * @param printRequestAttributeSet Print request Attribute set.
+	 * @param printJobAttributeSet Print Job attribute set.
+	 * @param docAttributeSet Document attribute set.
+	 * @param printable Printable.
+	 */
+	protected void printPrintable(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			PrintableChunkRemote printable) throws PrinterException {
+		ClientPrintDirectUtils.printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
+				docAttributeSet, 
+				printable);
+	}
+	
+	/**
+	 * Creates a pageable object and starts the printing process.
+	 */
+	public void createPageable(UUID objectUUID) throws PrinterException {
+		PageableRemote remote = (PageableRemote) Enhancer.create(getPageableRemoteClass(), 
+				new ProxyClientSlave(jobId, this, objectUUID, getPageableFilteredMethods()));
+		printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
+				docAttributeSet, 
+				remote);
+		printing = false;
+	}
+
+	/**
+	 * Default class to use for pageable remotes.
+	 * @return Pageable class.
+	 */
+	protected Class<? extends PageableRemote> getPageableRemoteClass() {
+		return PageableRemote.class;
+	}
+	
+	/**
+	 * Default filtered methods for pageable.
+	 * @return String array with the names of the filtered methods.
+	 */
+	protected String[] getPageableFilteredMethods() {
+		return PageableRemote.FILTERED_METHODS;
+	}
+	
+	/**
+	 * Prints a pageable object.
+	 * @param jobId Id of the object.
+	 * @param printService Print service.
+	 * @param printRequestAttributeSet Print request Attribute set.
+	 * @param printJobAttributeSet Print Job attribute set.
+	 * @param docAttributeSet Document attribute set.
+	 * @param pageable Pageable.
+	 */
+	protected void printPageable(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			PageableRemote pageable) throws PrinterException {
+		ClientPrintDirectUtils.printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
+				docAttributeSet, 
+				pageable);
+	}
 	/**
 	 * Registers an object for remote communication on the client side.
 	 * @param objectUUID object unique id.
@@ -133,29 +202,6 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	public void endPrintJob() {
 		printing = false;
 	}
-	
-	/**
-	 * @return the readValue
-	 */
-	/*
-	private synchronized String getRemoteData(UUID uuid) throws ConnectException, TimeoutException {
-		int timeout = 0;
-		String remoteData = null;
-		do {
-			remoteData = (String)directServer(jobIdString, DirectConnectCommand.POLL_REMOTE_DATA, 
-					DirectConnectKeys.DIRECT_CONNECT_DATA_UUID 
-					+ ParameterKeys.PARAMETER_SEPARATOR
-					+ uuid.toString());
-			if (remoteData == null) {
-				timeout = DirectConnectUtils.INSTANCE.checkTimeout(timeout);
-			} else {
-				timeout = 0;
-			}
-		} while (remoteData == null || 
-				remoteData.equals(DirectConnectKeys.DIRECT_CONNECT_NOT_READY));
-		return remoteData;
-	}
-	*/
 
 	/**
 	 * Calls the command on the physical printer.

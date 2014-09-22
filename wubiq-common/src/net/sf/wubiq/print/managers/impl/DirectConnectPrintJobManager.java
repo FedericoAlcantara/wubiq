@@ -7,6 +7,9 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.print.PrintService;
+
+import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
@@ -20,7 +23,6 @@ import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManager {
 	private Map<String, DirectConnectorQueue> connectors;
 	private Map<Long, String> associatedQueue;
-	private long lastJobId;
 	
 	/**
 	 * While you can directly create an instance of this queue, we encourage to use the
@@ -38,7 +40,6 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	public synchronized void initialize() throws Exception {
 		connectors = new HashMap<String, DirectConnectorQueue>();
 		associatedQueue = new HashMap<Long, String>();
-		lastJobId = 0l;
 	}
 
 	/**
@@ -47,9 +48,16 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	@Override
 	public synchronized long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
 		IDirectConnectorQueue queue = directConnector(queueId);
-		lastJobId++;
+		long lastJobId = RemotePrintJobManagerFactory.nextJobId();
 		queue.addPrintJob(lastJobId, remotePrintJob);
 		associatedQueue.put(lastJobId, queueId);
+		PrintService printService = remotePrintJob.getPrintService();
+		if (printService != null) {
+			if (printService instanceof INotifiablePrintService) {
+				INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+				notifiable.printJobCreated(lastJobId);
+			}
+		}
 		return lastJobId;
 	}
 
@@ -60,6 +68,14 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	public synchronized boolean removeRemotePrintJob(long jobId) {
 		DirectConnectorQueue queue = associatedQueue(jobId);
 		if (queue != null) {
+			IRemotePrintJob remotePrintJob = getRemotePrintJob(jobId, true);
+			PrintService printService = remotePrintJob.getPrintService();
+			if (printService != null) {
+				if (printService instanceof INotifiablePrintService) {
+					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+					notifiable.printJobFinished(jobId);
+				}
+			}
 			queue.removePrintJob(jobId);
 		}
 		return true;
@@ -88,7 +104,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	/**
 	 * Returns the direct connector queue manager.
 	 * @param jobId Id of the associated job.
-	 * @return
+	 * @return Queue handler for print jobs.
 	 */
 	private synchronized DirectConnectorQueue associatedQueue(long jobId) {
 		String queueId = associatedQueue.get(jobId);
@@ -110,5 +126,20 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 			connectors.put(queueId, queue);
 		}
 		return queue;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getPrintServicePendingJobs(java.lang.String, javax.print.PrintService)
+	 */
+	public int getPrintServicePendingJobs(String queueId, PrintService printService) {
+		int returnValue = 0;
+		IDirectConnectorQueue queue = directConnector(queueId);
+		for (Long jobId : queue.printJobs()) {
+			IRemotePrintJob printJob = queue.remotePrintJob(jobId);
+			if (printJob.getPrintService().equals(printService)) {
+				returnValue++;
+			}
+		}
+		return returnValue;
 	}
 }

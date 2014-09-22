@@ -26,14 +26,7 @@ public class DeviceStarMicronics extends BaseWubiqDevice {
     	{
 			port = StarIOPort.getPort("bt:" + getDeviceAddress(), "mini", 10000);
 			Thread.sleep(getPrintDelay());
-        	int start = 0;
-        	int chunk = 4096;
-        	while (start < getPrintData().length) {
-        		int count = (start + chunk) < getPrintData().length ? chunk : getPrintData().length - start;
-        		port.writePort(getPrintData(), start, count);
-        		start += count;
-				Thread.sleep(getPrintDelay());
-        	}
+        	port.writePort(getPrintData(), 0, getPrintData().length);
 			int sleepTime = (int) (getPrintData().length / 1024.0 * getPrintPause());
 			Thread.sleep(sleepTime);
 		}

@@ -25,6 +25,7 @@ public final class RemotePrintJobManagerFactory {
 	private static IRemotePrintJobManager instance;
 	private static IDirectConnectPrintJobManager directInstance;
 	private static Map<String, RemotePrintJobManagerType> managers;
+	private static long jobId = 0;
 	
 	private RemotePrintJobManagerFactory(){
 	}
@@ -50,6 +51,11 @@ public final class RemotePrintJobManagerFactory {
 		return returnValue;
 	}
 	
+	public synchronized static long nextJobId() {
+		jobId++;
+		return jobId;
+	}
+ 	
 	/**
 	 * Returns the singleton object according to the manager type.
 	 * @param managerType Manager type.
@@ -73,12 +79,12 @@ public final class RemotePrintJobManagerFactory {
 	}
 	
 	/**
-	 * Gets a singleton of a direct connect print job manager
-	 * @return
+	 * Gets a singleton of a direct connect print job manager.
+	 * @return Job manager for direct connect printing.
 	 */
 	private static IDirectConnectPrintJobManager getDirectConnectPrintJobManager() {
 		if (directInstance == null) {
-			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(ServerProperties.getRemotePrintJobManager());
+			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(ServerProperties.INSTANCE.getRemotePrintJobManager());
 		}
 		return directInstance;
 	}
@@ -88,7 +94,7 @@ public final class RemotePrintJobManagerFactory {
 	 */
 	private static IRemotePrintJobManager getRemotePrintJobManager() {
 		if (instance == null) {
-			instance = getPrintJobManager(ServerProperties.getPrintJobManager());
+			instance = getPrintJobManager(ServerProperties.INSTANCE.getPrintJobManager());
 		}
 		return instance;
 	}

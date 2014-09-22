@@ -3,6 +3,7 @@ package net.sf.wubiq.utils;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
@@ -46,6 +47,7 @@ import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.print.services.RemotePrintService;
+import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -64,17 +66,36 @@ public class PrintServiceUtils {
 	private static Set<String>photoPrinters;
 	private static Set<String>dotMatrixHqPrinters;
 	private static Set<String>dotMatrixPrinters;
+	private static final String VALID_PRINT_SERVICE_CHARACTERS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+	
+	/**
+	 * Gets the list of possible service providers.
+	 * @return Service providers. Never null.
+	 */
+	@SuppressWarnings("unchecked")
+	public static List<PrintServiceLookup> getServiceProviders() {
+		List<PrintServiceLookup> lookupPrintServices = new ArrayList<PrintServiceLookup>();
+		Method method;
+		try {
+			method = PrintServiceLookup.class.getDeclaredMethod("getAllLookupServices", new Class[]{});
+			method.setAccessible(true);
+			List<PrintServiceLookup> providers = (List<PrintServiceLookup>) method.invoke(null, new Object[]{});
+			if (providers != null) {
+				lookupPrintServices.addAll(providers);
+			}
+		} catch (Exception e) {
+			LOG.fatal(e.getMessage(), e);
+		}
+		return lookupPrintServices;
+	}
 	
 	/**
 	 * Tries to refresh print services.
 	 */
 	@SuppressWarnings("rawtypes")
 	public static void refreshServices(){
-		Method method;
 		try {
-			method = PrintServiceLookup.class.getDeclaredMethod("getAllLookupServices", new Class[]{});
-			method.setAccessible(true);
-			List lookupPrintServices = (List) method.invoke(null, new Object[]{});
+			List lookupPrintServices = getServiceProviders();
 			for (Object object : lookupPrintServices) {
 				LOG.debug("Trying to refresh:" + object.getClass());
 				Method refreshServices;
@@ -88,7 +109,7 @@ public class PrintServiceUtils {
 				}
 			}
 		} catch (Exception e) {
-			LOG.debug(e.getMessage());
+			LOG.error(e.getMessage());
 		}
 
 	}
@@ -102,6 +123,82 @@ public class PrintServiceUtils {
 		return PrintServiceLookup.lookupPrintServices(null, null);
 	}
 	
+	/**
+	 * Gets print services belonging to a given group and optionally the locals print services and the non grouped print services.
+	 * @param group Group to look for. Null or empty group will result in return non grouped print services.
+	 * @param includeLocals If true also local print services will be returned.
+	 * @param includeNonGrouped If true also adds the non grouped print services. This parameter has no use if group is given empty or null.
+	 * @return An array containing the selected print services.
+	 */
+	public static PrintService[] getPrintServices(String group, boolean includeLocals, boolean includeNonGrouped) {
+		List<PrintService> returnValue = new ArrayList<PrintService>();
+		for (PrintService printService : getPrintServices()) {
+			if (isRemotePrintService(printService)) {
+				RemotePrintService remotePrintService = (RemotePrintService)printService;
+				if (Is.emptyString(group) && remotePrintService.getGroups().isEmpty()) {
+					returnValue.add(printService);
+				} else if (remotePrintService.getGroups().contains(group.toLowerCase())) {
+					returnValue.add(printService);
+				} else if (remotePrintService.getGroups().isEmpty() &&
+						includeNonGrouped) {
+					returnValue.add(printService);
+				}
+			} else {
+				if (includeLocals) {
+					returnValue.add(printService);
+				}
+			}
+		}
+		
+		return returnValue.toArray(new PrintService[0]);
+	}
+	
+	/**
+	 * Replaces a print service from its corresponding lookup with a new one.
+	 * @param printService Print service to replace.
+	 * @param newPrintService New print service to add to the list.
+	 * @return The print service just added.
+	 */
+	@SuppressWarnings("static-access")
+	public static PrintService replacePrintService(PrintService printService, PrintService newPrintService) {
+		PrintService returnValue = newPrintService;
+		for (PrintServiceLookup lookup : getServiceProviders()) {
+			// Just try a simple registration
+			if (!lookup.registerService(newPrintService)) {
+				Field field = null;
+				try {
+					field = lookup.getClass().getDeclaredField("printServices");
+				} catch (Exception e) {
+					LOG.debug(e.getMessage());
+				}
+				if (field == null) {
+					try {
+						field = lookup.getClass().getField("printServices");
+					} catch (Exception e) {
+						LOG.debug(e.getMessage());
+					}
+				}
+				if (field != null) {
+					try {
+						field.setAccessible(true);
+						PrintService[] printServices = (PrintService[])field.get(lookup);
+						for (int index = 0; index < printServices.length; index++) {
+							if (newPrintService.equals(printServices[index])) {
+								printServices[index] = newPrintService;
+							}
+						}
+					} catch (Exception e) {
+						LOG.debug(e.getMessage());
+					}
+				} else if (lookup instanceof RemotePrintServiceLookup) {
+					RemotePrintServiceLookup remote = (RemotePrintServiceLookup) lookup;
+					remote.registerRemoteService(newPrintService);
+				}
+			}
+		}
+		return returnValue;
+	}
+
 	/**
 	 * Based on its name find corresponding printer.
 	 * @param name Name of the printer.
@@ -478,22 +575,41 @@ public class PrintServiceUtils {
 	public static boolean isRemotePrintService(PrintService printService) {
 		boolean returnValue = false;
 		try {
-			Method getUuid = printService.getClass().getDeclaredMethod("getUuid", new Class[]{});
-			String uuid = ((String) getUuid.invoke(printService, new Object[]{}));
-			returnValue = !Is.emptyString(uuid);
-		} catch (SecurityException e) {
-			LOG.debug(e.getMessage());
-		} catch (NoSuchMethodException e) {
-			LOG.debug(e.getMessage());
-		} catch (IllegalArgumentException e) {
+			Method getUuid = getRemotePrintServiceUuidMethod(printService.getClass());
+			if (getUuid != null) {
+				String uuid = ((String) getUuid.invoke(printService, new Object[]{}));
+				returnValue = !Is.emptyString(uuid);
+			}
+		} catch (InvocationTargetException e) {
 			LOG.debug(e.getMessage());
 		} catch (IllegalAccessException e) {
 			LOG.debug(e.getMessage());
-		} catch (InvocationTargetException e) {
+		} catch (IllegalArgumentException e) {
 			LOG.debug(e.getMessage());
 		}
 		
 		return returnValue;
+	}
+	
+	/**
+	 * Lookup for getUuid method within the given class or its parent.
+	 * @param clazz Class to be searched.
+	 * @return A method or null if not found.
+	 */
+	@SuppressWarnings({ "unchecked", "rawtypes" })
+	private static Method getRemotePrintServiceUuidMethod(Class clazz) {
+		Method uuid = null;
+		if (clazz !=null) {
+			try {
+				uuid = clazz.getDeclaredMethod("getUuid", new Class[]{});
+			} catch (Exception e) {
+				LOG.debug(e.getMessage());
+			}
+			if (uuid == null) {
+				uuid = getRemotePrintServiceUuidMethod(clazz.getSuperclass());
+			}
+		}
+		return uuid;
 	}
 	
 	/**
@@ -613,32 +729,6 @@ public class PrintServiceUtils {
 		return printServiceRegister.toString();
 	}
 
-	/**
-	 * Decodes a html with % codes.
-	 * @param input Html with % codes.
-	 * @return Converted string.
-	 */
-	public static String decodeHtml(String input) {
-		StringBuffer buffer = new StringBuffer("");
-		if (input != null) {
-			for (int index = 0; index < input.length(); index++) {
-				char characterAt = input.charAt(index);
-				if (characterAt == '%') {
-					if ((index + 2) < input.length()) {
-						String hex = new String(new char[]{input.charAt(index + 1),
-								input.charAt(index + 2)});
-						buffer.append((char)Integer.parseInt(hex, 16));
-						index += 2;
-					} else {
-						buffer.append(characterAt);
-					}
-				} else {
-					buffer.append(characterAt);
-				}
-			}
-		}
-		return buffer.toString();
-	}
 
 	/**
 	 * Deserialize printService and its categories
@@ -706,6 +796,11 @@ public class PrintServiceUtils {
 		return remotePrintService;
 	}
 	
+	/**
+	 * Compresses the attribute list of a print service.
+	 * @param attributeList String representing the list of valid attributes.
+	 * @return Compressed representation of the attribute list.
+	 */
 	public static String compressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
@@ -714,6 +809,11 @@ public class PrintServiceUtils {
 		return returnValue;
 	}
 	
+	/**
+	 * Uncompress a previously compressed list of attributes.
+	 * @param attributeList Attribute list is compressed format.
+	 * @return String representing the attribute list.
+	 */
 	public static String deCompressAttributes(String attributeList) {
 		String returnValue = attributeList;
 		for (Entry<String, String> entry : getCompressionMap().entrySet()) {
@@ -772,7 +872,7 @@ public class PrintServiceUtils {
 		StringBuffer returnValue = new StringBuffer("");
 		for (int index = 0; index < printServiceName.length(); index++) {
 			char charAt = printServiceName.charAt(index);
-			if ("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".indexOf(charAt) >= 0) {
+			if (VALID_PRINT_SERVICE_CHARACTERS.indexOf(charAt) >= 0) {
 				returnValue.append(charAt);
 			} else {
 				returnValue.append("_");
@@ -1052,7 +1152,7 @@ public class PrintServiceUtils {
 	public static boolean supportDocFlavor(PrintService printService, DocFlavor docFlavor) {
 		boolean returnValue = false;
 		for (DocFlavor psDocFlavor : printService.getSupportedDocFlavors()) {
-			if (psDocFlavor.equals(docFlavor)) {
+			if (psDocFlavor.toString().equals(docFlavor.toString())) {
 				returnValue = true;
 				break;
 			}
@@ -1072,6 +1172,21 @@ public class PrintServiceUtils {
 		if (printService instanceof RemotePrintService) {
 			returnValue = Labels.VERSION
 					.equals(((RemotePrintService) printService).getClientVersion());
+		}
+		return returnValue;
+	}
+	/**
+	 * Gets the client version that is connecting to.
+	 * @param printService Print service to poll.
+	 * @return Client version or <2.0.
+	 */
+	public static String getClientVersion(PrintService printService) {
+		String returnValue = "< 2.0";
+		if (isRemotePrintService(printService)) {
+			RemotePrintService remote = (RemotePrintService) printService;
+			if (!Is.emptyString(remote.getClientVersion())) {
+				returnValue = remote.getClientVersion();
+			}
 		}
 		return returnValue;
 	}

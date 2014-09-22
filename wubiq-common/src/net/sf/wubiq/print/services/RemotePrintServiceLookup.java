@@ -67,12 +67,22 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	public void refreshServices() {
 		
 	}
+
 	/**
 	 * Overrides default behavior and register services in custom form.
 	 * @param printService Service to be registered.
 	 * @return Always true.
 	 */
 	public static boolean registerService(PrintService printService) {
+		return registerRemoteService(printService);
+	}
+
+	/**
+	 * Overrides default behavior and register services in custom form.
+	 * @param printService Service to be registered.
+	 * @return Always true.
+	 */
+	public static boolean registerRemoteService(PrintService printService) {
 		String uuid = ((RemotePrintService)printService).getUuid();
 		Map<String, PrintService> uuidServices = getRemotePrintServices(uuid);
 		uuidServices.put(printService.getName(), printService);
@@ -81,7 +91,7 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 		}
 		return true;
 	}
-	
+
 	/**
 	 * Gather all active remote print services.
 	 * @return A List of remote print services. Never null.
@@ -93,7 +103,7 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 		}
 		return returnValue;
 	}
-
+	
 	/**
 	 * Gather all active remote print services.
 	 * @return A List of remote print services. Never null.
@@ -113,7 +123,7 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	public static void removePrintServices(String uuid) {
 		getAllRemotePrintServices().remove(uuid);
 	}		
-
+	
 	/**
 	 * @return All remote print services.
 	 */

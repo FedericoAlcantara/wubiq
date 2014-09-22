@@ -3,13 +3,10 @@
  */
 package net.sf.wubiq.utils;
 
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.File;
 import java.util.Properties;
-import java.util.UUID;
 
-import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.common.ConfigurationKeys;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,114 +18,58 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class ClientProperties {
+public class ClientProperties extends BaseProperties {
 	private static final Log LOG = LogFactory.getLog(ClientProperties.class);
 	private static Properties properties;
 	
-	protected ClientProperties() {
-	}
+	public static final ClientProperties INSTANCE = new ClientProperties();
 
-	/**
-	 * @deprecated Use the getConnections instead.
-	 * Returns the connection host.
-	 * @return the connection host.
-	 */
-	public static String getHost() {
-		return get("host", "http://localhost").trim();
+	protected ClientProperties(){
+		
 	}
 	
-	/**
-	 * @deprecated Use the getConnections instead.
-	 * Gets the connection port.
-	 * @return Connection port.
-	 */
-	public static String getPort() {
-		return get("port", "8080").trim();
-	}
-	
-	public static String getApplicationName() {
-		return get("application", WebKeys.DEFAULT_APPLICATION_NAME).trim();
-	}
-	
-	public static String getServletName() {
-		return get("servlet", WebKeys.DEFAULT_SERVLET_NAME).trim();
-	}
-	
-	public static String getUuid() {
-		return get("uuid", UUID.randomUUID().toString()).trim();
-	}
-	
-	/**
-	 * Reads the possible connections from the client properties. This should be the preferred method.
-	 * @return A comma separated list of connections.
-	 */
-	public static String getConnections() {
-		StringBuffer returnValue = new StringBuffer("");
-		String host = get("host", "").trim();
-		String port = get("port", "").trim();
-		if (!Is.emptyString(host)) {
-			returnValue.append(host);
-			if (!Is.emptyString(port)) {
-				returnValue.append(':')
-					.append(port);
-			}
-		}
-		String connectionsString = get("connections", "").trim();
-		if (!Is.emptyString(connectionsString)) {
-			String [] connections = connectionsString.split("[,;]");
-			for (String connection : connections) {
-				if (!Is.emptyString(connection.trim())) {
-					if (returnValue.length() > 0) {
-						returnValue.append(',');
-					}
-					returnValue.append(connection.trim());
-				}
-			}
-		}
-		return returnValue.toString();
-	}
-	
-	/**
-	 * Gets a value from properties file.
-	 * @param key Key to search for.
-	 * @param defaultValue Value to return in case key is not found in properties.
-	 * @return Found value or default value.
-	 */
-	protected static String get(String key, String defaultValue) {
-		String returnValue = getProperties().getProperty(key);
-		if (returnValue == null) {
-			returnValue = defaultValue;
-		}
-		return returnValue;
-	}
-
-	/**
-	 * @return the properties
-	 */
-	protected static Properties getProperties() {
+	protected Properties getProperties() {
 		if (properties == null) {
-			try {
-				properties = new Properties();
-				InputStream stream = null;
-				try {
-					stream = new FileInputStream("./" + WebKeys.CLIENT_PROPERTIES_FILE_NAME +".properties");
-					LOG.info(ClientLabels.get("client.info_client_properties_found_file"));
-				} catch (Exception e) {
-					LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
-				}
-				if (stream == null) {
-					stream = Class.class.getResourceAsStream("/" + WebKeys.CLIENT_PROPERTIES_FILE_NAME + ".properties");
-					if (stream == null) {
-						throw new IOException("null");
-					}
-					LOG.info(ClientLabels.get("client.info_client_properties_found"));
-				}
-				properties.load(stream);
-			} catch (Exception e) {
-				LOG.info(ClientLabels.get("client.info_no_client_properties_found"));
-			}
+			properties = super.getProperties();
 		}
 		return properties;
 	}
 	
+	/**
+	 * Must produce a file where the properties reside. Should return null if not found.
+	 * @return Found file or null.
+	 */
+	protected File getPropertiesFile() {
+		return super.getPropertiesFile(ConfigurationKeys.CLIENT_PROPERTIES_FILE_NAME);
+	}
+	
+	/**
+	 * Shows a message indicating that a properties file was found.
+	 */
+	protected void showPropertiesFileFound(){
+		LOG.info(ClientLabels.get("client.info_client_properties_found_file"));
+	}
+	
+	/**
+	 * Shows a message indicating that the properties file was not found.
+	 */
+	protected void showPropertiesFileNotFound(){
+		LOG.info(ClientLabels.get("client.info_no_client_properties_found_file"));
+	}
+
+	/**
+	 * Shows a message indicating that a properties element was found.
+	 * This might be a different message, since the properties file might be inside a jar object.
+	 */
+	protected void showPropertiesFound(){
+		LOG.info(ClientLabels.get("client.info_client_properties_found"));
+	}
+	
+	/**
+	 * Shows a message indicating that a properties element was not found.
+	 * This might be a different message, since the properties file might be inside a jar object.
+	 */
+	protected void showPropertiesNotFound(){
+		LOG.info(ClientLabels.get("client.info_no_client_properties_found"));
+	}	
 }

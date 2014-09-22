@@ -5,7 +5,7 @@
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="lib-nondeploy/cglib-nodep-3.1.jar"/>
-	<classpathentry kind="lib" path="lib-nondeploy/fontbox-1.6.0.jar"/>
-	<classpathentry kind="lib" path="lib-nondeploy/pdfbox-1.6.0.jar"/>
+	<classpathentry kind="lib" path="lib-nondeploy/fontbox-1.8.6.jar"/>
+	<classpathentry kind="lib" path="lib-nondeploy/pdfbox-1.8.6.jar" sourcepath="/pdfbox"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

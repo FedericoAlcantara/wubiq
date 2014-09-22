@@ -53,6 +53,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	
 	public LocalPrintManager() {
 		super();
+		
 	}
 	
 	
@@ -90,13 +91,13 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
 			boolean isDirectConnect = "true".equalsIgnoreCase(isDirectConnectData);
 			
-			if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY))  ||
+			if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION))  ||
 					!isDirectConnect) {
 				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
-				ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+				print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			} else {
 				directServer(jobId, DirectConnectCommand.START, parameter);
-				DirectPrintManager manager = new DirectPrintManager(
+				DirectPrintManager manager = createDirectPrintManager(
 						jobId,
 						printService,
 						printRequestAttributeSet,
@@ -134,59 +135,54 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}
 		}
 	}
+ 	
+	/**
+	 * Performs the printing. This is a needed method for fulfilling tests requirements. 
+	 * @param jobId Identifying job id.
+	 * @param printService PrintService to print to.
+	 * @param printRequestAttributeSet Attributes to be set on the print service.
+	 * @param printJobAttributeSet Attributes for the print job.
+	 * @param docAttributeSet Attributes for the document.
+	 * @param docFlavor Document flavor.
+	 * @param printData Document as input stream to sent to the print service.
+	 * @throws IOException if service is not found and no default service.
+	 */
+	protected void print(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			DocFlavor docFlavor,
+			InputStream printData) throws IOException {
+		ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+	}
 	
 	/**
-	 * Process a single pending job.
-	 * @param jobId Id of the job to be printed.
+	 * Creates a direct print manager.
+	 * @param jobId Id of the job.
+	 * @param printService PrintService to print to.
+	 * @param printRequestAttributeSet Attributes to be set on the print service.
+	 * @param printJobAttributeSet Attributes for the print job.
+	 * @param docAttributeSet Attributes for the document.
+	 * @param debugMode The state of the the debug mode.
+	 * @param debugLevel The debug Level.
+	 * @return an instance of a DirectPrintManager.
 	 */
-	protected void OLD_processPendingJob(String jobId) throws ConnectException {
-		String parameter = printJobPollString(jobId);
-		doLog("Process Pending Job: " + jobId, 0);
-		InputStream printData = null;
-		try {
-			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
-			doLog("Job(" + jobId + ") printServiceName:" + printServiceName, 5);
-			String printRequestAttributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") printRequestAttributes:" + printRequestAttributesData, 5);
-			String printJobAttributesData = askServer(CommandKeys.READ_PRINT_JOB_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") printJobAttributes:" + printJobAttributesData, 5);
-			String docAttributesData = askServer(CommandKeys.READ_DOC_ATTRIBUTES, parameter);
-			doLog("Job(" + jobId + ") docAttributes:" + docAttributesData, 5);
-			String docFlavorData = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
-			doLog("Job(" + jobId + ") docFlavor:" + docFlavorData, 5);
-			
-			printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
-			PrintService printService = getPrintServicesName().get(printServiceName);
-			PrintRequestAttributeSet printRequestAttributeSet = PrintServiceUtils.convertToPrintRequestAttributeSet(printRequestAttributesData);
-			PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(printJobAttributesData);
-			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
-			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
-			ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
-			doLog("Job(" + jobId + ") printed.", 0);
-		} catch (ConnectException e) {
-			LOG.error(e.getMessage(), e);
-			throw e;
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (Exception e) {
-			LOG.error(e.getMessage(), e);
-		} finally {
-			try {
-				if (printData != null) {
-					printData.close();
-				}
-			} catch (IOException e) {
-				doLog(e.getMessage());
-			}
-			try {
-				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-				doLog("Job(" + jobId + ") closing print job.");
-			} catch (Exception e) {
-				doLog(e.getMessage()); // this is not a desirable to show error
-			}
-		}
+	protected DirectPrintManager createDirectPrintManager(String jobId, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet,
+			DocAttributeSet docAttributeSet,
+			boolean debugMode,
+			int debugLevel) {
+		return new DirectPrintManager(
+				jobId,
+				printService,
+				printRequestAttributeSet,
+				printJobAttributeSet,
+				docAttributeSet,
+				isDebugMode(),
+				getDebugLevel());
 	}
- 	
+	
 	/**
 	 * Creates the print job poll string.
 	 * @param jobId Id of the print job to pull from the server.
@@ -253,7 +249,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 							+DirectConnectUtils.INSTANCE.serialize(printService.getSupportedDocFlavors()),
 						DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER 
 							+ ParameterKeys.PARAMETER_SEPARATOR
-							+ ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY)) ?
+							+ ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION)) ?
 									"FALSE" : "TRUE"),
 						DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION
 							+ ParameterKeys.PARAMETER_SEPARATOR
@@ -265,7 +261,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		}
 	}
 
-	private Map<String, PrintService> getPrintServicesName() {
+	protected Map<String, PrintService> getPrintServicesName() {
 		if (printServicesName == null) {
 			printServicesName = new HashMap<String, PrintService>();
 		}
@@ -289,6 +285,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		options.addOption("a", "app", true, ClientLabels.get("client.command_line_app"));
 		options.addOption("s", "servlet", true, ClientLabels.get("client.command_line_servlet"));
 		options.addOption("u", "uuid", true, ClientLabels.get("client.command_line_uuid"));
+		options.addOption("g", "groups", true, ClientLabels.get("client.command_line_groups"));
 		options.addOption("v", "verbose", false, ClientLabels.get("client.command_line_verbose"));
 		options.addOption("l", "logLevel", true, ClientLabels.get("client.command_line_loglevel"));
 		options.addOption("i", "interval", true, ClientLabels.get("client.command_line_interval"));
@@ -305,13 +302,14 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			if (line.hasOption("help")) {
 				HelpFormatter formatter = new HelpFormatter();
 				formatter.printHelp("java -jar wubiq-client.jar", "java properties:\n"
-						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_PHOTO + " For specifying laser or photo capable printers\n"
-						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ + " For high quality dot matrix printers (24pin) \n"
-						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + "wubiq.printers.dotmatrix For normal quality dot matrix printers (9pin) \n"
-						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT + " Specify default fonts for dot matrix printers\n"
-						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + " If true printing on dot matrix will only be done with java's logical fonts.\n"
+						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_PHOTO + " " + ClientLabels.get("PropertyKeys.WUBIQ_PRINTERS_PHOTO") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ + " " + ClientLabels.get("PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + " " + ClientLabels.get("PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT + " " + ClientLabels.get("PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + " " + ClientLabels.get("PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL") + ".\n"
 						+ "\n"
-						+ "-D" + PropertyKeys.DIRECT_CONNECT_FORCE_SERIALIZATION_PROPERTY + " If true communications between server and client uses old serialized implementation.\n"
+						+ "-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION") + ".\n"
 						+ "\n"
 						+ "", options, "\n For more information visit wubiq's site: http://sourceforge.net/projects/wubiq", true);
 			}
@@ -336,6 +334,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			if (line.hasOption("uuid")) {
 				manager.setUuid(line.getOptionValue("uuid"));
 			}
+			if (line.hasOption("groups")) {
+				manager.setGroups(line.getOptionValue("groups"));
+			}
 			if (line.hasOption("verbose")) {
 				manager.setDebugMode(true);
 			}
@@ -355,7 +356,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}
 			addConnectionsString(manager, manager.hostPortConnection(host, port));
 			addConnectionsString(manager, connectionsString);
-			Thread r = new Thread(manager);
+			Thread r = new Thread(manager, "LocalPrintManager");
 			r.start();
 		} catch (ParseException e) {
 			System.err.println(e.getMessage());

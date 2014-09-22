@@ -56,7 +56,7 @@ public enum NotificationUtils {
 			        notification.ledARGB = 0xff00ff00;
 			        notification.ledOnMS = 300;
 			        notification.ledOffMS = 1000;
-			        notification.defaults =Notification.DEFAULT_ALL;
+			        notification.defaults = Notification.DEFAULT_ALL;
 				}
 		        if (number > 0) {
 		        	notification.number = number;
