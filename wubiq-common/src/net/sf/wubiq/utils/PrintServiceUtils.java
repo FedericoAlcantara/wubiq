@@ -1175,4 +1175,19 @@ public class PrintServiceUtils {
 		}
 		return returnValue;
 	}
+	/**
+	 * Gets the client version that is connecting to.
+	 * @param printService Print service to poll.
+	 * @return Client version or <2.0.
+	 */
+	public static String getClientVersion(PrintService printService) {
+		String returnValue = "< 2.0";
+		if (isRemotePrintService(printService)) {
+			RemotePrintService remote = (RemotePrintService) printService;
+			if (!Is.emptyString(remote.getClientVersion())) {
+				returnValue = remote.getClientVersion();
+			}
+		}
+		return returnValue;
+	}
 }

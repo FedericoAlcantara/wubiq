@@ -31,6 +31,7 @@ import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientProperties;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
@@ -216,15 +217,19 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		doLog("Register Computer Name", 5);
 		// Gather computer Name.
 		StringBuffer computerName = new StringBuffer(ParameterKeys.COMPUTER_NAME)
-		.append(ParameterKeys.PARAMETER_SEPARATOR); 
+			.append(ParameterKeys.PARAMETER_SEPARATOR); 
 		try {
 			computerName.append(InetAddress.getLocalHost().getHostName());
 			doLog("Register computer name:" + computerName, 0);
 			doLog("Force Serialized Communication:" + System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION), 0);
 		} catch (UnknownHostException e) {
 			LOG.error(e.getMessage(), e);
+			computerName.append("UNKNOWN");
 		}
-		askServer(CommandKeys.REGISTER_COMPUTER_NAME, computerName.toString());
+		askServer(CommandKeys.REGISTER_COMPUTER_NAME, computerName.toString(),
+				ParameterKeys.CLIENT_VERSION 
+				+ ParameterKeys.PARAMETER_SEPARATOR
+				+ Labels.VERSION);
 	}
 
 

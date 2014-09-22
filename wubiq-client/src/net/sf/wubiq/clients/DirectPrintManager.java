@@ -3,7 +3,7 @@
  */
 package net.sf.wubiq.clients;
 
-import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.Method;
@@ -107,7 +107,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * Creates a printable object and starts the local printing process.
 	 */
-	public void createPrintable(UUID objectUUID) {
+	public void createPrintable(UUID objectUUID) throws PrinterException {
 		PrintableChunkRemote remote = (PrintableChunkRemote) Enhancer.create(getPrintableChunkRemoteClass(), 
 				new ProxyClientSlave(jobId, this, objectUUID, PrintableChunkRemote.FILTERED_METHODS));
 		
@@ -138,7 +138,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			Printable printable) {
+			PrintableChunkRemote printable) throws PrinterException {
 		ClientPrintDirectUtils.printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				printable);
@@ -147,7 +147,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * Creates a pageable object and starts the printing process.
 	 */
-	public void createPageable(UUID objectUUID) {
+	public void createPageable(UUID objectUUID) throws PrinterException {
 		PageableRemote remote = (PageableRemote) Enhancer.create(getPageableRemoteClass(), 
 				new ProxyClientSlave(jobId, this, objectUUID, getPageableFilteredMethods()));
 		printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
@@ -185,7 +185,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			PageableRemote pageable) {
+			PageableRemote pageable) throws PrinterException {
 		ClientPrintDirectUtils.printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				pageable);

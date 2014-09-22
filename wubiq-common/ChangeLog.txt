@@ -1,5 +1,5 @@
 ==========================
-Wubiq 2.0.0 ()
+Wubiq 2.0.4 (2014-09-22)
 ==========================
 -Added group management. Allows to group clients.
 -Added jobs web management. Allows to pause clients, remove print jobs.

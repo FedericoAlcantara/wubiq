@@ -86,7 +86,7 @@ public class PageableRemote implements Pageable, IProxyClient {
 
 		return printable;
 	}
-
+	
 	/**
 	 * Class for printable chunk remote instantiation.
 	 * @return Printable chunk remote default class.

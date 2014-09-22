@@ -5,7 +5,6 @@ package net.sf.wubiq.utils;
 
 import java.awt.print.PageFormat;
 import java.awt.print.Paper;
-import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
@@ -24,8 +23,12 @@ import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
+import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSizeName;
 
+import net.sf.wubiq.clients.remotes.PageablePrintableHolder;
 import net.sf.wubiq.clients.remotes.PageableRemote;
+import net.sf.wubiq.clients.remotes.PrintableChunkRemote;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
@@ -127,23 +130,21 @@ public final class ClientPrintDirectUtils {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			PageableRemote pageable){
+			PageableRemote pageable) throws PrinterException {
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+	
+		PageFormat pageFormat = getPageFormat(printService, printRequestAttributeSet);
+		pageable.setPageFormat(pageFormat);
+	
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
 		printerJob.setPageable(pageable);
-		PageFormat pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
-		Paper paper = new Paper();
-		// It might be an already left shifted pdf conversion.
-		paper.setImageableArea(0, 0, pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
-		paper.setSize(pageFormat.getWidth(), pageFormat.getHeight());
-		pageFormat.setPaper(paper);
-		pageable.setPageFormat(pageFormat);
 		try {
 			printerJob.setPrintService(printService);
 			printerJob.print(printRequestAttributeSet);
 		} catch (PrinterException e) {
-			LOG.debug(e.getMessage());
+			LOG.error(e.getMessage(), e);
 		}
+		
 		/*
 		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
@@ -168,8 +169,13 @@ public final class ClientPrintDirectUtils {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			Printable printable){
+			PrintableChunkRemote printable) throws PrinterException {
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		PageFormat pageFormat = getPageFormat(printService, printRequestAttributeSet);
+		PageablePrintableHolder pageable = new PageablePrintableHolder(printable);
+		pageable.setPageFormat(pageFormat);
+		
+		/*
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
 		printerJob.setPrintable(printable);
 		try {
@@ -178,16 +184,62 @@ public final class ClientPrintDirectUtils {
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
-		/*
-		Doc doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
+		*/
+		
+		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
 			printJob.print(doc, printRequestAttributeSet);
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		}
-		*/
 	}
+	
+	/**
+	 * The page format to use. It invokes a printer job which normally talks to print devices through native calls.
+	 * @param printService Associated print service.
+	 * @param printRequestAttributeSet Print request attribute set.
+	 * @return A page format. Never null.
+	 * @throws PrinterException Thrown if print service is not found.
+	 */
+	private static PageFormat getPageFormat(PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet) throws PrinterException {
+		PrinterJob printerJob = PrinterJob.getPrinterJob();
+		PageFormat returnValue = printerJob.getPageFormat(printRequestAttributeSet);
+		try {
+			printerJob.setPrintService(printService);
+			PageFormat pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
+			Paper paper = new Paper();
+			
+			// It might be an already left shifted by a previous pdf conversion.
+			paper.setImageableArea(0, 0, pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
+			MediaSizeName mediaSizeName = (MediaSizeName) printRequestAttributeSet.get(MediaSizeName.class);
+			double width = pageFormat.getWidth();
+			double height = pageFormat.getHeight();
+			if (mediaSizeName == null) { // this is a custom sized page, so we must change page format accordingly
+				MediaPrintableArea mediaPrintableArea = (MediaPrintableArea) printRequestAttributeSet.get(MediaPrintableArea.class);
+				if (mediaPrintableArea != null) {
+					width = pageFormat.getImageableWidth() + pageFormat.getImageableX();
+					height = pageFormat.getImageableHeight() + pageFormat.getImageableY();
+				}
+			}
+			paper.setSize(width, height);
+			pageFormat.setPaper(paper);
+			returnValue = pageFormat;
+		} finally {
+			if (printerJob != null) {
+				printerJob.cancel();
+			}
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Creates the attribute for the job name.
+	 * @param jobId Id of the print job.
+	 * @param printRequestAttributeSet Print request attribute set.
+	 * @param printJobAttributeSet Print job attribute set.
+	 */
 	private static void setJobName(String jobId, PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet) {
 		JobName jobName = (JobName)PrintServiceUtils.findCategoryAttribute(printRequestAttributeSet, JobName.class);

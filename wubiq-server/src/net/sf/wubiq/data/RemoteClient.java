@@ -24,6 +24,7 @@ public class RemoteClient {
 	private Long lastAccessedTime;
 	private Boolean refreshed;
 	private Boolean paused;
+	private String clientVersion;
 	
 	public RemoteClient() {
 		this(20000); // 20 seconds default idle time
@@ -163,5 +164,19 @@ public class RemoteClient {
 
 	public void setPaused(Boolean paused) {
 		this.paused = paused;
+	}
+
+	/**
+	 * @return the clientVersion
+	 */
+	public String getClientVersion() {
+		return clientVersion;
+	}
+
+	/**
+	 * @param clientVersion the clientVersion to set
+	 */
+	public void setClientVersion(String clientVersion) {
+		this.clientVersion = clientVersion;
 	}
 }

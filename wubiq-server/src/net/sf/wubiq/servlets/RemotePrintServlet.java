@@ -292,10 +292,16 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void registerComputerNameCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		notifyRemote(uuid, request);
+		String clientVersion = request.getParameter(ParameterKeys.CLIENT_VERSION);
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
 		client.setServices(null);
 		client.setComputerName(request.getRemoteAddr());
 		client.setRefreshed(true);
+		if (!Is.emptyString(clientVersion)) {
+			client.setClientVersion(clientVersion);
+		} else {
+			client.setClientVersion("< 2.0");
+		}
 		respond("ok", response);
 	}
 	

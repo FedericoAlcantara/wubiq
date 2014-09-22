@@ -144,6 +144,10 @@ boolean logged =  !Is.emptyString(userId);
 				continue;
 			}
 			boolean remote = remoteClient != null;
+			String clientVersion = "";
+			if (remoteClient != null) {
+				clientVersion = " (" + remoteClient.getClientVersion() + ")";
+			}
 			StringBuffer killClient = new StringBuffer("")
 				.append(url)
 				.append('/')
@@ -193,7 +197,7 @@ boolean logged =  !Is.emptyString(userId);
 				<tr class="wubiq_s_table_tr" >
 					<th class="wubiq_s_table_th_title" colspan='<%=remote ? "1" : "3"%>' class="wubiq-client-title"><%=remote ? remoteClient.getComputerName() : ServerLabels.get("server.server_manager")%> </th>
 					<%if (remote) { %>
-						<th class="wubiq_s_table_th_uuid"><%=uuid%> </th>
+						<th class="wubiq_s_table_th_uuid"><%=uuid%><%=clientVersion%> </th>
 						<th class="wubiq_s_table_th_actions">
 							<a href="<%=killClient.toString()%>">
 								<input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' />

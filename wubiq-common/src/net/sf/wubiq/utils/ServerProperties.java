@@ -65,16 +65,15 @@ public class ServerProperties extends BaseProperties {
 	 * @return List of users.
 	 */
 	public Map<String, String> getUsers() {
-		if (users == null) {
-			users = new HashMap<String, String>();
-			String usersList = get(ConfigurationKeys.PROPERTY_USERS, "");
-			for (String userPassword : usersList.split("[,;]")) {
-				if (userPassword.contains(":")) {
-					String[] data = userPassword.split(":");
-					String userId = ServerUtils.INSTANCE.normalizedUserId(data[0]);
-					if (!Is.emptyString(userId)) {
-						users.put(userId, ServerUtils.INSTANCE.normalizedPassword(data[1]));
-					}
+		users = new HashMap<String, String>();
+		properties = null;
+		String usersList = get(ConfigurationKeys.PROPERTY_USERS, "");
+		for (String userPassword : usersList.split("[,;]")) {
+			if (userPassword.contains(":")) {
+				String[] data = userPassword.split(":");
+				String userId = ServerUtils.INSTANCE.normalizedUserId(data[0]);
+				if (!Is.emptyString(userId)) {
+					users.put(userId, ServerUtils.INSTANCE.normalizedPassword(data[1]));
 				}
 			}
 		}
@@ -126,11 +125,23 @@ public class ServerProperties extends BaseProperties {
 						}
 					}
 				}
-				if (propertyFile.exists()) {
-					properties.load(new FileInputStream(propertyFile));
-					LOG.info(ServerLabels.get("server.info_server_properties_found"));
-				} else {
-					LOG.info(ServerLabels.get("server.info_no_server_properties_found"));
+				FileInputStream inputStream = null;
+				try {
+					if (propertyFile.exists()) {
+						inputStream = new FileInputStream(propertyFile);
+						properties.load(inputStream);
+						LOG.info(ServerLabels.get("server.info_server_properties_found"));
+					} else {
+						LOG.info(ServerLabels.get("server.info_no_server_properties_found"));
+					}
+				} finally {
+					if (inputStream != null) {
+						try {
+							inputStream.close();
+						} catch (IOException e) {
+							LOG.debug("Exception possible:" + e);
+						}
+					}
 				}
 			} catch (FileNotFoundException e) {
 				LOG.info(ServerLabels.get("server.info_no_server_properties_found"));
