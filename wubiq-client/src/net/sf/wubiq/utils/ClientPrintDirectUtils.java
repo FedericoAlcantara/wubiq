@@ -4,7 +4,9 @@
 package net.sf.wubiq.utils;
 
 import java.awt.print.PageFormat;
+import java.awt.print.Pageable;
 import java.awt.print.Paper;
+import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
@@ -24,11 +26,10 @@ import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaPrintableArea;
-import javax.print.attribute.standard.MediaSizeName;
 
 import net.sf.wubiq.clients.remotes.PageablePrintableHolder;
 import net.sf.wubiq.clients.remotes.PageableRemote;
-import net.sf.wubiq.clients.remotes.PrintableChunkRemote;
+import net.sf.wubiq.print.attribute.OriginalOrientationRequested;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
@@ -130,11 +131,14 @@ public final class ClientPrintDirectUtils {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			PageableRemote pageable) throws PrinterException {
+			Pageable pageable) throws PrinterException {
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
-	
+
 		PageFormat pageFormat = getPageFormat(printService, printRequestAttributeSet);
-		pageable.setPageFormat(pageFormat);
+		if (pageable instanceof PageableRemote) {
+			PageableRemote remote = (PageableRemote)pageable;
+			remote.setPageFormat(pageFormat);
+		}
 	
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
 		printerJob.setPageable(pageable);
@@ -169,8 +173,9 @@ public final class ClientPrintDirectUtils {
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
-			PrintableChunkRemote printable) throws PrinterException {
+			Printable printable) throws PrinterException {
 		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+
 		PageFormat pageFormat = getPageFormat(printService, printRequestAttributeSet);
 		PageablePrintableHolder pageable = new PageablePrintableHolder(printable);
 		pageable.setPageFormat(pageFormat);
@@ -212,18 +217,33 @@ public final class ClientPrintDirectUtils {
 			Paper paper = new Paper();
 			
 			// It might be an already left shifted by a previous pdf conversion.
-			paper.setImageableArea(0, 0, pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
-			MediaSizeName mediaSizeName = (MediaSizeName) printRequestAttributeSet.get(MediaSizeName.class);
+			double x = 0;
+			double y = 0;
+			MediaPrintableArea mediaPrintableArea = (MediaPrintableArea) printRequestAttributeSet.get(MediaPrintableArea.class);
+			if (mediaPrintableArea != null) {
+				x = x + (mediaPrintableArea.getX(MediaPrintableArea.INCH) * 72);
+				y = y + (mediaPrintableArea.getY(MediaPrintableArea.INCH) * 72);
+			}
+			paper.setImageableArea(x, y, pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
 			double width = pageFormat.getWidth();
 			double height = pageFormat.getHeight();
-			if (mediaSizeName == null) { // this is a custom sized page, so we must change page format accordingly
-				MediaPrintableArea mediaPrintableArea = (MediaPrintableArea) printRequestAttributeSet.get(MediaPrintableArea.class);
-				if (mediaPrintableArea != null) {
-					width = pageFormat.getImageableWidth() + pageFormat.getImageableX();
-					height = pageFormat.getImageableHeight() + pageFormat.getImageableY();
+			paper.setSize(width, height);
+			OriginalOrientationRequested originalOrientation = (OriginalOrientationRequested) printRequestAttributeSet.get(OriginalOrientationRequested.class);
+			if (originalOrientation != null) {
+				if (originalOrientation == OriginalOrientationRequested.REVERSE_PORTRAIT) {
+					pageFormat.setOrientation(PageFormat.PORTRAIT);
+				} else if (originalOrientation == OriginalOrientationRequested.REVERSE_LANDSCAPE) {
+					pageFormat.setOrientation(PageFormat.REVERSE_LANDSCAPE);
+				} else if (originalOrientation == OriginalOrientationRequested.PORTRAIT){
+					pageFormat.setOrientation(PageFormat.PORTRAIT);
+				} else {
+					pageFormat.setOrientation(PageFormat.LANDSCAPE);
+				}
+				if (!System.getProperty("os.name").toLowerCase().contains("win")) {
+					// We must rotate the paper size as it was previously changed.
+					paper.setSize(height, width);
 				}
 			}
-			paper.setSize(width, height);
 			pageFormat.setPaper(paper);
 			returnValue = pageFormat;
 		} finally {

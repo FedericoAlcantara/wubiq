@@ -1,5 +1,5 @@
 ==========================
-Wubiq 2.0.4 (2014-09-22)
+Wubiq 2.0.10 (2014-09-23)
 ==========================
 -Added group management. Allows to group clients.
 -Added jobs web management. Allows to pause clients, remove print jobs.
@@ -11,6 +11,7 @@ Wubiq 2.0.4 (2014-09-22)
 -Star micronics library for android upgraded to support newer androids.
 -Improved printing quality for remote clients.
 -Universal installer for Windows, MacOSX and linux.
+-Fix to orientation issues when printing on non standard papers.
 
 ==========================
 Wubiq 1.9.0 (2014-06-20)

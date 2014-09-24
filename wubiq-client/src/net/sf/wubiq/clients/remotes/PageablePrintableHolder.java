@@ -15,13 +15,13 @@ import java.awt.print.Printable;
 public class PageablePrintableHolder implements Pageable {
 
 	private PageFormat pageFormat;
-	private PrintableChunkRemote printable;
+	private Printable printable;
 	
 	/**
 	 * Constructor.
 	 * @param printable Printable to be hold.
 	 */
-	public PageablePrintableHolder(PrintableChunkRemote printable) {
+	public PageablePrintableHolder(Printable printable) {
 		this.printable = printable;
 	}
 	
@@ -31,7 +31,7 @@ public class PageablePrintableHolder implements Pageable {
 	 */
 	@Override
 	public int getNumberOfPages() {
-		return 1;
+		return Integer.MAX_VALUE;
 	}
 
 	/**

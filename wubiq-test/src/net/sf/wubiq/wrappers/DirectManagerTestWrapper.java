@@ -5,6 +5,7 @@ package net.sf.wubiq.wrappers;
 
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
+import java.awt.print.PrinterException;
 import java.io.Serializable;
 
 import javax.print.PrintService;
@@ -41,7 +42,7 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 	protected void printPrintable(String jobId, PrintService printService,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
-			DocAttributeSet docAttributeSet, Printable printable) {
+			DocAttributeSet docAttributeSet, Printable printable) throws PrinterException {
 		super.printPrintable(jobId, printService, printRequestAttributeSet,
 				printJobAttributeSet, docAttributeSet, printable);
 		testManager.getTestData().setDirectPrintPrintable(true);
@@ -61,7 +62,7 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 	protected void printPageable(String jobId, PrintService printService,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
-			DocAttributeSet docAttributeSet, Pageable pageable) {
+			DocAttributeSet docAttributeSet, Pageable pageable) throws PrinterException {
 		((PageableRemoteTestWrapper)pageable).setTestManager(testManager);
 		super.printPageable(jobId, printService, printRequestAttributeSet,
 				printJobAttributeSet, docAttributeSet, pageable);

@@ -2,7 +2,6 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="i18n"/>
-	<classpathentry kind="src" path="properties-src"/>
 	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-common"/>
 	<classpathentry exported="true" kind="lib" path="lib/cglib-nodep-3.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>

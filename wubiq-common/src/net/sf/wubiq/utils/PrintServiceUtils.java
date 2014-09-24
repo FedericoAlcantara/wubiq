@@ -39,6 +39,7 @@ import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterName;
+import javax.print.attribute.standard.PrinterURI;
 
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
@@ -1053,6 +1054,7 @@ public class PrintServiceUtils {
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.RequestingUserName", "xRUNx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.SheetCollate", "xSCOx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Sides", "xSIDx");
+			compressionMap.put("net\\.sf\\.wubiq\\.print\\.attribute\\.OriginalOrientationRequested", "xOORx");
 			compressionMap.put("sun\\.print\\.CustomMediaSizeName", "xCMSx");
 			compressionMap.put("sun\\.print\\.SunAlternateMedia", "xSAMx");
 			compressionMap.put("sun\\.print\\.Win32MediaSize", "xWMSx");
@@ -1189,5 +1191,9 @@ public class PrintServiceUtils {
 			}
 		}
 		return returnValue;
+	}
+	
+	public static void findPrinterPort(PrintService printService) {
+		System.out.println(printService.getAttribute(PrinterURI.class));
 	}
 }
