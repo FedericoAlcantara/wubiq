@@ -1,4 +1,8 @@
 ==========================
+Wubiq 2.0.11 (2014-09-26)
+==========================
+-Fixed incompatibilities with java 1.6.
+==========================
 Wubiq 2.0.10 (2014-09-23)
 ==========================
 -Added group management. Allows to group clients.

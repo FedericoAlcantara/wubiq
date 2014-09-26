@@ -134,7 +134,7 @@ public class WubiqConfigurator {
 	private JButton btnAddDmHq;
 	private JButton btnDeleteDmHq;
 	private JLabel lblDmDefaultFont;
-	private JComboBox<String> fldDmDefaultFont;
+	private JComboBox fldDmDefaultFont;
 	private JSplitPane flagsSplitPane;
 	private JPanel advanced;
 	private JLabel lblPollInterval;
@@ -559,9 +559,9 @@ public class WubiqConfigurator {
 		lblDmDefaultFont.setName("lblDmDefaultFont");
 		printers.add(lblDmDefaultFont, "cell 0 3,alignx trailing");
 		
-		fldDmDefaultFont = new JComboBox<String>();
+		fldDmDefaultFont = new JComboBox();
 		fldDmDefaultFont.setName("fldDmDefaultFont");
-		fldDmDefaultFont.setModel(new DefaultComboBoxModel<String>(new String[] {"Times New Roman", "Sans Serif", "Serif"}));
+		fldDmDefaultFont.setModel(new DefaultComboBoxModel(new String[] {"Times New Roman", "Sans Serif", "Serif"}));
 		fldDmDefaultFont.setEditable(true);
 		printers.add(fldDmDefaultFont, "cell 1 3,growx");
 		
