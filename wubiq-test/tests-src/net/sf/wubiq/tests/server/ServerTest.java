@@ -163,6 +163,9 @@ public class ServerTest extends WubiqBaseTest {
 		int rowCount = table.getRowCount();
 		for (int row = 0; row < rowCount; row++) {
 			String serviceName = table.getCellAt(row, 0).asText();
+			if (serviceName.contains("@")) {
+				serviceName = serviceName.substring(0, serviceName.indexOf('@'));
+			}
 			PrintService printer = manager.getPrintServicesName().get(serviceName);
 			if (printer != null) {
 				if (PrintServiceUtils.supportDocFlavor(printer, DocFlavor.INPUT_STREAM.PDF)) {
@@ -221,6 +224,9 @@ public class ServerTest extends WubiqBaseTest {
 		int rowCount = table.getRowCount();
 		for (int row = 0; row < rowCount; row++) {
 			String serviceName = table.getCellAt(row, 0).asText();
+			if (serviceName.contains("@")) {
+				serviceName = serviceName.substring(0, serviceName.indexOf('@'));
+			}
 			PrintService printer = manager.getPrintServicesName().get(serviceName);
 			if (printer != null) {
 				if (PrintServiceUtils.supportDocFlavor(printer, DocFlavor.INPUT_STREAM.PDF)) {

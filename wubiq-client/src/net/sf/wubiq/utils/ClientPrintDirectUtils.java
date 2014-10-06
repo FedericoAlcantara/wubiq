@@ -20,15 +20,22 @@ import javax.print.DocPrintJob;
 import javax.print.PrintException;
 import javax.print.PrintService;
 import javax.print.SimpleDoc;
+import javax.print.attribute.Attribute;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.HashDocAttributeSet;
+import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.JobName;
+import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSize;
+import javax.print.attribute.standard.MediaSizeName;
+import javax.print.attribute.standard.OrientationRequested;
 
 import net.sf.wubiq.clients.remotes.PageablePrintableHolder;
 import net.sf.wubiq.clients.remotes.PageableRemote;
+import net.sf.wubiq.print.attribute.CustomMediaSizeName;
 import net.sf.wubiq.print.attribute.OriginalOrientationRequested;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
@@ -132,9 +139,11 @@ public final class ClientPrintDirectUtils {
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
 			Pageable pageable) throws PrinterException {
-		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		PrintRequestAttributeSet filteredRequestAttributeSet =
+				filterPrintRequestAttributeSet(printRequestAttributeSet);
+		setJobName(jobId, filteredRequestAttributeSet, printJobAttributeSet);
 
-		PageFormat pageFormat = getPageFormat(printService, printRequestAttributeSet);
+		PageFormat pageFormat = getPageFormat(printService, filteredRequestAttributeSet);
 		if (pageable instanceof PageableRemote) {
 			PageableRemote remote = (PageableRemote)pageable;
 			remote.setPageFormat(pageFormat);
@@ -144,7 +153,7 @@ public final class ClientPrintDirectUtils {
 		printerJob.setPageable(pageable);
 		try {
 			printerJob.setPrintService(printService);
-			printerJob.print(printRequestAttributeSet);
+			printerJob.print(filteredRequestAttributeSet);
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -174,9 +183,11 @@ public final class ClientPrintDirectUtils {
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
 			Printable printable) throws PrinterException {
-		setJobName(jobId, printRequestAttributeSet, printJobAttributeSet);
+		PrintRequestAttributeSet filteredRequestAttributeSet =
+				filterPrintRequestAttributeSet(printRequestAttributeSet);
+		setJobName(jobId, filteredRequestAttributeSet, printJobAttributeSet);
 
-		PageFormat pageFormat = getPageFormat(printService, printRequestAttributeSet);
+		PageFormat pageFormat = getPageFormat(printService, filteredRequestAttributeSet);
 		PageablePrintableHolder pageable = new PageablePrintableHolder(printable);
 		pageable.setPageFormat(pageFormat);
 		
@@ -194,7 +205,7 @@ public final class ClientPrintDirectUtils {
 		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
-			printJob.print(doc, printRequestAttributeSet);
+			printJob.print(doc, filteredRequestAttributeSet);
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -209,25 +220,48 @@ public final class ClientPrintDirectUtils {
 	 */
 	private static PageFormat getPageFormat(PrintService printService, 
 			PrintRequestAttributeSet printRequestAttributeSet) throws PrinterException {
-		PrinterJob printerJob = PrinterJob.getPrinterJob();
-		PageFormat returnValue = printerJob.getPageFormat(printRequestAttributeSet);
+		PageFormat returnValue = new PageFormat();
+		PageFormat pageFormat = new PageFormat();
+		Paper paper = new Paper();
+		boolean paperSet = false;
+		MediaSizeName mediaSizeName = (MediaSizeName) printRequestAttributeSet.get(MediaSizeName.class);
+		if (mediaSizeName == null) {
+			mediaSizeName = (MediaSizeName) printRequestAttributeSet.get(Media.class);
+		}
+		if (mediaSizeName != null) {
+			if (mediaSizeName instanceof CustomMediaSizeName) {
+				CustomMediaSizeName customMedia = (CustomMediaSizeName)mediaSizeName;
+				PrintServiceUtils.findMedia(customMedia.getX(), customMedia.getY(), customMedia.getUnits()); // To enable it.
+			}
+			MediaSize mediaSize = MediaSize.getMediaSizeForName(mediaSizeName);
+			if (mediaSize != null) {
+				paper.setSize(Math.round(mediaSize.getX(MediaSize.INCH) * 72), 
+						(Math.round(mediaSize.getY(MediaSize.INCH) * 72)));
+				paper.setImageableArea(0, 0, mediaSize.getX(MediaSize.INCH) * 72,
+						mediaSize.getY(MediaSize.INCH) * 72);
+				pageFormat.setPaper(paper);
+				paperSet = true;
+			}
+		}
+		PrinterJob printerJob = null;
 		try {
-			printerJob.setPrintService(printService);
-			PageFormat pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
-			Paper paper = new Paper();
-			
+			if (!paperSet) {
+				printerJob = PrinterJob.getPrinterJob();
+				printerJob.setPrintService(printService);
+				pageFormat = printerJob.getPageFormat(printRequestAttributeSet);
+			}
 			// It might be an already left shifted by a previous pdf conversion.
 			double x = 0;
 			double y = 0;
+
 			MediaPrintableArea mediaPrintableArea = (MediaPrintableArea) printRequestAttributeSet.get(MediaPrintableArea.class);
 			if (mediaPrintableArea != null) {
 				x = x + (mediaPrintableArea.getX(MediaPrintableArea.INCH) * 72);
 				y = y + (mediaPrintableArea.getY(MediaPrintableArea.INCH) * 72);
 			}
-			paper.setImageableArea(x, y, pageFormat.getImageableWidth(), pageFormat.getImageableHeight());
+			paper.setImageableArea(x, y, pageFormat.getWidth() - x , pageFormat.getHeight() - y);
 			double width = pageFormat.getWidth();
 			double height = pageFormat.getHeight();
-			paper.setSize(width, height);
 			OriginalOrientationRequested originalOrientation = (OriginalOrientationRequested) printRequestAttributeSet.get(OriginalOrientationRequested.class);
 			if (originalOrientation != null) {
 				if (originalOrientation == OriginalOrientationRequested.REVERSE_PORTRAIT) {
@@ -242,6 +276,19 @@ public final class ClientPrintDirectUtils {
 				if (!System.getProperty("os.name").toLowerCase().contains("win")) {
 					// We must rotate the paper size as it was previously changed.
 					paper.setSize(height, width);
+				}
+			} else {
+				OrientationRequested orientation = (OrientationRequested) printRequestAttributeSet.get(OrientationRequested.class);
+				if (orientation != null) {
+					if (orientation == OrientationRequested.REVERSE_PORTRAIT) {
+						pageFormat.setOrientation(PageFormat.PORTRAIT);
+					} else if (orientation == OrientationRequested.REVERSE_LANDSCAPE) {
+						pageFormat.setOrientation(PageFormat.REVERSE_LANDSCAPE);
+					} else if (orientation == OrientationRequested.PORTRAIT){
+						pageFormat.setOrientation(PageFormat.PORTRAIT);
+					} else {
+						pageFormat.setOrientation(PageFormat.LANDSCAPE);
+					}
 				}
 			}
 			pageFormat.setPaper(paper);
@@ -273,5 +320,19 @@ public final class ClientPrintDirectUtils {
 				.append(jobName.getValue());
 		}
 		printRequestAttributeSet.add(new JobName(newJobName.toString(), Locale.getDefault()));
+	}
+	
+	private static PrintRequestAttributeSet filterPrintRequestAttributeSet(PrintRequestAttributeSet input) {
+		PrintRequestAttributeSet returnValue = new HashPrintRequestAttributeSet();
+		for (Attribute attribute : input.toArray()) {
+			if (attribute instanceof CustomMediaSizeName) {
+				CustomMediaSizeName media = (CustomMediaSizeName)attribute;
+				MediaSizeName mediaSizeName = PrintServiceUtils.findMedia(media.getX(), media.getY(), media.getUnits());
+				returnValue.add(mediaSizeName);
+			} else {
+				returnValue.add(attribute);
+			}
+		}
+		return returnValue;
 	}
 }

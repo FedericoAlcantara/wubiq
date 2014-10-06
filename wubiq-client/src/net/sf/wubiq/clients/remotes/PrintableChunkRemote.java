@@ -96,7 +96,7 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		PageFormatWrapper remotePageFormat = new PageFormatWrapper(pageFormat);
 		
 		transform.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-		GraphicsUtils.INSTANCE.scaleGraphics(graph, remotePageFormat, false);
+		GraphicsUtils.INSTANCE.scaleGraphics(graph, remotePageFormat, true);
 		
 		returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
 				"print",

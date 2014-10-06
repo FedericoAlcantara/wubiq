@@ -102,23 +102,23 @@
             <parsable targetfile="${INSTALL_PATH}/bin/wubiq-installer.properties">
             </parsable>
             <!-- Install windows service -->            
-           	<singlefile src="./resources/wubiq.bmp" override="true"
-                target="${INSTALL_PATH}/icons/wubiq.bmp">
+           	<singlefile src="./resources/wubiq.ico" override="true"
+                target="${INSTALL_PATH}/icons/wubiq.ico">
                 <os family="windows"/>
            	</singlefile>
            	
-           	<singlefile src="./resources/stop.bmp" override="true"
-                target="${INSTALL_PATH}/icons/stop.bmp">
+           	<singlefile src="./resources/stop.ico" override="true"
+                target="${INSTALL_PATH}/icons/stop.ico">
                 <os family="windows"/>
            	</singlefile>
            
-           	<singlefile src="./resources/start.bmp" override="true"
-                target="${INSTALL_PATH}/icons/start.bmp">
+           	<singlefile src="./resources/start.ico" override="true"
+                target="${INSTALL_PATH}/icons/start.ico">
                 <os family="windows"/>
            	</singlefile>
           
-          	<singlefile src="./resources/wubiq_uninstall.bmp" override="true"
-                target="${INSTALL_PATH}/icons/wubiq_uninstall.bmp">
+          	<singlefile src="./resources/wubiq_uninstall.ico" override="true"
+                target="${INSTALL_PATH}/icons/wubiq_uninstall.ico">
                 <os family="windows"/>
           	</singlefile>
           			

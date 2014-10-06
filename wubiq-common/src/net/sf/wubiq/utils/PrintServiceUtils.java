@@ -34,12 +34,13 @@ import javax.print.attribute.standard.ColorSupported;
 import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.CopiesSupported;
 import javax.print.attribute.standard.Media;
+import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.NumberUp;
 import javax.print.attribute.standard.PageRanges;
 import javax.print.attribute.standard.PrinterName;
-import javax.print.attribute.standard.PrinterURI;
 
 import net.sf.wubiq.common.AttributeInputStream;
 import net.sf.wubiq.common.AttributeOutputStream;
@@ -47,6 +48,7 @@ import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.enums.PrinterType;
+import net.sf.wubiq.print.attribute.CustomMediaSize;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 
@@ -414,8 +416,10 @@ public class PrintServiceUtils {
 	 * @param attribute attribute to add
 	 */
 	private static void addAttribute(Collection<Attribute> attributes, Attribute attribute) {
-		if (!attributes.contains(attribute)) {
-			attributes.add(attribute);
+		if (attribute != null) {
+			if (!attributes.contains(attribute)) {
+				attributes.add(attribute);
+			}
 		}
 	}
 	
@@ -1192,8 +1196,58 @@ public class PrintServiceUtils {
 		}
 		return returnValue;
 	}
+
+	/**
+	 * Finds a suitable media size name. If it can't find an exact match then it CREATES and register a new set
+	 * of MediaSizeName and MediaSize. It allows landscape dimensions.
+	 * @param width Width of the paper.
+	 * @param height Height of the paper.
+	 * @param units Units used. It can be MM or INCH.
+	 * @return Compatible MediaSizeName, never null.
+	 */
+	public static MediaSizeName findMedia(float width, float height, int units) {
+		MediaSizeName returnValue = MediaSize.findMedia(width, height, units);
+		boolean createNew = false;
+		if (returnValue == null) {
+			createNew = true;
+		} else {
+			MediaSize mediaSize = MediaSize.getMediaSizeForName(returnValue);
+			if (mediaSize.getX(units) != width ||
+					mediaSize.getY(units) != height) {
+				createNew = true;
+			}
+		}
+		if (createNew) {
+			CustomMediaSize.createCustomMediaSize(width, height, units);
+			returnValue = MediaSize.findMedia(width, height, units);
+		}
+		return returnValue;
+	}
 	
-	public static void findPrinterPort(PrintService printService) {
-		System.out.println(printService.getAttribute(PrinterURI.class));
+	/**
+	 * Tries to produce a compatible printable area.
+	 * @param printService Print service to check the printable area from.
+	 * @param flavor Doc flavor to use. It can be null.
+	 * @param media MediaSizeName to check the contraints. If null returns the default MediaPrintableArea for the printer.
+	 * @return MediaPrintableArea or null.
+	 */
+	public static MediaPrintableArea getMediaPrintableArea(PrintService printService, DocFlavor flavor, MediaSizeName media) {
+		MediaPrintableArea returnValue = null;
+		if (media != null) {
+			PrintRequestAttributeSet attributes = new HashPrintRequestAttributeSet();
+			attributes.add(media);
+			MediaPrintableArea defaultArea = (MediaPrintableArea) printService.getDefaultAttributeValue(MediaPrintableArea.class);
+			if (defaultArea != null) {
+				MediaSize mediaSize = MediaSize.getMediaSizeForName(media);
+				if (mediaSize != null) {
+					returnValue = new MediaPrintableArea(defaultArea.getX(MediaSize.MM), 
+							defaultArea.getY(MediaSize.MM),
+							mediaSize.getX(MediaSize.MM) - defaultArea.getX(MediaSize.MM),
+							mediaSize.getY(MediaSize.MM) - defaultArea.getY(MediaSize.MM),
+							MediaSize.MM);
+				}
+			}
+		}
+		return returnValue;
 	}
 }

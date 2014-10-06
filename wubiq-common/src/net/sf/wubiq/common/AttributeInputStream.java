@@ -22,6 +22,7 @@ import javax.print.attribute.standard.MediaSize;
 import net.sf.wubiq.print.attribute.GenericMediaSizeName;
 import net.sf.wubiq.print.attribute.GenericMediaTray;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -100,6 +101,8 @@ public class AttributeInputStream extends InputStreamReader {
 			if (objectDetails.length > 2) {
 				if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_SET_INTEGER_SYNTAX)) {
 					returnValue = readSetOfIntegerSyntax(objectDetails[0], objectDetails[2]);
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_CUSTOM_MEDIA)) {
+					returnValue = readCustomMediaSyntax(objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA)) {
 					returnValue = readMediaSyntax(objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_MEDIA_TRAY)) {
@@ -173,6 +176,30 @@ public class AttributeInputStream extends InputStreamReader {
 			returnValue = findEnumSyntax(clazz, values);
 		} catch (Exception e) {
 			LOG.error(e.getMessage());
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Reads and convert a attribute with enum syntax into a standard attribute.
+	 * @param values Dimension value.
+	 * @return Attribute found or null if no suitable attribute is found.
+	 * @throws IOException
+	 */
+	private Attribute readCustomMediaSyntax(String values) throws IOException {
+		Attribute returnValue = null;
+		if (!Is.emptyString(values)) {
+			String[] xyName = values.split(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR);
+			if (xyName.length >= 3) {
+				try {
+					float x = Float.parseFloat(xyName[0]);
+					float y = Float.parseFloat(xyName[1]);
+					int units = Integer.parseInt(xyName[2]);
+					returnValue = PrintServiceUtils.findMedia(x, y, units);
+				} catch (NumberFormatException e) {
+					LOG.error(e.getMessage(), e);
+				}
+			}
 		}
 		return returnValue;
 	}

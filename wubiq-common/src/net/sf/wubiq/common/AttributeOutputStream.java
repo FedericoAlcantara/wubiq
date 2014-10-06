@@ -18,6 +18,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaTray;
 
+import net.sf.wubiq.print.attribute.CustomMediaSizeName;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
@@ -110,6 +111,8 @@ public class AttributeOutputStream extends OutputStreamWriter {
 		if (attribute instanceof SetOfIntegerSyntax) {
 			data.append(ParameterKeys.ATTRIBUTE_TYPE_SET_INTEGER_SYNTAX).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 			writeSetOfIntegerSyntax((SetOfIntegerSyntax)attribute, data);
+		} else if (attribute instanceof CustomMediaSizeName) {
+			writeCustomMediaSizeNameSyntax((CustomMediaSizeName)attribute, data);
 		} else if (attribute instanceof MediaSizeName) {
 			writeMediaSizeNameSyntax((MediaSizeName)attribute, data);
 		} else if (attribute instanceof MediaTray) {
@@ -135,6 +138,22 @@ public class AttributeOutputStream extends OutputStreamWriter {
 		return data;
 	}
 	
+	/**
+	 * Writes media information.
+	 * @param mediaSize Size of the media.
+	 * @param data Buffer containing the output.
+	 * @throws IOException
+	 */
+	private void writeCustomMediaSizeNameSyntax(CustomMediaSizeName mediaSizeName, StringBuffer data) throws IOException {
+		data.append(ParameterKeys.ATTRIBUTE_TYPE_CUSTOM_MEDIA).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR)
+				.append(mediaSizeName.getX())
+				.append(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR)
+				.append(mediaSizeName.getY())
+				.append(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR)
+				.append(mediaSizeName.getUnits())
+				;
+	}
+
 	/**
 	 * Writes media information.
 	 * @param mediaSize Size of the media.

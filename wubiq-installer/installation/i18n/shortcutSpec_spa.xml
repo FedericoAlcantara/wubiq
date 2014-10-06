@@ -1,7 +1,7 @@
 <shortcuts>
     <programGroup 
         defaultName="Wubiq" 
-        iconFile="${INSTALL_PATH}\icons\wubiq.bmp"
+        iconFile="${INSTALL_PATH}\icons\wubiq.ico"
         location="applications"/>
     
     <shortcut
@@ -10,7 +10,7 @@
         target="${JAVA_HOME}\bin\javaw"
         commandLine='-cp "${INSTALL_PATH}\bin" -splash:splash.png net.sf.wubiq.clients.WubiqConfigurator'
         workingDirectory="${INSTALL_PATH}\bin"
-        iconFile="${INSTALL_PATH}\icons\wubiq.bmp"
+        iconFile="${INSTALL_PATH}\icons\wubiq.ico"
         initialState="noShow"
         programGroup="yes"
         applications="no"
@@ -24,7 +24,7 @@
         target="net"
         commandLine="stop wubiq"
         workingDirectory="${INSTALL_PATH}"
-        iconFile="${INSTALL_PATH}\icons\stop.bmp"
+        iconFile="${INSTALL_PATH}\icons\stop.ico"
         initialState="noShow"
         programGroup="yes"
         applications="no"
@@ -39,7 +39,7 @@
         target="net"
         commandLine="start wubiq"
         workingDirectory="${INSTALL_PATH}"
-        iconFile="${INSTALL_PATH}\icons\start.bmp"
+        iconFile="${INSTALL_PATH}\icons\start.ico"
         initialState="noShow"
         programGroup="yes"
         applications="no"
@@ -54,7 +54,7 @@
         target="${JAVA_HOME}\bin\javaw"
         commandLine="-jar uninstaller.jar"
         workingDirectory="${INSTALL_PATH}\Uninstaller"
-        iconFile="${INSTALL_PATH}\icons\wubiq_uninstall.bmp"
+        iconFile="${INSTALL_PATH}\icons\wubiq_uninstall.ico"
         initialState="noShow"
         programGroup="yes"
         applications="no"

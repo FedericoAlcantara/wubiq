@@ -13,7 +13,10 @@ import javax.print.attribute.standard.OrientationRequested;
 /**
  * Provides an attribute for saving the original orientation of a print job.
  * Sometimes it is necessary to manipulate the output with a different orientation, but
- * prior to print it must be returned back to the original state.
+ * prior to print it must be returned back to the original state. This can be used to 
+ * "hack" a printer behavior by letting it print in portrait and just before sending the
+ * renderization to the device turn it back to its original orientation, but already bypassing 
+ * all the limitations about printing landscape media.
  * @author Federico Alcantara
  *
  */

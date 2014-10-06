@@ -1,7 +1,14 @@
 ==========================
+Wubiq 2.0.12 (2014-10-05)
+==========================
+-Wubiq can now create and register custom media size, including wider than taller ones!
+-Wubiq android updated to be compatible with versions 2.0 and up.
+
+==========================
 Wubiq 2.0.11 (2014-09-26)
 ==========================
 -Fixed incompatibilities with java 1.6.
+
 ==========================
 Wubiq 2.0.10 (2014-09-23)
 ==========================
