@@ -14,6 +14,7 @@ import java.awt.print.PrinterJob;
 import javax.print.PrintService;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.OrientationRequested;
 
 import net.sf.wubiq.utils.PrintServiceUtils;
 
@@ -59,6 +60,17 @@ public class PdfPrinterJob extends PrinterJob {
 					printableArea.getHeight(MediaPrintableArea.INCH) * 72);
 		}
 		pageFormat.setPaper(paper);
+		OrientationRequested orientationRequested = 
+				(OrientationRequested) attributes.get(OrientationRequested.class);
+		if (orientationRequested != null) {
+			if (OrientationRequested.LANDSCAPE.equals(orientationRequested)) {
+				pageFormat.setOrientation(PageFormat.LANDSCAPE);
+			} else if (OrientationRequested.REVERSE_LANDSCAPE.equals(orientationRequested)) {
+				pageFormat.setOrientation(PageFormat.REVERSE_LANDSCAPE);
+			} else {
+				pageFormat.setOrientation(PageFormat.PORTRAIT);
+			}
+		}
 		return pageFormat;
 	}
 	
