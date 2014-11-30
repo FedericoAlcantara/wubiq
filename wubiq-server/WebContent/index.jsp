@@ -92,7 +92,7 @@ boolean logged =  !Is.emptyString(userId);
 				<td>
 					<div id="wubiq-setup-hidden" style="display:none">
 						<script>
-						    var url = "/wubiq-server/wubiq-setup.do";
+						    var url = "/wubiq-server/wubiq-setup.jar";
 						    deployJava.createWebStartLaunchButton(url, '1.6.0');
 						</script>
 					</div>
