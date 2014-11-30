@@ -111,7 +111,11 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 						}
 						String[] pendingJobs = getPendingJobs();
 						for (String pendingJob : pendingJobs) {
-							processPendingJob(pendingJob);
+							try {
+								processPendingJob(pendingJob);
+							} catch (Throwable e) {
+								doLog(e.getMessage(), 0);
+							}
 							Thread.sleep(getPrintingJobInterval());
 							nextCheckInterval = fastReadingTime();
 						}
@@ -358,9 +362,10 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					connection.setRequestMethod("POST");
 					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 					connection.setRequestProperty("charset", "utf-8");
-					connection.setRequestProperty("ContentType", "text/html");
+					connection.setRequestProperty("Accept-Charset", "utf-8");
+					connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
 					connection.setRequestProperty("Content-Length", "" + Integer.toString(encodedParameters.getBytes().length));
-					ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes());
+					ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes("utf-8"));
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 					content = connection.getContent();

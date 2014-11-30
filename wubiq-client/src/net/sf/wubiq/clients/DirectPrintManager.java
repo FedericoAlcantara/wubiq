@@ -94,7 +94,9 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				final RemoteCommand remoteCommand = 
 						(RemoteCommand) DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
 				if (remoteCommand != null) {
-					callCommand(remoteCommand);
+					if (callCommand(remoteCommand)) {
+						break; // If error just let the print job die.
+					}
 				}
 			} else {
 				try {
@@ -208,9 +210,11 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * Calls the command on the physical printer.
 	 * @param printerCommand Printer command to execute on the physical printer.
+	 * @return True if an error ocurred.
 	 */
 	@SuppressWarnings("rawtypes")
-	protected void callCommand(RemoteCommand printerCommand) {
+	protected boolean callCommand(RemoteCommand printerCommand) {
+		boolean returnValue = false;
 		String methodName = printerCommand.getMethodName();
 		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
 		Object[] parameterValues = new Object[printerCommand.getParameters().length];
@@ -233,6 +237,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 					data = method.invoke(methodObject, parameterValues);
 				}
 			} catch (Exception e) {
+				returnValue = true;
 				e.printStackTrace();
 				if (e.getCause() != null) {
 					error = e.getCause().getMessage();
@@ -244,7 +249,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				if (error != null) {
 					directServer(jobIdString, DirectConnectCommand.EXCEPTION, DirectConnectKeys.DIRECT_CONNECT_DATA 
 							+ ParameterKeys.PARAMETER_SEPARATOR 
-							+ error);
+							+ DirectConnectUtils.INSTANCE.serialize(error));
 					LOG.error(error);
 				} else {
 					if (data != null) {
@@ -262,6 +267,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		} catch (IllegalArgumentException e) {
 			LOG.error(e.getMessage(), e);
 		}
+		return returnValue;
 	}
 	
 	/**

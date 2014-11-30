@@ -1,4 +1,10 @@
 ==========================
+Wubiq 2.0.13 (2014-11-29)
+==========================
+- Bug #1. Print jobs with images might stall wubiq clients.
+- Bug #2. Remove all print jobs not working.
+
+==========================
 Wubiq 2.0.12 (2014-10-05)
 ==========================
 -Wubiq can now create and register custom media size, including wider than taller ones!

@@ -13,12 +13,12 @@ takes care of them and notifies the server of its success.
 
 Documentation
 -------------
-Wiki pages are available at: **http://sourceforge.net/apps/mediawiki/wubiq/index.php?title=Main_Page**
+Wiki pages are available at: **http://sourceforge.net/p/wubiq/wiki/Main_Page/**
 
 Installing wubiq as a server
 ----------------------------
 1. Download wubiq.zip and extract its files.
-2. Deploy wubiq-server.war on a servlet container (this has been tested on Tomcat 6).
+2. Deploy wubiq-server.war on a servlet container (this has been tested on Tomcat 6 and Tomcat 7).
 3. Copy wubiq-common.jar and hsqldb.jar (included in the distribution) to your web application lib folder.
    (Re)start your servlet container if needed.
 4. You can test if wubiq is running by opening a web browser and write: http://host:port/wubiq-server.
@@ -40,8 +40,8 @@ There are two ways to get the client to work on the remote computer.
 Or by downloading a client program and running it from the command line.
 1. From the previous downnload extract wubiq-client.jar.
 2. You can make a batch or script to run the client with the following:
-   **java -jar wubiq-client.jar --host http://host --port 8080**. For example:
-   - java -jar wubiq-client.jar --host http://localhost --port 8080
+   **java -jar wubiq-client.jar -c http://host:8080**. For example:
+   - java -jar wubiq-client.jar -c http://localhost:8080
    See the wubiq-client help by running java -jar wubiq-client.jar -?
 3. To test if your clients are working as expected connect to wubiq-manager with: http://host:port/wubiq-server.
    If everything is working you should see a list of servers' print services including remote print services from client computers.
@@ -60,7 +60,5 @@ Follow the installation steps and then configure the server address and the prin
 
 Limitations
 -----------
-- Administration services are not yet implemented for pending printing jobs.
-- Client program must be running on each client computer that wish to use remote print services.
-
+- A client program must be running on each client computer that wish to use remote print services.
 

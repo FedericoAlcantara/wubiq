@@ -34,7 +34,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public enum DirectConnectUtils {
 	INSTANCE;
-	private final int CONNECTION_TIMEOUT_SECONDS = 10000;
+	private final int CONNECTION_TIMEOUT_SECONDS = 10;
 	private final int CONNECTION_RETRY_MILLISECONDS = 100;
 	
 	private static final Log LOG = LogFactory.getLog(DirectConnectUtils.class);

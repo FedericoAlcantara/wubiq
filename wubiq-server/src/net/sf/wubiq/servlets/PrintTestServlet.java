@@ -4,6 +4,7 @@
 package net.sf.wubiq.servlets;
 
 import java.io.IOException;
+import java.util.Map;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
@@ -25,7 +26,8 @@ public class PrintTestServlet extends RemotePrintServlet {
 			String uuid = request.getParameter(ParameterKeys.UUID);
 			String command = request.getParameter(ParameterKeys.COMMAND);
 			if (command.equalsIgnoreCase(CommandKeys.PRINT_TEST_PAGE)) {
-				printTestPageCommand(uuid, request, response);
+				Map<String, String> parameters = parseStreamParameters(request);
+				printTestPageCommand(uuid, request, response, parameters);
 			} else if (command.equalsIgnoreCase(CommandKeys.SHOW_PRINT_SERVICES)) {
 				showPrintServicesCommand("", request, response);
 			}

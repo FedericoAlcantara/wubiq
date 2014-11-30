@@ -70,6 +70,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		String parameter = printJobPollString(jobId);
 		doLog("Process Pending Job: " + jobId, 0);
 		InputStream printData = null;
+		boolean closePrintJob = true;
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName, 5);
@@ -113,6 +114,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}			
 			doLog("Job(" + jobId + ") printed.", 0);
 		} catch (ConnectException e) {
+			closePrintJob = false;
 			LOG.error(e.getMessage(), e);
 			throw e;
 		} catch (IOException e) {
@@ -128,8 +130,10 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				doLog(e.getMessage());
 			}
 			try {
-				askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-				doLog("Job(" + jobId + ") closing print job.");
+				if (closePrintJob) {
+					askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
+					doLog("Job(" + jobId + ") closing print job.");
+				}
 			} catch (Exception e) {
 				doLog(e.getMessage()); // this is not a desirable to show error
 			}

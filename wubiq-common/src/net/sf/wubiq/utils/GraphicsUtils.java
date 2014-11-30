@@ -131,6 +131,10 @@ public enum GraphicsUtils {
 			fontName = "Monospaced";
 			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
 			font = Font.decode(decodeString);
+		} else if (fontName.toLowerCase().contains("verdana")) {
+			fontName = "SansSerif";
+			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
+			font = Font.decode(decodeString);
 		}
 		return font;
 	}

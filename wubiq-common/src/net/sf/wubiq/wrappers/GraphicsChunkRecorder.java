@@ -210,7 +210,7 @@ public class GraphicsChunkRecorder extends Graphics2D {
 	@Override
 	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
 		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
-			new GraphicParameter(int.class, y), new GraphicParameter(ImageObserver.class, observer));
+			new GraphicParameter(int.class, y), new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(observer)));
 		return originalGraphics.drawImage(img, x, y, observer);
 	}
 
@@ -219,7 +219,7 @@ public class GraphicsChunkRecorder extends Graphics2D {
 			ImageObserver observer) {
 		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 				new GraphicParameter(int.class, y), new GraphicParameter(Color.class, bgcolor),
-				new GraphicParameter(ImageObserver.class, observer));
+				new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(observer)));
 		return originalGraphics.drawImage(img, x, y, bgcolor, observer);
 	}
 
@@ -229,7 +229,7 @@ public class GraphicsChunkRecorder extends Graphics2D {
 			int height, ImageObserver observer) {
 		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 			new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
-			new GraphicParameter(int.class, height), new GraphicParameter(ImageObserver.class, observer));
+			new GraphicParameter(int.class, height), new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(observer)));
 		return originalGraphics.drawImage(img, x, y, width, height, observer);
 	}
 
@@ -239,7 +239,7 @@ public class GraphicsChunkRecorder extends Graphics2D {
 		addToCommands("drawImage", new GraphicParameter(ImageWrapper.class, new ImageWrapper(img)), new GraphicParameter(int.class, x), 
 				new GraphicParameter(int.class, y), new GraphicParameter(int.class, width),
 				new GraphicParameter(int.class, height), new GraphicParameter(Color.class, bgcolor), 
-				new GraphicParameter(ImageObserver.class, observer));
+				new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(observer)));
 		return originalGraphics.drawImage(img, x, y, width, height, bgcolor, observer);
 	}
 
@@ -251,7 +251,7 @@ public class GraphicsChunkRecorder extends Graphics2D {
 			new GraphicParameter(int.class, dy1), new GraphicParameter(int.class, dx2),
 			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
 			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
-			new GraphicParameter(int.class, sy2), new GraphicParameter(ImageObserver.class, observer));
+			new GraphicParameter(int.class, sy2), new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(observer)));
 		return originalGraphics.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
 	}
 
@@ -264,7 +264,7 @@ public class GraphicsChunkRecorder extends Graphics2D {
 			new GraphicParameter(int.class, dy2), new GraphicParameter(int.class, sx1),
 			new GraphicParameter(int.class, sy1), new GraphicParameter(int.class, sx2),
 			new GraphicParameter(int.class, sy2), new GraphicParameter(Color.class, bgcolor), 
-			new GraphicParameter(ImageObserver.class, observer));
+			new GraphicParameter(ImageObserverWrapper.class, new ImageObserverWrapper(observer)));
 		return originalGraphics.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
 	}
 	
