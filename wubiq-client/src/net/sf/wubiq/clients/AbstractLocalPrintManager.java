@@ -363,7 +363,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 					connection.setRequestProperty("charset", "utf-8");
 					connection.setRequestProperty("Accept-Charset", "utf-8");
-					connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
+					// Using content-type will force the use of input stream and that is not managed by older servers.
+					//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
 					connection.setRequestProperty("Content-Length", "" + Integer.toString(encodedParameters.getBytes().length));
 					ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes("utf-8"));
 					connection.setUseCaches (false);

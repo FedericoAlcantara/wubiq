@@ -1,4 +1,10 @@
 ==========================
+Wubiq 2.0.14 (2014-12-03)
+==========================
+- Ensures compatibility with old servers.
+- Added image for android app store.
+
+==========================
 Wubiq 2.0.13 (2014-11-29)
 ==========================
 - Bug #1. Print jobs with images might stall wubiq clients.
