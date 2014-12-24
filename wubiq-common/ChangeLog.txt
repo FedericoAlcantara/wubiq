@@ -1,4 +1,10 @@
 ==========================
+Wubiq 2.0.15 (2014-12-024)
+==========================
+- Merry Christmas!
+- Adds group as part of UUID on installer configuration.
+
+==========================
 Wubiq 2.0.14 (2014-12-03)
 ==========================
 - Ensures compatibility with old servers.

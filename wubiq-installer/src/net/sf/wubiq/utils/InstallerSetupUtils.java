@@ -184,7 +184,11 @@ public class InstallerSetupUtils {
 			try {
 				writer = new PrintWriter(new FileWriter(propertyFile));
 				writer.println("# " + new Date().toString());
-				writer.println("uuid=${ENV[COMPUTERNAME]}");
+				if (!Is.emptyString(group)) {
+					writer.println("uuid=" + group + "-${ENV[COMPUTERNAME]}");
+				} else {
+					writer.println("uuid=${ENV[COMPUTERNAME]}");
+				}
 				if (connection != null && !connection.equals("")) {
 					writer.println(ConfigurationKeys.PROPERTY_CONNECTIONS + "=" + connection);
 				}
