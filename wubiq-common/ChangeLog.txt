@@ -1,7 +1,7 @@
 ==========================
-Wubiq 2.0.15 (2014-12-024)
+Wubiq 2.0.15 (2014-12-28)
 ==========================
-- Merry Christmas!
+- Merry Christmas and Happy New Year!
 - Adds group as part of UUID on installer configuration.
 
 ==========================
