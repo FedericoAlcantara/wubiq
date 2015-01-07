@@ -1,7 +1,9 @@
+<%@page import="java.util.Locale"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%@ page import="java.util.ArrayList" %>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.TreeSet"%>
 
 <%@ page import="javax.print.PrintService" %>    
 
@@ -59,6 +61,13 @@
 <%
 String userId = (String)session.getAttribute(WebKeys.SERVER_USER_ID);
 boolean logged =  !Is.emptyString(userId);
+String filter = (String)session.getAttribute(WebKeys.SERVER_FILTER);
+if (filter == null) {
+	filter = "";
+} else {
+	filter = filter.toLowerCase();
+}
+String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.getLocale() == null ? "Espa&#241;ol" : "English";
 %>  
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -81,7 +90,13 @@ boolean logged =  !Is.emptyString(userId);
 	<div align="center">
 		<table class="wubiq_header">
 			<tr>
-				<td align="center" colspan="3" ><%=ServerLabels.get("server.version", Labels.VERSION)%></td>
+				<td align="center" colspan="3" ><%=ServerLabels.get("server.version", Labels.VERSION)%>
+				</td>
+				<td>
+					<form action="localeToggle.jsp">
+						<input type="Submit" value='<%=localeLabel %>' />
+					</form>
+				</td>
 			</tr>
 			<tr>
 				<td>
@@ -104,6 +119,15 @@ boolean logged =  !Is.emptyString(userId);
 					<form action="wubiq-client.jar">
 						<input type="Submit" value ='<%=ServerLabels.get("server.download_wubiq_client")%>'/>
 					</form>
+				</td>
+				<td>&nbsp;</td>
+			</tr>
+			<tr>
+				<td>
+				</td>
+				<td>
+				</td>
+				<td>
 				</td>
 			</tr>
 			<%if (!logged) {
@@ -128,13 +152,21 @@ boolean logged =  !Is.emptyString(userId);
 					</form>
 				</td>
 			</tr>
-			<%} %>			
+			<%} %>
+			<tr>
+				<td colspan="3">
+					<form action="filter.jsp" method="post" style="font-size: smaller;">
+						<%=ServerLabels.get("server.filter")%>:<input type="text" name="<%=WebKeys.SERVER_FILTER%>" value="<%=filter%>"/>
+						<input type="submit" value="<%=ServerLabels.get("server.filter.apply") %>" />
+					</form>
+				</td>
+			</tr>					
 		</table>
 		<%
 		RemoteClientManager manager = RemoteClientManager.getRemoteClientManager(request);
 		String url = request.getContextPath();
 		manager.updateRemotes();
-		Collection<String>uuids = new ArrayList<String>();
+		Collection<String>uuids = new TreeSet<String>();
 		uuids.add("");
 		uuids.addAll(manager.getUuids());
 		int clientCount = 0;
@@ -147,6 +179,11 @@ boolean logged =  !Is.emptyString(userId);
 			String clientVersion = "";
 			if (remoteClient != null) {
 				clientVersion = " (" + remoteClient.getClientVersion() + ")";
+			}
+			if (!Is.emptyString(filter)) {
+				if (!uuid.toLowerCase().startsWith(filter) || remoteClient == null) {
+					continue;
+				}
 			}
 			StringBuffer killClient = new StringBuffer("")
 				.append(url)
@@ -197,7 +234,7 @@ boolean logged =  !Is.emptyString(userId);
 				<tr class="wubiq_s_table_tr" >
 					<th class="wubiq_s_table_th_title" colspan='<%=remote ? "1" : "3"%>' class="wubiq-client-title"><%=remote ? remoteClient.getComputerName() : ServerLabels.get("server.server_manager")%> </th>
 					<%if (remote) { %>
-						<th class="wubiq_s_table_th_uuid"><%=uuid%><%=clientVersion%> </th>
+						<th class="wubiq_s_table_th_uuid"><%=uuid%><%=clientVersion%></th>
 						<th class="wubiq_s_table_th_actions">
 							<%if (logged) {%>
 								<a href="<%=killClient.toString()%>">

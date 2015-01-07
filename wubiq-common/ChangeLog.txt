@@ -3,6 +3,8 @@ Wubiq 2.0.16 (2015-01-07)
 ==========================
 -Fixed null pointer exception on server.
 -Stopping clients is forbidden for none logged users.
+-Remote client filter is enabled in wubiq-server console.
+-Localization enabled in wubiq-server console.
 
 ==========================
 Wubiq 2.0.15 (2014-12-28)

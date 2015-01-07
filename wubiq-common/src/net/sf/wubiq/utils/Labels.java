@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.utils;
 
+import java.util.Locale;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 
@@ -19,7 +20,12 @@ public class Labels {
 	private static final Log LOG = LogFactory.getLog(Labels.class);
 	private ResourceBundle bundle;
 	private String labelFile;
+	private Locale locale;
 	
+	/**
+	 * Gets a labels file.
+	 * @param labelFile
+	 */
 	protected Labels(String labelFile) {
 		this.labelFile = labelFile;
 	}
@@ -45,11 +51,32 @@ public class Labels {
 	}
 		
 	/**
+	 * Sets a new locale.
+	 * @param locale New locale to be set.
+	 */
+	public void setLocale(Locale locale) {
+		this.locale = locale;
+		Locale.setDefault(locale);
+		bundle = null;
+	}
+	
+	/**
+	 * @return Current locale.
+	 */
+	public Locale getLocale() {
+		return locale;
+	}
+	
+	/**
 	 * @return the localized bundle.
 	 */
 	private ResourceBundle getBundle() {
 		if (bundle == null) {
-			bundle = ResourceBundle.getBundle(labelFile);
+			if (locale != null) {
+				bundle = ResourceBundle.getBundle(labelFile, locale);
+			} else {
+				bundle = ResourceBundle.getBundle(labelFile);
+			}
 		}
 		return bundle;
 	}
