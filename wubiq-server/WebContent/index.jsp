@@ -199,10 +199,10 @@ boolean logged =  !Is.emptyString(userId);
 					<%if (remote) { %>
 						<th class="wubiq_s_table_th_uuid"><%=uuid%><%=clientVersion%> </th>
 						<th class="wubiq_s_table_th_actions">
-							<a href="<%=killClient.toString()%>">
-								<input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' />
-							</a>
 							<%if (logged) {%>
+								<a href="<%=killClient.toString()%>">
+									<input type="button" value='<%=ServerLabels.get("server.kill_client")%>'  onclick='<%=killClient%>' />
+								</a>
 								<a href="<%=pauseResumeClient.toString()%>">
 									<input type="button" value='<%=pauseResumeLabel%>'  onclick='<%=pauseResumeClient%>' />
 								</a>

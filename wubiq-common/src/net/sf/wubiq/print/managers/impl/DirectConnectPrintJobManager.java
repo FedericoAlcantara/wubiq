@@ -136,8 +136,12 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		IDirectConnectorQueue queue = directConnector(queueId);
 		for (Long jobId : queue.printJobs()) {
 			IRemotePrintJob printJob = queue.remotePrintJob(jobId);
-			if (printJob.getPrintService().equals(printService)) {
-				returnValue++;
+			if (printJob != null) {
+				if (printJob.getPrintService().equals(printService)) {
+					returnValue++;
+				}
+			} else {
+				queue.removePrintJob(jobId);
 			}
 		}
 		return returnValue;

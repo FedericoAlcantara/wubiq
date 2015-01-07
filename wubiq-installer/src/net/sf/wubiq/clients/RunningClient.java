@@ -94,7 +94,7 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 		if (!jvmParameters.toString().contains("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=")) {
 			jvmParameters
 					.append(' ')
-					.append("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=3");
+					.append("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=30");
 		}
 		javaRun.setJvmParameters(jvmParameters.toString());
 		javaRun.setJarFile(wubiqClientJar.getPath());
