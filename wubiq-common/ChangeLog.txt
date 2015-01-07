@@ -1,4 +1,10 @@
 ==========================
+Wubiq 2.0.16 (2015-01-07)
+==========================
+-Fixed null pointer exception on server.
+-Stopping clients is forbidden for none logged users.
+
+==========================
 Wubiq 2.0.15 (2014-12-28)
 ==========================
 - Merry Christmas and Happy New Year!
