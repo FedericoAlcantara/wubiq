@@ -13,7 +13,9 @@ import java.net.ConnectException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
@@ -21,6 +23,7 @@ import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.InstallerProperties;
 import net.sf.wubiq.utils.InstallerUtils;
+import net.sf.wubiq.utils.Is;
 
 /**
  * @author Federico Alcantara
@@ -90,13 +93,49 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 
 		javaRun = new JavaRun();
 		javaRun.setFixedParameters(InstallerProperties.INSTANCE(serviceName).getClientParameters());
-		StringBuffer jvmParameters = new StringBuffer(InstallerProperties.INSTANCE(serviceName).getJvmParameters());
-		if (!jvmParameters.toString().contains("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=")) {
-			jvmParameters
-					.append(' ')
-					.append("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=30");
+		List<String> jvmParameters = new ArrayList<String>();
+		for (String jvmParam : InstallerProperties.INSTANCE(serviceName).getJvmParameters().split("[; ]")) {
+			if (!Is.emptyString(jvmParam.trim())) {
+				jvmParameters.add(jvmParam.trim());
+			}
 		}
-		javaRun.setJvmParameters(jvmParameters.toString());
+		if (!jvmParameters.contains("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=")) {
+			jvmParameters
+					.add("-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + "=30");
+		}
+		
+		String dmPrinters = InstallerProperties.INSTANCE(serviceName).getDmPrinters().trim();
+		String dmHqPrinters = InstallerProperties.INSTANCE(serviceName).getDmHqPrinters().trim();
+		String photoPrinters = InstallerProperties.INSTANCE(serviceName).getPhotoPrinters().trim();
+		String defaultDmFont = InstallerProperties.INSTANCE("serviceName").getDefaultDmFont().trim();
+		String forceLogicalFonts = InstallerProperties.INSTANCE("serviceName").getForceLogicalFontOnDm().trim();
+		
+		if (!Is.emptyString(dmPrinters)) {
+			jvmParameters
+				.add("-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + "=" + dmPrinters);
+		}
+		
+		if (!Is.emptyString(dmHqPrinters)) {
+			jvmParameters
+				.add("-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX_HQ+ "=" + dmHqPrinters);
+		}
+		
+		if (!Is.emptyString(photoPrinters)) {
+			jvmParameters
+				.add("-D" + PropertyKeys.WUBIQ_PRINTERS_PHOTO + "=" + photoPrinters);
+		}
+		
+		if (!Is.emptyString(defaultDmFont)) {
+			jvmParameters
+				.add("-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT + "=" + defaultDmFont);
+		}
+		
+		if (!Is.emptyString(forceLogicalFonts)) {
+			jvmParameters
+				.add("-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + "=" + forceLogicalFonts );
+		}
+		
+		javaRun.setJvmParameters(jvmParameters);
 		javaRun.setJarFile(wubiqClientJar.getPath());
 		boolean loadNewJar = true;
 		

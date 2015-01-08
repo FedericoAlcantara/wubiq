@@ -73,9 +73,13 @@ public class JavaRun {
 	/**
 	 * @param jvmParameters the jvmParameters to set
 	 */
-	public void setJvmParameters(String... jvmParameters) {
-		this.jvmParameters = jvmParameters;
+	public void setJvmParameters(List<String> jvmParameters) {
+		this.jvmParameters = new String[jvmParameters.size()];
+		for (int index = 0; index < jvmParameters.size(); index++) {
+			this.jvmParameters[index] = jvmParameters.get(index);
+		}
 	}
+	
 	/**
 	 * @return the jarFile
 	 */

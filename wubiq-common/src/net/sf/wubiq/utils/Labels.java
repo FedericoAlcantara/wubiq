@@ -16,7 +16,7 @@ import org.apache.commons.logging.LogFactory;
  *
  */
 public class Labels {
-	public static final String VERSION = "2.0.16";
+	public static final String VERSION = "2.0.17";
 	private static final Log LOG = LogFactory.getLog(Labels.class);
 	private ResourceBundle bundle;
 	private String labelFile;

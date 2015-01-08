@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.0.17 (2015-01-08)
+==========================
+-Fixed missed parameters handling in wubiq-installer.
+
+==========================
 Wubiq 2.0.16 (2015-01-07)
 ==========================
 -Fixed null pointer exception on server.
