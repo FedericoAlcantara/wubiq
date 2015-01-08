@@ -949,7 +949,7 @@ public class WubiqConfigurator {
 			String data = (String)tableModel.getValueAt(row, 0);
 			if (!Is.emptyString(data)) {
 				if (text.length() > 0) {
-					text.append(';');
+					text.append(',');
 				}
 				text.append(data);
 			}
