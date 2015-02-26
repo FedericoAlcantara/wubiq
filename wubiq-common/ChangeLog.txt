@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.0.18 (2015-02-26)
+==========================
+-Improved resilience against communication instability.
+
+==========================
 Wubiq 2.0.17 (2015-01-08)
 ==========================
 -Fixed missed parameters handling in wubiq-installer.

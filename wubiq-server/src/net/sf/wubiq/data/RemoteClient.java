@@ -17,7 +17,6 @@ public class RemoteClient {
 	 * Time in milliseconds where after not having notification from remote the connection is considered dead.
 	 */
 	private long inactiveTime;
-	private long longInactiveTime;
 	private Boolean killed;
 	private List<String> services;
 	private String computerName;
@@ -25,6 +24,7 @@ public class RemoteClient {
 	private Boolean refreshed;
 	private Boolean paused;
 	private String clientVersion;
+	private long connectionFailures;
 	
 	public RemoteClient() {
 		this(20000); // 20 seconds default idle time
@@ -33,10 +33,10 @@ public class RemoteClient {
 	
 	public RemoteClient(Integer inactiveTime) {
 		this.inactiveTime = inactiveTime;
-		this.longInactiveTime = 2l * (60l * 60l * 1000l); // Two hours without activities is considered dead
 		this.setKilled(false);
 		this.setRefreshed(false);
 		this.setPaused(false);
+		this.connectionFailures = 1;
 	}
 	
 	/**
@@ -62,6 +62,7 @@ public class RemoteClient {
 			if (lastAccessedTime > inactiveTime) {
 				lastAccessedTime = lastAccessedTime - inactiveTime;
 			}
+			connectionFailures = 1l;
 		}
 	}
 
@@ -110,6 +111,10 @@ public class RemoteClient {
 	 * @param lastAccessedTime the lastAccessedTime to set
 	 */
 	public void setLastAccessedTime(Long lastAccessedTime) {
+		long currentTime = new Date().getTime();
+		if ((currentTime - lastAccessedTime) > inactiveTime) {
+			connectionFailures++;
+		}
 		this.lastAccessedTime = lastAccessedTime;
 	}
 
@@ -148,13 +153,12 @@ public class RemoteClient {
 	
 	/**
 	 * Determines if the remote is dead for a long time.
-	 * @return True or false.
+	 * @deprecated No longer used for determining the state of the client. 
+	 * Clients are ALWAYS considered connected, to definitively kill a client
+	 * a 'kill' command must be issued either by the client or by the server.
+	 * @return Always returns true, meaning that the client is not dead.
 	 */
 	public boolean isRemoteDead() {
-		long currentTime = new Date().getTime();
-		if (Math.abs(currentTime - getLastAccessedTime()) > longInactiveTime) {
-			return false;
-		} 
 		return true;
 	}
 
@@ -178,5 +182,15 @@ public class RemoteClient {
 	 */
 	public void setClientVersion(String clientVersion) {
 		this.clientVersion = clientVersion;
+	}
+	
+	/**
+	 * The number of times a client connection had failed.
+	 * When a client connection is dropped more than 20 seconds
+	 * it is a considered a connection failure and added up.
+	 * @return The number of times the connection failed.
+	 */
+	public long getConnectionFailures() {
+		return connectionFailures;
 	}
 }

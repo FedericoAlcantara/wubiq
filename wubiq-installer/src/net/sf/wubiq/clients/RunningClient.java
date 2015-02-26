@@ -57,7 +57,7 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 					runClient();
 				} catch (ConnectException e) {
 					try {
-						Thread.sleep(10000);
+						Thread.sleep(1000); // Every second it tries to reconnect.
 					} catch (InterruptedException e1) {
 						doLog(e1.getMessage(), 0);
 					}

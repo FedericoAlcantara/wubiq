@@ -56,9 +56,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private boolean killManager;
 	private boolean refreshServices;
 	private boolean debugMode;
-	private long checkPendingJobInterval = 3000;
-	private long printingJobInterval = 1000;
-	private int connectionErrorRetries = -1;
+	private long checkPendingJobInterval = 1000; // every 1 seconds
+	private long printingJobInterval = 2000; // 2 second
+	private int connectionErrorRetries = -1; // never end
 	private int connectionErrorCount = 0;
 	private boolean cancelManager = false;
 	private Set<String> connections;
@@ -134,7 +134,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 						LOG.debug(e.getMessage());
 						setRefreshServices(true);
 						try {
-							Thread.sleep(10000);
+							Thread.sleep(getCheckPendingJobInterval()); 
 						} catch (InterruptedException e1) {
 							LOG.debug(e.getMessage());
 						}

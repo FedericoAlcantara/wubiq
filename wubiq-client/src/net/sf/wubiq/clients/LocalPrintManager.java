@@ -111,15 +111,18 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				manager.setServletName(getServletName());
 				manager.setUuid(getUuid());
 				manager.handleDirectPrinting();
-			}			
+			}
 			doLog("Job(" + jobId + ") printed.", 0);
 		} catch (ConnectException e) {
 			closePrintJob = false;
+			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
 			LOG.error(e.getMessage(), e);
 			throw e;
 		} catch (IOException e) {
+			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
 			LOG.error(e.getMessage(), e);
 		} catch (Exception e) {
+			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
 			LOG.error(e.getMessage(), e);
 		} finally {
 			try {
@@ -132,7 +135,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			try {
 				if (closePrintJob) {
 					askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
-					doLog("Job(" + jobId + ") closing print job.");
+					doLog("Job(" + jobId + ") closing print job.", 0);
 				}
 			} catch (Exception e) {
 				doLog(e.getMessage()); // this is not a desirable to show error
@@ -206,6 +209,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		boolean reload = false;
 		Map<String, PrintService>newPrintServices = new HashMap<String, PrintService>();
 		for (PrintService printService: PrintServiceUtils.getPrintServices()) {
+			if ("Microsoft XPS document writer".equalsIgnoreCase(printService.getName())) {
+				continue; // This is a hanger printer
+			}
 			String printServiceName = PrintServiceUtils.cleanPrintServiceName(printService);
 			newPrintServices.put(printServiceName, printService);
 			if (!getPrintServicesName().containsKey(printServiceName)) {
@@ -240,6 +246,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			doLog("Register Print Services", 5);
 			getPrintServicesName().clear();
 			for (PrintService printService: PrintServiceUtils.getPrintServices()) {
+				if ("Microsoft XPS document writer".equalsIgnoreCase(printService.getName())) {
+					continue; // This is a hanger printer
+				}
 				String printServiceName = PrintServiceUtils.serializeServiceName(printService, isDebugMode());
 				getPrintServicesName().put(PrintServiceUtils.cleanPrintServiceName(printService), printService);
 				doLog("Print service:" + printServiceName, 5);

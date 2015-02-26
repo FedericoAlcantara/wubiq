@@ -162,7 +162,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void killManagerCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, true);
 		if (client != null) {
 			client.setKilled(true);
 			RemotePrintServiceLookup.removePrintServices(uuid);
@@ -180,7 +180,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void pauseManagerCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, true);
 		if (client != null) {
 			client.setPaused(true);;
 		}
@@ -197,7 +197,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void resumeManagerCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, true);
 		if (client != null) {
 			client.setPaused(false);;
 		}
@@ -214,7 +214,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void isKilledCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, true);
 		if (client != null && client.isKilled()) {
 			respond("1", response);
 		} else {
@@ -751,7 +751,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void notifyRemote(String uuid, HttpServletRequest request) {
 		if (!Is.emptyString(uuid)) {
-			RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid);
+			RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, true);
 			if (client == null) {
 				client = new RemoteClient();
 				client.setComputerName(request.getRemoteAddr());

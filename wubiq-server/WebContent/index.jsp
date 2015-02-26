@@ -1,8 +1,11 @@
-<%@page import="java.util.Locale"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
+<%@ page import="java.text.DateFormat"%>
+<%@ page import="java.text.SimpleDateFormat"%>
 <%@ page import="java.util.ArrayList" %>
+<%@ page import="java.util.Date"%>
 <%@ page import="java.util.Collection" %>
+<%@ page import="java.util.Locale"%>
 <%@ page import="java.util.TreeSet"%>
 
 <%@ page import="javax.print.PrintService" %>    
@@ -170,15 +173,25 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 		uuids.add("");
 		uuids.addAll(manager.getUuids());
 		int clientCount = 0;
+		DateFormat df = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		for (String uuid: uuids) {
-			RemoteClient remoteClient = manager.getRemoteClient(uuid);
+			RemoteClient remoteClient = manager.getRemoteClient(uuid, true);
 			if (remoteClient != null && remoteClient.isKilled()) {
 				continue;
 			}
 			boolean remote = remoteClient != null;
 			String clientVersion = "";
+			String disconnection = "";
+			String failures = "";
 			if (remoteClient != null) {
-				clientVersion = " (" + remoteClient.getClientVersion() + ")";
+				clientVersion = " (" + remoteClient.getClientVersion() + ") " 
+						+ " - " + df.format(new Date(remoteClient.getLastAccessedTime()));
+				disconnection = (!remoteClient.isRemoteActive()
+								? ServerLabels.get("server.client_disconnected")
+								: "");
+				failures = remoteClient.getConnectionFailures() > 1
+						? ServerLabels.get("server.client_failures", Long.toString(remoteClient.getConnectionFailures() - 1))
+						: "";
 			}
 			if (!Is.emptyString(filter)) {
 				if (!uuid.toLowerCase().startsWith(filter) || remoteClient == null) {
@@ -245,7 +258,17 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 								</a>
 							<%} %>	
 						</th>
-					<%}%>				 
+					<%if (!Is.emptyString(disconnection)) {%>
+					</tr>
+						<th>&nbsp;</th>
+						<th colspan="2" style="text-align:center; color:red;"><%=disconnection%></th>
+					<%}
+					if (!Is.emptyString(failures)) {%>
+					</tr>
+						<th>&nbsp;</th>
+						<th colspan="2" style="text-align:center; color:green;"><%=failures%></th>
+					<%}
+					}%>			 
 				</tr>
 				<tr class="wubiq_s_table_tr">
 					<td class="wubiq_s_table_td" colspan="3">

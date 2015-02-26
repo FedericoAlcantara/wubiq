@@ -42,10 +42,22 @@ public class RemoteClientManager {
 	 * @return The client or null.
 	 */
 	public RemoteClient getRemoteClient(String uuid) {
+		return getRemoteClient(uuid, false);
+	}
+	
+	/**
+	 * Gets the remote client and updates its last accessed time.
+	 * @param uuid Unique identifier to look for.
+	 * @param doNotUpdateAccessedTime If true the accessed time is not updated.
+	 * @return The client or null.
+	 */
+	public RemoteClient getRemoteClient(String uuid, boolean doNotUpdateAccessedTime) {
 		validateRemoteLookup();
 		RemoteClient returnValue = getRemotes().get(uuid);
-		if (returnValue != null && !returnValue.isKilled()) {
-			returnValue.setLastAccessedTime(new Date().getTime());
+		if (!doNotUpdateAccessedTime) {
+			if (returnValue != null && !returnValue.isKilled()) {
+				returnValue.setLastAccessedTime(new Date().getTime());
+			}
 		}
 		return returnValue;
 	}
@@ -78,11 +90,6 @@ public class RemoteClientManager {
 	public void updateRemotes() {
 		validateRemoteLookup();
 		Collection<String> uuidToRemoves = new ArrayList<String>();
-		for (Entry<String, RemoteClient> infoEntry : getRemotes().entrySet()) {
-			if (!infoEntry.getValue().isRemoteDead()) {
-				uuidToRemoves.add(infoEntry.getKey());
-			}
-		}
 		for (String uuidToRemove : uuidToRemoves) {
 			RemotePrintServiceLookup.removePrintServices(uuidToRemove);
 			getRemotes().remove(uuidToRemove);
@@ -95,9 +102,7 @@ public class RemoteClientManager {
 	public Collection<String> getUuids() {
 		Collection<String> returnValue = new ArrayList<String>();
 		for (Entry<String, RemoteClient> entry : getRemotes().entrySet()) {
-			if (entry.getValue().isRemoteActive()) {
-				returnValue.add(entry.getKey());
-			}
+			returnValue.add(entry.getKey());
 		}
 		return returnValue;
 	}
