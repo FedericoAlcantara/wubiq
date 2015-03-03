@@ -134,24 +134,26 @@ public class RemotePrintJob implements IRemotePrintJob {
 		}
 		if (!Is.emptyString(uuid)) {
 			boolean printRemotely = true;
+			boolean printSerialized = false;
 			if (isDirectCommunicationEnabled) {
 				if (!(doc.getDocFlavor() instanceof DocFlavor.SERVICE_FORMATTED)) {
 					if (PrintServiceUtils.supportDocFlavor(printService, doc.getDocFlavor())) {
-						printRemotely = false;
+						printSerialized = true;
 					}
 				}
 			} else {
 				printRemotely = false;
 			}
 			if (printRemotely) {
-				printRemote(uuid, doc, printRequestAttributeSet);
+				printRemote(uuid, doc, printRequestAttributeSet, printSerialized);
 			} else {
 				printSerialized(uuid, doc, printRequestAttributeSet);
 			}
 		}
 	}
 
-	private void printRemote(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet) 
+	private void printRemote(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet,
+			boolean printSerialized) 
 			throws PrintException {
 		try {
 			IRemotePrintJobManager manager = null;
@@ -159,7 +161,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 			this.docAttributeSet = doc.getAttributes();
 			this.docFlavor = doc.getDocFlavor();
 			printData = doc.getPrintData();
-			if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor)) {
+			if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor) && !printSerialized) {
 				docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
 				printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)doc.getPrintData(), printService, printRequestAttributeSet);
 			}

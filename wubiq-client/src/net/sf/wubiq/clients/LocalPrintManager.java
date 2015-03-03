@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.clients;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
@@ -24,6 +26,8 @@ import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientPrintDirectUtils;
 import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.utils.IOUtils;
+import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
@@ -50,10 +54,11 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	private static final Log LOG = LogFactory.getLog(LocalPrintManager.class);
 	private Map<String, PrintService>printServicesName;
 	private long lastServerTimestamp = -1;
+	private Map<Long, Thread> registeredJobs;
+	private Map<String, Thread> registeredPrintServices;
 	
 	public LocalPrintManager() {
 		super();
-		
 	}
 	
 	
@@ -67,12 +72,41 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * @param jobId Id of the job to be printed.
 	 */
 	protected void processPendingJob(String jobId) throws ConnectException {
+		Long jobIdLong = Long.parseLong(jobId);
+		// This will prevent to that a print job is taken more than once.
+		if (getRegisteredJobs().containsKey(jobIdLong)) {
+			Thread runningThread = getRegisteredJobs().get(jobIdLong);
+			if (runningThread == null ||
+					!runningThread.isAlive()) {
+				unRegisterJob(jobIdLong);
+			}
+			return;
+		}
 		String parameter = printJobPollString(jobId);
 		doLog("Process Pending Job: " + jobId, 0);
 		InputStream printData = null;
-		boolean closePrintJob = true;
+		boolean closePrintJob = false;
 		try {
 			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
+			if (Is.emptyString(printServiceName)) { // this job is already closed
+				try {
+					askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
+					doLog("Job(" + jobId + ") closing print job.", 0);
+				} catch (Exception e) {
+					doLog(e.getMessage()); // this is not a desirable to show error
+				}
+				return;
+			}
+			// This will prevent to that more than one job is sent to the same print service while printing.
+			if (getRegisteredPrintServices().containsKey(printServiceName)) {
+				Thread runningThread = getRegisteredPrintServices().get(printServiceName);
+				if (runningThread == null ||
+						!runningThread.isAlive()) {
+					releasePrintService(printServiceName);
+				}
+				return;
+			}
+			
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName, 5);
 			String printRequestAttributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter);
 			doLog("Job(" + jobId + ") printRequestAttributes:" + printRequestAttributesData, 5);
@@ -82,8 +116,20 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			doLog("Job(" + jobId + ") docAttributes:" + docAttributesData, 5);
 			String docFlavorData = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
 			doLog("Job(" + jobId + ") docFlavor:" + docFlavorData, 5);
-			String isDirectConnectData = askServer(CommandKeys.READ_IS_DIRECT_CONNECT);
+			String isDirectConnectData = "false";
+			try {
+				isDirectConnectData = askServer(CommandKeys.READ_IS_DIRECT_CONNECT);
+			} catch (ConnectException e) {
+				isDirectConnectData = "false";
+			}
 			doLog("Job(" + jobId + ") isDirectConnect:" + isDirectConnectData, 5);
+			String isCompressionEnabledData = "false";
+			try {
+				isCompressionEnabledData = askServer(CommandKeys.READ_IS_COMPRESSED);
+			} catch (ConnectException e) {
+				isCompressionEnabledData = "false";
+			}
+			doLog("Job(" + jobId + ") serverSupportsCompression:" + isCompressionEnabledData, 5);
 
 			PrintService printService = getPrintServicesName().get(printServiceName);
 			PrintRequestAttributeSet printRequestAttributeSet = PrintServiceUtils.convertToPrintRequestAttributeSet(printRequestAttributesData);
@@ -91,28 +137,73 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
 			boolean isDirectConnect = "true".equalsIgnoreCase(isDirectConnectData);
+			boolean serverSupportsCompression = "true".equalsIgnoreCase(isCompressionEnabledData);
+			boolean forceSerialized = false;
 			
-			if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION))  ||
-					!isDirectConnect) {
-				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
-				print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
-			} else {
-				directServer(jobId, DirectConnectCommand.START, parameter);
-				DirectPrintManager manager = createDirectPrintManager(
-						jobId,
-						printService,
-						printRequestAttributeSet,
-						printJobAttributeSet,
-						docAttributeSet,
-						isDebugMode(),
-						getDebugLevel());
+			if (forceSerializedBySystem()) {
+				isDirectConnect = false;
+			}
+
+			if (isDirectConnect) {
+				if (!docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) &&
+						!docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
+					if (PrintServiceUtils.supportDocFlavor(printService, docFlavor)) {
+						forceSerialized = true; // this is different this is telling to handle by old printing routines but multi print services.
+					}
+				}
+			}
+			if (isDirectConnect) {
+				// Only same print service requests are put in queue
+				DirectPrintManager manager = null;
+				if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION))  ||
+						!isDirectConnect || forceSerialized) {
+					// This automatically starts the service.
+					printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+					ByteArrayOutputStream out = new ByteArrayOutputStream();
+					IOUtils.INSTANCE.copy(printData, out);
+					printData = new ByteArrayInputStream(out.toByteArray());
+					manager = createDirectPrintManager(
+							jobId,
+							printService,
+							printRequestAttributeSet,
+							printJobAttributeSet,
+							docAttributeSet,
+							isDebugMode(),
+							getDebugLevel(),
+							serverSupportsCompression,
+							docFlavor,
+							printData);
+				} else {
+					if (serverSupportsCompression) {
+						directServerNotSerialized(jobId, DirectConnectCommand.START);
+					} else {
+						directServer(jobId, DirectConnectCommand.START, parameter);
+					}
+					manager = createDirectPrintManager (
+							jobId,
+							printService,
+							printRequestAttributeSet,
+							printJobAttributeSet,
+							docAttributeSet,
+							isDebugMode(),
+							getDebugLevel(),
+							serverSupportsCompression);
+				}
 				manager.setConnections(getConnections());
 				manager.setApplicationName(getApplicationName());
 				manager.setServletName(getServletName());
 				manager.setUuid(getUuid());
-				manager.handleDirectPrinting();
+				manager.setLocalPrintManager(this);
+				runManager(manager, printServiceName, jobId);
+			} else {
+				// Single job, single print service other jobs or print service wait in queue.
+				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				IOUtils.INSTANCE.copy(printData, out);
+				printData = new ByteArrayInputStream(out.toByteArray());
+				print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+				closePrintJob = true;
 			}
-			doLog("Job(" + jobId + ") printed.", 0);
 		} catch (ConnectException e) {
 			closePrintJob = false;
 			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
@@ -128,7 +219,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			try {
 				if (printData != null) {
 					printData.close();
-				}
+			}
 			} catch (IOException e) {
 				doLog(e.getMessage());
 			}
@@ -143,6 +234,119 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		}
 	}
  	
+	/**
+	 * Closes the print job.
+	 * @param jobId Job id to close.
+	 */
+	private void closePrintJob(String jobId) {
+		try {
+			askServer(CommandKeys.CLOSE_PRINT_JOB, printJobPollString(jobId));
+			doLog("Job(" + jobId + ") closing print job.", 0);
+		} catch (Exception e) {
+			doLog(e.getMessage()); // this is not a desirable to show error
+		}
+	}
+	
+	/**
+	 * Checks the system property and validates if it is set to use old routines.
+	 * @return True if force the use of old routines.
+	 */
+	protected boolean forceSerializedBySystem() {
+		return "true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION));
+	}
+	
+	/**
+	 * Creates a Direct print manager. This is a method to be intercepted by tests.
+	 * @param jobIdString Id of the print job.
+	 * @param printService Print service to print the job to.
+	 * @param printRequestAttributeSet Print request attributes.
+	 * @param printJobAttributeSet Print job attributes.
+	 * @param docAttributeSet Document attributes.
+	 * @param debugMode Debug mode
+	 * @param debugLevel Debug Level
+	 * @param serverSupportsCompression Indicates if the direct print manager supports compression.
+	 * @param docFlavor Doc flavor of the data to be printed.
+	 * @param printData Data to be printed.
+	 * @return A new instance of Direct print manager.
+	 * @throws IOException
+	 */
+	protected DirectPrintManager createDirectPrintManager(String jobIdString, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			boolean debugMode,
+			int debugLevel,
+			boolean serverSupportsCompression,
+			DocFlavor docFlavor,
+			InputStream printData) {
+		return new DirectPrintManager(
+				jobIdString,
+				printService,
+				printRequestAttributeSet,
+				printJobAttributeSet,
+				docAttributeSet,
+				isDebugMode(),
+				getDebugLevel(),
+				serverSupportsCompression,
+				docFlavor,
+				printData);
+	}
+	
+	/**
+	 * Creates a Direct print manager. This is a method to be intercepted by tests.
+	 * @param jobIdString Id of the print job.
+	 * @param printService Print service to print the job to.
+	 * @param printRequestAttributeSet Print request attributes.
+	 * @param printJobAttributeSet Print job attributes.
+	 * @param docAttributeSet Document attributes.
+	 * @param debugMode Debug mode
+	 * @param debugLevel Debug Level
+	 * @param serverSupportsCompression Indicates if the direct print manager supports compression.
+	 */
+	protected DirectPrintManager createDirectPrintManager(String jobIdString, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet,
+			DocAttributeSet docAttributeSet,
+			boolean debugMode,
+			int debugLevel,
+			boolean serverSupportsCompression) {
+		return new DirectPrintManager (
+				jobIdString,
+				printService,
+				printRequestAttributeSet,
+				printJobAttributeSet,
+				docAttributeSet,
+				isDebugMode(),
+				getDebugLevel(),
+				serverSupportsCompression);
+	}
+	
+	/**
+	 * Runs a stand alone manager.
+	 * @param manager Manager to be run.
+	 * @param printServiceName Name of the service.
+	 * @param jobId Job id.
+	 */
+	protected void runManager(DirectPrintManager manager, String printServiceName, String jobId) {
+		Thread thread = new Thread(manager, printServiceName + "(" + jobId + ")");
+		getRegisteredJobs().put(Long.parseLong(jobId), thread);
+		getRegisteredPrintServices().put(printServiceName, thread);
+		thread.start();
+	}
+	
+	/**
+	 * Unregisters and notifies that job has finished.
+	 * @param jobId Job id to unregister.
+	 */
+	protected void unRegisterJob(Long jobId) {
+		closePrintJob(jobId.toString());
+		getRegisteredJobs().remove(jobId);
+	}
+	
+	protected void releasePrintService(String printServiceName) {
+		getRegisteredPrintServices().remove(printServiceName);
+	}
+	
 	/**
 	 * Performs the printing. This is a needed method for fulfilling tests requirements. 
 	 * @param jobId Identifying job id.
@@ -162,34 +366,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			InputStream printData) throws IOException {
 		ClientPrintDirectUtils.print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
 	}
-	
-	/**
-	 * Creates a direct print manager.
-	 * @param jobId Id of the job.
-	 * @param printService PrintService to print to.
-	 * @param printRequestAttributeSet Attributes to be set on the print service.
-	 * @param printJobAttributeSet Attributes for the print job.
-	 * @param docAttributeSet Attributes for the document.
-	 * @param debugMode The state of the the debug mode.
-	 * @param debugLevel The debug Level.
-	 * @return an instance of a DirectPrintManager.
-	 */
-	protected DirectPrintManager createDirectPrintManager(String jobId, PrintService printService, 
-			PrintRequestAttributeSet printRequestAttributeSet,
-			PrintJobAttributeSet printJobAttributeSet,
-			DocAttributeSet docAttributeSet,
-			boolean debugMode,
-			int debugLevel) {
-		return new DirectPrintManager(
-				jobId,
-				printService,
-				printRequestAttributeSet,
-				printJobAttributeSet,
-				docAttributeSet,
-				isDebugMode(),
-				getDebugLevel());
-	}
-	
+		
 	/**
 	 * Creates the print job poll string.
 	 * @param jobId Id of the print job to pull from the server.
@@ -279,6 +456,25 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			printServicesName = new HashMap<String, PrintService>();
 		}
 		return printServicesName;
+	}
+	/**
+	 * @return the registeredJobs
+	 */
+	private Map<Long, Thread> getRegisteredJobs() {
+		if (registeredJobs == null) {
+			registeredJobs = new HashMap<Long, Thread>();
+		}
+		return registeredJobs;
+	}
+
+	/**
+	 * @return The registered print services
+	 */
+	private Map<String, Thread> getRegisteredPrintServices() {
+		if (registeredPrintServices == null) {
+			registeredPrintServices = new HashMap<String, Thread>();
+		}
+		return registeredPrintServices;
 	}
 	/**
 	 * Parses the command line and starts an instance of a client.

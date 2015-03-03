@@ -30,7 +30,7 @@
 	private Collection<String[]> getPrintServices(String uuid) {
 		Collection<String[]> returnValue = new ArrayList<String[]>();
 		for (PrintService printService : PrintServiceUtils.getPrintServices()) {
-			String[] printServiceData = new String[4];
+			String[] printServiceData = new String[5];
 			RemotePrintService remotePrintService = null;
 			boolean remote = PrintServiceUtils.isRemotePrintService(printService);
 			if (remote) {
@@ -45,6 +45,7 @@
 					printServiceData[1] = ServerLabels.get("server.remote_yes");
 					printServiceData[2] = remotePrintService.getUuid();
 					printServiceData[3] = count;
+					printServiceData[4] = Boolean.toString(remotePrintService.isPrinting());
 				}
 			} else {
 				if (uuid.isEmpty()) {
@@ -52,6 +53,7 @@
 					printServiceData[1] = ServerLabels.get("server.remote_no");
 					printServiceData[2] = "";
 					printServiceData[3] = "0";
+					printServiceData[4] = "false";
 				}
 			}
 			
@@ -278,8 +280,9 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 								<th class="wubiq_sd_table_th_remote"><%=ServerLabels.get("server.remote")%></th>
 								<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.actions")%></th>
 								<%if (remote) { %>
+									<th class="wubiq_sd_table_th_jobs">&nbsp;</th>
+									<th class="wubiq_sd_table_th_jobs"><%=ServerLabels.get("server.jobs")%></th>
 									<%if (logged) {%>
-										<th class="wubiq_sd_table_th_jobs"><%=ServerLabels.get("server.jobs")%></th>
 										<th class="wubiq_sd_table_th_actions"><%=ServerLabels.get("server.jobs.remove_all") %></th>
 									<%} %>
 								<%} %>
@@ -336,10 +339,17 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 									</a>
 								</td>
 								<%if (remote) { %>
+									<td class="wubiq_sd_table_td_printing" style="text-align:center">
+										<%if ("true".equalsIgnoreCase(serviceData[4])) {%>
+											<img src="images/icon_print.gif" height="24px" width="24px" /> 
+										<%} else { %>
+											&nbsp;
+										<%} %>
+									</td>
+									<td class="wubiq_sd_table_td_jobs" style="text-align:center">
+										<%=serviceData[3]%>
+									</td>
 									<%if (logged) {%>
-										<td class="wubiq_sd_table_td_jobs" style="text-align:center">
-											<%=serviceData[3]%>
-										</td>
 										<td class="wubiq_sd_table_td_actions">
 											<a href="<%=removeAll.toString()%>">
 												<input style="width:100%" type="button" value='<%=ServerLabels.get("server.remove_button")%>'

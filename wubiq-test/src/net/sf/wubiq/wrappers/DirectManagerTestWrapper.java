@@ -6,8 +6,10 @@ package net.sf.wubiq.wrappers;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.io.InputStream;
 import java.io.Serializable;
 
+import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
@@ -31,9 +33,28 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 			PrintService printService,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
-			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel) {
+			DocAttributeSet docAttributeSet,
+			boolean debugMode, int debugLevel,
+			boolean serverSupportsCompressed) {
 		super(jobIdString, printService, printRequestAttributeSet,
-				printJobAttributeSet, docAttributeSet, debugMode, debugLevel);
+				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed);
+		this.testManager = testManager;
+		this.testManager.getTestData().setDirectManagerCalled(true);
+	}
+
+	protected DirectManagerTestWrapper(LocalManagerTestWrapper testManager,
+			String jobIdString,
+			PrintService printService,
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet,
+			DocAttributeSet docAttributeSet,
+			boolean debugMode, int debugLevel,
+			boolean serverSupportsCompressed,
+			DocFlavor docFlavor,
+			InputStream printData) {
+		super(jobIdString, printService, printRequestAttributeSet,
+				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed,
+				docFlavor, printData);
 		this.testManager = testManager;
 		this.testManager.getTestData().setDirectManagerCalled(true);
 	}

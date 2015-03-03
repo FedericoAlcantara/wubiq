@@ -68,6 +68,41 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 			throw new ConnectException(e.getMessage());
 		}
 	}
+	@Override
+	protected boolean forceSerializedBySystem() {
+		return getTestData().isForceSerializedBySystem();
+	}
+	
+	@Override
+	protected DirectPrintManager createDirectPrintManager(String jobIdString,
+			PrintService printService,
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet,
+			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel,
+			boolean serverSupportsCompression) {
+		return new DirectManagerTestWrapper(this, jobIdString, printService,
+				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
+				debugMode, debugLevel, serverSupportsCompression);
+	}
+	
+	@Override
+	protected DirectPrintManager createDirectPrintManager(String jobIdString,
+			PrintService printService,
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet,
+			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel,
+			boolean serverSupportsCompression, DocFlavor docFlavor,
+			InputStream printData) {
+		return new DirectManagerTestWrapper(this, jobIdString, printService,
+				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
+				debugMode, debugLevel, serverSupportsCompression, docFlavor, printData);
+	}
+	
+	@Override
+	protected void runManager(DirectPrintManager manager,
+			String printServiceName, String jobId) {
+		manager.run(); // To avoid a thread;
+	}
 	
 	@Override
 	protected void print(String jobId, PrintService printService,
@@ -88,19 +123,7 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 			throw new IOException(e.getMessage());
 		}
 	}
-	
-	@Override
-	protected DirectPrintManager createDirectPrintManager(String jobId,
-			PrintService printService,
-			PrintRequestAttributeSet printRequestAttributeSet,
-			PrintJobAttributeSet printJobAttributeSet,
-			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel) {
-		DirectPrintManager directManager = new DirectManagerTestWrapper(this, jobId, printService,
-				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
-				debugMode, debugLevel);
-		return directManager;
-	}
-	
+		
 	@Override
 	public void killManager() {
 		super.killManager();

@@ -17,9 +17,11 @@ import java.net.URL;
 import java.net.UnknownHostException;
 import java.net.UnknownServiceException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
@@ -29,6 +31,7 @@ import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.utils.ClientLabels;
 import net.sf.wubiq.utils.ClientProperties;
+import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.Labels;
@@ -207,9 +210,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				.split(ParameterKeys.CATEGORIES_SEPARATOR);
 		}
 		if (!Is.emptyString(pendingJobResponse)) {
-			doLog("pending jobs:" + pendingJobResponse, 0);
+			doLog("pending jobs: " + pendingJobResponse, 1);
 		} else {
-			doLog("pending jobs:" + pendingJobResponse, 5);
+			doLog("pending jobs: " + pendingJobResponse, 5);
 		}
 		return returnValue;
 	}
@@ -319,6 +322,43 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		}
 		return pollServer(CommandKeys.DIRECT_CONNECT, newParameters);
 	}
+		
+	/**
+	 * Communicates with the server using the sub set of direct connection commands. This connection
+	 * serves the objects serialized ONLY, no encoding is performed.
+	 * @param jobIdString id of the current job.
+	 * @param command Direct connect sub command.
+	 * @return Response from the server.
+	 * @throws ConnectException If it can't connect to the server.
+	 */
+	public Object directServerNotSerialized(String jobIdString, DirectConnectCommand command) 
+			throws ConnectException {
+		return directServerNotSerialized(jobIdString, command, new HashMap<String, Object>());
+	}
+
+	/**
+	 * Communicates with the server using the sub set of direct connection commands. This connection
+	 * serves the objects serialized ONLY, no encoding is performed.
+	 * @param jobIdString id of the current job.
+	 * @param command Direct connect sub command.
+	 * @param parameters Parameters. All parameters MUST be serializable.
+	 * @return Response from the server.
+	 * @throws ConnectException If it can't connect to the server.
+	 */
+	public Object directServerNotSerialized(String jobIdString, DirectConnectCommand command, Map<String, Object> parameters) 
+			throws ConnectException {
+		parameters.put(ParameterKeys.CLIENT_SUPPORTS_COMPRESSION, "true");
+		parameters.put(ParameterKeys.COMMAND, CommandKeys.DIRECT_CONNECT);
+		parameters.put(ParameterKeys.UUID, getUuid());
+		if (!Is.emptyString(getGroups())) {
+			parameters.put(ParameterKeys.GROUPS, getGroups());
+		}		
+		parameters.put(DirectConnectKeys.DIRECT_CONNECT_PARAMETER, command.ordinal());
+		parameters.put(ParameterKeys.PRINT_JOB_ID, jobIdString);
+		parameters.put(DirectConnectKeys.DIRECT_CONNECT_COMPRESSED_MODE, "true");
+		Object[] serializedData = DirectConnectUtils.INSTANCE.serializeObject(parameters);
+		return pollServer(CommandKeys.DIRECT_CONNECT, (InputStream)serializedData[0], (Integer)serializedData[1]);
+	}
 	
 	/**
 	 * Send command to server and returns its response as a string.
@@ -330,7 +370,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	protected String askServer(String command, String...parameters) throws ConnectException {
 		return (String)pollServer(command, parameters);
 	}
-		
+
 	/**
 	 * Send command to server and returns it response as an object.
 	 * @param command Command to send to the server.
@@ -339,8 +379,28 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * @throws ConnectException If it can't connect to the server.
 	 */
 	protected Object pollServer(String command, String... parameters) throws ConnectException {
+		try {
+			String encodedParameters = null;
+			encodedParameters = getEncodedParameters(command, parameters);
+			ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes("utf-8"));
+			return pollServer(command, input, encodedParameters.getBytes().length);
+		} catch (ConnectException e) {
+			throw e;
+		} catch (IOException e) {
+			LOG.debug(e.getMessage());
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Send command to server and returns it response as an object.
+	 * @param command Command to send to the server.
+	 * @param parameters List of parameters to be sent.
+	 * @return Response from server.
+	 * @throws ConnectException If it can't connect to the server.
+	 */
+	protected Object pollServer(String command, InputStream input, int length) throws ConnectException {
 		Object returnValue = "";
-		String encodedParameters = null;
 		URL webUrl = null;
 		HttpURLConnection connection = null;
 		Object content = null;
@@ -355,7 +415,6 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			for (URL address : actualURLs) {
 				try {
 					webUrl = address;
-					encodedParameters = getEncodedParameters(command, parameters);
 					connection = (HttpURLConnection) webUrl.openConnection();
 					connection.setDoOutput(true);
 					connection.setDoInput(true);
@@ -365,25 +424,25 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					connection.setRequestProperty("Accept-Charset", "utf-8");
 					// Using content-type will force the use of input stream and that is not managed by older servers.
 					//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
-					connection.setRequestProperty("Content-Length", "" + Integer.toString(encodedParameters.getBytes().length));
-					ByteArrayInputStream input = new ByteArrayInputStream(encodedParameters.getBytes("utf-8"));
+					connection.setRequestProperty("Content-Length", "" + length);
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 					content = connection.getContent();
 					if (!connected) {
-						doLog("\nConnected! to:" + encodedParameters + "\n", 0);
+						doLog("\nConnected! to:" + webUrl + "\n", 0);
 						connected = true;
 					} else {
-						doLog("Connected! to:" + encodedParameters, 5);
+						doLog("Connected! to:" + webUrl, 5);
 					}
 					preferredURL = webUrl;
+				} catch (UnknownServiceException e) {
+					throw e;
 				} catch (IOException e) {
 					LOG.debug(e.getMessage() + ":" + address);
 					connection = null;
 				}
 			}
 			if (connection == null) {
-				encodedParameters = null;
 				connected = false;
 				throw new IOException("Couldn't connect to any of the addresses:" + getUrls());
 			}
@@ -403,7 +462,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 		} catch (MalformedURLException e) {
 			preferredURL = null;
-			LOG.error(e.getMessage() + "->" + encodedParameters);
+			LOG.error(e.getMessage() + "->" + webUrl);
 		} catch (UnknownServiceException e) {
 			preferredURL = null;
 			doLog(e.getMessage(), 5);
@@ -415,7 +474,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			throw new ConnectException(e.getMessage());
 		} catch (Exception e) {
 			preferredURL = null;
-			LOG.error(e.getMessage() + "->" + encodedParameters);
+			LOG.error(e.getMessage() + "->" + webUrl);
 		} finally {			
 			if (reader != null) {
 				try {
@@ -427,6 +486,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		}
 		return returnValue;
 	}
+
 	
 	protected Set<URL> getUrls() {
 		if (urls == null) {
@@ -477,6 +537,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			}
 		
 			for (String parameter: parameters) {
+				if (Is.emptyString(parameter)) {
+					continue;
+				}
 				String parameterString = parameter;
 				if (parameter.contains("=")) {
 					String parameterName = parameter.substring(0, parameter.indexOf("="));

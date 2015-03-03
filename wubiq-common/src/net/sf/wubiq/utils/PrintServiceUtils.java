@@ -1198,6 +1198,48 @@ public class PrintServiceUtils {
 	}
 
 	/**
+	 * Indicates if the client supports compression.
+	 * @param printService Print service to test.
+	 * @return True if the client supports version, false otherwise.
+	 */
+	public static boolean clientSupportsCompression(PrintService printService) {
+		boolean returnValue = false;
+		double currentClientVersion = convertedVersion(getClientVersion(printService));
+		double expectedVersion = convertedVersion("2.1");
+		if (currentClientVersion >= expectedVersion) {
+			return true;
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Converts a version to a numeric value for comparison purposes.
+	 * @param version Version string to compare. Format version.sub-version[.build]<br/>
+	 * for example: 2.0.10 = 2000010, 2.1 = 2001000, 2.1.1 = 2001001
+	 * @return A representation of the convertedVersion.
+	 */
+	public static int convertedVersion(String version) {
+		int returnValue = 1;
+		if (!Is.emptyString(version) && !version.startsWith("<")) {
+			StringBuffer buffer = new StringBuffer("");
+			int value = 0;
+			int multiplier = 1000000;
+			for (int index = 0; index < version.length(); index ++) {
+				char charAt = version.charAt(index);
+				if (charAt == '.') {
+					value = value + (Integer.parseInt(buffer.toString()) * multiplier);
+					multiplier = multiplier / 1000;
+					buffer = new StringBuffer("");
+				} else {
+					buffer.append(charAt);
+				}
+			}
+			returnValue = value + (buffer.length() > 0 ? Integer.parseInt(buffer.toString()) * multiplier : 0);
+		}
+		return returnValue;
+	}
+	
+	/**
 	 * Finds a suitable media size name. If it can't find an exact match then it CREATES and register a new set
 	 * of MediaSizeName and MediaSize. It allows landscape dimensions.
 	 * @param width Width of the paper.

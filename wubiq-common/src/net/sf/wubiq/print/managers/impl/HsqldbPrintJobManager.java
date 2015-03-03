@@ -398,4 +398,8 @@ public class HsqldbPrintJobManager implements IRemotePrintJobManager {
 		return returnValue;
 	}
 
+	@Override
+	public void startPrintJob(long jobId) {
+		
+	}
 }

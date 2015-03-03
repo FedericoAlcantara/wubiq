@@ -200,13 +200,27 @@ public class ServerTest extends WubiqBaseTest {
 		assertTrue("Graphic command must not be empty", manager.getTestData().getDirectPrintableGraphicsCommandCount() > 50);
 		assertFalse("Shouldn't be no errors", manager.getTestData().isErrors());
 	}
-	
 	/**
 	 * Test the local and direct print managers, by letting them start as a thread as it is 
 	 * normally used. Validates that the local printing without conversion is working as expected.
 	 * @throws Exception 
 	 */
-	public void testRemotePrintTestPageNonPageable() throws Exception {
+	public void testRemotePrintTestPageNonPageableDirect() throws Exception {
+		manager.getTestData().setForceSerializedBySystem(false);
+		remotePrintTestPageNonPageable(false);
+	}	
+
+	public void testRemotePrintTestPageNonPageableOldRouting() throws Exception {
+		manager.getTestData().setForceSerializedBySystem(true);
+		remotePrintTestPageNonPageable(true);
+	}	
+
+	/**
+	 * Test the local and direct print managers, by letting them start as a thread as it is 
+	 * normally used. Validates that the local printing without conversion is working as expected.
+	 * @throws Exception 
+	 */
+	public void remotePrintTestPageNonPageable(boolean useOldRoutine) throws Exception {
 		Thread thread = new Thread(manager, "TestLocalPrintManager");
 		thread.start();
 		int timeout = 10;
@@ -248,13 +262,22 @@ public class ServerTest extends WubiqBaseTest {
 		String response = ((HtmlPage)getNewTestPage(CommandKeys.PRINT_TEST_PAGE, buffer.toString())).asText();
 		assertTrue("Response ", response != null && response.contains(ServerLabels.get("server.test_page_sent", printServiceName)));
 		timeout = 20;
-		while (!manager.getTestData().isLocalManagerCalled() &&
-				timeout-- > 0) {
-			Thread.yield();
-			Thread.sleep(1000);
+		if (useOldRoutine) {
+			while (!manager.getTestData().isLocalManagerCalled() &&
+					timeout-- > 0) {
+				Thread.yield();
+				Thread.sleep(1000);
+			}
+			assertTrue("Must be local manager", manager.getTestData().isLocalManagerCalled());
+			assertTrue("Must be a pdf flavor", DocFlavor.INPUT_STREAM.PDF.equals(manager.getTestData().getLocalDocFlavor()));
+		} else {
+			while (!manager.getTestData().isDirectManagerCalled() &&
+					timeout-- > 0) {
+				Thread.yield();
+				Thread.sleep(1000);
+			}
+			assertTrue("Must be direct manager", manager.getTestData().isDirectManagerCalled());
 		}
-		assertTrue("Must be local manager", manager.getTestData().isLocalManagerCalled());
-		assertTrue("Must be a pdf flavor", DocFlavor.INPUT_STREAM.PDF.equals(manager.getTestData().getLocalDocFlavor()));
 		assertFalse("Shouldn't be no errors", manager.getTestData().isErrors());
 	}
 	

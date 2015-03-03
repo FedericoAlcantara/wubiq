@@ -23,5 +23,5 @@ public final class DirectConnectKeys {
 	public static final String DIRECT_CONNECT_PAGE_INDEX = "dcpi";
 	public static final String DIRECT_CONNECT_PAGE_FORMAT = "dcpf";
 	public static final String DIRECT_CONNECT_CLIENT_VERSION = "dccv";
-	
+	public static final String DIRECT_CONNECT_COMPRESSED_MODE = "dccm";
 }

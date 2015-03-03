@@ -7,7 +7,6 @@ import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Image;
 import java.awt.Paint;
-import java.awt.Rectangle;
 import java.awt.RenderingHints;
 import java.awt.Shape;
 import java.awt.Stroke;
@@ -23,16 +22,17 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.UUID;
 
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.enums.RemoteCommand;
+import net.sf.wubiq.interfaces.ICompressible;
 import net.sf.wubiq.interfaces.IProxyClient;
 import net.sf.wubiq.utils.GraphicsUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
+import net.sf.wubiq.wrappers.CompressedGraphicsPage;
 import net.sf.wubiq.wrappers.GlyphChunkVectorWrapper;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicParameter;
@@ -64,18 +64,24 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		"print",
 		"executeGraphics",
 		"executeMethod",
-		"findMethod"
+		"findMethod",
+		"setServerSupportsCompression"
 	};
 
 	private PrinterType printerType;
 	private int printed = 0;
 	private Integer returnValue = -1;
-	private static Set<GraphicCommand>graphicCommands = new TreeSet<GraphicCommand>();
 	private String slowerMethod;
 	private long slowerTime;
+	private boolean serverSupportsCompression;
+	private CompressedGraphicsPage compressedGraphicsPage;
 
 	public PrintableChunkRemote() {
 		initialize();
+	}
+	
+	public void setServerSupportsCompression(boolean serverSupportsCompression) {
+		this.serverSupportsCompression = serverSupportsCompression;
 	}
 	
 	/**
@@ -98,6 +104,10 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		transform.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 		GraphicsUtils.INSTANCE.scaleGraphics(graph, remotePageFormat, true);
 		
+		manager().readFromRemote(new RemoteCommand(objectUUID(),
+				"setClientSupportsCompression",
+				new GraphicParameter(boolean.class, true)));
+		
 		returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
 				"print",
 				new GraphicParameter(int.class, pageIndex),
@@ -105,77 +115,35 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 				new GraphicParameter(AffineTransform.class, transform),
 				new GraphicParameter(Color.class, background),
 				new GraphicParameter(Font.class, font)));
-		Set<GraphicCommand> commands =
-			(Set<GraphicCommand>)
-			manager().readFromRemote(new RemoteCommand(objectUUID(),
-					"graphicCommands",
-					new GraphicParameter(int.class, pageIndex)));
+		Set<GraphicCommand> commands = null;
+		
+		if (serverSupportsCompression) {
+			compressedGraphicsPage = 
+					(CompressedGraphicsPage)
+					manager().readFromRemote(new RemoteCommand(objectUUID(),
+							"compressedGraphicsPage",
+							new GraphicParameter(int.class, pageIndex)));
+			commands = compressedGraphicsPage.getGraphicCommands();
+		} else {
+			commands =
+				(Set<GraphicCommand>)
+				manager().readFromRemote(new RemoteCommand(objectUUID(),
+						"graphicCommands",
+						new GraphicParameter(int.class, pageIndex)));
+		}
 		if (commands != null) {
-			startTime = new Date().getTime();
+			long startTimePrint = new Date().getTime();
 			printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
 			executeGraphics(graph, remotePageFormat, commands);
-			manager().doLog("Sending page to printer took (step " + ++printed + "):" + (new Date().getTime() - startTime) + "ms", 4); 
+			manager().doLog("Sending page " + pageIndex + " to printer took (step " + ++printed + "):" + (new Date().getTime() - startTimePrint) + "ms", 4);		
 		}
-		manager().doLog("Generating page in server took:" + (new Date().getTime() - startTime) + "ms", 4); 
+		manager().doLog("Generating page " + pageIndex + " took:" + (new Date().getTime() - startTime) + "ms", 4);
+		if (compressedGraphicsPage != null) {
+			compressedGraphicsPage.clearLists();
+		}
 		return returnValue;
 	}
-	
-	/**
-	 * This a two stage print method. 
-	 * First it records graphics command into itself by using a GraphicRecorder object.
-	 * After it is de-serialized, then it sends the previously saved command to the
-	 * graphics provided by the local printer object.
-	 */
-	@SuppressWarnings("unchecked")
-	public int oldPrint(Graphics graphics, PageFormat pageFormat, int pageIndex)
-			throws PrinterException {
-		Graphics2D graph = (Graphics2D) graphics;
-		if (printed <= 0) {
-			long startTime = new Date().getTime();			
-			Rectangle rect = graph.getClipBounds();
-			AffineTransform transform = graph.getTransform();
-			Color background = graph.getBackground();
-			Font font = graph.getFont();
-			returnValue = (Integer) manager().readFromRemote(new RemoteCommand(objectUUID(),
-					"print",
-					new GraphicParameter(int.class, pageIndex),
-					new GraphicParameter(Rectangle.class, rect),
-					new GraphicParameter(AffineTransform.class, transform),
-					new GraphicParameter(Color.class, background),
-					new GraphicParameter(Font.class, font)));
-					
-			manager().doLog("Generating page in server took:" + (new Date().getTime() - startTime) + "ms", 4); 
-		}
-		if (returnValue != null && Printable.NO_SUCH_PAGE != returnValue) {
-			graphicCommands.clear();
-			
-			try {
-				if (printed > 0) {
-					Set<GraphicCommand> newCommands = (Set<GraphicCommand>)
-							manager().readFromRemote(new RemoteCommand(objectUUID(),
-									"graphicCommands",
-									new GraphicParameter(int.class, pageIndex)));
-					if (newCommands != null) {
-						graphicCommands.addAll(newCommands);
-					} else {
-						returnValue = Printable.NO_SUCH_PAGE;
-					}
-				}
-			} catch (Exception e) {
-				LOG.fatal(e.getMessage(), e);
-				throw new RuntimeException(e);
-			}
-			if (graphicCommands != null && !graphicCommands.isEmpty()) {
-				long startTime = new Date().getTime();
-				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
-				executeGraphics(graph, pageFormat, graphicCommands);
-				manager().doLog("Sending page to printer took:" + (new Date().getTime() - startTime) + "ms", 4); 
-			}
-		}
-		printed++;
-		return returnValue;
-	}
-	
+		
 	/**
 	 * Iterates through the previously serialized command set.
 	 * @param graph Graphics2D object receiving the commands.
@@ -214,6 +182,15 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		Object[] parameterValues = new Object[]{};
 		long startTime = new Date().getTime();
 
+		Object parameterValue = graphicCommand.getParameters()[0].getParameterValue();
+		if (parameterValue != null && parameterValue instanceof ICompressible) {
+			GraphicParameter[] newGraphicsParameters = ((ICompressible)
+					parameterValue).uncompress(compressedGraphicsPage);
+			if (newGraphicsParameters != null) {
+				graphicCommand.setParameters(newGraphicsParameters);
+			}
+		}
+		
 		if ("setFont".equalsIgnoreCase(graphicCommand.getMethodName())) {
 			Font originalFont = (Font)graphicCommand.getParameters()[0].getParameterValue();
 			Font font = GraphicsUtils.INSTANCE.properFont(originalFont, printerType);
@@ -268,18 +245,6 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 					graphicCommand.setMethodName("drawString");
 					parameterValues[index] = data.toString();
 					parameterTypes[index] = String.class;
-					/*
-						GlyphVector glyphVector = font.createGlyphVector(graph.getFontRenderContext(), 
-								glyphVectorWrapper.getCharacters());
-						AffineTransform transform = new AffineTransform();
-						
-						transform.scale(1d, 1d);
-						for (int glyphIndex = 0; glyphIndex < glyphVector.getNumGlyphs(); glyphIndex++) {
-							glyphVector.setGlyphTransform(glyphIndex, transform);
-						}
-						parameterValues[index] = glyphVector;
-					}
-					*/
 				} else if (parameterTypes[index].equals(StrokeWrapper.class)) {
 					parameterTypes[index] = Stroke.class;
 					parameterValues[index] = ((StrokeWrapper) parameterValues[index]).getStroke(xScale, yScale);

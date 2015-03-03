@@ -32,6 +32,7 @@ import javax.print.attribute.standard.PrinterState;
 import javax.print.event.PrintServiceAttributeListener;
 
 import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -47,7 +48,7 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class RemotePrintService extends StreamPrintService {
+public class RemotePrintService extends StreamPrintService implements INotifiablePrintService {
 	private static Log LOG = LogFactory.getLog(RemotePrintService.class);
 	private String uuid;
 	private String remoteName;
@@ -61,6 +62,8 @@ public class RemotePrintService extends StreamPrintService {
 	private boolean directCommunicationEnabled = true;
 	private String clientVersion = "";
 	private Set<String> groups;
+	private boolean printing = false;
+	private long currentJobId = 0l;
 	
 	public RemotePrintService(OutputStream outputStream) {
 		super(outputStream);
@@ -427,5 +430,39 @@ public class RemotePrintService extends StreamPrintService {
 			}
 		}
 	}
+	
+	/**
+	 * Sets the printing state.
+	 * @param printing New printing state.
+	 */
+	public void setPrinting(boolean printing) {
+		this.printing = printing;
+	}
 
+	/**
+	 * @return True if the print service is currently printing.
+	 */
+	public boolean isPrinting() {
+		return this.printing;
+	}
+
+	@Override
+	public void printJobCreated(long jobId) {
+		currentJobId = jobId;
+	}
+
+	@Override
+	public void printJobStarted(long jobId) {
+		this.printing = true;
+	}
+	
+	@Override
+	public void printJobFinished(long jobId) {
+		this.printing = false;
+		currentJobId = 0l;
+	}
+	
+	public long getCurrentJobId() {
+		return currentJobId;
+	}
 }

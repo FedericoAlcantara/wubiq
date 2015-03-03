@@ -54,4 +54,5 @@ public class RenderedImageWrapper extends ImageWrapper {
 	public RenderedImage getRenderedImage(double xScale, double yScale) {
 		return (RenderedImage)((BufferedImage)super.getImage(xScale, yScale));
 	}
+	
 }

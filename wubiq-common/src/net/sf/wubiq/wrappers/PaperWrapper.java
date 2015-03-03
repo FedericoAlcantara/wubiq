@@ -100,7 +100,7 @@ public class PaperWrapper extends Paper implements Serializable {
 		return returnValue;
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override

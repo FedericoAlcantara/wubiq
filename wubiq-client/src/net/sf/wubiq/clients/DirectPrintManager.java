@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import javax.print.DocFlavor;
 import javax.print.PrintService;
 import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
@@ -47,11 +48,31 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private PrintRequestAttributeSet printRequestAttributeSet;
 	private PrintJobAttributeSet printJobAttributeSet;
 	private DocAttributeSet docAttributeSet;
-	
+	private boolean serverSupportsCompression;
+	private DocFlavor docFlavor;
+	private InputStream printData;
 	private boolean printing;
+	private boolean printSerialized;
 	private Map<UUID, Object> registeredObjects;
+	private LocalPrintManager localPrintManager;
 	
 	
+	protected DirectPrintManager (String jobIdString, PrintService printService, 
+			PrintRequestAttributeSet printRequestAttributeSet,
+			PrintJobAttributeSet printJobAttributeSet, 
+			DocAttributeSet docAttributeSet,
+			boolean debugMode,
+			int debugLevel,
+			boolean serverSupportsCompression,
+			DocFlavor docFlavor,
+			InputStream printData) {
+		this(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, 
+				debugMode, debugLevel, serverSupportsCompression);
+		this.docFlavor = docFlavor;
+		this.printData = printData;
+		this.printSerialized = true;
+	}
+
 	/**
 	 * Creates an instances of direct print manager.
 	 * @param jobIdString Id of the job.
@@ -68,7 +89,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
 			boolean debugMode,
-			int debugLevel){
+			int debugLevel,
+			boolean serverSupportsCompression){
 		this.jobIdString = jobIdString;
 		this.jobId = Long.parseLong(jobIdString);
 		this.printService = printService;
@@ -77,26 +99,83 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		this.docAttributeSet = docAttributeSet;
 		setDebugMode(debugMode);
 		setDebugLevel(debugLevel);
+		this.serverSupportsCompression = serverSupportsCompression;
 	}
 		
 	/**
 	 * Ask the server about commands.
 	 * @throws ConnectException
 	 */
-	public void handleDirectPrinting() throws ConnectException {
+	@Override
+	public void run() {
+		boolean closePrintJob = false;
+		try {
+			if (printSerialized) {
+				printSerialized();
+				closePrintJob = true;
+			} else {
+				printDirect();
+				closePrintJob = true;
+			}
+			doLog("Job(" + jobId + ") printed.", 0);
+		} catch (ConnectException e) {
+			closePrintJob = false;
+			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
+			LOG.error(e.getMessage(), e);
+		} catch (IOException e) {
+			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
+			LOG.error(e.getMessage(), e);
+		} catch (Exception e) {
+			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
+			LOG.error(e.getMessage(), e);
+		} finally {
+			try {
+				if (printData != null) {
+					printData.close();
+				}
+			} catch (IOException e) {
+				doLog(e.getMessage());
+			}
+			if (closePrintJob) {
+				localPrintManager.unRegisterJob(jobId);
+			}
+		}
+	}
+	
+	/**
+	 * @return the localPrintManager
+	 */
+	public LocalPrintManager getLocalPrintManager() {
+		return localPrintManager;
+	}
+
+	/**
+	 * @param localPrintManager the localPrintManager to set
+	 */
+	public void setLocalPrintManager(LocalPrintManager localPrintManager) {
+		this.localPrintManager = localPrintManager;
+	}
+
+	protected void printSerialized() throws IOException {
+		ClientPrintDirectUtils.print(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+	}
+	
+	protected void printDirect() throws ConnectException {
 		printing = true;
 		registeredObjects = new HashMap<UUID, Object>();
 		int timeout = 0;
 		while (printing) {
-			Object response  = directServer(jobIdString, DirectConnectCommand.POLL);
+			Object response  = serverSupportsCompression
+					? directServerNotSerialized(jobIdString, DirectConnectCommand.POLL)
+					: directServer(jobIdString, DirectConnectCommand.POLL, "");
 			if (response instanceof InputStream) {
 				timeout = 0;
 				final RemoteCommand remoteCommand = 
-						(RemoteCommand) DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
+						serverSupportsCompression
+						? (RemoteCommand) DirectConnectUtils.INSTANCE.deserializeObject((InputStream) response)
+						: (RemoteCommand) DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
 				if (remoteCommand != null) {
-					if (callCommand(remoteCommand)) {
-						break; // If error just let the print job die.
-					}
+					callCommand(remoteCommand);
 				}
 			} else {
 				try {
@@ -105,7 +184,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 					throw new ConnectException(e.getMessage());
 				}
 			}
-		}
+		}	
 	}
 	
 	/**
@@ -114,6 +193,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	public void createPrintable(UUID objectUUID) throws PrinterException {
 		PrintableChunkRemote remote = (PrintableChunkRemote) Enhancer.create(getPrintableChunkRemoteClass(), 
 				new ProxyClientSlave(jobId, this, objectUUID, PrintableChunkRemote.FILTERED_METHODS));
+		
+		remote.setServerSupportsCompression(serverSupportsCompression);
 		
 		printPrintable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
@@ -154,6 +235,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	public void createPageable(UUID objectUUID) throws PrinterException {
 		PageableRemote remote = (PageableRemote) Enhancer.create(getPageableRemoteClass(), 
 				new ProxyClientSlave(jobId, this, objectUUID, getPageableFilteredMethods()));
+		remote.setServerSupportsCompression(serverSupportsCompression);
+		
 		printPageable(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, 
 				docAttributeSet, 
 				remote);
@@ -247,18 +330,36 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			}
 			try {
 				if (error != null) {
-					directServer(jobIdString, DirectConnectCommand.EXCEPTION, DirectConnectKeys.DIRECT_CONNECT_DATA 
-							+ ParameterKeys.PARAMETER_SEPARATOR 
-							+ DirectConnectUtils.INSTANCE.serialize(error));
-					LOG.error(error);
+					if (serverSupportsCompression) {
+						Map<String, Object> parameters = new HashMap<String, Object>();
+						parameters.put(DirectConnectKeys.DIRECT_CONNECT_DATA, error);
+						directServerNotSerialized(jobIdString, DirectConnectCommand.EXCEPTION, parameters);
+					} else {
+						directServer(jobIdString, DirectConnectCommand.EXCEPTION, DirectConnectKeys.DIRECT_CONNECT_DATA 
+								+ ParameterKeys.PARAMETER_SEPARATOR 
+								+ DirectConnectUtils.INSTANCE.serialize(error));
+					}
+					throw new RuntimeException(error);
 				} else {
 					if (data != null) {
-						String serializedData = DirectConnectUtils.INSTANCE.serialize(data);
-						directServer(jobIdString, DirectConnectCommand.DATA, DirectConnectKeys.DIRECT_CONNECT_DATA 
-								+ ParameterKeys.PARAMETER_SEPARATOR 
-								+ serializedData);
+						if (serverSupportsCompression) {
+							Map<String, Object> parameters = new HashMap<String, Object>();
+							parameters.put(DirectConnectKeys.DIRECT_CONNECT_DATA, data);
+							directServerNotSerialized(jobIdString, DirectConnectCommand.DATA, parameters);
+						} else {
+							String serializedData = DirectConnectUtils.INSTANCE.serialize(data);
+							directServer(jobIdString, DirectConnectCommand.DATA, DirectConnectKeys.DIRECT_CONNECT_DATA 
+									+ ParameterKeys.PARAMETER_SEPARATOR 
+									+ serializedData);
+						}
 					} else {
-						directServer(jobIdString, DirectConnectCommand.DATA);
+						if (serverSupportsCompression) {
+							Map<String, Object> parameters = new HashMap<String, Object>();
+							parameters.put(DirectConnectKeys.DIRECT_CONNECT_DATA, "");
+							directServerNotSerialized(jobIdString, DirectConnectCommand.DATA, parameters);
+						} else {
+							directServer(jobIdString, DirectConnectCommand.DATA, "");
+						}
 					}
 				}
 			} catch (IOException e) {
@@ -277,13 +378,27 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	public Object readFromRemote(RemoteCommand remoteCommand) {
 		Object returnValue = null;
-		String remoteData = (String) executeOnRemote(remoteCommand);
-		if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_NULL)) {
-			returnValue = null;
-		} else if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_EXCEPTION)) {
-			throw new RuntimeException(remoteData.split(ParameterKeys.PARAMETER_SEPARATOR)[1]); 
+		if (serverSupportsCompression) {
+			InputStream remoteData = (InputStream) executeOnRemote(remoteCommand);
+			returnValue = DirectConnectUtils.INSTANCE.deserializeObject(remoteData);
+			if (returnValue != null) {
+				if ((returnValue instanceof String) &&
+						((String)returnValue).startsWith(DirectConnectKeys.DIRECT_CONNECT_NULL)) {
+					returnValue = null;
+				} else if ((returnValue instanceof String) &&
+						((String)returnValue).startsWith(DirectConnectKeys.DIRECT_CONNECT_EXCEPTION)) {
+					throw new RuntimeException(((String)returnValue).split(ParameterKeys.PARAMETER_SEPARATOR)[1]); 
+				}
+			}
 		} else {
-			returnValue = DirectConnectUtils.INSTANCE.deserialize(remoteData);
+			String remoteData = (String) executeOnRemote(remoteCommand);
+			if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_NULL)) {
+				returnValue = null;
+			} else if (remoteData.startsWith(DirectConnectKeys.DIRECT_CONNECT_EXCEPTION)) {
+				throw new RuntimeException(remoteData.split(ParameterKeys.PARAMETER_SEPARATOR)[1]); 
+			} else {
+				returnValue = DirectConnectUtils.INSTANCE.deserialize(remoteData);
+			}
 		}
 		return returnValue;
 	}
@@ -294,13 +409,18 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * @return Unique id of the data to retrieve.
 	 */
 	public Object executeOnRemote(RemoteCommand remoteCommand) {
-		String serialized = DirectConnectUtils.INSTANCE.serialize(remoteCommand);
 		Object returnValue = null;
 		try {
-		
-			returnValue = directServer(jobIdString, DirectConnectCommand.READ_REMOTE, DirectConnectKeys.DIRECT_CONNECT_DATA
-					+ ParameterKeys.PARAMETER_SEPARATOR
-					+ serialized);
+			if (serverSupportsCompression) {
+				Map<String, Object> parameters = new HashMap<String, Object>();
+				parameters.put(DirectConnectKeys.DIRECT_CONNECT_DATA, remoteCommand);
+				returnValue = directServerNotSerialized(jobIdString, DirectConnectCommand.READ_REMOTE, parameters);
+			} else {
+				String serialized = DirectConnectUtils.INSTANCE.serialize(remoteCommand);
+					returnValue = directServer(jobIdString, DirectConnectCommand.READ_REMOTE, DirectConnectKeys.DIRECT_CONNECT_DATA
+							+ ParameterKeys.PARAMETER_SEPARATOR
+							+ serialized);
+			}
 		} catch (ConnectException e) {
 			throw new RuntimeException(e.getMessage());
 		}

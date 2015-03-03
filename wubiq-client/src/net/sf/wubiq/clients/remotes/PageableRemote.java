@@ -24,6 +24,7 @@ public class PageableRemote implements Pageable, IProxyClient {
 	private Printable printable;
 	private Integer numberOfPages = null;
 	private PageFormat pageFormat = null;
+	private boolean serverSupportsCompression = false;
 	
 	public static final String[] FILTERED_METHODS = new String[]{
 		"getNumberOfPages",
@@ -31,7 +32,8 @@ public class PageableRemote implements Pageable, IProxyClient {
 		"getPrintable",
 		"getPrintableClass",
 		"getPrintableFilteredMethods",
-		"setPageFormat"
+		"setPageFormat",
+		"setServerSupportsCompression"
 		};
 
 	public PageableRemote() {
@@ -62,6 +64,9 @@ public class PageableRemote implements Pageable, IProxyClient {
 		return pageFormat;
 	}
 	
+	public void setServerSupportsCompression(boolean serverSupportsCompression) {
+		this.serverSupportsCompression = serverSupportsCompression;
+	}
 
 	/**
 	 * Will create a printable object which directly communicates with the
@@ -82,8 +87,11 @@ public class PageableRemote implements Pageable, IProxyClient {
 							manager(),
 							printableObjectUUID,
 							getPrintableFilteredMethods()));
+			((PrintableChunkRemote)printable).setServerSupportsCompression(serverSupportsCompression);
 		}
-
+		manager().readFromRemote(new RemoteCommand(objectUUID(),
+				"setClientSupportsCompression",
+				new GraphicParameter(boolean.class, true)));
 		return printable;
 	}
 	

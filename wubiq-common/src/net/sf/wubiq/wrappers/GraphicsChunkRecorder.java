@@ -28,9 +28,13 @@ import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
 import java.text.AttributedCharacterIterator;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import net.sf.wubiq.interfaces.ICompressible;
 
 /**
  * @author Federico Alcantara
@@ -42,21 +46,83 @@ public class GraphicsChunkRecorder extends Graphics2D {
 	private transient int currentExecutionOrder;
 	private transient DefaultDeviceConfiguration deviceConfiguration;
 
-	public void initialize(Set<GraphicCommand> graphicCommands, Graphics2D originalGraphics) {
+	private transient boolean clientSupportsCompression;
+	private transient List<String>methodNamesList;
+	@SuppressWarnings("rawtypes")
+	private transient List<Class>parametersTypeList;
+	private transient List<Object>parametersValueList;
+	private transient List<Font>fontsList;
+
+	@SuppressWarnings("rawtypes")
+	public void initialize(Set<GraphicCommand> graphicCommands, Graphics2D originalGraphics,
+			boolean clientSupportsCompression) {
 		currentExecutionOrder = 0;
 		this.graphicCommands = graphicCommands;
 		this.originalGraphics = originalGraphics;
 		this.deviceConfiguration = new DefaultDeviceConfiguration(originalGraphics.getDeviceConfiguration());
+
+		this.clientSupportsCompression = clientSupportsCompression;
+		this.methodNamesList = new ArrayList<String>();
+		this.parametersTypeList = new ArrayList<Class>();
+		this.parametersValueList = new ArrayList<Object>();
+		this.fontsList = new ArrayList<Font>();
 		addToCommands("setTransform", new GraphicParameter(AffineTransform.class, originalGraphics.getTransform()));
 		addToCommands("setBackground", new GraphicParameter(Color.class, originalGraphics.getBackground()));
 		addToCommands("setColor", new GraphicParameter(Color.class, originalGraphics.getColor()));
 		addToCommands("setClip", shapeParameter(originalGraphics.getClip()));
-		addToCommands("setFont", new GraphicParameter(Font.class, originalGraphics.getFont()));
+		if (this.clientSupportsCompression) {
+			addToCommands("setFont", new GraphicParameter(FontWrapper.class, new FontWrapper(originalGraphics.getFont())));
+		} else {
+			addToCommands("setFont", new GraphicParameter(Font.class, originalGraphics.getFont()));
+		}
 		addToCommands("addRenderingHints", new GraphicParameter(RenderingHintsWrapper.class, new RenderingHintsWrapper(originalGraphics.getRenderingHints())));
+	}
+	
+	public List<String> getMethodNamesList() {
+		return methodNamesList;
+	}
+	
+	@SuppressWarnings("rawtypes")
+	public List<Class> getParametersTypeList() {
+		return parametersTypeList;
+	}
+	
+	public List<Object> getParametersValueList() {
+		return parametersValueList;
+	}
+	
+	public List<Font> getFontsList() {
+		return fontsList;
+	}
+	
+	/**
+	 * Gets the font index. If needed the font is added to the list.
+	 * @param font Font to get the index from.
+	 * @return Font index.
+	 */
+	public int getFontIndex(Font font) {
+		if (!getFontsList().contains(font)) {
+			getFontsList().add(font);
+		}
+		return getFontsList().indexOf(font);
 	}
 	
 	private void addToCommands(String command, GraphicParameter... parameters) {
 		graphicCommands.add(new GraphicCommand(currentExecutionOrder++, command, parameters));
+		if (!methodNamesList.contains(command)) {
+			methodNamesList.add(command);
+		}
+		for (GraphicParameter parameter : parameters) {
+			if (!parametersTypeList.contains(parameter.getParameterType())) {
+				parametersTypeList.add(parameter.getParameterType());
+			}
+			if (!parametersValueList.contains(parameter.getParameterValue())) {
+				parametersValueList.add(parameter.getParameterValue());
+				if (parameter.getParameterValue() instanceof ICompressible) {
+					((ICompressible)parameter.getParameterValue()).compress(this);
+				}
+			}
+		}
 	}
 	
 	@Override
@@ -560,7 +626,11 @@ public class GraphicsChunkRecorder extends Graphics2D {
 
 	@Override
 	public void setFont(Font font) {
-		addToCommands("setFont", new GraphicParameter(Font.class, font));
+		if (clientSupportsCompression) {
+			addToCommands("setFont", new GraphicParameter(FontWrapper.class, new FontWrapper(font)));
+		} else {
+			addToCommands("setFont", new GraphicParameter(Font.class, font));
+		}
 		originalGraphics.setFont(font);
 	}
 

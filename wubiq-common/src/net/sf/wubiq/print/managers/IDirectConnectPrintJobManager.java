@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.print.managers;
 
+import javax.print.PrintService;
+
 
 /**
  * Represents the contract for the Direct connection Management
@@ -16,4 +18,11 @@ public interface IDirectConnectPrintJobManager extends IRemotePrintJobManager {
 	 * @return DirectConnectorQueue found or newly created. Must never be null.
 	 */
 	IDirectConnectorQueue directConnector(String queueId);
+	
+	/**
+	 * Gets the queue state.
+	 * @return Queue state.
+	 */
+	boolean isPrinting(PrintService printService);
+
 }

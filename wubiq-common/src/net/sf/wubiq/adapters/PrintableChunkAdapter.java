@@ -15,9 +15,7 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.util.Date;
-import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.UUID;
 
@@ -28,6 +26,7 @@ import net.sf.wubiq.interfaces.IProxyMaster;
 import net.sf.wubiq.interfaces.IRemoteListener;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.utils.PageableUtils;
+import net.sf.wubiq.wrappers.CompressedGraphicsPage;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicsChunkRecorder;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
@@ -50,13 +49,16 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 		"graphicCommands",
 		"setPageable",
 		"setPageFormat",
-		"getPageFormat"
+		"getPageFormat",
+		"setClientSupportsCompression",
+		"compressedGraphicsPage"
 	};
 
-	private static GraphicsChunkRecorder graphicsRecorder = new GraphicsChunkRecorder();
-	private static Map<Integer, Set<GraphicCommand>> graphicCommands = new TreeMap<Integer, Set<GraphicCommand>>();
+	private GraphicsChunkRecorder graphicsRecorder = new GraphicsChunkRecorder();
+	private Set<GraphicCommand> graphicCommands = new TreeSet<GraphicCommand>();
 	private Pageable pageable;
 	private PageFormat pageFormat;
+	private boolean clientSupportsCompression;
 	
 	public PrintableChunkAdapter() {
 		initialize();
@@ -71,45 +73,24 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	}
 	
 	/**
+	 * Sets the client capabilities to support compression.
+	 * @param clientSupportsCompression Client supports compression.
+	 */
+	public void setClientSupportsCompression(boolean clientSupportsCompression) {
+		this.clientSupportsCompression = clientSupportsCompression;
+	}
+	
+	/**
 	 * @see java.awt.print.Printable#print(java.awt.Graphics, java.awt.print.PageFormat, int)
 	 */
 	@Override
 	public int print(Graphics graphics, PageFormat pageFormat, int pageIndex)
 			throws PrinterException {
-		graphicCommands.put(pageIndex, new TreeSet<GraphicCommand>());
-		graphicsRecorder.initialize(graphicCommands.get(pageIndex), (Graphics2D)graphics);
+		graphicCommands.clear();
+		graphicsRecorder.initialize(graphicCommands, (Graphics2D)graphics, clientSupportsCompression);
 		return printable().print(graphicsRecorder, pageFormat, pageIndex);
 	}
 	
-	/**
-	 * Starts the collection of graphics commands.
-	 * @param pageIndex Page index.
-	 * @throws PrinterException
-	 */
-	/*
-	public int print(int pageIndex) throws PrinterException {
-		long start = new Date().getTime();
-		PageFormat pageFormat = getPageFormat(pageIndex);
-		BufferedImage img = new BufferedImage(1, 1, BufferedImage.TYPE_INT_RGB);
-		Graphics2D graph = img.createGraphics();
-		AffineTransform scaleTransform = new AffineTransform();
-		scaleTransform.scale(1, 1);
-		graph.setTransform(scaleTransform);
-		graph.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-		graph.setClip(new Rectangle2D.Double(
-				0,
-				0,
-				pageFormat.getPaper().getImageableWidth(), 
-				pageFormat.getPaper().getImageableHeight()));
-		graph.setBackground(Color.WHITE);
-		graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
-				(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
-		int returnValue = print(graph, pageFormat, pageIndex);
-		LOG.debug("Page " + pageIndex + " generation took:" + (new Date().getTime() - start) + "ms");
-		return returnValue;
-	}
-	*/
-
 	/**
 	 * Starts the printing process. In reality it starts the collection of graphics commands.
 	 * @param pageIndex Page index for the printable.
@@ -145,7 +126,16 @@ public class PrintableChunkAdapter implements Printable, IAdapter, IProxyMaster 
 	}
 	
 	public Set<GraphicCommand> graphicCommands(int pageIndex) {
-		return graphicCommands.get(pageIndex);
+		return graphicCommands;
+	}
+	
+	/**
+	 * Returns the graphics in compressed format.
+	 * @param pageIndex Page to read from.
+	 * @return Compressed graphics command.
+	 */
+	public CompressedGraphicsPage compressedGraphicsPage(int pageIndex) {
+		return new CompressedGraphicsPage(graphicsRecorder, graphicCommands);
 	}
 	
 	public Printable printable() {

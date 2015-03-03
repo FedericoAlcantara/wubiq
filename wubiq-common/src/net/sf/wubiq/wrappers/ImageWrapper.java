@@ -11,6 +11,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.Arrays;
 
 import javax.imageio.ImageIO;
 
@@ -107,5 +108,37 @@ public class ImageWrapper implements Serializable {
 	 */
 	protected byte[] getImageData() {
 		return imageData;
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Arrays.hashCode(imageData);
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof ImageWrapper)) {
+			return false;
+		}
+		ImageWrapper other = (ImageWrapper) obj;
+		if (!Arrays.equals(imageData, other.imageData)) {
+			return false;
+		}
+		return true;
 	}
 }

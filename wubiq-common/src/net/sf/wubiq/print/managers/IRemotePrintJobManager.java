@@ -64,4 +64,10 @@ public interface IRemotePrintJobManager {
 	 */
 	int getPrintServicePendingJobs(String queueId, PrintService printService);
 	
+	/**
+	 * Starts a print job.
+	 * @param jobId Job Id to start.
+	 */
+	void startPrintJob(long jobId);
+	
 }

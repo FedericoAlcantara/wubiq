@@ -33,6 +33,7 @@ public final class CommandKeys {
 	public static final String SERVER_TIMESTAMP = "STS";
 	public static final String PRINT_SERVICE_PENDING_JOBS = "j3";
 	public static final String READ_IS_DIRECT_CONNECT = "idc";
+	public static final String READ_IS_COMPRESSED = "icm";
 	public static final String DIRECT_CONNECT = "dc";
 	public static final String PAUSE_MANAGER = "mp";
 	public static final String RESUME_MANAGER = "mr";

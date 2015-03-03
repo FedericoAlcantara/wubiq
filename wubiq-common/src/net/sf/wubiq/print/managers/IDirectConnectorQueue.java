@@ -93,9 +93,10 @@ public interface IDirectConnectorQueue extends IAdapter {
 	 * Execute a method on the object referenced within the remote command.
 	 * @param jobId Id of the job being processed.
 	 * @param remoteCommand Remote command to be processed.
-	 * @return Serialized output.
+	 * @param clientSupportsCompression If true the client supports compression.
+	 * @return Object resulting from the process execution.
 	 */
-	String callCommand(Long jobId, RemoteCommand remoteCommand);
+	Object callCommand(Long jobId, RemoteCommand remoteCommand, boolean clientSupportsCompression);
 	
 	/**
 	 * Registers a given object according to its object type.

@@ -158,4 +158,7 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 		return 0;
 	}
 
+	@Override
+	public void startPrintJob(long jobId) {
+	}
 }

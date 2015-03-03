@@ -38,4 +38,5 @@ public final class ParameterKeys {
 	public static final String CONNECTION_TEST_STRING = "WUBIQ_CONNECTED";
 	public static final String PRINT_TEST_DIRECT_PAGEABLE = "TP";
 	public static final String CLIENT_VERSION = "cv";
+	public static final String CLIENT_SUPPORTS_COMPRESSION = "csp";
 }

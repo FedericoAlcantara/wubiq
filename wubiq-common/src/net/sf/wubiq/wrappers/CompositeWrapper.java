@@ -51,4 +51,45 @@ public class CompositeWrapper implements Serializable, Composite {
 			RenderingHints arg2) {
 		return null;
 	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + Float.floatToIntBits(alpha);
+		result = prime * result + (nullObject ? 1231 : 1237);
+		result = prime * result + rule;
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof CompositeWrapper)) {
+			return false;
+		}
+		CompositeWrapper other = (CompositeWrapper) obj;
+		if (Float.floatToIntBits(alpha) != Float.floatToIntBits(other.alpha)) {
+			return false;
+		}
+		if (nullObject != other.nullObject) {
+			return false;
+		}
+		if (rule != other.rule) {
+			return false;
+		}
+		return true;
+	}
+	
 }

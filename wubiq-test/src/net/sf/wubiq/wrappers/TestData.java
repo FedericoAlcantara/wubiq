@@ -26,6 +26,7 @@ public class TestData implements Serializable {
 	private boolean directPrintPageable;
 	private int directPageableNumberOfPages;
 	private int directPrintableGraphicsCommandCount;
+	private boolean forceSerializedBySystem;
 	
 	private boolean errors;
 	
@@ -190,6 +191,20 @@ public class TestData implements Serializable {
 	 */
 	public void setErrors(boolean errors) {
 		this.errors = errors;
+	}
+
+	/**
+	 * @return the forceSerializedBySystem
+	 */
+	public boolean isForceSerializedBySystem() {
+		return forceSerializedBySystem;
+	}
+
+	/**
+	 * @param forceSerializedBySystem the forceSerializedBySystem to set
+	 */
+	public void setForceSerializedBySystem(boolean forceSystemSerialization) {
+		this.forceSerializedBySystem = forceSystemSerialization;
 	}
 
 }

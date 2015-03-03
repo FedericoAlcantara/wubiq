@@ -45,7 +45,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	private Set<IRemoteListener> listeners;
 	private UUID objectUUID;
 	private Map<Long, JobBucket> jobBuckets;
-
+	
 	private class JobBucket {
 		private Map<UUID, Object> registeredObjects;
 		private Map<String, String> remoteDatas;
@@ -359,11 +359,11 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 	}
 	
 	/**
-	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(java.lang.Long, net.sf.wubiq.enums.RemoteCommand)
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#callCommand(java.lang.Long, net.sf.wubiq.enums.RemoteCommand, boolean clientSupportsCompression)
 	 */
 	@SuppressWarnings("rawtypes")
-	public String callCommand(Long jobId, RemoteCommand printerCommand) {
-		String serializedData = DirectConnectKeys.DIRECT_CONNECT_NULL;
+	public Object callCommand(Long jobId, RemoteCommand printerCommand, boolean clientSupportsCompression) {
+		Object serializedData = DirectConnectKeys.DIRECT_CONNECT_NULL;
 		String methodName = printerCommand.getMethodName();
 		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
 		Object[] parameterValues = new Object[printerCommand.getParameters().length];
@@ -397,13 +397,15 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 					// Don't try to serialized a non serializable.
 					// Return value that we don't want to transfer back
 					// will be returned as non-serializable.
-					serializedData = DirectConnectUtils.INSTANCE.serialize(data);
+					serializedData = data;
 				}
 			}
 		} catch (IllegalArgumentException e) {
 			LOG.error(e.getMessage(), e);
 		}
-		return serializedData;
+		return clientSupportsCompression
+				? serializedData
+				: DirectConnectUtils.INSTANCE.serialize(serializedData);
 	}
 	
 	/**

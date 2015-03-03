@@ -49,4 +49,41 @@ public class RenderingHintsWrapper implements Serializable {
 		}
 		return new RenderingHints(returnValue);
 	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + ((hints == null) ? 0 : hints.hashCode());
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof RenderingHintsWrapper)) {
+			return false;
+		}
+		RenderingHintsWrapper other = (RenderingHintsWrapper) obj;
+		if (hints == null) {
+			if (other.hints != null) {
+				return false;
+			}
+		} else if (!hints.equals(other.hints)) {
+			return false;
+		}
+		return true;
+	}
+	
 }

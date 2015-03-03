@@ -376,13 +376,49 @@ public class RenderingHintWrapper implements Serializable {
 		return new Integer(valueValue);
 	}
 
-	/* (non-Javadoc)
+	/**
 	 * @see java.lang.Object#toString()
 	 */
 	@Override
 	public String toString() {
 		return "RenderingHintWrapper [keyValue=" + keyValue + ", valueValue="
 				+ valueValue + "]";
+	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result + keyValue;
+		result = prime * result + valueValue;
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (!(obj instanceof RenderingHintWrapper)) {
+			return false;
+		}
+		RenderingHintWrapper other = (RenderingHintWrapper) obj;
+		if (keyValue != other.keyValue) {
+			return false;
+		}
+		if (valueValue != other.valueValue) {
+			return false;
+		}
+		return true;
 	}
 
 }

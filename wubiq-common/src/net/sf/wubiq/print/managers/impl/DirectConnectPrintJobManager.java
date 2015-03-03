@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.print.managers.impl;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,6 +15,8 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
+import net.sf.wubiq.print.services.RemotePrintService;
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 /**
  * Manages direct connection with clients.
@@ -69,14 +72,16 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		DirectConnectorQueue queue = associatedQueue(jobId);
 		if (queue != null) {
 			IRemotePrintJob remotePrintJob = getRemotePrintJob(jobId, true);
-			PrintService printService = remotePrintJob.getPrintService();
-			if (printService != null) {
-				if (printService instanceof INotifiablePrintService) {
-					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
-					notifiable.printJobFinished(jobId);
+			if (remotePrintJob != null) {
+				PrintService printService = remotePrintJob.getPrintService();
+				queue.removePrintJob(jobId);
+				if (printService != null) {
+					if (printService instanceof INotifiablePrintService) {
+						INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+						notifiable.printJobFinished(jobId);
+					}
 				}
 			}
-			queue.removePrintJob(jobId);
 		}
 		return true;
 	}
@@ -87,7 +92,21 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	@Override
 	public synchronized IRemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob) {
 		DirectConnectorQueue queue = associatedQueue(jobId);
-		return queue.remotePrintJob(jobId);
+		IRemotePrintJob returnValue = queue.remotePrintJob(jobId);
+		if (returnValue == null) {
+			queue.removePrintJob(jobId);
+		} else {
+			if (queue != null && fullPrintJob) {
+				PrintService printService = returnValue.getPrintService();
+				if (printService != null) {
+					if (printService instanceof INotifiablePrintService) {
+						INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+						notifiable.printJobStarted(jobId);
+					}
+				}
+			}
+		}
+		return returnValue;
 
 	}
 
@@ -98,7 +117,11 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	public synchronized Collection<Long> getPrintJobs(String queueId,
 			RemotePrintJobStatus status) {
 		IDirectConnectorQueue queue = directConnector(queueId);
-		return queue.printJobs();
+		Collection<Long> returnValue = new ArrayList<Long>();
+		for (Long jobId : queue.printJobs()) {
+			returnValue.add(jobId);
+		}
+		return returnValue;
 	}
 
 	/**
@@ -131,7 +154,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getPrintServicePendingJobs(java.lang.String, javax.print.PrintService)
 	 */
-	public int getPrintServicePendingJobs(String queueId, PrintService printService) {
+	public synchronized int getPrintServicePendingJobs(String queueId, PrintService printService) {
 		int returnValue = 0;
 		IDirectConnectorQueue queue = directConnector(queueId);
 		for (Long jobId : queue.printJobs()) {
@@ -140,10 +163,35 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 				if (printJob.getPrintService().equals(printService)) {
 					returnValue++;
 				}
-			} else {
-				queue.removePrintJob(jobId);
-			}
+			} 
 		}
 		return returnValue;
 	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#startPrintJob(long)
+	 */
+	@Override
+	public synchronized void startPrintJob(long jobId) {
+		DirectConnectorQueue queue = associatedQueue(jobId);
+		if (queue != null) {
+			IRemotePrintJob remotePrintJob = getRemotePrintJob(jobId, true);
+			PrintService printService = remotePrintJob.getPrintService();
+			if (printService != null) {
+				if (printService instanceof INotifiablePrintService) {
+					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+					notifiable.printJobStarted(jobId);
+				}
+			}
+		}		
+	}
+	
+	public synchronized boolean isPrinting(PrintService printService) {
+		if (PrintServiceUtils.isRemotePrintService(printService)) {
+			return ((RemotePrintService)printService).isPrinting();
+		} else {
+			return false;
+		}
+	}
+	
 }

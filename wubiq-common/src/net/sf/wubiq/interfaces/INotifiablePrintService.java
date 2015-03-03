@@ -18,6 +18,12 @@ public interface INotifiablePrintService {
 	void printJobCreated(long jobId);
 	
 	/**
+	 * Indicates that a job has been sent to the printer.
+	 * @param jobId Unique jobId
+	 */
+	void printJobStarted(long jobId);
+	
+	/**
 	 * Indicates that a job has been printed and consumed.
 	 * @param jobId Job just printed.
 	 */

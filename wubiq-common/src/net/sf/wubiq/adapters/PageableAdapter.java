@@ -23,16 +23,19 @@ import net.sf.wubiq.wrappers.PageFormatWrapper;
  *
  */
 public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {	
-	private int lastPageFormatProcessed = -1;
-	private int lastPrintableProcessed = -1;
-	private PageFormatWrapper lastPageFormat = null;
-	private PrintableChunkAdapter lastPrintable = null;
 	public static final String[] FILTERED_METHODS = new String[]{
 		"pageable",
 		"getPageFormat",
 		"getPrintable",
-		"getLastPrintableObjectUUID"
+		"getLastPrintableObjectUUID",
+		"setClientSupportsCompression"
 	};
+
+	private int lastPageFormatProcessed = -1;
+	private int lastPrintableProcessed = -1;
+	private PageFormatWrapper lastPageFormat = null;
+	private PrintableChunkAdapter lastPrintable = null;
+	private boolean clientSupportsCompression = false;
 	
 	public PageableAdapter() {
 		initialize();
@@ -46,6 +49,10 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 		return 0;
 	}
 
+	public void setClientSupportsCompression(boolean clientSupportsCompression) {
+		this.clientSupportsCompression = clientSupportsCompression;
+	}
+	
 	/**
 	 * @see java.awt.print.Pageable#getPageFormat(int)
 	 */
@@ -77,6 +84,7 @@ public class PageableAdapter implements Pageable, IAdapter, IProxyMaster {
 			lastPrintable.setPageable(this);
 		}
 		lastPrintableProcessed = pageIndex;
+		((PrintableChunkAdapter)lastPrintable).setClientSupportsCompression(clientSupportsCompression);
 		return lastPrintable; // Must be the adapter
 	}
 	
