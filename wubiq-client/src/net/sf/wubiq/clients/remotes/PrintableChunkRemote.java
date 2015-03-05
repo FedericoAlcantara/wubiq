@@ -160,8 +160,12 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 			int count = 0;
 			while (it.hasNext()) {
 				GraphicCommand graphicCommand = it.next();
-				count++; 
-				executeMethod(graph, graphicCommand);
+				count++;
+				try {
+					executeMethod(graph, graphicCommand);
+				} catch (Exception e) {
+					throw new RuntimeException(e);
+				}
 			}
 			long diff = new Date().getTime() - startTime;
 			manager().doLog("Took:" + diff + "ms, processed count:" + count + ", slower method:" + slowerMethod + " took:" + slowerTime, 5);
@@ -182,12 +186,14 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 		Object[] parameterValues = new Object[]{};
 		long startTime = new Date().getTime();
 
-		Object parameterValue = graphicCommand.getParameters()[0].getParameterValue();
-		if (parameterValue != null && parameterValue instanceof ICompressible) {
-			GraphicParameter[] newGraphicsParameters = ((ICompressible)
-					parameterValue).uncompress(compressedGraphicsPage);
-			if (newGraphicsParameters != null) {
-				graphicCommand.setParameters(newGraphicsParameters);
+		if (serverSupportsCompression) {
+			Object parameterValue = graphicCommand.getParameters()[0].getParameterValue();
+			if (parameterValue != null && parameterValue instanceof ICompressible) {
+				GraphicParameter[] newGraphicsParameters = ((ICompressible)
+						parameterValue).uncompress(compressedGraphicsPage);
+				if (newGraphicsParameters != null) {
+					graphicCommand.setParameters(newGraphicsParameters);
+				}
 			}
 		}
 		

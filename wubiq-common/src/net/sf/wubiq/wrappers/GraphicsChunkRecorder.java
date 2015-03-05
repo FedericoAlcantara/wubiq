@@ -267,9 +267,15 @@ public class GraphicsChunkRecorder extends Graphics2D {
 
 	@Override
 	public void drawGlyphVector(GlyphVector g, float x, float y) {
-		addToCommands("drawGlyphVector", new GraphicParameter(GlyphChunkVectorWrapper.class, new GlyphChunkVectorWrapper(g)),
-				new GraphicParameter(float.class, x), 
-				new GraphicParameter(float.class, y));
+		if (clientSupportsCompression) {
+			addToCommands("drawGlyphVector", new GraphicParameter(GlyphChunkVectorCompressedWrapper.class, new GlyphChunkVectorWrapper(g)),
+					new GraphicParameter(float.class, x), 
+					new GraphicParameter(float.class, y));
+		} else {
+			addToCommands("drawGlyphVector", new GraphicParameter(GlyphChunkVectorWrapper.class, new GlyphChunkVectorWrapper(g)),
+					new GraphicParameter(float.class, x), 
+					new GraphicParameter(float.class, y));
+		}
 		originalGraphics.drawGlyphVector(g, x, y);
 	}
 

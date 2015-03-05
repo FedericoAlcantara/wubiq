@@ -11,26 +11,32 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import net.sf.wubiq.interfaces.ICompressible;
+
 /**
+ * Represents a compressible and serializable GlyphVector.
  * @author Federico Alcantara
  *
  */
-public class GlyphChunkVectorWrapper implements Serializable {
+public class GlyphChunkVectorCompressedWrapper implements Serializable, ICompressible {
 	private static final long serialVersionUID = 1L;
-	private Font font;
+	private transient Font font;
 	private transient static String utfCharacters = null;
 	private transient static Map<Font, Map<String, Character>> charactersMap;
+	private int fontIndex;
+	private Font originalFont;
 	
 	private char[] characters;
 	
-	public GlyphChunkVectorWrapper() {
+	public GlyphChunkVectorCompressedWrapper() {
 	}
 
-	public GlyphChunkVectorWrapper(GlyphVector glyphVector) {
+	public GlyphChunkVectorCompressedWrapper(GlyphVector glyphVector) {
 		this();
 		if (glyphVector != null) {
 			glyphVector.performDefaultLayout();
 			this.font = glyphVector.getFont();
+			this.originalFont = glyphVector.getFont();
 			initializeGlyphs(glyphVector);
 		}
 	}
@@ -49,7 +55,7 @@ public class GlyphChunkVectorWrapper implements Serializable {
 	 * @see java.awt.font.GlyphVector#getFont()
 	 */
 	public Font getFont() {
-		return font;
+		return originalFont;
 	}
 
 	/**
@@ -74,7 +80,7 @@ public class GlyphChunkVectorWrapper implements Serializable {
 			} while (character <=  '\u00FF');
 			utfCharacters = utf.toString();
 		}
-		return GlyphChunkVectorWrapper.utfCharacters;
+		return GlyphChunkVectorCompressedWrapper.utfCharacters;
 	}
 	
 	/**
@@ -147,5 +153,19 @@ public class GlyphChunkVectorWrapper implements Serializable {
 		returnValue.insert(0, '[');
 		returnValue.append(']');
 		return returnValue.toString();
+	}
+
+	@Override
+	public void compress(GraphicsChunkRecorder graphicsRecorder) {
+		fontIndex = graphicsRecorder.getFontIndex(font);
+		originalFont = null;
+	}
+
+	@Override
+	public GraphicParameter[] uncompress(
+			CompressedGraphicsPage compressedGraphicsPage) {
+		font = compressedGraphicsPage.getFontsList().get(fontIndex);
+		originalFont = font;
+		return null;
 	}
 }

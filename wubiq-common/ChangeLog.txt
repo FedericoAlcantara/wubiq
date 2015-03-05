@@ -1,11 +1,11 @@
 ==========================
-Wubiq 2.1.11 (2015-03-03)
+Wubiq 2.1.11 (2015-03-05)
 ==========================
 -New communications engine for reducing bandwidth by more than 90%
 -Parallel printing to different print services within the same client.
 -Fixed memory fault when printing large pageable documents.
 -Printing status on print services.
--Pending jobs to print no longer requires login.
+-Pending jobs to print no longer requires login to be seen.
 
 ==========================
 Wubiq 2.0.18 (2015-02-26)
