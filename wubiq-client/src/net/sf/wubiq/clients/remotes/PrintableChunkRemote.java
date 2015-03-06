@@ -33,6 +33,7 @@ import net.sf.wubiq.utils.GraphicsUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.wrappers.CompositeWrapper;
 import net.sf.wubiq.wrappers.CompressedGraphicsPage;
+import net.sf.wubiq.wrappers.GlyphChunkVectorCompressedWrapper;
 import net.sf.wubiq.wrappers.GlyphChunkVectorWrapper;
 import net.sf.wubiq.wrappers.GraphicCommand;
 import net.sf.wubiq.wrappers.GraphicParameter;
@@ -242,6 +243,18 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 				} else if (parameterTypes[index].equals(GlyphChunkVectorWrapper.class)) {
 					parameterTypes[index] = GlyphVector.class;
 					GlyphChunkVectorWrapper glyphVectorWrapper = (GlyphChunkVectorWrapper)parameterValues[index];
+					Font font = GraphicsUtils.INSTANCE.properFont(glyphVectorWrapper.getFont(), printerType);
+					executeMethod(graph, "setFont", new Class[]{Font.class}, new Object[]{font});
+					StringBuffer data = new StringBuffer("");
+					for (char charAt : glyphVectorWrapper.getCharacters()) {
+						data.append(charAt);
+					}
+					graphicCommand.setMethodName("drawString");
+					parameterValues[index] = data.toString();
+					parameterTypes[index] = String.class;
+				} else if (parameterTypes[index].equals(GlyphChunkVectorCompressedWrapper.class)) {
+					parameterTypes[index] = GlyphVector.class;
+					GlyphChunkVectorCompressedWrapper glyphVectorWrapper = (GlyphChunkVectorCompressedWrapper)parameterValues[index];
 					Font font = GraphicsUtils.INSTANCE.properFont(glyphVectorWrapper.getFont(), printerType);
 					executeMethod(graph, "setFont", new Class[]{Font.class}, new Object[]{font});
 					StringBuffer data = new StringBuffer("");
