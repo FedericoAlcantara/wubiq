@@ -26,6 +26,7 @@ import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
@@ -39,7 +40,9 @@ import net.sf.wubiq.print.attribute.CustomMediaSizeName;
 import net.sf.wubiq.print.attribute.OriginalOrientationRequested;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
+import net.sf.wubiq.wrappers.PageableStreamWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
+import net.sf.wubiq.wrappers.PrintableStreamWrapper;
 import net.sf.wubiq.wrappers.PrintableWrapper;
 
 import org.apache.commons.logging.Log;
@@ -103,10 +106,10 @@ public final class ClientPrintDirectUtils {
 							formattedPageable.addPrintable(printable);
 						}
 						formattedPageable.setNumberOfPages(pageable.getNumberOfPages());
-						doc = new SimpleDoc(formattedPageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+						doc = new SimpleDoc(enablePageableStream(formattedPageable, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
-						doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
+						doc = new SimpleDoc(enablePrintableStream(printable, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
 					}
 				} else {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
@@ -149,8 +152,9 @@ public final class ClientPrintDirectUtils {
 			remote.setPageFormat(pageFormat);
 		}
 	
+
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
-		printerJob.setPageable(pageable);
+		printerJob.setPageable(enablePageableStream(pageable, printRequestAttributeSet));
 		try {
 			printerJob.setPrintService(printService);
 			printerJob.print(filteredRequestAttributeSet);
@@ -169,6 +173,52 @@ public final class ClientPrintDirectUtils {
 		*/
 	}
 	
+	/**
+	 * Enables the print to stream.
+	 * @param originalPageable Original pageable.
+	 * @param printRequestAttributeSet Print request attribute set.
+	 * @return A Pageable capable of streaming or not.
+	 */
+	private static Pageable enablePageableStream(Pageable originalPageable,
+			PrintRequestAttributeSet printRequestAttributeSet) {
+		Pageable toPrintPageable = originalPageable;
+		String printerUrl = printerUrl(printRequestAttributeSet);
+		if (printerUrl != null) {
+			toPrintPageable = new PageableStreamWrapper(originalPageable, printerUrl);
+		}
+		return toPrintPageable;
+	}
+	
+	/**
+	 * Enables the print to stream.
+	 * @param originalPrintable Original printable.
+	 * @param printRequestAttributeSet Print request attribute set.
+	 * @return A Printable capable of streaming or not.
+	 */
+	private static Printable enablePrintableStream(Printable originalPrintable,
+			PrintRequestAttributeSet printRequestAttributeSet) {
+		Printable toPrintPrintable = originalPrintable;
+		String printerUrl = printerUrl(printRequestAttributeSet);
+		if (printerUrl != null) {
+			toPrintPrintable = new PrintableStreamWrapper(originalPrintable, printerUrl);
+		}
+		return toPrintPrintable;
+	}
+	
+	/**
+	 * Converts the url to the proper format.
+	 * @param printRequestAttributeSet Attribute set containing the url.
+	 * @return String with the printer url or null if none found.
+	 */
+	private static String printerUrl(PrintRequestAttributeSet printRequestAttributeSet) {
+		String printerUrl = null;
+		if (printRequestAttributeSet.containsKey(Destination.class)) {
+			Destination uri = (Destination) printRequestAttributeSet.get(Destination.class);
+			printerUrl = uri.getURI().toASCIIString();
+		}
+		return printerUrl;
+	}
+
 	/**
 	 * Prints a printable object.
 	 * @param jobId Id of the object.
@@ -190,7 +240,6 @@ public final class ClientPrintDirectUtils {
 		PageFormat pageFormat = getPageFormat(printService, filteredRequestAttributeSet);
 		PageablePrintableHolder pageable = new PageablePrintableHolder(printable);
 		pageable.setPageFormat(pageFormat);
-		
 		/*
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
 		printerJob.setPrintable(printable);
@@ -202,7 +251,7 @@ public final class ClientPrintDirectUtils {
 		}
 		*/
 		
-		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+		Doc doc = new SimpleDoc(enablePageableStream(pageable, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
 			printJob.print(doc, filteredRequestAttributeSet);
@@ -335,4 +384,5 @@ public final class ClientPrintDirectUtils {
 		}
 		return returnValue;
 	}
+	
 }

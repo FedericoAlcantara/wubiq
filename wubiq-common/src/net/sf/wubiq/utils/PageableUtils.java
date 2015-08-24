@@ -250,4 +250,7 @@ public enum PageableUtils {
 		return returnValue;
 	}
 	
+	public void printPageableToStream(Pageable pageable) {
+		
+	}
 }

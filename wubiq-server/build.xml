@@ -10,7 +10,7 @@
 	<property name="lib" value="${web}/WEB-INF/lib" />
 	<property name="output.war" value="${dist}/${project}.war" />
 	<property name="war.build" value="${basedir}/build" />
-	
+	<property file="settings.properties" />
 	
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
@@ -48,6 +48,13 @@
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${war.build}"/>
 		<mkdir dir="${war.build}/WEB-INF/classes"/>
+	</target>
+	
+	<target name="deploy" description="deploys to server" if="deploy.dir">
+		<copy todir="${deploy.dir}">
+			<fileset dir="${basedir}/dist/${version}" includes="wubiq-common.jar" />
+			<fileset dir="${basedir}/dist/${version}" includes="wubiq-installer.jar" />
+		</copy>
 	</target>
 	
 	<target name="distribute" description="creates the distribution">
@@ -91,6 +98,7 @@
 				<include name="README.rst" />
 			</fileset>
 		</copy>
+		<antcall target="deploy" />
 		<zip basedir="${basedir}/dist/${version}" zipfile="${basedir}/dist/${version}.zip" />
 		
 		<delete file="${basedir}/dist/wubiq-server.war" />

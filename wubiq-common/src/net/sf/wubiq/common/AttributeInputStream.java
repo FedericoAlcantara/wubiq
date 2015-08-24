@@ -10,6 +10,7 @@ import java.io.InputStreamReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Locale;
@@ -23,6 +24,7 @@ import net.sf.wubiq.print.attribute.GenericMediaSizeName;
 import net.sf.wubiq.print.attribute.GenericMediaTray;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -115,6 +117,8 @@ public class AttributeInputStream extends InputStreamReader {
 					returnValue = readMediaPrintableArea(objectDetails[0], objectDetails[2]);
 				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_JOB_NAME)) {
 					returnValue = readJobName(objectDetails[0], objectDetails[2]);
+				} else if (objectDetails[1].equals(ParameterKeys.ATTRIBUTE_TYPE_URI_SYNTAX)) {
+					returnValue = readURISyntax(objectDetails[0], objectDetails[2]);
 				} else {
 					throw new IOException("Attribute not recognized:" + deserialized);
 				}
@@ -355,5 +359,54 @@ public class AttributeInputStream extends InputStreamReader {
 	
 	private Attribute readJobName(String className, String values) throws IOException {
 		return new JobName(values, Locale.getDefault());
+	}
+	
+	@SuppressWarnings("rawtypes")
+	private Attribute readURISyntax(String className, String value) throws IOException {
+		//new URI(String scheme, String authority, String path, String query, String fragment);
+		Attribute returnValue = null;
+		Constructor constructor;
+		try {
+			if (!Is.emptyString(value)) {
+				String[] values = value.split(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR);
+				if (values.length == 5) {
+					constructor = (Constructor) Class.forName(className).getConstructor(new Class[]{URI.class});
+					returnValue = (Attribute) constructor.newInstance(
+							new Object[]{new URI(
+									convertValue(values[0]),
+									convertValue(values[1]),
+									convertValue(values[2]),
+									convertValue(values[3]),
+									convertValue(values[4]))});
+				}
+			}
+		} catch (InvocationTargetException e) {
+			if (e.getCause() != null) {
+				LOG.error(e.getCause().getMessage(), e.getCause());
+				throw new IOException(e.getCause());
+			} else {
+				LOG.error(e.getMessage(), e);
+				throw new IOException(e);
+			}
+		} catch (Exception e) {
+			LOG.error(e.getMessage(), e);
+			throw new IOException(e);
+		}
+		return returnValue;
+	
+	}
+	
+	/**
+	 * Converts the value back to the original one.
+	 * @param value Value to be converted.
+	 * @return String representing the value. Might be null.
+	 */
+	private String convertValue(String value) {
+		String returnValue = WebUtils.INSTANCE.decode(value)
+				.replaceAll(ParameterKeys.ATTRIBUTE_CHANGE_SEPARATOR, ParameterKeys.ATTRIBUTES_SEPARATOR);
+		if ("-".equals(returnValue)) {
+			returnValue = null;
+		}
+		return returnValue;
 	}
 }

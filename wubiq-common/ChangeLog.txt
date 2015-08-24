@@ -1,5 +1,10 @@
 ==========================
-Wubiq 2.1.11 (2015-03-05)
+Wubiq 2.1.2 ()
+==========================
+-Support for printing directly to printer streams (ESC/P).
+
+==========================
+Wubiq 2.1.1 (2015-03-05)
 ==========================
 -New communications engine for reducing bandwidth by more than 90%
 -Parallel printing to different print services within the same client.

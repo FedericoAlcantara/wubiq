@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.wrappers;
 
+import java.awt.Font;
+import java.awt.font.TextAttribute;
 import java.io.Serializable;
 import java.util.Comparator;
 
@@ -28,6 +30,8 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	private boolean underline;
 	private TextAlignmentType textAlignment;
 	private String text;
+	public static final float CPI_5 = 5;
+	public static final float CPI_6 = 6;
 	public static final float CPI_10 = 10;
 	public static final float CPI_12 = 12;
 	public static final float CPI_15 = 15;
@@ -40,7 +44,20 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 		this.y = y;
 		this.fontSize = fontSize;
 		this.text = text;
+		calculateWidth();
 	}
+	
+	public TextField(int page, int x, int y, Font font, String text) {
+		this(page, x, y, font.getSize(), text);
+		this.setBold(font.isBold());
+		this.setItalic(font.isItalic());
+		if (font.getAttributes().get(TextAttribute.UNDERLINE) != null &&
+				font.getAttributes().get(TextAttribute.UNDERLINE) ==
+				TextAttribute.UNDERLINE_ON) {
+			this.setUnderline(true);
+		}
+	}
+	
 	/**
 	 * @return the page
 	 */
@@ -88,6 +105,7 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	 */
 	public void setFontSize(int fontSize) {
 		this.fontSize = fontSize;
+		calculateWidth();
 	}
 	/**
 	 * @return the bold
@@ -125,6 +143,7 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	public void setUnderline(boolean underline) {
 		this.underline = underline;
 	}
+
 	public int getWidth() {
 		return width;
 	}
@@ -132,12 +151,15 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	public void setWidth(int width) {
 		this.width = width;
 	}
+	
 	public TextAlignmentType getTextAlignment() {
 		return textAlignment;
 	}
+	
 	public void setTextAlignment(TextAlignmentType textAlignment) {
 		this.textAlignment = textAlignment;
 	}
+	
 	/**
 	 * @return the text
 	 */
@@ -149,6 +171,7 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	 */
 	public void setText(String text) {
 		this.text = text;
+		calculateWidth();
 	}
 	
 	/**
@@ -156,19 +179,29 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	 * @return Character per inches for the font
 	 */
 	public float getTextFontCPI() {
-		float returnValue = CPI_10;
-		if (fontSize <= 8) {
+		float returnValue = CPI_12;
+		if (fontSize <= 6) {
+			returnValue = CPI_20;
+		} else if (fontSize == 7) {
 			returnValue = CPI_17;
-		} else if (fontSize > 8 && fontSize <= 10) {
+		} else if (fontSize <= 9) {
 			returnValue = CPI_15;
-		} else if (fontSize > 10 && fontSize < 12) {
+		} else if (fontSize <= 12) {
 			returnValue = CPI_12;
-		} else if (fontSize >= 12) {
+		} else if (fontSize <= 17) {
 			returnValue = CPI_10;
+		} else if (fontSize < 22) {
+			returnValue = CPI_6;
+		} else {
+			returnValue = CPI_5;
 		}
 		return returnValue;
 	}
 		
+	private void calculateWidth() {
+		float cpi = getTextFontCPI();
+		width = new Float(cpi * getText().length()).intValue();
+	}
 	/**
 	 * Orders it in line / position order.
 	 */

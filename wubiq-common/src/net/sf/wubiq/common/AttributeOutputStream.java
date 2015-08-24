@@ -6,12 +6,14 @@ package net.sf.wubiq.common;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
+import java.net.URI;
 import java.util.Collection;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.EnumSyntax;
 import javax.print.attribute.IntegerSyntax;
 import javax.print.attribute.SetOfIntegerSyntax;
+import javax.print.attribute.URISyntax;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
@@ -20,6 +22,7 @@ import javax.print.attribute.standard.MediaTray;
 
 import net.sf.wubiq.print.attribute.CustomMediaSizeName;
 import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.utils.WebUtils;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -129,6 +132,10 @@ public class AttributeOutputStream extends OutputStreamWriter {
 		} else if (attribute instanceof JobName) {
 			data.append(ParameterKeys.ATTRIBUTE_TYPE_JOB_NAME).append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
 			writeJobName((JobName)attribute, data);
+		} else if (attribute instanceof URISyntax) {
+			data.append(ParameterKeys.ATTRIBUTE_TYPE_URI_SYNTAX)
+				.append(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+			writeURISyntax((URISyntax)attribute, data);
 		} else {
 			if (PrintServiceUtils.OUTPUT_LOG) {
 				LOG.info("Attribute not converted:" + attribute);
@@ -239,5 +246,40 @@ public class AttributeOutputStream extends OutputStreamWriter {
 	 */
 	private void writeStringData(String input, StringBuffer data) throws IOException {
 		data.append(input.replaceAll("-", "_").replaceAll(" ", "_"));
+	}
+	
+	/**
+	 * Serializes a URI syntax attribute.
+	 * @param attribute Attribute to be serialized
+	 * @param data Data to be used.
+	 * @throws IOException
+	 */
+	private void writeURISyntax(URISyntax attribute, StringBuffer data) throws IOException {
+		//new URI(scheme, authority, path, query, fragment);
+		URI uri = attribute.getURI();
+		String value = convertValue(uri.getScheme())
+				+ ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR
+				+ convertValue(uri.getAuthority())
+				+ ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR
+				+ convertValue(uri.getPath())
+				+ ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR
+				+ convertValue(uri.getQuery())
+				+ ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR
+				+ convertValue(uri.getFragment())
+				;
+		data.append(value);
+	}
+	
+	/**
+	 * Converts the value to appropriate web communications.
+	 * @param value Value to be converted.
+	 * @return String representing the value.
+	 */
+	private String convertValue(String value) {
+		String returnValue = "-";
+		if (value != null) {
+			returnValue = WebUtils.INSTANCE.encode(value.replaceAll(ParameterKeys.ATTRIBUTES_SEPARATOR, ParameterKeys.ATTRIBUTE_CHANGE_SEPARATOR));
+		}
+		return returnValue;
 	}
 }

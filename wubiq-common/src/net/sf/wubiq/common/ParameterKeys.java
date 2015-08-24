@@ -22,6 +22,7 @@ public final class ParameterKeys {
 	public static final String CATEGORIES_SEPARATOR = ";";
 	public static final String CATEGORIES_ATTRIBUTES_STARTER = "=";
 	public static final String ATTRIBUTES_SEPARATOR = "/";
+	public static final String ATTRIBUTE_CHANGE_SEPARATOR = "~";
 	public static final String ATTRIBUTE_VALUE_SEPARATOR = ":";
 	public static final String ATTRIBUTE_SET_SEPARATOR = ";";
 	public static final String ATTRIBUTE_SET_MEMBER_SEPARATOR = ",";
@@ -33,10 +34,12 @@ public final class ParameterKeys {
 	public static final String ATTRIBUTE_TYPE_CUSTOM_MEDIA = "C";
 	public static final String ATTRIBUTE_TYPE_MEDIA = "M";
 	public static final String ATTRIBUTE_TYPE_MEDIA_TRAY = "T";
+	public static final String ATTRIBUTE_TYPE_URI_SYNTAX = "U";
 	public static final String PENDING_JOB_SIGNATURE = "pending_jobs";
 	public static final String PRINT_JOB_ID = "printJob";
 	public static final String CONNECTION_TEST_STRING = "WUBIQ_CONNECTED";
 	public static final String PRINT_TEST_DIRECT_PAGEABLE = "TP";
+	public static final String PRINT_TEST_STREAM_URL = "TPT";
 	public static final String CLIENT_VERSION = "cv";
 	public static final String CLIENT_SUPPORTS_COMPRESSION = "csp";
 }

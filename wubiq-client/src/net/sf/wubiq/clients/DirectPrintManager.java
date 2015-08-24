@@ -170,10 +170,10 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 					: directServer(jobIdString, DirectConnectCommand.POLL, "");
 			if (response instanceof InputStream) {
 				timeout = 0;
-				final RemoteCommand remoteCommand = 
-						serverSupportsCompression
-						? (RemoteCommand) DirectConnectUtils.INSTANCE.deserializeObject((InputStream) response)
-						: (RemoteCommand) DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
+				Object object = serverSupportsCompression
+						? DirectConnectUtils.INSTANCE.deserializeObject((InputStream) response)
+						: DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
+				final RemoteCommand remoteCommand = (RemoteCommand) object;
 				if (remoteCommand != null) {
 					callCommand(remoteCommand);
 				}

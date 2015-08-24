@@ -10,6 +10,8 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -26,6 +28,7 @@ import javax.print.SimpleDoc;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.attribute.standard.Copies;
+import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.servlet.ServletException;
@@ -706,6 +709,7 @@ public class RemotePrintServlet extends HttpServlet {
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_NAME);
 		String printTestDirectPageable = getParameter(request, parameters, ParameterKeys.PRINT_TEST_DIRECT_PAGEABLE);
+		String printerUrl = getParameter(request, parameters, ParameterKeys.PRINT_TEST_STREAM_URL);
 		boolean printDirectPageable = "true".equalsIgnoreCase(printTestDirectPageable);
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
@@ -716,6 +720,20 @@ public class RemotePrintServlet extends HttpServlet {
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
 			requestAttributes.add(new Copies(1));
+			if (!Is.emptyString(printerUrl)) {
+				try {
+					if (!Is.emptyString(printerUrl)) {
+						//while (printerUrl.contains("/")) {
+							//printerUrl = printerUrl.replace('/', '\\');
+						//}
+					}
+					Destination printerURI = new Destination(new URI(printerUrl));
+					requestAttributes.add(printerURI);
+				} catch (URISyntaxException e) {
+					LOG.error(printerUrl + ". " + e.getMessage());
+				}
+
+			}
 			if (!printDirectPageable) {
 				try {
 					Doc doc = new SimpleDoc(input, DocFlavor.INPUT_STREAM.PDF, null);
