@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.UUID;
 
 import net.sf.cglib.proxy.Enhancer;
@@ -60,7 +61,7 @@ public class DirectConnectorQueue implements IDirectConnectorQueue {
 		this.queueId = queueId;
 		onProcess = -1l;
 		listeners = new HashSet<IRemoteListener>();
-		jobBuckets = new HashMap<Long, JobBucket>();
+		jobBuckets = new TreeMap<Long, JobBucket>();
 		objectUUID = UUID.randomUUID();
 	}
 	
