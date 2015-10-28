@@ -56,10 +56,10 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 	}
 	
 	@Override
-	protected void processPendingJob(String jobId) throws ConnectException {
+	protected void processPendingJob(String jobId, String printServiceName) throws ConnectException {
 		getTestData().setJobId(jobId);
 		try {
-			super.processPendingJob(jobId);
+			super.processPendingJob(jobId, printServiceName);
 		} catch (ConnectException e) {
 			getTestData().setErrors(true);
 			throw e;
@@ -76,24 +76,27 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 	@Override
 	protected DirectPrintManager createDirectPrintManager(String jobIdString,
 			PrintService printService,
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel,
 			boolean serverSupportsCompression) {
 		return new DirectManagerTestWrapper(this, jobIdString, printService,
+				printServiceName,
 				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
 				debugMode, debugLevel, serverSupportsCompression);
 	}
 	
 	@Override
 	protected DirectPrintManager createDirectPrintManager(String jobIdString,
-			PrintService printService,
+			PrintService printService, String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel,
 			boolean serverSupportsCompression, DocFlavor docFlavor,
 			InputStream printData) {
 		return new DirectManagerTestWrapper(this, jobIdString, printService,
+				printServiceName,
 				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
 				debugMode, debugLevel, serverSupportsCompression, docFlavor, printData);
 	}

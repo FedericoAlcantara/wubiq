@@ -9,7 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import javax.print.DocFlavor;
 import javax.print.PrintService;
@@ -54,8 +56,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	private static final Log LOG = LogFactory.getLog(LocalPrintManager.class);
 	private Map<String, PrintService>printServicesName;
 	private long lastServerTimestamp = -1;
-	private Map<Long, Thread> registeredJobs;
-	private Map<String, Thread> registeredPrintServices;
+	private Set<Long> registeredJobs;
+	private Set<String> registeredPrintServices;
 	
 	public LocalPrintManager() {
 		super();
@@ -71,23 +73,17 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * Process a single pending job.
 	 * @param jobId Id of the job to be printed.
 	 */
-	protected void processPendingJob(String jobId) throws ConnectException {
+	@Override
+	protected synchronized void processPendingJob(String jobId, String printServiceName) throws ConnectException {
 		Long jobIdLong = Long.parseLong(jobId);
 		// This will prevent to that a print job is taken more than once.
-		if (getRegisteredJobs().containsKey(jobIdLong)) {
-			Thread runningThread = getRegisteredJobs().get(jobIdLong);
-			if (runningThread == null ||
-					!runningThread.isAlive()) {
-				unRegisterJob(jobIdLong);
-			}
+		if (getRegisteredJobs().contains(jobIdLong)) {
 			return;
 		}
 		String parameter = printJobPollString(jobId);
-		doLog("Process Pending Job: " + jobId, 0);
 		InputStream printData = null;
 		boolean closePrintJob = false;
 		try {
-			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter);
 			if (Is.emptyString(printServiceName)) { // this job is already closed
 				try {
 					askServer(CommandKeys.CLOSE_PRINT_JOB, parameter);
@@ -98,15 +94,13 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				return;
 			}
 			// This will prevent to that more than one job is sent to the same print service while printing.
-			if (getRegisteredPrintServices().containsKey(printServiceName)) {
-				Thread runningThread = getRegisteredPrintServices().get(printServiceName);
-				if (runningThread == null ||
-						!runningThread.isAlive()) {
-					releasePrintService(printServiceName);
-				}
+			if (getRegisteredPrintServices().contains(printServiceName)) {
 				return;
 			}
-			
+			registerJob(Long.parseLong(jobId));
+			holdPrintService(printServiceName);
+
+			doLog("Process Pending Job: " + jobId, 0);
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName, 5);
 			String printRequestAttributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter);
 			doLog("Job(" + jobId + ") printRequestAttributes:" + printRequestAttributesData, 5);
@@ -165,6 +159,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 					manager = createDirectPrintManager(
 							jobId,
 							printService,
+							printServiceName,
 							printRequestAttributeSet,
 							printJobAttributeSet,
 							docAttributeSet,
@@ -182,6 +177,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 					manager = createDirectPrintManager (
 							jobId,
 							printService,
+							printServiceName,
 							printRequestAttributeSet,
 							printJobAttributeSet,
 							docAttributeSet,
@@ -259,6 +255,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * Creates a Direct print manager. This is a method to be intercepted by tests.
 	 * @param jobIdString Id of the print job.
 	 * @param printService Print service to print the job to.
+	 * @param printServiceName Name of the print service as registered in wubiq.
 	 * @param printRequestAttributeSet Print request attributes.
 	 * @param printJobAttributeSet Print job attributes.
 	 * @param docAttributeSet Document attributes.
@@ -270,7 +267,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * @return A new instance of Direct print manager.
 	 * @throws IOException
 	 */
-	protected DirectPrintManager createDirectPrintManager(String jobIdString, PrintService printService, 
+	protected DirectPrintManager createDirectPrintManager(String jobIdString, PrintService printService,
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
@@ -282,6 +280,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		return new DirectPrintManager(
 				jobIdString,
 				printService,
+				printServiceName,
 				printRequestAttributeSet,
 				printJobAttributeSet,
 				docAttributeSet,
@@ -296,6 +295,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * Creates a Direct print manager. This is a method to be intercepted by tests.
 	 * @param jobIdString Id of the print job.
 	 * @param printService Print service to print the job to.
+	 * @param printServiceName Name of the print service as registered in wubiq.
 	 * @param printRequestAttributeSet Print request attributes.
 	 * @param printJobAttributeSet Print job attributes.
 	 * @param docAttributeSet Document attributes.
@@ -303,7 +303,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * @param debugLevel Debug Level
 	 * @param serverSupportsCompression Indicates if the direct print manager supports compression.
 	 */
-	protected DirectPrintManager createDirectPrintManager(String jobIdString, PrintService printService, 
+	protected DirectPrintManager createDirectPrintManager(String jobIdString, PrintService printService,
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
@@ -313,6 +314,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		return new DirectPrintManager (
 				jobIdString,
 				printService,
+				printServiceName,
 				printRequestAttributeSet,
 				printJobAttributeSet,
 				docAttributeSet,
@@ -329,22 +331,50 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 */
 	protected void runManager(DirectPrintManager manager, String printServiceName, String jobId) {
 		Thread thread = new Thread(manager, printServiceName + "(" + jobId + ")");
-		getRegisteredJobs().put(Long.parseLong(jobId), thread);
-		getRegisteredPrintServices().put(printServiceName, thread);
 		thread.start();
+	}
+	
+	/**
+	 * Registers a print job, so it can't be re-processed again.
+	 * @param jobId Job id.
+	 */
+	private synchronized void registerJob(Long jobId) {
+		doLog("Registering job: " + jobId, 3);
+		getRegisteredJobs().add(jobId);
 	}
 	
 	/**
 	 * Unregisters and notifies that job has finished.
 	 * @param jobId Job id to unregister.
 	 */
-	protected void unRegisterJob(Long jobId) {
+	protected synchronized void closePrintJob(Long jobId) {
 		closePrintJob(jobId.toString());
+	}
+
+	/**
+	 * Unregisters and notifies that job has finished.
+	 * @param jobId Job id to unregister.
+	 */
+	protected synchronized void unRegisterJob(Long jobId) {
 		getRegisteredJobs().remove(jobId);
+		doLog("Un-registered job: " + jobId, 3);
 	}
 	
-	protected void releasePrintService(String printServiceName) {
+	/**
+	 * @param printServiceName
+	 */
+	private synchronized void holdPrintService(String printServiceName) {
+		doLog("Holding print service: " + printServiceName, 3);
+		getRegisteredPrintServices().add(printServiceName);
+	}
+	
+	/**
+	 * Releases the print service, so other print jobs can be served.
+	 * @param printServiceName Print service name to release.
+	 */
+	protected synchronized void releasePrintService(String printServiceName) {
 		getRegisteredPrintServices().remove(printServiceName);
+		doLog("Released print service: " + printServiceName, 3);
 	}
 	
 	/**
@@ -460,9 +490,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * @return the registeredJobs
 	 */
-	private Map<Long, Thread> getRegisteredJobs() {
+	private Set<Long> getRegisteredJobs() {
 		if (registeredJobs == null) {
-			registeredJobs = new HashMap<Long, Thread>();
+			registeredJobs = new HashSet<Long>();
 		}
 		return registeredJobs;
 	}
@@ -470,12 +500,13 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	/**
 	 * @return The registered print services
 	 */
-	private Map<String, Thread> getRegisteredPrintServices() {
+	private Set<String> getRegisteredPrintServices() {
 		if (registeredPrintServices == null) {
-			registeredPrintServices = new HashMap<String, Thread>();
+			registeredPrintServices = new HashSet<String>();
 		}
 		return registeredPrintServices;
 	}
+	
 	/**
 	 * Parses the command line and starts an instance of a client.
 	 * @param args Command line arguments.

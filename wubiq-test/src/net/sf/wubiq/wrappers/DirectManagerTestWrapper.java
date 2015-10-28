@@ -31,12 +31,13 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 	protected DirectManagerTestWrapper(LocalManagerTestWrapper testManager,
 			String jobIdString,
 			PrintService printService,
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
 			boolean debugMode, int debugLevel,
 			boolean serverSupportsCompressed) {
-		super(jobIdString, printService, printRequestAttributeSet,
+		super(jobIdString, printService, printServiceName, printRequestAttributeSet,
 				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed);
 		this.testManager = testManager;
 		this.testManager.getTestData().setDirectManagerCalled(true);
@@ -45,6 +46,7 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 	protected DirectManagerTestWrapper(LocalManagerTestWrapper testManager,
 			String jobIdString,
 			PrintService printService,
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
@@ -52,7 +54,7 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 			boolean serverSupportsCompressed,
 			DocFlavor docFlavor,
 			InputStream printData) {
-		super(jobIdString, printService, printRequestAttributeSet,
+		super(jobIdString, printService, printServiceName, printRequestAttributeSet,
 				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed,
 				docFlavor, printData);
 		this.testManager = testManager;

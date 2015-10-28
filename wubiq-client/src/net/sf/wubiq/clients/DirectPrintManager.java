@@ -45,6 +45,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private String jobIdString;
 	private Long jobId;
 	private PrintService printService;
+	private String printServiceName;
 	private PrintRequestAttributeSet printRequestAttributeSet;
 	private PrintJobAttributeSet printJobAttributeSet;
 	private DocAttributeSet docAttributeSet;
@@ -57,7 +58,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private LocalPrintManager localPrintManager;
 	
 	
-	protected DirectPrintManager (String jobIdString, PrintService printService, 
+	protected DirectPrintManager (String jobIdString, PrintService printService,
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet, 
 			DocAttributeSet docAttributeSet,
@@ -66,7 +68,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			boolean serverSupportsCompression,
 			DocFlavor docFlavor,
 			InputStream printData) {
-		this(jobIdString, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, 
+		this(jobIdString, printService, printServiceName, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, 
 				debugMode, debugLevel, serverSupportsCompression);
 		this.docFlavor = docFlavor;
 		this.printData = printData;
@@ -77,6 +79,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * Creates an instances of direct print manager.
 	 * @param jobIdString Id of the job.
 	 * @param printService PrintService to print to.
+	 * @param printServiceName The name of the print service as registered. 
 	 * @param printRequestAttributeSet Attributes to be set on the print service.
 	 * @param printJobAttributeSet Attributes for the print job.
 	 * @param docAttributeSet Attributes for the document.
@@ -85,6 +88,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * @return an instance of a DirectPrintManager.
 	 */
 	protected DirectPrintManager(String jobIdString, PrintService printService, 
+			String printServiceName,
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
@@ -94,6 +98,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		this.jobIdString = jobIdString;
 		this.jobId = Long.parseLong(jobIdString);
 		this.printService = printService;
+		this.printServiceName = printServiceName;
 		this.printRequestAttributeSet = printRequestAttributeSet;
 		this.printJobAttributeSet = printJobAttributeSet;
 		this.docAttributeSet = docAttributeSet;
@@ -108,37 +113,41 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 */
 	@Override
 	public void run() {
-		boolean closePrintJob = false;
+		boolean closePrintJob = true;
 		try {
-			if (printSerialized) {
-				printSerialized();
-				closePrintJob = true;
-			} else {
-				printDirect();
-				closePrintJob = true;
-			}
-			doLog("Job(" + jobId + ") printed.", 0);
-		} catch (ConnectException e) {
-			closePrintJob = false;
-			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
-			LOG.error(e.getMessage(), e);
-		} catch (IOException e) {
-			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
-			LOG.error(e.getMessage(), e);
-		} catch (Exception e) {
-			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
-			LOG.error(e.getMessage(), e);
-		} finally {
 			try {
-				if (printData != null) {
-					printData.close();
+				if (printSerialized) {
+					printSerialized();
+				} else {
+					printDirect();
 				}
+				doLog("Job(" + jobId + ") printed.", 0);
+			} catch (ConnectException e) {
+				doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
+				LOG.error(e.getMessage(), e);
+				closePrintJob = false;
 			} catch (IOException e) {
-				doLog(e.getMessage());
+				doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
+				LOG.error(e.getMessage(), e);
+				closePrintJob = false;
+			} catch (Exception e) {
+				doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
+				LOG.error(e.getMessage(), e);
+			} finally {
+				try {
+					if (printData != null) {
+						printData.close();
+					}
+				} catch (IOException e) {
+					doLog(e.getMessage());
+				}
 			}
+		} finally {
 			if (closePrintJob) {
-				localPrintManager.unRegisterJob(jobId);
+				localPrintManager.closePrintJob(jobId);
 			}
+			localPrintManager.releasePrintService(printServiceName);
+			localPrintManager.unRegisterJob(jobId);
 		}
 	}
 	
@@ -428,7 +437,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	}
 	
 	@Override
-	protected void processPendingJob(String jobId) throws ConnectException {
+	protected void processPendingJob(String jobId, String printServiceName) throws ConnectException {
 	}
 
 	@Override
