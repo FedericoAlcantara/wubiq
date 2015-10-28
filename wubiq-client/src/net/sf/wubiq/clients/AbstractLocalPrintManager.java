@@ -105,6 +105,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 				bringAlive();
 				setRefreshServices(true);
 				double nextCheckInterval = getCheckPendingJobInterval();
+				Set<String> holdPrintServices = new HashSet<String>();
 				while (!isKilled()) {
 					try {
 						if (needsRefresh()) {
@@ -113,9 +114,15 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 							setConnectionErrorCount(0);
 						}
 						String[] pendingJobs = getPendingJobs();
+						holdPrintServices.clear();
 						for (String pendingJob : pendingJobs) {
 							try {
-								processPendingJob(pendingJob);
+								String printServiceName = jobPrintServiceName(pendingJob);
+								if (holdPrintServices.contains(printServiceName)) {
+									continue;
+								}
+								holdPrintServices.add(printServiceName);
+								processPendingJob(pendingJob, printServiceName);
 							} catch (Throwable e) {
 								doLog(e.getMessage(), 0);
 							}
@@ -192,9 +199,24 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	/**
 	 * Process a single pending job.
 	 * @param jobId Id of the job to be printed.
+	 * @param printService name. Associated print service name.
 	 */
-	protected abstract void processPendingJob(String jobId) throws ConnectException;
-		
+	protected abstract void processPendingJob(String jobId, String printServiceName) throws ConnectException;
+	
+	/**
+	 * Finds the job id print service name.
+	 * @param jobId Job id to find its print service.
+	 * @return Job id.
+	 * @throws ConnectException
+	 */
+	protected String jobPrintServiceName(String jobId) throws ConnectException {
+		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
+				.append(ParameterKeys.PARAMETER_SEPARATOR)
+				.append(jobId);
+		String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
+		return printServiceName;
+	}
+	
 	/**
 	 * Ask to the server for a list of all pending jobs for this client instance.
 	 * @return A list of pending jobs, or a zero element String array. Never null.

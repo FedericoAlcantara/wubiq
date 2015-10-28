@@ -201,7 +201,7 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 	}
 	
 	@Override
-	protected void processPendingJob(String jobId) throws ConnectException {
+	protected void processPendingJob(String jobId, String printServiceName) throws ConnectException {
 		// Here do nothing
 	}
 

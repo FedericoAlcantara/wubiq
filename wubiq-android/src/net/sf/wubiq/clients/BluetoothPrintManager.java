@@ -131,7 +131,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	 * Print pending jobs to the client.
 	 */
 	@Override
-	protected void processPendingJob(String jobId) throws ConnectException {
+	protected void processPendingJob(String jobId, String printServiceName) throws ConnectException {
 		StringBuffer parameter = new StringBuffer(ParameterKeys.PRINT_JOB_ID)
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
 				.append(jobId);
@@ -139,9 +139,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		InputStream stream = null;
 		boolean closePrintJob = false;
 
-		try {
-			String printServiceName = askServer(CommandKeys.READ_PRINT_SERVICE_NAME, parameter.toString());
-			
+		try {			
 			if (printServiceName != null && !printServiceName.equals("") &&
 					printServicesName.containsKey(printServiceName)) {
 				if (BluetoothUtils.device(context, printServicesName.get(printServiceName)) != null) {
