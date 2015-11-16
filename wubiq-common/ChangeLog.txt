@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.1.13 (2015-11-14)
+==========================
+-Compile with java 6
+
+==========================
 Wubiq 2.1.12 (2015-10-28)
 ==========================
 -Fix report printing order when outputting several print jobs to same client + printer.
