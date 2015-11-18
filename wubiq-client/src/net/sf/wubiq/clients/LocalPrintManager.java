@@ -97,9 +97,6 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			if (getRegisteredPrintServices().contains(printServiceName)) {
 				return;
 			}
-			registerJob(Long.parseLong(jobId));
-			holdPrintService(printServiceName);
-
 			doLog("Process Pending Job: " + jobId, 0);
 			doLog("Job(" + jobId + ") printServiceName:" + printServiceName, 5);
 			String printRequestAttributesData = askServer(CommandKeys.READ_PRINT_REQUEST_ATTRIBUTES, parameter);
@@ -130,6 +127,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(printJobAttributesData);
 			DocAttributeSet docAttributeSet = PrintServiceUtils.convertToDocAttributeSet(docAttributesData);
 			DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(docFlavorData);
+			
 			boolean isDirectConnect = "true".equalsIgnoreCase(isDirectConnectData);
 			boolean serverSupportsCompression = "true".equalsIgnoreCase(isCompressionEnabledData);
 			boolean forceSerialized = false;
@@ -331,6 +329,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 */
 	protected void runManager(DirectPrintManager manager, String printServiceName, String jobId) {
 		Thread thread = new Thread(manager, printServiceName + "(" + jobId + ")");
+		registerJob(Long.parseLong(jobId));
+		holdPrintService(printServiceName);		
 		thread.start();
 	}
 	

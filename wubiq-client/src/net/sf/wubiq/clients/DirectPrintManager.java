@@ -143,11 +143,16 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				}
 			}
 		} finally {
-			if (closePrintJob) {
-				localPrintManager.closePrintJob(jobId);
+			try {
+				if (closePrintJob) {
+					localPrintManager.closePrintJob(jobId);
+				}
+			} catch (Exception e) {
+				doLog(e.getMessage());
+			} finally {
+				localPrintManager.releasePrintService(printServiceName);
+				localPrintManager.unRegisterJob(jobId);
 			}
-			localPrintManager.releasePrintService(printServiceName);
-			localPrintManager.unRegisterJob(jobId);
 		}
 	}
 	
