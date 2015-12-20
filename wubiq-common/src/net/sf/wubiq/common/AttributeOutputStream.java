@@ -175,7 +175,7 @@ public class AttributeOutputStream extends OutputStreamWriter {
 					.append(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR)
 					.append(mediaSize.getY(MediaSize.MM))
 					.append(ParameterKeys.ATTRIBUTE_SET_MEMBER_SEPARATOR)
-					.append(mediaSizeName.toString())
+					.append(mediaSizeName.toString().replaceAll(";", " "))
 					;
 		}
 	}
