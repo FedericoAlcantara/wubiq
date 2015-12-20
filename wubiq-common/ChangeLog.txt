@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.1.6 (2015-12-16)
+==========================
+-When parsing attributes of print services with semicolon in it, throws errors.
+
+==========================
 Wubiq 2.1.5 (2015-11-17)
 ==========================
 -Fixed errors while closing print jobs prevent further printing.

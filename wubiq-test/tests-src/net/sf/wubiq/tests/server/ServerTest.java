@@ -23,6 +23,7 @@ import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTable;
 import com.gargoylesoftware.htmlunit.html.HtmlTableCell;
+import com.gargoylesoftware.htmlunit.html.HtmlTableRow;
 
 /**
  * @author Federico Alcantara
@@ -74,19 +75,15 @@ public class ServerTest extends WubiqBaseTest {
 	 * @throws Exception
 	 */
 	public void testRegisterPrintServices() throws Exception {
-		HtmlPage page = (HtmlPage)getNewTestPage(CommandKeys.SHOW_PRINT_SERVICES);
-		HtmlTable table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
-		int originalRowCount = table.getRowCount();
+		int originalPrintServicesCount = countPrintServices();
 		manager.registerPrintServices();
-		page = (HtmlPage)getNewTestPage(CommandKeys.SHOW_PRINT_SERVICES);
-		table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
-		int newRowCount = ((originalRowCount - 1) * 2) + 1;
-		assertEquals("Should be the double of print services registered", newRowCount, table.getRowCount());
+		int actualPrintServicesCount = countPrintServices();
+		int expectedPrintServicesCount = originalPrintServicesCount * 2;
+		assertEquals("Should be the double of print services registered", expectedPrintServicesCount, actualPrintServicesCount);
 		// Checks if it unregisters.
 		manager.killManager();
-		page = (HtmlPage)getNewTestPage(CommandKeys.SHOW_PRINT_SERVICES);
-		table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
-		assertEquals("Should be no remote print services registered", originalRowCount, table.getRowCount());
+		actualPrintServicesCount = countPrintServices();
+		assertEquals("Should be no remote print services registered", originalPrintServicesCount, actualPrintServicesCount);
 	}
 	
 	public void testPrintTestPage() throws Exception {
@@ -326,5 +323,25 @@ public class ServerTest extends WubiqBaseTest {
 		} else {
 			fail("Unrecognized return value");
 		}
+	}
+	
+	/**
+	 * Counts the available print services.
+	 * @return Count of print services.
+	 * @throws Exception 
+	 */
+	private int countPrintServices() throws Exception {
+		int returnValue = 0;
+		HtmlPage page = (HtmlPage)getNewTestPage(CommandKeys.SHOW_PRINT_SERVICES);
+		HtmlTable table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
+		for (HtmlTableRow row : table.getRows()) {
+			for (HtmlTableCell cell : row.getCells()) {
+				String classAttribute = cell.getAttribute("class");
+				if (classAttribute != null && classAttribute.contains("wubiq_sd_table_td_name")) {
+					returnValue++;
+				}
+			}
+		}
+		return returnValue;
 	}
 }
