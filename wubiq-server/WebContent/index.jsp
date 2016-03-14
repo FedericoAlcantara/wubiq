@@ -14,6 +14,7 @@
 <%@ page import="net.sf.wubiq.common.ParameterKeys" %>
 <%@ page import="net.sf.wubiq.common.WebKeys"%>
 <%@ page import="net.sf.wubiq.data.RemoteClient" %>
+<%@ page import="net.sf.wubiq.persistence.PersistenceManager"%>
 <%@ page import="net.sf.wubiq.print.jobs.RemotePrintJobStatus"%>
 <%@ page import="net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory"%>
 <%@ page import="net.sf.wubiq.print.managers.IRemotePrintJobManager"%>
@@ -165,12 +166,15 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 						<input type="submit" value="<%=ServerLabels.get("server.filter.apply") %>" />
 					</form>
 				</td>
-			</tr>					
+			</tr>
+			<%if (PersistenceManager.isPersistenceEnabled()) {%>
+			<tr>
+			</tr>
+			<%} %>			
 		</table>
 		<%
 		RemoteClientManager manager = RemoteClientManager.getRemoteClientManager(request);
 		String url = request.getContextPath();
-		manager.updateRemotes();
 		Collection<String>uuids = new TreeSet<String>();
 		uuids.add("");
 		uuids.addAll(manager.getUuids());
@@ -187,13 +191,11 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 			String failures = "";
 			if (remoteClient != null) {
 				clientVersion = " (" + remoteClient.getClientVersion() + ") " 
-						+ " - " + df.format(new Date(remoteClient.getLastAccessedTime()));
-				disconnection = (!remoteClient.isRemoteActive()
+						+ " - " + df.format(manager.remoteLastAccessed(uuid));
+				disconnection = (!manager.isRemoteActive(uuid)
 								? ServerLabels.get("server.client_disconnected")
 								: "");
-				failures = remoteClient.getConnectionFailures() > 1
-						? ServerLabels.get("server.client_failures", Long.toString(remoteClient.getConnectionFailures() - 1))
-						: "";
+				failures = "";
 			}
 			if (!Is.emptyString(filter)) {
 				if (!uuid.toLowerCase().startsWith(filter) || remoteClient == null) {

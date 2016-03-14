@@ -110,24 +110,29 @@ public class ServerProperties extends BaseProperties {
 				File propertyFile = new File(getRealPath() + "/WEB-INF/classes/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
 				if (!propertyFile.exists()) {
 					propertyFile = propertyFile.getParentFile();
-					for (int i = 0; i < 5; i++) {
-						propertyFile = propertyFile.getParentFile();
-						File testFile = new File(propertyFile.getParent() + "/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
-						if (testFile.exists()) {
-							propertyFile = testFile;
-							break;
-						} else {
-							testFile = new File(propertyFile.getParent() + "/conf/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
+					if (propertyFile != null) {
+						for (int i = 0; i < 8; i++) {
+							propertyFile = propertyFile.getParentFile();
+							if (propertyFile == null) {
+								break;
+							}
+							File testFile = new File(propertyFile.getParent() + "/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
 							if (testFile.exists()) {
 								propertyFile = testFile;
 								break;
-							}		
+							} else {
+								testFile = new File(propertyFile.getParent() + "/conf/" + ConfigurationKeys.SERVER_PROPERTIES_FILE_NAME + ".properties");
+								if (testFile.exists()) {
+									propertyFile = testFile;
+									break;
+								}		
+							}
 						}
 					}
 				}
 				FileInputStream inputStream = null;
 				try {
-					if (propertyFile.exists()) {
+					if (propertyFile != null && propertyFile.exists()) {
 						inputStream = new FileInputStream(propertyFile);
 						properties.load(inputStream);
 						LOG.info(ServerLabels.get("server.info_server_properties_found"));

@@ -38,7 +38,6 @@ import net.sf.wubiq.clients.remotes.PageablePrintableHolder;
 import net.sf.wubiq.clients.remotes.PageableRemote;
 import net.sf.wubiq.print.attribute.CustomMediaSizeName;
 import net.sf.wubiq.print.attribute.OriginalOrientationRequested;
-import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableStreamWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
@@ -115,9 +114,6 @@ public final class ClientPrintDirectUtils {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
 				}
 				DocPrintJob printJob = printService.createPrintJob();
-				if (printJob instanceof RemotePrintJob) {
-					((RemotePrintJob)printJob).setAttributes(printJobAttributeSet);
-				}
 				printJob.print(doc, printRequestAttributeSet);
 			}
 				

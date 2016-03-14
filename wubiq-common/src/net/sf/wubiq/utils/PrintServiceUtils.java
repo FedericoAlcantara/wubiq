@@ -50,7 +50,6 @@ import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.print.attribute.CustomMediaSize;
 import net.sf.wubiq.print.services.RemotePrintService;
-import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -163,8 +162,8 @@ public class PrintServiceUtils {
 	 * @return The print service just added.
 	 */
 	@SuppressWarnings("static-access")
-	public static PrintService replacePrintService(PrintService printService, PrintService newPrintService) {
-		PrintService returnValue = newPrintService;
+	public static PrintService replacePrintService(PrintService printService, RemotePrintService newPrintService) {
+		RemotePrintService returnValue = newPrintService;
 		for (PrintServiceLookup lookup : getServiceProviders()) {
 			// Just try a simple registration
 			if (!lookup.registerService(newPrintService)) {
@@ -193,9 +192,25 @@ public class PrintServiceUtils {
 					} catch (Exception e) {
 						LOG.debug(e.getMessage());
 					}
-				} else if (lookup instanceof RemotePrintServiceLookup) {
-					RemotePrintServiceLookup remote = (RemotePrintServiceLookup) lookup;
-					remote.registerRemoteService(newPrintService);
+				} else if (lookup.getClass().getName().contains("RemotePrintServiceLookup")) {
+					Method m = null;
+					for (Method readMethod : lookup.getClass().getDeclaredMethods()) {
+						if ("registerRemoteService".equals(readMethod.getName())) {
+							m = readMethod;
+							break;
+						}
+					}
+					if (m != null) {
+						try {
+							m.invoke(lookup, new Object[]{newPrintService});
+						} catch (IllegalArgumentException e) {
+							LOG.error(e.getMessage(), e);
+						} catch (IllegalAccessException e) {
+							LOG.error(e.getMessage(), e);
+						} catch (InvocationTargetException e) {
+							LOG.error(e.getMessage(), e);
+						}
+					}
 				}
 			}
 		}
@@ -692,7 +707,7 @@ public class PrintServiceUtils {
 		StringBuffer docFlavors = new StringBuffer("");
 		Set<DocFlavor> flavors = new HashSet<DocFlavor>();
 		for (DocFlavor docFlavor : printService.getSupportedDocFlavors()) {
-			System.out.println(docFlavor);
+			LOG.debug(docFlavor);
 			flavors.add(docFlavor);
 		}
 		for (DocFlavor docFlavor : flavors) {

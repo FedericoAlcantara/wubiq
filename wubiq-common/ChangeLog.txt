@@ -2,6 +2,7 @@
 Wubiq 2.2 ()
 ==========================
 -Support for printing directly to printer streams (ESC/P).
+-Support of data sources for cluster and servers escalation capabilities.
 
 ==========================
 Wubiq 2.1.6 (2015-12-16)

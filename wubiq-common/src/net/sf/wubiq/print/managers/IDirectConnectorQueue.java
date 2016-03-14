@@ -6,6 +6,8 @@ package net.sf.wubiq.print.managers;
 import java.util.Collection;
 import java.util.UUID;
 
+import javax.print.PrintService;
+
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IAdapter;
@@ -24,7 +26,15 @@ public interface IDirectConnectorQueue extends IAdapter {
 	 * @param jobId Id of the job being processed.
 	 * @param remotePrintJob Remote print job.
 	 */
+	@Deprecated
 	void addPrintJob(long jobId, IRemotePrintJob remotePrintJob);
+	
+	/**
+	 * Adds a new print job to the queue.
+	 * @param remotePrintJob Print job to be added to the queue.
+	 * @return Id of the print job added.
+	 */
+	long addPrintJob(IRemotePrintJob remotePrintJob);
 	
 	/**
 	 * Removes the print job from the queue.
@@ -130,5 +140,12 @@ public interface IDirectConnectorQueue extends IAdapter {
 	 * @return Adapter object.
 	 */
 	Object getAdapter(Long jobId, UUID objectUUID);
+	
+	/**
+	 * Calculates the count of pending jobs for the given print service.
+	 * @param printService Associated print service.
+	 * @return The count of pending jobs.
+	 */
+	int pendingPrintJobs(PrintService printService);
 	
 }

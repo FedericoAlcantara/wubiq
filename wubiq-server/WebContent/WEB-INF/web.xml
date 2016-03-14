@@ -5,9 +5,9 @@
     <welcome-file>index.jsp</welcome-file>
   </welcome-file-list>
 	<listener>
-		<listener-class>net.sf.wubiq.servlets.HsqldbContextListener</listener-class>
+		<listener-class>net.sf.wubiq.listeners.ContextListener</listener-class>
 	</listener>
-	<!-- wubiq servlet -->
+  	<!-- wubiq servlet -->
 	<servlet>
 		<servlet-name>wubiq</servlet-name>
 		<servlet-class>net.sf.wubiq.servlets.RemotePrintServlet</servlet-class>

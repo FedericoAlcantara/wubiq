@@ -3,42 +3,87 @@
  */
 package net.sf.wubiq.data;
 
+import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
 import java.util.List;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Id;
+import javax.persistence.Table;
 
 /**
  * Contains the remote info and status. Each connected client is represented by an instance of this class.
  * @author Federico Alcantara
  *
  */
-public class RemoteClient {
+@Entity
+@Table(name = "wubiq_remote_client")
+public class RemoteClient implements Serializable {
+	private static final long serialVersionUID = 1L;
+
+	@Id
+	@Column(length = 100)
+	private String uniqueId;
+	
+	@Column(length = 100)
+	private String computerName;
+	
+	
+	/**
+	 * @deprecated Services are handled by RemotePrintServiceLookup
+	 */
+	private transient List<String> services;
+	
+	@Column(length = 20)
+	private String clientVersion;
+
+	private Boolean refreshed;
+	
+	private Boolean paused;
+	
+	private Boolean killed;
+	
+	/**
+	 * @deprecated Use lastAccessed
+	 */
+	private transient Long lastAccessedTime;
+
 	/**
 	 * Time in milliseconds where after not having notification from remote the connection is considered dead.
 	 */
-	private long inactiveTime;
-	private Boolean killed;
-	private List<String> services;
-	private String computerName;
-	private Long lastAccessedTime;
-	private Boolean refreshed;
-	private Boolean paused;
-	private String clientVersion;
-	private long connectionFailures;
+	private transient long inactiveTime;
+
+	/**
+	 * @deprecated Connection failures proves to be a useless statistics is no longer maintained.
+	 */
+	private transient long connectionFailures;
 	
 	public RemoteClient() {
 		this(20000); // 20 seconds default idle time
-		lastAccessedTime = new Date().getTime();
 	}
 	
-	public RemoteClient(Integer inactiveTime) {
+	private RemoteClient(Integer inactiveTime) {
 		this.inactiveTime = inactiveTime;
 		this.setKilled(false);
 		this.setRefreshed(false);
 		this.setPaused(false);
-		this.connectionFailures = 1;
 	}
 	
+	/**
+	 * @return the uUID
+	 */
+	public String getUniqueId() {
+		return uniqueId;
+	}
+
+	/**
+	 * @param uniqueId the uUID to set
+	 */
+	public void setUniqueId(String uniqueId) {
+		this.uniqueId = uniqueId;
+	}
+
 	/**
 	 * @return the inactiveTime
 	 */
@@ -58,12 +103,6 @@ public class RemoteClient {
 	 */
 	public void setKilled(Boolean killed) {
 		this.killed = killed;
-		if (killed) {
-			if (lastAccessedTime > inactiveTime) {
-				lastAccessedTime = lastAccessedTime - inactiveTime;
-			}
-			connectionFailures = 1l;
-		}
 	}
 
 	/**
@@ -74,6 +113,7 @@ public class RemoteClient {
 	}
 
 	/**
+	 * @deprecated Services are not registered here. They are registered at RemotePrintServiceLookup.
 	 * @param services the services to set
 	 */
 	public void setServices(List<String> services) {
@@ -81,6 +121,7 @@ public class RemoteClient {
 	}
 
 	/**
+	 * @deprecated No use. Services are handled by RemotePrintServiceLookup
 	 * @return the services
 	 */
 	public List<String> getServices() {
@@ -108,23 +149,21 @@ public class RemoteClient {
 	}
 
 	/**
+	 * @deprecated Use setLastAccessed instead.
 	 * @param lastAccessedTime the lastAccessedTime to set
 	 */
 	public void setLastAccessedTime(Long lastAccessedTime) {
-		long currentTime = new Date().getTime();
-		if ((currentTime - lastAccessedTime) > inactiveTime) {
-			connectionFailures++;
-		}
 		this.lastAccessedTime = lastAccessedTime;
 	}
-
+	
 	/**
+	 * @deprecated Use getLastAccessed
 	 * @return the lastAccessedTime
 	 */
 	public Long getLastAccessedTime() {
 		return lastAccessedTime;
 	}
-
+	
 	/**
 	 * @param refreshed the refreshed to set
 	 */
@@ -140,14 +179,11 @@ public class RemoteClient {
 	}
 
 	/**
+	 * @deprecated Control of its active state is transferred to the Remote Client Manager.
 	 * Determines if the remote is active and working.
-	 * @return True or false.
+	 * @return Always returns true.
 	 */
 	public boolean isRemoteActive() {
-		long currentTime = new Date().getTime();
-		if (Math.abs(currentTime - getLastAccessedTime()) > inactiveTime) {
-			return false;
-		} 
 		return true;
 	}
 	
@@ -156,16 +192,24 @@ public class RemoteClient {
 	 * @deprecated No longer used for determining the state of the client. 
 	 * Clients are ALWAYS considered connected, to definitively kill a client
 	 * a 'kill' command must be issued either by the client or by the server.
+	 * The state is handled by the RemoteClientManager.
 	 * @return Always returns true, meaning that the client is not dead.
 	 */
 	public boolean isRemoteDead() {
 		return true;
 	}
 
+	/**
+	 * @return
+	 */
 	public Boolean isPaused() {
 		return paused;
 	}
 
+	/**
+	 * It is recommended to pause the remote client through the RemoteClientManager provided interface.
+	 * @param paused
+	 */
 	public void setPaused(Boolean paused) {
 		this.paused = paused;
 	}
@@ -185,6 +229,7 @@ public class RemoteClient {
 	}
 	
 	/**
+	 * @deprecated Connection failure is no longer maintained. This method will always return 0.
 	 * The number of times a client connection had failed.
 	 * When a client connection is dropped more than 20 seconds
 	 * it is a considered a connection failure and added up.

@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.print.services;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -15,15 +16,25 @@ import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.AttributeSet;
 
+import net.sf.wubiq.dao.WubiqPrintServiceDao;
+
 /**
  * Implements a RemotePrintServiceLookup aware of the remote print services that are online.
  * @author Federico Alcantara
  *
  */
-public class RemotePrintServiceLookup extends PrintServiceLookup {
-	private static Map<String, Map<String, PrintService>> allRemotePrintServices;
-	private static PrintService remoteDefaultPrintService; 
+public class RemotePrintServiceLookup extends PrintServiceLookup implements Serializable {
+	private static final long serialVersionUID = 1L;
+	
+	private static Map<String, Map<String, RemotePrintService>> allRemotePrintServices;
+	private static RemotePrintService remoteDefaultPrintService; 
 	private static Map<String, Boolean> mobilePrintServices;
+	
+	private static Boolean persistenceActive;
+	
+	public RemotePrintServiceLookup(boolean persistenceActive) {
+		RemotePrintServiceLookup.persistenceActive = persistenceActive;
+	}
 	
 	/**
 	 * @see javax.print.PrintServiceLookup#getDefaultPrintService()
@@ -47,7 +58,8 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 */
 	@Override
 	public PrintService[] getPrintServices() {
-		PrintService[] returnValue = getRemotePrintServices().toArray(new PrintService[getRemotePrintServices().size()]);
+		List<RemotePrintService> remotePrintServices = getRemotePrintServices();
+		PrintService[] returnValue = remotePrintServices.toArray(new PrintService[remotePrintServices.size()]);
 		return returnValue;
 	}
 
@@ -57,7 +69,8 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	@Override
 	public PrintService[] getPrintServices(DocFlavor flavor,
 			AttributeSet attributes) {
-		PrintService[] returnValue = getRemotePrintServices().toArray(new PrintService[getRemotePrintServices().size()]);
+		List<RemotePrintService> remotePrintServices = getRemotePrintServices();
+		PrintService[] returnValue = remotePrintServices.toArray(new PrintService[remotePrintServices.size()]);
 		return returnValue;
 	}
 
@@ -70,10 +83,11 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 
 	/**
 	 * Overrides default behavior and register services in custom form.
+	 * Should not be called directly instead use RemoteClientManager registration method.
 	 * @param printService Service to be registered.
 	 * @return Always true.
 	 */
-	public static boolean registerService(PrintService printService) {
+	public static boolean registerService(RemotePrintService printService) {
 		return registerRemoteService(printService);
 	}
 
@@ -82,12 +96,16 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * @param printService Service to be registered.
 	 * @return Always true.
 	 */
-	public static boolean registerRemoteService(PrintService printService) {
-		String uuid = ((RemotePrintService)printService).getUuid();
-		Map<String, PrintService> uuidServices = getRemotePrintServices(uuid);
-		uuidServices.put(printService.getName(), printService);
-		if (((RemotePrintService)printService).isMobile()) {
-			getMobilePrintServices().put(uuid, true);
+	public static boolean registerRemoteService(RemotePrintService printService) {
+		if (persistenceActive) {
+			WubiqPrintServiceDao.INSTANCE.registerRemotePrintService(printService);
+		} else {
+			String uuid = printService.getUuid();
+			Map<String, RemotePrintService> uuidServices = getRemotePrintServices(uuid);
+			uuidServices.put(printService.getName(), printService);
+			if (((RemotePrintService)printService).isMobile()) {
+				getMobilePrintServices().put(uuid, true);
+			}
 		}
 		return true;
 	}
@@ -96,10 +114,14 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * Gather all active remote print services.
 	 * @return A List of remote print services. Never null.
 	 */
-	public static List<PrintService> getRemotePrintServices() {
-		List<PrintService> returnValue = new ArrayList<PrintService>();
-		for (Entry<String, Map<String, PrintService>> remotePrintServices : getAllRemotePrintServices().entrySet()) {
-			returnValue.addAll(remotePrintServices.getValue().values());
+	private static List<RemotePrintService> getRemotePrintServices() {
+		List<RemotePrintService> returnValue = new ArrayList<RemotePrintService>();
+		if (persistenceActive) {
+			returnValue.addAll(WubiqPrintServiceDao.INSTANCE.remoteAllPrintServices());
+		} else {
+			for (Entry<String, Map<String, RemotePrintService>> remotePrintServices : getAllRemotePrintServices().entrySet()) {
+				returnValue.addAll(remotePrintServices.getValue().values());
+			}
 		}
 		return returnValue;
 	}
@@ -108,10 +130,13 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * Gather all active remote print services.
 	 * @return A List of remote print services. Never null.
 	 */
-	public static Map<String, PrintService> getRemotePrintServices(String uuid) {
-		Map<String, PrintService> returnValue  = getAllRemotePrintServices().get(uuid);
+	private static Map<String, RemotePrintService> getRemotePrintServices(String uuid) {
+		if (persistenceActive) {
+			return WubiqPrintServiceDao.INSTANCE.remotePrintServices(uuid);
+		}
+		Map<String, RemotePrintService> returnValue  = getAllRemotePrintServices().get(uuid);
 		if (returnValue == null) {
-			returnValue = new HashMap<String, PrintService>();
+			returnValue = new HashMap<String, RemotePrintService>();
 			getAllRemotePrintServices().put(uuid, returnValue);
 		}
 		return returnValue;
@@ -121,15 +146,19 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * @param uuid Unique id of the local print manager.
 	 */
 	public static void removePrintServices(String uuid) {
-		getAllRemotePrintServices().remove(uuid);
+		if (persistenceActive) {
+			WubiqPrintServiceDao.INSTANCE.removePrintServices(uuid);
+		} else {
+			getAllRemotePrintServices().remove(uuid);
+		}
 	}		
 	
 	/**
 	 * @return All remote print services.
 	 */
-	private static Map<String, Map<String, PrintService>> getAllRemotePrintServices() {
+	private static Map<String, Map<String, RemotePrintService>> getAllRemotePrintServices() {
 		if (allRemotePrintServices == null) {
-			allRemotePrintServices = new HashMap<String, Map<String, PrintService>>();
+			allRemotePrintServices = new HashMap<String, Map<String, RemotePrintService>>();
 		}
 		return allRemotePrintServices;
 	}
@@ -137,14 +166,14 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	/**
 	 * @return Default remote print service.
 	 */
-	private static PrintService getRemoteDefaultPrintService() {
+	private static RemotePrintService getRemoteDefaultPrintService() {
 		return remoteDefaultPrintService;
 	}
 
 	/**
 	 * @param remoteDefaultPrintService the remoteDefaultPrintService to set
 	 */
-	public static void setRemoteDefaultPrintService(PrintService remoteDefaultPrintService) {
+	public static void setRemoteDefaultPrintService(RemotePrintService remoteDefaultPrintService) {
 		RemotePrintServiceLookup.remoteDefaultPrintService = remoteDefaultPrintService;
 	}
 
@@ -153,8 +182,12 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * @return True if the pending tasks should be handle as mobile processes.
 	 */
 	public static boolean isMobile(String uuid) {
-		Boolean returnValue = getMobilePrintServices().get(uuid);
-		return returnValue != null && returnValue;
+		if (persistenceActive) {
+			return WubiqPrintServiceDao.INSTANCE.isMobile(uuid);
+		} else {
+			Boolean returnValue = getMobilePrintServices().get(uuid);
+			return returnValue != null && returnValue;
+		}
 	}
 	
 	/**
@@ -163,10 +196,10 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 	 * @param remotePrintServiceName Name of the print service to look for.
 	 * @return PrintService found or null.
 	 */
-	public static PrintService find(String uuid, String remotePrintServiceName) {
-		PrintService returnValue = null;
+	public static RemotePrintService find(String uuid, String remotePrintServiceName) {
+		RemotePrintService returnValue = null;
 		String formattedPrintServiceName = remotePrintServiceName.replace("\\", "\\\\");
-		for (Entry<String, PrintService> entry: getRemotePrintServices(uuid).entrySet()) {
+		for (Entry<String, RemotePrintService> entry: getRemotePrintServices(uuid).entrySet()) {
 			String printServiceName = entry.getKey();
 			if (printServiceName.contains("@")) {
 				printServiceName = printServiceName.substring(0, printServiceName.indexOf("@")).trim();
@@ -179,6 +212,10 @@ public class RemotePrintServiceLookup extends PrintServiceLookup {
 		return returnValue;
 	}
 	
+	/**
+	 * List all mobile print services.
+	 * @return Get mobile print services.
+	 */
 	private static Map<String, Boolean> getMobilePrintServices() {
 		if (mobilePrintServices == null) {
 			mobilePrintServices = new HashMap<String, Boolean>();

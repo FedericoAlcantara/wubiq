@@ -5,6 +5,7 @@ package net.sf.wubiq.print.services;
 
 import java.io.ByteArrayOutputStream;
 import java.io.OutputStream;
+import java.io.Serializable;
 import java.lang.reflect.Array;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -48,8 +49,10 @@ import org.apache.commons.logging.LogFactory;
  * @author Federico Alcantara
  *
  */
-public class RemotePrintService extends StreamPrintService implements INotifiablePrintService {
-	private static Log LOG = LogFactory.getLog(RemotePrintService.class);
+public class RemotePrintService extends StreamPrintService implements INotifiablePrintService, Serializable {
+	private static final long serialVersionUID = 1L;
+
+	private transient static Log LOG = LogFactory.getLog(RemotePrintService.class);
 	private String uuid;
 	private String remoteName;
 	private String remoteComputerName;
@@ -86,19 +89,19 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 		uuid = UUID.randomUUID().toString();
 		supportedDocFlavors = printService.getSupportedDocFlavors();
 		for (Class<? extends Attribute> category : PrintServiceUtils.getCategories(printService)) {
-			remoteCategories.add(category);
+			getRemoteCategories().add(category);
 		}
-		for (Class<?> category : remoteCategories) {
+		for (Class<?> category : getRemoteCategories()) {
 			for (Attribute attribute : PrintServiceUtils.getCategoryAttributes(printService, (Class<? extends Attribute>) category)) {
-				remoteAttributes.put(category.getName(), attribute);
+				getRemoteAttributes().put(category.getName(), attribute);
 			}
 
 			if (category.isAssignableFrom(PrintServiceAttribute.class)) {
-				attributesPerCategory.put(category.getName(), 
+				getAttributesPerCategory().put(category.getName(), 
 						printService.getAttribute((Class<? extends PrintServiceAttribute>)category));
 			}
 			
-			defaultAttributes.put(category.getName(), 
+			getDefaultAttributes().put(category.getName(), 
 					printService.getDefaultAttributeValue((Class<? extends PrintServiceAttribute>)category));
 		}
 		
@@ -133,7 +136,7 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	@SuppressWarnings("unchecked")
 	@Override
 	public <T extends PrintServiceAttribute> T getAttribute(Class<T> category) {
-		return (T) attributesPerCategory.get(category.getName());
+		return (T) getAttributesPerCategory().get(category.getName());
 	}
 
 	/**
@@ -160,7 +163,7 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	 */
 	@Override
 	public Object getDefaultAttributeValue(Class<? extends Attribute> category) {
-		return defaultAttributes.get(category.getName());
+		return getDefaultAttributes().get(category.getName());
 	}
 
 	/**
@@ -331,9 +334,9 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	public void setRemoteName(String remoteName) {
 		this.remoteName = remoteName;
 		PrintServiceAttribute attribute = new PrinterName(getName(), Locale.getDefault());
-		attributesPerCategory.put(attribute.getCategory().getName(), attribute);
+		getAttributesPerCategory().put(attribute.getCategory().getName(), attribute);
 		attribute = PrinterState.IDLE;
-		attributesPerCategory.put(attribute.getCategory().getName(), attribute);
+		getAttributesPerCategory().put(attribute.getCategory().getName(), attribute);
 	}
 
 	/**
@@ -385,11 +388,15 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 
 	/**
 	 * Indicates if this remote print server supports direct communication.
-	 * This is a way to determine if the client is apt to deal direct communication.
+	 * This is a way to determine if the client is able to deal with direct communication.
 	 * @return True always as indicator of a feacture implemented in the client.
 	 */
 	public boolean isDirectCommunicationEnabled() {
 		return isMobile() ? false : directCommunicationEnabled;
+	}
+	
+	public boolean getDirectCommunicationEnabled() {
+		return directCommunicationEnabled;
 	}
 	
 	/**
@@ -465,4 +472,38 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	public long getCurrentJobId() {
 		return currentJobId;
 	}
+	
+	public Map<String, PrintServiceAttribute> getAttributesPerCategory() {
+		return attributesPerCategory;
+	}
+	
+	public Map<String, Object> getDefaultAttributes() {
+		return defaultAttributes;
+	}
+	
+	/**
+	 * Refreshes the remote print service.
+	 */
+	public void refresh(
+			String uuid,
+			String remoteName,
+			String remoteComputerName,
+			boolean mobile,
+			DocFlavor[] supportedDocFlavors,
+			Map<String, Object> defaultAttributes,
+			boolean directCommunicationEnabled,
+			String clientVersion,
+			Set<String> groups) {
+		this.uuid = uuid;
+		this.remoteName = remoteName;
+		this.remoteComputerName = remoteComputerName;
+		this.mobile = mobile;
+		this.supportedDocFlavors = supportedDocFlavors;
+		this.defaultAttributes = defaultAttributes;
+		this.directCommunicationEnabled = directCommunicationEnabled;
+		this.clientVersion = clientVersion;
+		this.groups = groups;
+		
+	}
+
 }

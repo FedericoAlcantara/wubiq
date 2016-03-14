@@ -1,0 +1,15 @@
+Migrate from 2.1.x to 2.2.x
+============================
+-PrintServiceUtils has been splitted in PrintServiceUtils and ServerPrintServiceUtils.
+The following methods now exists ONLY in ServerPrintServiceUtils
+  replacePrintService
+  isSameVersion
+  clientSupportsCompression
+  getClientVersion
+  convertedVersion
+  getPrintServices(String group, boolean includeLocals, boolean includeNonGrouped)
+  deSerializeService
+  
+  
+The following methods are DUPLICATED in both, but with different behaviors.
+  

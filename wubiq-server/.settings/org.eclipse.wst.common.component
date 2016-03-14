@@ -1,8 +1,9 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project-modules id="moduleCoreId" project-version="1.5.0">
+<?xml version="1.0" encoding="UTF-8"?><project-modules id="moduleCoreId" project-version="1.5.0">
     <wb-module deploy-name="wubiq-server">
         <wb-resource deploy-path="/" source-path="/WebContent"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/persistence"/>
+        <wb-resource deploy-path="/WEB-INF/classes" source-path="/logging"/>
         <dependent-module archiveName="wubiq-common.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/wubiq-common/wubiq-common">
             <dependency-type>uses</dependency-type>
         </dependent-module>

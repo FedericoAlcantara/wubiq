@@ -30,6 +30,8 @@ public final class ConfigurationKeys {
 	public static final String DEFAULT_PRINT_JOB_MANAGER = "net.sf.wubiq.print.managers.impl.HsqldbPrintJobManager";
 	public static final String DEFAULT_REMOTE_PRINT_JOB_MANAGER = "net.sf.wubiq.print.managers.impl.DirectConnectPrintJobManager";
 
+	public static final String DEFAULT_JDBC_USERNAME = "wubiq";
+	public static final String DEFAULT_JDBC_PASSWORD = "wubiq2011";
 	
 	public static final String PROPERTY_APPLICATION_NAME = "application";
 	public static final String PROPERTY_SERVLET_NAME = "servlet";
@@ -56,6 +58,11 @@ public final class ConfigurationKeys {
 	public static final String PROPERTY_USERS = "users";
 	
 	public static final String PROPERTY_INSTALLER_PORT_ADDRESS = "installer.port.address";
-	
+
+	public static final String PROPERTY_JDBC_URL = "jdbc.url";
+	public static final String PROPERTY_JDBC_USERNAME = "jdbc.username";
+	public static final String PROPERTY_JDBC_PASSWORD = "jdbc.password";
+
+
 
 }

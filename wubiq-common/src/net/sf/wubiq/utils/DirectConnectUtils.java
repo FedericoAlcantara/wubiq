@@ -20,9 +20,6 @@ import net.sf.wubiq.enums.NotificationType;
 import net.sf.wubiq.exceptions.TimeoutException;
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.interfaces.IRemoteListener;
-import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
-import net.sf.wubiq.print.managers.IDirectConnectorQueue;
-import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
 import org.apache.commons.logging.Log;
@@ -258,19 +255,6 @@ public enum DirectConnectUtils {
 			}
 		}
 		return method;
-	}
-	
-	/**
-	 * Direct connector.
-	 * @param queueId Id of the queue.
-	 * @return Direct connector instance. Never null.
-	 */
-	public IDirectConnectorQueue directConnector(String queueId) {
-		IDirectConnectPrintJobManager manager = 
-				(IDirectConnectPrintJobManager) RemotePrintJobManagerFactory
-					.getRemotePrintJobManager(queueId);
-		IDirectConnectorQueue queue = manager.directConnector(queueId);
-		return queue;
 	}
 	
 	/**

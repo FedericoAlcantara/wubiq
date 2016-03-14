@@ -4,6 +4,8 @@
 package net.sf.wubiq.print.jobs;
 
 import java.awt.print.PageFormat;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -23,6 +25,7 @@ import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.RemotePrintJobManagerType;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PdfUtils;
@@ -164,6 +167,12 @@ public class RemotePrintJob implements IRemotePrintJob {
 			if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor) && !printSerialized) {
 				docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
 				printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)doc.getPrintData(), printService, printRequestAttributeSet);
+			}
+			if (printData instanceof InputStream) {
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				IOUtils.INSTANCE.copy((InputStream)printData, output);
+				output.flush();
+				printData = new ByteArrayInputStream(output.toByteArray());
 			}
 			manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid, RemotePrintJobManagerType.DIRECT_CONNECT);
 			manager.addRemotePrintJob(uuid, this);
