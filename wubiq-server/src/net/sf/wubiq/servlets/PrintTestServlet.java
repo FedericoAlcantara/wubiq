@@ -3,6 +3,8 @@
  */
 package net.sf.wubiq.servlets;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.util.Map;
 
@@ -12,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.utils.IOUtils;
 
 /**
  * Handles the communication between clients and server.
@@ -25,8 +28,11 @@ public class PrintTestServlet extends RemotePrintServlet {
 		if (ServletsStatus.isReady()) {
 			String uuid = request.getParameter(ParameterKeys.UUID);
 			String command = request.getParameter(ParameterKeys.COMMAND);
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			IOUtils.INSTANCE.copy(request.getInputStream(), output);
+			ByteArrayInputStream parametersInputStream = new ByteArrayInputStream(output.toByteArray());
 			if (command.equalsIgnoreCase(CommandKeys.PRINT_TEST_PAGE)) {
-				Map<String, Object> parameters = parseStreamParameters(request);
+				Map<String, Object> parameters = parseStreamParameters(request, parametersInputStream);
 				printTestPageCommand(uuid, request, response, parameters);
 			} else if (command.equalsIgnoreCase(CommandKeys.SHOW_PRINT_SERVICES)) {
 				showPrintServicesCommand("", request, response);

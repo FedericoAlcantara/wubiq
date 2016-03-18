@@ -28,7 +28,7 @@ public enum IOUtils {
 	 */
 	public void copy(InputStream input, OutputStream output) throws IOException {
 		try {
-			if (input instanceof ByteArrayInputStream || input.markSupported()) {
+			if (input instanceof ByteArrayInputStream) {
 				input.reset();
 			}
 			int readData = -1;

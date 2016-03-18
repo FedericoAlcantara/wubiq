@@ -90,7 +90,10 @@ public class RemotePrintServlet extends HttpServlet {
 	
 	public void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		if (ServletsStatus.isReady()) {
-			Map<String, Object> parameters = parseStreamParameters(request);
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			IOUtils.INSTANCE.copy(request.getInputStream(), output);
+			ByteArrayInputStream parametersInputStream = new ByteArrayInputStream(output.toByteArray());
+			Map<String, Object> parameters = parseStreamParameters(request, parametersInputStream);
 			String uuid = getParameter(request, parameters, ParameterKeys.UUID);
 			String command = getParameter(request, parameters, ParameterKeys.COMMAND);
 			boolean clientSupportsCompression = "true".equalsIgnoreCase(getParameter(request, parameters, ParameterKeys.CLIENT_SUPPORTS_COMPRESSION));
@@ -151,7 +154,7 @@ public class RemotePrintServlet extends HttpServlet {
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_IS_COMPRESSED)) {
 							serverSupportsCompressionCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
-							getPrintJobCommand(uuid, request, response, parameters);
+							getPrintJobCommand(uuid, request, response, parametersInputStream, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
 							closePrintJobCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.DIRECT_CONNECT)) {
@@ -631,11 +634,13 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	private void getPrintJobCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws ServletException, IOException {
+	private void getPrintJobCommand(String uuid, HttpServletRequest request, HttpServletResponse response,
+			ByteArrayInputStream parametersInputStream,
+			Map<String, Object> parameters) throws ServletException, IOException {
 		closeSession(request);
 		request.getSession();
 		String jobId = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
-		if (!forwarded(request, response, jobId)) {
+		if (!forwarded(request, response, parametersInputStream, jobId)) {
 			IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), true);
 			InputStream input = null;
 			// If it is remote we must convert pdf to image and then scale it to print size
@@ -1014,8 +1019,8 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	@SuppressWarnings({ "rawtypes", "unchecked" })
-	protected Map<String, Object> parseStreamParameters(HttpServletRequest request) throws ServletException, IOException{
-		InputStream parameterInputStream = request.getInputStream();
+	protected Map<String, Object> parseStreamParameters(HttpServletRequest request, ByteArrayInputStream parameterInputStream) throws ServletException, IOException{
+		parameterInputStream.reset();
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
 		Map parameters = null;
 		IOUtils.INSTANCE.copy(parameterInputStream, output);
@@ -1086,7 +1091,8 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param jobIdString Id of the job.
 	 * @return True if the print job was successfully forwarded.
 	 */
-	private boolean forwarded(HttpServletRequest request, HttpServletResponse response, String jobIdString) {
+	private boolean forwarded(HttpServletRequest request, HttpServletResponse response,
+			ByteArrayInputStream parametersInputStream, String jobIdString) {
 		boolean returnValue = false;
 		try {
 			long jobId = Long.parseLong(jobIdString);
@@ -1095,7 +1101,7 @@ public class RemotePrintServlet extends HttpServlet {
 					String ip = WubiqServerDao.INSTANCE.associatedServer(jobId);
 					if (!Is.emptyString(ip)) { // we have a server
 						String url = request.getScheme() + "://" + ip + ":" + request.getServerPort() + request.getRequestURI();
-						returnValue = forwardTo(request, response, url);
+						returnValue = forwardTo(request, response, parametersInputStream, url);
 					}
 				}	
 			}
@@ -1112,12 +1118,12 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param url Url to relay to.
 	 * @return True if the forwarding was successful.
 	 */
-	private boolean forwardTo(HttpServletRequest request, HttpServletResponse response, String url) {
+	private boolean forwardTo(HttpServletRequest request, HttpServletResponse response, ByteArrayInputStream parametersInputStream, String url) {
 		boolean returnValue = false;
 		HttpURLConnection connection = null; 
 		try {
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
-			IOUtils.INSTANCE.copy(request.getInputStream(), output);
+			IOUtils.INSTANCE.copy(parametersInputStream, output);
 			int length = output.toByteArray().length;
 			connection = (HttpURLConnection) new URL(url).openConnection();
 			connection.setDoOutput(true);
