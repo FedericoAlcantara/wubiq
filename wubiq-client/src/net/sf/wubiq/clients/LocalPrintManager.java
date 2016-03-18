@@ -81,7 +81,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			return;
 		}
 		String parameter = printJobPollString(jobId);
-		InputStream printData = null;
+		Object printData = null;
 		boolean closePrintJob = false;
 		try {
 			if (Is.emptyString(printServiceName)) { // this job is already closed
@@ -107,16 +107,20 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			doLog("Job(" + jobId + ") docAttributes:" + docAttributesData, 5);
 			String docFlavorData = askServer(CommandKeys.READ_DOC_FLAVOR, parameter);
 			doLog("Job(" + jobId + ") docFlavor:" + docFlavorData, 5);
+			
+			// We must read the input stream to set the type of connection at job level.
+			printData = pollServer(CommandKeys.READ_PRINT_JOB, parameter);
+			
 			String isDirectConnectData = "false";
 			try {
-				isDirectConnectData = askServer(CommandKeys.READ_IS_DIRECT_CONNECT);
+				isDirectConnectData = askServer(CommandKeys.READ_IS_DIRECT_CONNECT, parameter);
 			} catch (ConnectException e) {
 				isDirectConnectData = "false";
 			}
 			doLog("Job(" + jobId + ") isDirectConnect:" + isDirectConnectData, 5);
 			String isCompressionEnabledData = "false";
 			try {
-				isCompressionEnabledData = askServer(CommandKeys.READ_IS_COMPRESSED);
+				isCompressionEnabledData = askServer(CommandKeys.READ_IS_COMPRESSED, parameter);
 			} catch (ConnectException e) {
 				isCompressionEnabledData = "false";
 			}
@@ -147,12 +151,11 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			if (isDirectConnect) {
 				// Only same print service requests are put in queue
 				DirectPrintManager manager = null;
-				if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION))  ||
-						!isDirectConnect || forceSerialized) {
+				if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION)) 
+						|| forceSerialized) {
 					// This automatically starts the service.
-					printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 					ByteArrayOutputStream out = new ByteArrayOutputStream();
-					IOUtils.INSTANCE.copy(printData, out);
+					IOUtils.INSTANCE.copy((InputStream)printData, out);
 					printData = new ByteArrayInputStream(out.toByteArray());
 					manager = createDirectPrintManager(
 							jobId,
@@ -165,7 +168,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 							getDebugLevel(),
 							serverSupportsCompression,
 							docFlavor,
-							printData);
+							lastSessionId(),
+							(InputStream)printData);
 				} else {
 					if (serverSupportsCompression) {
 						directServerNotSerialized(jobId, DirectConnectCommand.START);
@@ -181,7 +185,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 							docAttributeSet,
 							isDebugMode(),
 							getDebugLevel(),
-							serverSupportsCompression);
+							serverSupportsCompression,
+							lastSessionId());
 				}
 				manager.setConnections(getConnections());
 				manager.setApplicationName(getApplicationName());
@@ -191,11 +196,10 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				runManager(manager, printServiceName, jobId);
 			} else {
 				// Single job, single print service other jobs or print service wait in queue.
-				printData = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 				ByteArrayOutputStream out = new ByteArrayOutputStream();
-				IOUtils.INSTANCE.copy(printData, out);
+				IOUtils.INSTANCE.copy((InputStream)printData, out);
 				printData = new ByteArrayInputStream(out.toByteArray());
-				print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, printData);
+				print(jobId, printService, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, docFlavor, (InputStream)printData);
 				closePrintJob = true;
 			}
 		} catch (ConnectException e) {
@@ -211,8 +215,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			LOG.error(e.getMessage(), e);
 		} finally {
 			try {
-				if (printData != null) {
-					printData.close();
+				if (printData != null && printData instanceof InputStream) {
+					((InputStream)printData).close();
 			}
 			} catch (IOException e) {
 				doLog(e.getMessage());
@@ -262,6 +266,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * @param serverSupportsCompression Indicates if the direct print manager supports compression.
 	 * @param docFlavor Doc flavor of the data to be printed.
 	 * @param printData Data to be printed.
+	 * @param jobSessionId Job session id.
 	 * @return A new instance of Direct print manager.
 	 * @throws IOException
 	 */
@@ -274,6 +279,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			int debugLevel,
 			boolean serverSupportsCompression,
 			DocFlavor docFlavor,
+			String jobSessionId,
 			InputStream printData) {
 		return new DirectPrintManager(
 				jobIdString,
@@ -286,6 +292,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				getDebugLevel(),
 				serverSupportsCompression,
 				docFlavor,
+				jobSessionId,
 				printData);
 	}
 	
@@ -308,7 +315,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			DocAttributeSet docAttributeSet,
 			boolean debugMode,
 			int debugLevel,
-			boolean serverSupportsCompression) {
+			boolean serverSupportsCompression, 
+			String jobSessionId) {
 		return new DirectPrintManager (
 				jobIdString,
 				printService,
@@ -318,7 +326,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				docAttributeSet,
 				isDebugMode(),
 				getDebugLevel(),
-				serverSupportsCompression);
+				serverSupportsCompression, 
+				jobSessionId);
 	}
 	
 	/**

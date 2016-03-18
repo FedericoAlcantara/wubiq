@@ -4,8 +4,6 @@
 package net.sf.wubiq.print.jobs;
 
 import java.awt.print.PageFormat;
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -22,10 +20,10 @@ import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
 import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
-import net.sf.wubiq.print.managers.RemotePrintJobManagerType;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import net.sf.wubiq.utils.IOUtils;
+import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PdfUtils;
@@ -50,11 +48,19 @@ public class RemotePrintJob implements IRemotePrintJob {
 	private RemotePrintJobStatus status;
 	private Object printData;
 	private PageFormat pageFormat;
+	private static Boolean persistenceActive;
+	private RemotePrintJobCommunicationType communicationType;
+	private RemotePrintJobCommunicationType appliedCommunicationType;
+	private InputStream transformed;
 	
 	public RemotePrintJob() {
 	}
 
 	public RemotePrintJob(PrintService printService) {
+		if (persistenceActive == null &&
+				printService instanceof RemotePrintService) {
+			persistenceActive = ((RemotePrintService)printService).getPersistenceActive();
+		}
 		this.printService = printService;
 		status = RemotePrintJobStatus.NOT_PRINTED;
 		Method getRemoteName;
@@ -136,7 +142,6 @@ public class RemotePrintJob implements IRemotePrintJob {
 			LOG.error(e.getMessage(), e);
 		}
 		if (!Is.emptyString(uuid)) {
-			boolean printRemotely = true;
 			boolean printSerialized = false;
 			if (isDirectCommunicationEnabled) {
 				if (!(doc.getDocFlavor() instanceof DocFlavor.SERVICE_FORMATTED)) {
@@ -145,16 +150,20 @@ public class RemotePrintJob implements IRemotePrintJob {
 					}
 				}
 			} else {
-				printRemotely = false;
+				printSerialized = true;
 			}
-			if (printRemotely) {
-				printRemote(uuid, doc, printRequestAttributeSet, printSerialized);
-			} else {
-				printSerialized(uuid, doc, printRequestAttributeSet);
-			}
+			printRemote(uuid, doc, printRequestAttributeSet, printSerialized);
 		}
 	}
 
+	/**
+	 * Prints using the modern communication.
+	 * @param uuid Unique print service id.
+	 * @param doc Simple doc object.
+	 * @param printRequestAttributeSet Print request attribute set.
+	 * @param printSerialized If true job is printed as serialized, not service formatted.
+	 * @throws PrintException
+	 */
 	private void printRemote(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet,
 			boolean printSerialized) 
 			throws PrintException {
@@ -164,17 +173,31 @@ public class RemotePrintJob implements IRemotePrintJob {
 			this.docAttributeSet = doc.getAttributes();
 			this.docFlavor = doc.getDocFlavor();
 			printData = doc.getPrintData();
-			if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor) && !printSerialized) {
-				docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
-				printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)doc.getPrintData(), printService, printRequestAttributeSet);
+			boolean formatted = false;
+			
+			if (manager == null) {
+				manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
 			}
-			if (printData instanceof InputStream) {
-				ByteArrayOutputStream output = new ByteArrayOutputStream();
-				IOUtils.INSTANCE.copy((InputStream)printData, output);
-				output.flush();
-				printData = new ByteArrayInputStream(output.toByteArray());
+			communicationType = RemotePrintJobCommunicationType.DIRECT_CONNECT;
+			appliedCommunicationType = null;
+
+			// DocFlavor.SERVICE_FORMATTED (Pageable and Printable) documents are not serializable.
+			if (docFlavor instanceof DocFlavor.SERVICE_FORMATTED) {
+				/* We must transform them if:
+				 * 1 - The client can not handle direct communication (old clients).
+				 * 2 - We have persistence active, that is that the print job MUST be serialized.
+				*/
+				if (printSerialized || persistenceActive) {
+					transformed = transformDocument(doc, printRequestAttributeSet);
+					communicationType = RemotePrintJobCommunicationType.SERIALIZED;
+				}				
 			}
-			manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid, RemotePrintJobManagerType.DIRECT_CONNECT);
+			if (!formatted) {
+				if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor) && !printSerialized) {
+					docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
+					printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)doc.getPrintData(), printService, printRequestAttributeSet);
+				}
+			}
 			manager.addRemotePrintJob(uuid, this);
 		} catch (IOException e) {
 			throw new PrintException(e);
@@ -185,33 +208,29 @@ public class RemotePrintJob implements IRemotePrintJob {
 	
 	
 	/**
-	 * Print serialized. This is for compatibility with OLD clients.
-	 * @param doc
-	 * @param printRequestAttributeSet
+	 * Serializes this object this element with the doc information.
+	 * @param doc Document to be printed
+	 * @param printRequestAttributeSet Request attribute.
 	 * @throws PrintException
 	 */
-	private void printSerialized(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet) 
+	public InputStream transformDocument(Doc doc, PrintRequestAttributeSet printRequestAttributeSet)
 			throws PrintException {
-		try {			
-			IRemotePrintJobManager manager = null;
-			this.printRequestAttributeSet = printRequestAttributeSet;
-			this.docAttributeSet = doc.getAttributes();
-			this.docFlavor = doc.getDocFlavor();
+		this.printRequestAttributeSet = printRequestAttributeSet;
+		this.docAttributeSet = doc.getAttributes();
+		this.docFlavor = doc.getDocFlavor();
+		InputStream transformed = null;
+		try {
 			printData = doc.getPrintData();
-			update(doc, printRequestAttributeSet);
-			manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid, RemotePrintJobManagerType.SERIALIZED);
-			manager.addRemotePrintJob(uuid, this);
-		} catch (SecurityException e) {
-			LOG.error(e.getMessage(), e);
-		} catch (IllegalArgumentException e) {
-			LOG.error(e.getMessage(), e);
+			transformed = PageableUtils.INSTANCE.getStreamForBytes(printData, getPageFormat(), printRequestAttributeSet);
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
 		}
+		return transformed;
 	}
-	
+
 	/**
 	 * Updates this element with the doc information.
+	 * @deprecated Use transformDocument instead.
 	 * @param doc Document to be printed
 	 * @param printRequestAttributeSet Request attribute.
 	 * @throws PrintException
@@ -248,6 +267,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	
 	/**
 	 * Sets a new PrintJob attributeSet.
+	 * @deprecated Use setPrintJobAttributeSet instead.
 	 * @param printJobAttributeSet
 	 */
 	public void setAttributes(PrintJobAttributeSet printJobAttributeSet) {
@@ -270,7 +290,6 @@ public class RemotePrintJob implements IRemotePrintJob {
 	public Object getPrintDataObject() {
 		return printData;
 	}
-	
 
 	/**
 	 * Sets the document flavor.
@@ -337,9 +356,78 @@ public class RemotePrintJob implements IRemotePrintJob {
 	}
 
 	/**
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#setDocAttributeSet(javax.print.attribute.DocAttributeSet)
+	 */
+	@Override
+	public void setDocAttributeSet(DocAttributeSet docAttributeSet) {
+		this.docAttributeSet = docAttributeSet;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#setPrintRequestAttributeSet(javax.print.attribute.PrintRequestAttributeSet)
+	 */
+	@Override
+	public void setPrintRequestAttributeSet(
+			PrintRequestAttributeSet printRequestAttributeSet) {
+		this.printRequestAttributeSet = printRequestAttributeSet;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#setPrintJobAttributeSet(javax.print.attribute.PrintJobAttributeSet)
+	 */
+	@Override
+	public void setPrintJobAttributeSet(
+			PrintJobAttributeSet printJobAttributeSet) {
+		this.printJobAttributeSet = printJobAttributeSet;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#setPrintDataObject(java.lang.Object)
+	 */
+	@Override
+	public void setPrintDataObject(Object printDataObject) {
+		this.printData = printDataObject;
+	}
+	
+	/**
 	 * @param pageFormat the pageFormat to set
 	 */
 	public void setPageFormat(PageFormat pageFormat) {
 		this.pageFormat = pageFormat;
+	}
+
+	@Override
+	public InputStream getTransformed() {
+		return transformed;
+	}
+	/**
+	 * @return the communicationType
+	 */
+	@Override
+	public RemotePrintJobCommunicationType getCommunicationType() {
+		return communicationType;
+	}
+
+	/**
+	 * @return the appliedCommunicationType
+	 */
+	@Override
+	public RemotePrintJobCommunicationType getAppliedCommunicationType() {
+		return appliedCommunicationType;
+	}
+
+	/**
+	 * @param appliedCommunicationType the appliedCommunicationType to set
+	 */
+	@Override
+	public void setAppliedCommunicationType(RemotePrintJobCommunicationType appliedCommunicationType) {
+		this.appliedCommunicationType = appliedCommunicationType;
+	}
+
+	/**
+	 * @return the persistenceActive
+	 */
+	public static boolean getPersistenceActive() {
+		return persistenceActive;
 	}
 }

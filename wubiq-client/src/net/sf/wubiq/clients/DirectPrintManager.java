@@ -56,6 +56,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	private boolean printSerialized;
 	private Map<UUID, Object> registeredObjects;
 	private LocalPrintManager localPrintManager;
+	private String jobSessionId;
 	
 	
 	protected DirectPrintManager (String jobIdString, PrintService printService,
@@ -67,9 +68,10 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			int debugLevel,
 			boolean serverSupportsCompression,
 			DocFlavor docFlavor,
+			String jobSessionId,
 			InputStream printData) {
 		this(jobIdString, printService, printServiceName, printRequestAttributeSet, printJobAttributeSet, docAttributeSet, 
-				debugMode, debugLevel, serverSupportsCompression);
+				debugMode, debugLevel, serverSupportsCompression, jobSessionId);
 		this.docFlavor = docFlavor;
 		this.printData = printData;
 		this.printSerialized = true;
@@ -94,7 +96,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 			DocAttributeSet docAttributeSet,
 			boolean debugMode,
 			int debugLevel,
-			boolean serverSupportsCompression){
+			boolean serverSupportsCompression,
+			String jobSessionId){
 		this.jobIdString = jobIdString;
 		this.jobId = Long.parseLong(jobIdString);
 		this.printService = printService;
@@ -105,6 +108,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 		setDebugMode(debugMode);
 		setDebugLevel(debugLevel);
 		this.serverSupportsCompression = serverSupportsCompression;
+		this.jobSessionId = jobSessionId;
 	}
 		
 	/**
@@ -447,6 +451,15 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 
 	@Override
 	protected void registerPrintServices() throws ConnectException {
+	}
+	
+	@Override
+	protected String getSessionId() {
+		return jobSessionId;
+	}
+	
+	protected void setLastSessionId(String lastSessionId) {
+		this.jobSessionId = lastSessionId;
 	}
 	
 	@Override

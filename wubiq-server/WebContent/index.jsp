@@ -1,3 +1,7 @@
+<%@page import="java.util.TreeMap"%>
+<%@page import="java.util.List"%>
+<%@page import="java.util.Map"%>
+<%@page import="net.sf.wubiq.servlets.ServletsStatus"%>
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 
 <%@ page import="java.text.DateFormat"%>
@@ -28,9 +32,9 @@
 <%@ page import="net.sf.wubiq.utils.WebUtils"%>
 
 <%! 
-	private Collection<String[]> getPrintServices(String uuid) {
+	private Collection<String[]> getPrintServices(String uuid, PrintService[] printServices) {
 		Collection<String[]> returnValue = new ArrayList<String[]>();
-		for (PrintService printService : PrintServiceUtils.getPrintServices()) {
+		for (PrintService printService : printServices) {
 			String[] printServiceData = new String[5];
 			RemotePrintService remotePrintService = null;
 			boolean remote = PrintServiceUtils.isRemotePrintService(printService);
@@ -65,6 +69,7 @@
 	
 %>
 <%
+PrintService[] printServices = PrintServiceUtils.getPrintServices();
 String userId = (String)session.getAttribute(WebKeys.SERVER_USER_ID);
 boolean logged =  !Is.emptyString(userId);
 String filter = (String)session.getAttribute(WebKeys.SERVER_FILTER);
@@ -74,6 +79,7 @@ if (filter == null) {
 	filter = filter.toLowerCase();
 }
 String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.getLocale() == null ? "Espa&#241;ol" : "English";
+String ready = ServletsStatus.isReady() ? "" : "paused" ;
 %>  
 <!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <html>
@@ -93,8 +99,8 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 		</script>
 	</head>
 	<body>
-	<div align="center">
-		<table class="wubiq_header">
+	<div align="center" >
+		<table class="wubiq_header <%=ready%>">
 			<tr>
 				<td align="center" colspan="3" ><%=ServerLabels.get("server.version", Labels.VERSION)%>
 				</td>
@@ -167,8 +173,11 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 					</form>
 				</td>
 			</tr>
-			<%if (PersistenceManager.isPersistenceEnabled()) {%>
+			<%if (logged && PersistenceManager.isPersistenceEnabled()) {%>
 			<tr>
+				<td colspan="3">
+					<%=ServerLabels.get("server.info_running_on_persistence") %>
+				</td>
 			</tr>
 			<%} %>			
 		</table>
@@ -189,6 +198,7 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 			String clientVersion = "";
 			String disconnection = "";
 			String failures = "";
+			String printTestButtonStyle = "";
 			if (remoteClient != null) {
 				clientVersion = " (" + remoteClient.getClientVersion() + ") " 
 						+ " - " + df.format(manager.remoteLastAccessed(uuid));
@@ -196,6 +206,10 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 								? ServerLabels.get("server.client_disconnected")
 								: "");
 				failures = "";
+				
+				printTestButtonStyle = !manager.isRemoteActive(uuid)
+						? "pointer-events:none; cursor:default; text-decoration:none; color:grey;" : "text-decoration:none";
+				
 			}
 			if (!Is.emptyString(filter)) {
 				if (!uuid.toLowerCase().startsWith(filter) || remoteClient == null) {
@@ -292,7 +306,7 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 			
 			<%
 			int serviceCount = 0;
-			for (String[] serviceData : getPrintServices(uuid)) {
+			for (String[] serviceData : getPrintServices(uuid, printServices)) {
 				if (serviceData[0] == null) {
 					continue;
 				}
@@ -335,8 +349,8 @@ String localeLabel = Locale.US.equals(ServerLabels.getLocale()) || ServerLabels.
 								<td class="wubiq_sd_table_td_name"><%=serviceData[0]%></td>
 								<td class="wubiq_sd_table_td_remote"><%=serviceData[1]%></td>
 								<td class="wubiq_sd_table_td_actions">
-									<a href="<%=printTestPage.toString()%>">
-										<input style="width:100%" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
+									<a href="<%=printTestPage.toString()%>" style="<%=printTestButtonStyle%>">
+										<input style="width:100%; <%=printTestButtonStyle%>" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
 											id='wubiq_testpage_button_<%=serviceCount++%>' />
 									</a>
 								</td>

@@ -7,9 +7,9 @@
              version="2.0">
              
     <persistence-unit name="default">
-    	<non-jta-data-source>java:comp/env/jdbc/wubiqDS</non-jta-data-source>
+    	<non-jta-data-source>java:/comp/env/jdbc/wubiqDS</non-jta-data-source>
     	<properties>
-    	    <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQL9Dialect" />
+    	    <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect" />
          	<property name="hibernate.show_sql" value="false" />
         </properties>
     </persistence-unit>    

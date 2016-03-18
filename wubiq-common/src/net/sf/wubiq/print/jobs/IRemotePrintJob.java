@@ -10,7 +10,10 @@ import java.io.InputStream;
 import javax.print.DocFlavor;
 import javax.print.DocPrintJob;
 import javax.print.attribute.DocAttributeSet;
+import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+
+import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 
 /**
  * Represents the contract of a remote print job
@@ -28,7 +31,13 @@ public interface IRemotePrintJob extends DocPrintJob {
 	 * 
 	 * @return The original doc flavor for the print data.
 	 */
-	DocFlavor getDocFlavor() ;
+	DocFlavor getDocFlavor();
+	
+	/**
+	 * Sets a new doc flavor.
+	 * @param docFlavor
+	 */
+	void setDocFlavor(DocFlavor docFlavor);
 	
 	/**
 	 * 
@@ -37,9 +46,33 @@ public interface IRemotePrintJob extends DocPrintJob {
 	DocAttributeSet getDocAttributeSet();
 	
 	/**
+	 * Sets a new doc attribute set.
+	 * @param docAttributeSet
+	 */
+	void setDocAttributeSet(DocAttributeSet docAttributeSet);
+	
+	/**
 	 * @return The original print request attribute set for the print action.
 	 */
 	PrintRequestAttributeSet getPrintRequestAttributeSet();
+	
+	/**
+	 * Sets a new print request attribute set.
+	 * @param attributeSet
+	 */
+	void setPrintRequestAttributeSet(PrintRequestAttributeSet printRequestAttributeSet);
+	
+	
+	/**
+	 * @return Current print job attribute set.
+	 */
+	PrintJobAttributeSet getAttributes();
+	
+	/**
+	 * Sets a new print job attribute set.
+	 * @param printJobAttributeSet
+	 */
+	void setPrintJobAttributeSet(PrintJobAttributeSet printJobAttributeSet);
 	
 	/**
 	 * 
@@ -55,6 +88,18 @@ public interface IRemotePrintJob extends DocPrintJob {
 	Object getPrintDataObject();
 	
 	/**
+	 * Sets a new print data object.
+	 * @param printDataObject Print data object to set.
+	 */
+	void setPrintDataObject(Object printDataObject);
+	
+	/**
+	 * Gets a transformed (normally a pageable or printable serialized) version of print data object.
+	 * @return Transformed as input stream.
+	 */
+	InputStream getTransformed();
+	
+	/**
 	 * Sets a new status for the print job
 	 * @param status the status to set.
 	 */
@@ -65,4 +110,20 @@ public interface IRemotePrintJob extends DocPrintJob {
 	 * @return PageFormat instance.
 	 */
 	PageFormat getPageFormat();
+	
+	/**
+	 * @return Type of expected communication for the print job.
+	 */
+	RemotePrintJobCommunicationType getCommunicationType();
+
+	/**
+	 * @return Type of realized communication for the print job.
+	 */
+	RemotePrintJobCommunicationType getAppliedCommunicationType();
+
+	/**
+	 * Sets the type of communication applied.
+	 * @param appliedCommunicationType New communication applied.
+	 */
+	void setAppliedCommunicationType(RemotePrintJobCommunicationType appliedCommunicationType);
 }

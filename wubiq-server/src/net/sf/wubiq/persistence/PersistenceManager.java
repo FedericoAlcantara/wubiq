@@ -9,12 +9,13 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.sql.Connection;
 import java.sql.SQLException;
-import java.util.EnumSet;
+import java.util.Properties;
 
 import javax.naming.Context;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
 import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
 import javax.persistence.EntityTransaction;
 import javax.persistence.Persistence;
 import javax.sql.DataSource;
@@ -22,17 +23,13 @@ import javax.sql.DataSource;
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.data.WubiqPrintJob;
 import net.sf.wubiq.data.WubiqPrintService;
+import net.sf.wubiq.data.WubiqServer;
 import net.sf.wubiq.utils.ServerLabels;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.hibernate.boot.MetadataBuilder;
-import org.hibernate.boot.MetadataSources;
-import org.hibernate.boot.registry.StandardServiceRegistryBuilder;
-import org.hibernate.cfg.AvailableSettings;
+import org.hibernate.cfg.Configuration;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
-import org.hibernate.tool.hbm2ddl.SchemaExport.Action;
-import org.hibernate.tool.schema.TargetType;
 
 /**
  * Handles all persistence related cases.
@@ -118,6 +115,10 @@ public final class PersistenceManager {
 	 */
 	public static void rollback() {
 		EntityManager m = entityManager.get();
+		if (m == null) {
+			return;
+		}
+
 		if (m.isOpen()) {
 			EntityTransaction t = (EntityTransaction) m.getTransaction();
 			try {
@@ -166,6 +167,48 @@ public final class PersistenceManager {
 	 */
 	public static void createSchemas() {
 		try {
+			Properties properties = new Properties();
+			properties.put("hibernate.default_schema", "");
+			properties.put("hibernate.dialect", dialect);
+			EntityManagerFactory emf = Persistence.createEntityManagerFactory("default", properties);
+			emf.createEntityManager();
+			File tempFile = File.createTempFile("wubiq_server", ".sql");
+			Configuration cfg = new Configuration();
+			cfg.addAnnotatedClass(WubiqPrintJob.class);
+			cfg.addAnnotatedClass(RemoteClient.class);
+			cfg.addAnnotatedClass(WubiqPrintService.class);
+			cfg.addAnnotatedClass(WubiqServer.class);
+			cfg.setProperty("hibernate.dialect", dialect);
+			
+			SchemaExport export = new SchemaExport(cfg);
+			export.setOutputFile(tempFile.getAbsolutePath());
+			export.setFormat(false);
+			export.execute(true, false, false, true);
+
+			if (tempFile.exists()) {
+				String line = null;
+				BufferedReader reader = new BufferedReader(new FileReader(tempFile));
+				while ((line = reader.readLine()) != null) {
+					try {
+						PersistenceManager.em().createNativeQuery(line).executeUpdate();
+						PersistenceManager.commit();
+					} catch (Exception e) {
+						PersistenceManager.rollback();
+					}
+				}
+				reader.close();
+			}
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Creates the schema.
+	 */
+	public static void createSchemasHibernate5() {
+		/*
+		try {
 			File tempFile = File.createTempFile("wubiq_server", ".sql");
 			MetadataSources metadataSources = new MetadataSources(
 				    new StandardServiceRegistryBuilder()
@@ -197,5 +240,7 @@ public final class PersistenceManager {
 		} catch (IOException e) {
 			throw new RuntimeException(e);
 		}
+		*/
 	}
+
 }

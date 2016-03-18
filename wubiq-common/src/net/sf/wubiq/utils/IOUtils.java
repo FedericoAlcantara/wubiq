@@ -1,5 +1,6 @@
 package net.sf.wubiq.utils;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -20,13 +21,16 @@ public enum IOUtils {
 	private final Log LOG = LogFactory.getLog(IOUtils.class);
 	
 	/**
-	 * Copy from input stream to output stream. Doesn't close any of the streams.
+	 * Copy from input stream to output stream. Closes both streams.
 	 * @param input Input stream, must be opened and in the starting position.
 	 * @param output Output stream, must be opened.
 	 * @throws IOException If input is not readable or input is not writable.
 	 */
 	public void copy(InputStream input, OutputStream output) throws IOException {
 		try {
+			if (input instanceof ByteArrayInputStream || input.markSupported()) {
+				input.reset();
+			}
 			int readData = -1;
 			byte[] readBuffer = new byte[65535];
 			while ((readData = input.read(readBuffer)) > -1) {
@@ -52,7 +56,7 @@ public enum IOUtils {
 	}
 
 	/**
-	 * Copy from input stream to output stream. Doesn't close any of the streams.
+	 * Copy from input stream to output stream. Closes both streams.
 	 * @param input Input stream, must be opened and in the starting position.
 	 * @param output Output stream, must be opened.
 	 * @throws IOException If input is not readable or input is not writable.

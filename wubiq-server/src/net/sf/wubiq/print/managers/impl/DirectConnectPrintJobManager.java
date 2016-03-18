@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.print.PrintService;
 
 import net.sf.wubiq.dao.WubiqPrintJobDao;
+import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
@@ -36,8 +37,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String, net.sf.wubiq.print.managers.RemotePrintJobManagerType)}
 	 * method instead.
 	 */
-	protected DirectConnectPrintJobManager(){
-		
+	protected DirectConnectPrintJobManager() {
 	}
 	
 	/**
@@ -48,6 +48,17 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		persistenceActive = PersistenceManager.isPersistenceEnabled();
 		connectors = new HashMap<String, IDirectConnectorQueue>();
 		associatedQueue = new HashMap<Long, String>();
+	}
+
+	/**
+	 * @return the directConnect
+	 */
+	public boolean isDirectConnect(long jobId) {
+		IRemotePrintJob printJob = getRemotePrintJob(jobId, false);
+		if (printJob.getAppliedCommunicationType() == null) {
+			printJob.setAppliedCommunicationType(printJob.getCommunicationType());
+		}
+		return RemotePrintJobCommunicationType.DIRECT_CONNECT.equals(printJob.getAppliedCommunicationType());
 	}
 
 	/**
@@ -93,6 +104,18 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	}
 
 	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectPrintJobManager#hasLocalPrintJob(java.lang.Long)
+	 */
+	@Override
+	public boolean hasLocalPrintJob(Long jobId) {
+		IDirectConnectorQueue queue = associatedQueue(jobId);
+		if (queue != null) {
+			return queue.hasLocalPrintJob(jobId);
+		}
+		return false;
+	}
+	
+	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#getRemotePrintJob(long, boolean)
 	 */
 	@Override
@@ -103,7 +126,19 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		if (returnValue == null) {
 			queue.removePrintJob(jobId);
 		} else {
-			if (queue != null && fullPrintJob) {
+			if (fullPrintJob) {
+				// If we haven't tell the client the type of communication we used for the print job data transfer.
+				if (returnValue.getAppliedCommunicationType() == null) {
+					/* We will change it to the most efficient DIRECT_CONNECT 
+					 * That is determined by checking if the server queue has a local copy of the remote print job.
+					 */
+					if (RemotePrintJobCommunicationType.SERIALIZED.equals(returnValue.getCommunicationType())
+							&& queue.hasLocalPrintJob(jobId)) {
+						returnValue.setAppliedCommunicationType(RemotePrintJobCommunicationType.DIRECT_CONNECT);
+					} else {
+						returnValue.setAppliedCommunicationType(returnValue.getCommunicationType());
+					}
+				}
 				PrintService printService = returnValue.getPrintService();
 				if (printService != null) {
 					if (printService instanceof INotifiablePrintService) {

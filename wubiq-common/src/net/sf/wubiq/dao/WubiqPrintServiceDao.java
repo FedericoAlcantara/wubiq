@@ -15,7 +15,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import javax.print.DocFlavor;
@@ -87,7 +86,6 @@ public enum WubiqPrintServiceDao {
 	 */
 	public Collection<RemotePrintService> remoteAllPrintServices() {
 		Collection<RemotePrintService> returnValue = new ArrayList<RemotePrintService>();
-		List<String[]> toBeRemoved = new ArrayList<String[]>();
 		Connection connection = null;
 		PreparedStatement stmt = null;
 		ResultSet rs = null;
@@ -95,41 +93,28 @@ public enum WubiqPrintServiceDao {
 		try {
 			connection = CommonPersistenceManager.getConnection();
 			autoCommitState = CommonPersistenceManager.turnOffAutoCommit(connection);
-			do {
-				toBeRemoved.clear();
-				try {
-					stmt = connection.prepareStatement("SELECT * FROM wubiq_print_service"
-							+ " ORDER BY "
-							+ "uuid, name",
-							ResultSet.TYPE_SCROLL_INSENSITIVE,
-							ResultSet.CONCUR_READ_ONLY);
-					rs = stmt.executeQuery();
-					while(rs.next()) {
-						RemotePrintService remote = null;
-						try {
-							remote = deserialize(rs.getBytes("service"));
-							if (remote != null) {
-								returnValue.add(remote);
-							}
-						} catch (Exception e) {
-							String[] serviceToBeRemoved = new String[]{rs.getString("uuid"), rs.getString("name")};
-							//toBeRemoved.add(serviceToBeRemoved);
-							LOG.error(ExceptionUtils.getMessage(e));
+			try {
+				stmt = connection.prepareStatement("SELECT * FROM wubiq_print_service"
+						+ " ORDER BY "
+						+ "uuid, name",
+						ResultSet.TYPE_SCROLL_INSENSITIVE,
+						ResultSet.CONCUR_READ_ONLY);
+				rs = stmt.executeQuery();
+				while(rs.next()) {
+					RemotePrintService remote = null;
+					try {
+						remote = deserialize(rs.getBytes("service"));
+						if (remote != null) {
+							returnValue.add(remote);
 						}
+					} catch (Exception e) {
+						LOG.error(ExceptionUtils.getMessage(e));
 					}
-					CommonPersistenceManager.commit(connection);
-					/*
-					if (!toBeRemoved.isEmpty()) {
-						for (String[] serviceToBeRemoved : toBeRemoved) {
-							removePrintService(serviceToBeRemoved[0], serviceToBeRemoved[1]);
-						}
-						returnValue.clear();
-					}
-					*/
-				} finally {
-					CommonPersistenceManager.close(rs, stmt, null);
 				}
-			} while (!toBeRemoved.isEmpty());
+				CommonPersistenceManager.commit(connection);
+			} finally {
+				CommonPersistenceManager.close(rs, stmt, null);
+			}
 		} catch (Exception e) {
 			LOG.error(ExceptionUtils.getMessage(e), e);
 			throw new RuntimeException(e);
@@ -257,6 +242,8 @@ public enum WubiqPrintServiceDao {
 			stmt = connection.prepareStatement("SELECT count(name) FROM wubiq_print_service"
 					+ " WHERE "
 					+ "uuid=?"
+					+ " AND "
+					+ "mobile=true"
 					+ " GROUP BY "
 					+ "uuid",
 					ResultSet.TYPE_SCROLL_INSENSITIVE,

@@ -22,6 +22,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
@@ -59,7 +60,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private boolean killManager;
 	private boolean refreshServices;
 	private boolean debugMode;
-	private long checkPendingJobInterval = 1000; // every 1 seconds
+	private long checkPendingJobInterval = 5000; // every 5 seconds
 	private long printingJobInterval = 2000; // 2 second
 	private int connectionErrorRetries = -1; // never end
 	private int connectionErrorCount = 0;
@@ -68,7 +69,8 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	private Set<URL> urls;
 	protected URL preferredURL;
 	private boolean connected = false;
-	
+	private String sessionId;
+	private String lastSessionId;
 			
 	/**
 	 * Level of detail for debug output. between 0 and 5.
@@ -428,6 +430,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		Object content = null;
 		BufferedReader reader = null;
 		List<URL> actualURLs = new ArrayList<URL>();
+		resetLastSessionId();
 		if (preferredURL != null) {
 			actualURLs.add(preferredURL);
 		} else {
@@ -447,9 +450,37 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					// Using content-type will force the use of input stream and that is not managed by older servers.
 					//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
 					connection.setRequestProperty("Content-Length", "" + length);
+					if (!Is.emptyString(getSessionId())) {
+						connection.setRequestProperty("Cookie", "JSESSIONID=" + sessionId);
+					}
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
 					content = connection.getContent();
+					for (Entry<String, List<String>> entry : connection.getHeaderFields().entrySet()) {
+						if (entry.getKey() != null && entry.getValue() != null) {
+							if (entry.getKey().equalsIgnoreCase("Set-Cookie")) {
+								for (String line : entry.getValue()) {
+									if (line.toLowerCase().contains("jsessionid")) {
+										String[] values = line.split(";");
+										String newSession = null;
+										String path = null;
+										for (String value : values) {
+											if (value.toLowerCase().contains("jsessionid")) {
+												newSession = value.trim().split("=")[1];
+											} else if (value.toLowerCase().contains("path")) {
+												path = value.trim().split("=")[1];
+											}
+										}
+										if (path != null && newSession != null
+												&& path.equals("/" + getApplicationName())) {
+											setLastSessionId(newSession);
+										}
+									}
+								}
+										
+							}
+						}
+					}
 					if (!connected) {
 						doLog("\nConnected! to:" + webUrl + "\n", 0);
 						connected = true;
@@ -904,5 +935,48 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 */
 	public void setConnectionErrorCount(int connectionErrorCount) {
 		this.connectionErrorCount = connectionErrorCount;
+	}
+	
+	/**
+	 * Session id to be used in the next call.
+	 * @return Session id to use.
+	 */
+	protected String getSessionId() {
+		return sessionId;
+	}
+	
+	/**
+	 * Sets the new session id for the next connection attempt.
+	 * @param sessionId new session id.
+	 */
+	protected void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
+	}
+	
+	/**
+	 * Reads the last session id.
+	 * @return Last session id. Might be null.
+	 */
+	protected String lastSessionId() {
+		return lastSessionId;
+	}
+	
+	/**
+	 * Stores the last session id.
+	 * @param lastSessionId Last session id to store.
+	 */
+	protected void setLastSessionId(String lastSessionId) {
+		this.lastSessionId = lastSessionId;
+		setSessionId(lastSessionId);
+	}
+	
+	/**
+	 * Resets the last session id to null.
+	 * @return Previous value in last session id.
+	 */
+	protected String resetLastSessionId() {
+		String returnValue = this.lastSessionId;
+		this.lastSessionId = null;
+		return returnValue;
 	}
 }

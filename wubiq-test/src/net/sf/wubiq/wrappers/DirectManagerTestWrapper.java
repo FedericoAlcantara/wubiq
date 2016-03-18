@@ -36,9 +36,10 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet,
 			boolean debugMode, int debugLevel,
-			boolean serverSupportsCompressed) {
+			boolean serverSupportsCompressed,
+			String sessionId) {
 		super(jobIdString, printService, printServiceName, printRequestAttributeSet,
-				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed);
+				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed, sessionId);
 		this.testManager = testManager;
 		this.testManager.getTestData().setDirectManagerCalled(true);
 	}
@@ -53,10 +54,11 @@ public class DirectManagerTestWrapper extends DirectPrintManager implements Seri
 			boolean debugMode, int debugLevel,
 			boolean serverSupportsCompressed,
 			DocFlavor docFlavor,
+			String sessionId,
 			InputStream printData) {
 		super(jobIdString, printService, printServiceName, printRequestAttributeSet,
 				printJobAttributeSet, docAttributeSet, debugMode, debugLevel, serverSupportsCompressed,
-				docFlavor, printData);
+				docFlavor, sessionId, printData);
 		this.testManager = testManager;
 		this.testManager.getTestData().setDirectManagerCalled(true);
 	}

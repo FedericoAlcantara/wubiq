@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.data;
 
+import java.io.Serializable;
 import java.util.Date;
 
 import javax.persistence.Column;
@@ -15,6 +16,8 @@ import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
+import net.sf.wubiq.enums.PrintJobDataType;
+import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 import org.hibernate.annotations.Type;
@@ -25,7 +28,9 @@ import org.hibernate.annotations.Type;
  */
 @Entity
 @Table(name = "wubiq_print_job")
-public class WubiqPrintJob {
+public class WubiqPrintJob implements Serializable {
+	private static final long serialVersionUID = 1L;
+
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Id
 	private long printJobId;
@@ -50,7 +55,13 @@ public class WubiqPrintJob {
 	
 	@Column(length = 100)
 	private String docFlavor;
+	
+	private RemotePrintJobCommunicationType communicationType;
+	
+	private RemotePrintJobCommunicationType appliedCommunicationType;
 
+	private PrintJobDataType printJobDataType;
+	
 	private byte[] printData;
 	
 	private RemotePrintJobStatus status;
@@ -168,6 +179,48 @@ public class WubiqPrintJob {
 	 */
 	public void setQueueId(String queueId) {
 		this.queueId = queueId;
+	}
+
+	/**
+	 * @return the communicationType
+	 */
+	public RemotePrintJobCommunicationType getCommunicationType() {
+		return communicationType;
+	}
+
+	/**
+	 * @param communicationType the communicationType to set
+	 */
+	public void setCommunicationType(RemotePrintJobCommunicationType communicationType) {
+		this.communicationType = communicationType;
+	}
+
+	/**
+	 * @return the appliedCommunicationType
+	 */
+	public RemotePrintJobCommunicationType getAppliedCommunicationType() {
+		return appliedCommunicationType;
+	}
+
+	/**
+	 * @param appliedCommunicationType the appliedCommunicationType to set
+	 */
+	public void setAppliedCommunicationType(RemotePrintJobCommunicationType appliedCommunicationType) {
+		this.appliedCommunicationType = appliedCommunicationType;
+	}
+
+	/**
+	 * @return the printJobDataType
+	 */
+	public PrintJobDataType getPrintJobDataType() {
+		return printJobDataType;
+	}
+
+	/**
+	 * @param printJobDataType the printJobDataType to set
+	 */
+	public void setPrintJobDataType(PrintJobDataType printJobDataType) {
+		this.printJobDataType = printJobDataType;
 	}
 
 	/**

@@ -24,5 +24,20 @@ public interface IDirectConnectPrintJobManager extends IRemotePrintJobManager {
 	 * @return Queue state.
 	 */
 	boolean isPrinting(PrintService printService);
+	
+	/**
+	 * Returns current direct connect state.
+	 * @param jobId id of the job.
+	 * @return State of direct connection.
+	 */
+	boolean isDirectConnect(long jobId);
+	
+	/**
+	 * Checks if the manager has a local (in memory) copy of the print job in one of its queue.
+	 * @param jobId Job Id to check.
+	 * @return true if the manager has a local copy.
+	 */
+	boolean hasLocalPrintJob(Long jobId);
+
 
 }

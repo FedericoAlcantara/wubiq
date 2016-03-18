@@ -20,6 +20,7 @@ import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
+import net.sf.wubiq.utils.PrintServiceUtils;
 
 /**
  * Manages remote print clients. Each instance of RemoteClient represents a connected client.
@@ -32,7 +33,8 @@ public class RemoteClientManager implements Serializable {
 	private transient Map<String, RemoteClient> remotes;
 	private transient Map<String, Date> remotesAccessedTimes;
 	
-	private static RemotePrintServiceLookup remoteLookup;
+	private static boolean remoteLookupInstalled;
+
 	private static transient Boolean persistenceActive = null;
 	
 	public RemoteClientManager() {
@@ -151,6 +153,9 @@ public class RemoteClientManager implements Serializable {
 	 */
 	public void registerPrintService(String uuid, RemotePrintService printService) {
 		validateRemoteLookup();
+		if (printService.getPersistenceActive() == null) {
+			printService.setPersistenceActive(persistenceActive);
+		}
 		RemotePrintServiceLookup.registerRemoteService(printService);
 	}
 	
@@ -159,12 +164,20 @@ public class RemoteClientManager implements Serializable {
 	 * and registered to the print service lookup.
 	 * @return The found or newly created remote print service lookup. 
 	 */
-	private RemotePrintServiceLookup validateRemoteLookup() {
-		if (remoteLookup == null) {
-			remoteLookup = new RemotePrintServiceLookup(persistenceActive);
-			PrintServiceLookup.registerServiceProvider(remoteLookup);
+	private void validateRemoteLookup() {
+		if (!remoteLookupInstalled) {
+			boolean doInstall = true;
+			for (PrintServiceLookup provider : PrintServiceUtils.getServiceProviders()) {
+				if (provider instanceof RemotePrintServiceLookup) {
+					doInstall = false;
+					break;
+				}
+			}
+			if (doInstall) {
+				PrintServiceLookup.registerServiceProvider(new RemotePrintServiceLookup(persistenceActive));
+			}
+			remoteLookupInstalled = true;
 		}
-		return remoteLookup;
 	}
 	
 	/**

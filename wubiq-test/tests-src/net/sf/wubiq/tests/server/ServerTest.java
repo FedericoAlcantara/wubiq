@@ -208,6 +208,7 @@ public class ServerTest extends WubiqBaseTest {
 	}	
 
 	public void testRemotePrintTestPageNonPageableOldRouting() throws Exception {
+		Thread.sleep(5000);
 		manager.getTestData().setForceSerializedBySystem(true);
 		remotePrintTestPageNonPageable(true);
 	}	
@@ -266,7 +267,7 @@ public class ServerTest extends WubiqBaseTest {
 				Thread.sleep(1000);
 			}
 			assertTrue("Must be local manager", manager.getTestData().isLocalManagerCalled());
-			assertTrue("Must be a pdf flavor", DocFlavor.INPUT_STREAM.PDF.equals(manager.getTestData().getLocalDocFlavor()));
+			assertTrue("Must be a pdf flavor: " + manager.getTestData().getLocalDocFlavor(), DocFlavor.INPUT_STREAM.PDF.equals(manager.getTestData().getLocalDocFlavor()));
 		} else {
 			while (!manager.getTestData().isDirectManagerCalled() &&
 					timeout-- > 0) {

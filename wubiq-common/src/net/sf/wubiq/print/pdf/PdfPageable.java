@@ -28,6 +28,10 @@ public class PdfPageable implements Pageable {
 	PDDocument document;
 	PDPageable pageable;
 	
+	public PdfPageable() {
+		
+	}
+	
 	/**
 	 * Creates a PDFPageable using default PrinterJob.
 	 * @param document Document to encapsulate.

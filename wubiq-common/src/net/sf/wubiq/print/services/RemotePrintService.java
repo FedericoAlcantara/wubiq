@@ -67,6 +67,7 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	private Set<String> groups;
 	private boolean printing = false;
 	private long currentJobId = 0l;
+	private static Boolean persistenceActive;
 	
 	public RemotePrintService(OutputStream outputStream) {
 		super(outputStream);
@@ -482,28 +483,17 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	}
 	
 	/**
-	 * Refreshes the remote print service.
+	 * @return the persistenceActive
 	 */
-	public void refresh(
-			String uuid,
-			String remoteName,
-			String remoteComputerName,
-			boolean mobile,
-			DocFlavor[] supportedDocFlavors,
-			Map<String, Object> defaultAttributes,
-			boolean directCommunicationEnabled,
-			String clientVersion,
-			Set<String> groups) {
-		this.uuid = uuid;
-		this.remoteName = remoteName;
-		this.remoteComputerName = remoteComputerName;
-		this.mobile = mobile;
-		this.supportedDocFlavors = supportedDocFlavors;
-		this.defaultAttributes = defaultAttributes;
-		this.directCommunicationEnabled = directCommunicationEnabled;
-		this.clientVersion = clientVersion;
-		this.groups = groups;
-		
+	public Boolean getPersistenceActive() {
+		return persistenceActive;
+	}
+
+	/**
+	 * @param persistenceActive the persistenceActive to set
+	 */
+	public void setPersistenceActive(Boolean persistenceActive) {
+		RemotePrintService.persistenceActive = persistenceActive;
 	}
 
 }

@@ -27,7 +27,11 @@ public final class ConfigurationKeys {
 	public static final Integer DEFAULT_POLL_INTERVAL = 300; // Default interval for checking for pending jobs. 300 ms.
 	public static final Integer DEFAULT_PRINT_JOB_WAIT = 500; // Pause between print jobs, default 1/2 a second.
 
-	public static final String DEFAULT_PRINT_JOB_MANAGER = "net.sf.wubiq.print.managers.impl.HsqldbPrintJobManager";
+	
+	/**
+	 * @since version 2.2 HsqlDB Job manager is deprecated in favor of DirectConnectPrintJobManager for all cases.
+	 */
+	public static final String DEFAULT_PRINT_JOB_MANAGER = "net.sf.wubiq.print.managers.impl.DirectConnectPrintJobManager";
 	public static final String DEFAULT_REMOTE_PRINT_JOB_MANAGER = "net.sf.wubiq.print.managers.impl.DirectConnectPrintJobManager";
 
 	public static final String DEFAULT_JDBC_USERNAME = "wubiq";

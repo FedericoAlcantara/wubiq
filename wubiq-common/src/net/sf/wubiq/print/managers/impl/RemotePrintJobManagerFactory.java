@@ -3,12 +3,8 @@
  */
 package net.sf.wubiq.print.managers.impl;
 
-import java.util.HashMap;
-import java.util.Map;
-
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
-import net.sf.wubiq.print.managers.RemotePrintJobManagerType;
 import net.sf.wubiq.utils.ServerProperties;
 
 import org.apache.commons.logging.Log;
@@ -22,9 +18,7 @@ import org.apache.commons.logging.LogFactory;
  */
 public final class RemotePrintJobManagerFactory {
 	private static final Log LOG = LogFactory.getLog(RemotePrintJobManagerFactory.class);
-	private static IRemotePrintJobManager instance;
 	private static IDirectConnectPrintJobManager directInstance;
-	private static Map<String, RemotePrintJobManagerType> managers;
 	private static long jobId = 0;
 	
 	private RemotePrintJobManagerFactory(){
@@ -36,69 +30,17 @@ public final class RemotePrintJobManagerFactory {
 	 * @return Singleton object.
 	 */
 	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(String uuid) {
-		return getRemotePrintJobManager(managers().get(uuid));
-	}
-	
-	/**
-	 * Creates and registers the remote print manager.
-	 * @param uuid Associated unique printer Id.
-	 * @param managerType Manager type.
-	 * @return Instance of remote print job manager.
-	 */
-	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(String uuid, RemotePrintJobManagerType managerType) {
-		IRemotePrintJobManager returnValue = getRemotePrintJobManager(managerType);
-		managers().put(uuid, managerType);
-		return returnValue;
-	}
-	
-	public synchronized static long nextJobId() {
-		jobId++;
-		return jobId;
-	}
- 	
-	/**
-	 * Returns the singleton object according to the manager type.
-	 * @param managerType Manager type.
-	 * @return Singleton object of manager type's
-	 */
-	private static IRemotePrintJobManager getRemotePrintJobManager(RemotePrintJobManagerType managerType) {
-		IRemotePrintJobManager returnValue = null;
-		if (managerType != null) {
-			switch (managerType) {
-				case DIRECT_CONNECT:
-					returnValue = getDirectConnectPrintJobManager();
-					break;
-				case SERIALIZED:
-					returnValue = getRemotePrintJobManager();
-					break;
-				default:
-					break;
-			}
-		}
-		return returnValue;
-	}
-	
-	/**
-	 * Gets a singleton of a direct connect print job manager.
-	 * @return Job manager for direct connect printing.
-	 */
-	private static IDirectConnectPrintJobManager getDirectConnectPrintJobManager() {
 		if (directInstance == null) {
 			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(ServerProperties.INSTANCE.getRemotePrintJobManager());
 		}
 		return directInstance;
 	}
 	
-	/**
-	 * @return Returns a Singleton print job manager.
-	 */
-	private static IRemotePrintJobManager getRemotePrintJobManager() {
-		if (instance == null) {
-			instance = getPrintJobManager(ServerProperties.INSTANCE.getPrintJobManager());
-		}
-		return instance;
+	public synchronized static long nextJobId() {
+		jobId++;
+		return jobId;
 	}
-
+ 		
 	/**
 	 * @return Returns a Singleton print job manager.
 	 */
@@ -119,12 +61,5 @@ public final class RemotePrintJobManagerFactory {
 			LOG.error(e.getMessage(), e);
 		}
 		return newInstance;
-	}
-
-	private static Map<String, RemotePrintJobManagerType> managers() {
-		if (managers == null) {
-			managers = new HashMap<String, RemotePrintJobManagerType>();
-		}
-		return managers;
 	}
 }

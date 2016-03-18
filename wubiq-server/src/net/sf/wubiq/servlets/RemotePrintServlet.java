@@ -10,8 +10,10 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -35,6 +37,7 @@ import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 
 import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.android.ConversionServerUtils;
@@ -42,6 +45,7 @@ import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
@@ -65,6 +69,7 @@ import net.sf.wubiq.utils.ServerLabels;
 import net.sf.wubiq.utils.ServerWebUtils;
 import net.sf.wubiq.utils.WebUtils;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -142,7 +147,7 @@ public class RemotePrintServlet extends HttpServlet {
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
 							getDocFlavorCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_IS_DIRECT_CONNECT)) {
-							isDirectConnectionCommand(uuid, request, response);
+							isDirectConnectionCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_IS_COMPRESSED)) {
 							serverSupportsCompressionCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
@@ -614,19 +619,6 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws ServletException 
 	 * @throws IOException
 	 */
-	private void isDirectConnectionCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		Boolean returnValue = (manager instanceof IDirectConnectPrintJobManager);
-		respond(returnValue.toString(), response);
-	}
-
-	/**
-	 * Returns if the type of manager is direct connection.
-	 * @param uuid Unique Id of the print service.
-	 * @param request Originating request.
-	 * @param response Destination response.
-	 * @throws ServletException 
-	 * @throws IOException
-	 */
 	private void serverSupportsCompressionCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		respond(Boolean.TRUE.toString(), response);
 	}
@@ -640,28 +632,60 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	private void getPrintJobCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws ServletException, IOException {
+		closeSession(request);
+		request.getSession();
 		String jobId = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
-		IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), true);
-		InputStream input = null;
-		// If it is remote we must convert pdf to image and then scale it to print size
-		try {
-			if (RemotePrintServiceLookup.isMobile(uuid)) {
-				input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
-			} else {
-				input = printJob.getPrintData();
+		if (!forwarded(request, response, jobId)) {
+			IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), true);
+			InputStream input = null;
+			// If it is remote we must convert pdf to image and then scale it to print size
+			try {
+				if (RemotePrintServiceLookup.isMobile(uuid)) {
+					input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
+				} else {
+					input = printJob.getTransformed() != null 
+							? printJob.getTransformed()
+							: printJob.getPrintData();
+				}
+			} catch (Throwable e) {
+				LOG.fatal(e.getMessage(), e);
+				input = null;
 			}
-		} catch (Throwable e) {
-			LOG.fatal(e.getMessage(), e);
-			input = null;
-		}
-		if (input != null) {
-			respond("application/pdf", input, response);
-			input.close();
-		} else {
-			respond("", response);
+			if (input != null) {
+				respond("application/pdf", input, response);
+				input.close();
+			} else {
+				respond("", response);
+			}
 		}
 	}
 	
+	/**
+	 * Returns if the type of manager is direct connection. This will occur after 
+	 * getting print job when called from new clients.
+	 * @param uuid Unique Id of the print service.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @throws ServletException 
+	 * @throws IOException
+	 */
+	private void isDirectConnectionCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws ServletException, IOException {
+		Boolean returnValue = true;
+		if (manager instanceof IDirectConnectPrintJobManager) {
+			String jobIdString = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
+			Long jobId = null; // Old clients won't set this parameter at all.
+			try {
+				jobId = Long.parseLong(jobIdString);
+			} catch (NumberFormatException e) {
+				jobId = null;
+			}
+			// Called by NEW client, and after reading the print job data!
+			returnValue = ((IDirectConnectPrintJobManager) manager).isDirectConnect(jobId);
+		}
+		respond(returnValue.toString(), response);
+	}
+
+
 	/**
 	 * Closes the printJob.
 	 * @param uuid Unique computer identification.
@@ -674,6 +698,7 @@ public class RemotePrintServlet extends HttpServlet {
 		String jobIdString = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
 		long jobId = Long.parseLong(jobIdString);
 		manager.removeRemotePrintJob(jobId);
+		closeSession(request);
 		respond("ok", response);
 	}
 	
@@ -1039,6 +1064,83 @@ public class RemotePrintServlet extends HttpServlet {
 			returnValue = parameters.get(parameterName);
 		} else {
 			returnValue = WebUtils.INSTANCE.decodeHtml((String)returnValue);
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Closes the current session.
+	 * @param request Originating request.
+	 */
+	private void closeSession(HttpServletRequest request) {
+		HttpSession session = request.getSession(false);
+		if (session != null) {
+			session.invalidate();
+		}
+	}
+	
+	/**
+	 * Checks if the given print job should be relayed to another server. If so, forwards the action to it.
+	 * @param request Originating request.
+	 * @param response Receiving response.
+	 * @param jobIdString Id of the job.
+	 * @return True if the print job was successfully forwarded.
+	 */
+	private boolean forwarded(HttpServletRequest request, HttpServletResponse response, String jobIdString) {
+		boolean returnValue = false;
+		try {
+			long jobId = Long.parseLong(jobIdString);
+			if (manager instanceof IDirectConnectPrintJobManager) {
+				if (!((IDirectConnectPrintJobManager)manager).hasLocalPrintJob(jobId)) {
+					String ip = WubiqServerDao.INSTANCE.associatedServer(jobId);
+					if (!Is.emptyString(ip)) { // we have a server
+						String url = request.getScheme() + "://" + ip + ":" + request.getServerPort() + request.getRequestURI();
+						returnValue = forwardTo(request, response, url);
+					}
+				}	
+			}
+		} catch (NumberFormatException e) {
+			LOG.debug(ExceptionUtils.getMessage(e));
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * Relays action to given url.
+	 * @param request Originating request.
+	 * @param response Response.
+	 * @param url Url to relay to.
+	 * @return True if the forwarding was successful.
+	 */
+	private boolean forwardTo(HttpServletRequest request, HttpServletResponse response, String url) {
+		boolean returnValue = false;
+		HttpURLConnection connection = null; 
+		try {
+			ByteArrayOutputStream output = new ByteArrayOutputStream();
+			IOUtils.INSTANCE.copy(request.getInputStream(), output);
+			int length = output.toByteArray().length;
+			connection = (HttpURLConnection) new URL(url).openConnection();
+			connection.setDoOutput(true);
+			connection.setDoInput(true);
+			connection.setRequestMethod("POST");
+			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
+			connection.setRequestProperty("charset", "utf-8");
+			connection.setRequestProperty("Accept-Charset", "utf-8");
+			// Using content-type will force the use of input stream and that is not managed by older servers.
+			//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
+			connection.setRequestProperty("Content-Length", "" + length);
+			connection.setUseCaches (false);
+			IOUtils.INSTANCE.copy(new ByteArrayInputStream(output.toByteArray()), connection.getOutputStream());
+			connection.connect();
+			if (HttpURLConnection.HTTP_OK  == connection.getResponseCode() ||
+					HttpURLConnection.HTTP_ACCEPTED == connection.getResponseCode() ||
+					HttpURLConnection.HTTP_CREATED == connection.getResponseCode()) {
+				IOUtils.INSTANCE.copy(connection.getInputStream(), response.getOutputStream());
+				returnValue = true;
+			}
+		} catch (Exception e) {
+			LOG.error(ExceptionUtils.getMessage(e));
+			returnValue = false;
 		}
 		return returnValue;
 	}

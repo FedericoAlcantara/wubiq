@@ -80,11 +80,11 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 			PrintRequestAttributeSet printRequestAttributeSet,
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel,
-			boolean serverSupportsCompression) {
+			boolean serverSupportsCompression, String sessionId) {
 		return new DirectManagerTestWrapper(this, jobIdString, printService,
 				printServiceName,
 				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
-				debugMode, debugLevel, serverSupportsCompression);
+				debugMode, debugLevel, serverSupportsCompression, sessionId);
 	}
 	
 	@Override
@@ -94,11 +94,14 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 			PrintJobAttributeSet printJobAttributeSet,
 			DocAttributeSet docAttributeSet, boolean debugMode, int debugLevel,
 			boolean serverSupportsCompression, DocFlavor docFlavor,
+			String sessionId,
 			InputStream printData) {
 		return new DirectManagerTestWrapper(this, jobIdString, printService,
 				printServiceName,
 				printRequestAttributeSet, printJobAttributeSet, docAttributeSet,
-				debugMode, debugLevel, serverSupportsCompression, docFlavor, printData);
+				debugMode, debugLevel, serverSupportsCompression, docFlavor,
+				sessionId,
+				printData);
 	}
 	
 	@Override
@@ -114,10 +117,10 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 			DocAttributeSet docAttributeSet, DocFlavor docFlavor,
 			InputStream printData) throws IOException {
 		try {
-			super.print(jobId, printService, printRequestAttributeSet,
-					printJobAttributeSet, docAttributeSet, docFlavor, printData);
 			getTestData().setLocalDocFlavor(docFlavor);
 			getTestData().setLocalManagerCalled(true);
+			super.print(jobId, printService, printRequestAttributeSet,
+					printJobAttributeSet, docAttributeSet, docFlavor, printData);
 		} catch (IOException e) {
 			getTestData().setErrors(true);
 			throw e;

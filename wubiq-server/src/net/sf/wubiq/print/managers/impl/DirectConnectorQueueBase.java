@@ -104,6 +104,14 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 	}
 	
 	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#hasLocalPrintJob(java.lang.Long)
+	 */
+	@Override
+	public boolean hasLocalPrintJob(Long jobId) {
+		return jobBucket(jobId).printJob != null;
+	}
+	
+	/**
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#registerObject(java.lang.Long, java.util.UUID, java.lang.Object)
 	 */
 	@Override

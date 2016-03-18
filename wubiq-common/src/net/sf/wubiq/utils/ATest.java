@@ -18,6 +18,7 @@ import javax.print.attribute.PrintServiceAttribute;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.print.services.RemotePrintService;
+import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 
 public class ATest {
 
@@ -29,15 +30,21 @@ public class ATest {
 	private void serialization() throws IOException, ClassNotFoundException {
 		List<byte[]> serializeds = new ArrayList<byte[]>();
 		System.out.println("ORIGINAL");
-		for (PrintService printService : PrintServiceLookup.lookupPrintServices(null, null)) {
+		RemotePrintServiceLookup lookup = new RemotePrintServiceLookup(false);
+		PrintServiceLookup.registerServiceProvider(lookup);
+		for (PrintService printService : PrintServiceUtils.getPrintServices()) {
 			RemotePrintService remotePrintService = new RemotePrintService(printService);
+			RemotePrintServiceLookup.registerRemoteService(remotePrintService);
 			remotePrintService.setUuid("mac_client");
 			
 			byte[] serialized = serializePrintService(remotePrintService);
 			serializeds.add(serialized);
 			System.out.println(remotePrintService);
 		}
-		
+		System.out.println("\nAFTER REGISTRATION");
+		for (PrintService printService : PrintServiceUtils.getPrintServices()) {
+			System.out.println(printService);
+		}		
 		System.out.println("\nSERIALIZED");
 		for (byte[] serialized : serializeds) {
 			RemotePrintService newRemote = deserialize(serialized);

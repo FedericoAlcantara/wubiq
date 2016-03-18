@@ -148,4 +148,10 @@ public interface IDirectConnectorQueue extends IAdapter {
 	 */
 	int pendingPrintJobs(PrintService printService);
 	
+	/**
+	 * Checks if the connector has a local (in memory) copy of the print job.
+	 * @param jobId Job Id to check.
+	 * @return true if the connector has a local copy.
+	 */
+	boolean hasLocalPrintJob(Long jobId);
 }

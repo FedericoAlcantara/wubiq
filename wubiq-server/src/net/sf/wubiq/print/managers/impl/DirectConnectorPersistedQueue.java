@@ -3,21 +3,14 @@
  */
 package net.sf.wubiq.print.managers.impl;
 
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
 import java.util.Collection;
-import java.util.Date;
 
-import javax.print.PrintException;
 import javax.print.PrintService;
 
 import net.sf.wubiq.dao.WubiqPrintJobDao;
-import net.sf.wubiq.data.WubiqPrintJob;
-import net.sf.wubiq.persistence.PersistenceManager;
+import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
-import net.sf.wubiq.utils.IOUtils;
-import net.sf.wubiq.utils.PrintServiceUtils;
 
 /**
  * Handles direct communication with printers.
@@ -48,35 +41,11 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 	 */
 	@Override
 	public synchronized long addPrintJob(IRemotePrintJob remotePrintJob) {
-		long returnValue = 0l;
-		try {
-			String docAttributes = PrintServiceUtils.serializeAttributes(remotePrintJob.getDocAttributeSet());
-			String printRequestAttributes = PrintServiceUtils.serializeAttributes(remotePrintJob.getPrintRequestAttributeSet());
-			String printJobAttributes = PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes());
-			String docFlavor = PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor());
-			InputStream inputStream = remotePrintJob.getPrintData();
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			IOUtils.INSTANCE.copy(inputStream, outputStream);
-			outputStream.close();
-			
-			WubiqPrintJob job = new WubiqPrintJob();
-			job.setQueueId(queueId());
-			job.setPrintServiceName(remotePrintJob.getPrintService() != null 
-					? remotePrintJob.getPrintService().getName() : remotePrintJob.getPrintServiceName());
-			job.setDocAttributes(docAttributes);
-			job.setPrintRequestAttributes(printRequestAttributes);
-			job.setPrintJobAttributes(printJobAttributes);
-			job.setDocFlavor(docFlavor);
-			job.setPrintData(outputStream.toByteArray());
-			job.setStatus(RemotePrintJobStatus.NOT_PRINTED);
-			job.setTime(new Date());
-			PersistenceManager.em().persist(job);
-			PersistenceManager.commit();
-			returnValue = job.getPrintJobId();
-		} catch (Exception e) {
-			throw new RuntimeException(e);
-		}
-		return returnValue;
+		long jobId = 
+				WubiqPrintJobDao.INSTANCE.addPrintJob(queueId(), remotePrintJob);
+		WubiqServerDao.INSTANCE.addPrintJob(jobId);
+		jobBucket(jobId).printJob = remotePrintJob;
+		return jobId;
 	}
 	
 	/**
@@ -88,6 +57,8 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 			resetProcess();
 		}
 		WubiqPrintJobDao.INSTANCE.remove(jobId);
+		WubiqServerDao.INSTANCE.removePrintJob(jobId);
+		super.removePrintJob(jobId);
 		return true;
 	}
 	
@@ -96,11 +67,11 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 	 */
 	@Override
 	public synchronized IRemotePrintJob remotePrintJob(long jobId) {
-		try {
-			return WubiqPrintJobDao.INSTANCE.remotePrintJob(jobId, true);
-		} catch (PrintException e) {
-			throw new RuntimeException(e);
+		IRemotePrintJob printJob = jobBucket(jobId).printJob;
+		if (printJob == null) {
+			printJob = WubiqPrintJobDao.INSTANCE.remotePrintJob(jobId, true);
 		}
+		return printJob;
 	}
 	
 	/**
