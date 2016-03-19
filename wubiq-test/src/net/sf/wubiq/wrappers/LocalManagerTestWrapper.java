@@ -213,6 +213,11 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 		return testData;
 	}
 
+	@Override
+	public synchronized void closePrintJob(String jobId) {
+		super.closePrintJob(jobId);
+	}
+	
 	/**
 	 * Reset the test data.
 	 */

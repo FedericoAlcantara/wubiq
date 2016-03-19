@@ -7,6 +7,7 @@ import java.awt.Color;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -105,7 +106,7 @@ public abstract class BaseImageConversion {
 				printData.flush();
 			}
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 		}
 	}
 	
@@ -121,7 +122,7 @@ public abstract class BaseImageConversion {
 			}
 			printData.flush();
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 		}
 	}
 	/**

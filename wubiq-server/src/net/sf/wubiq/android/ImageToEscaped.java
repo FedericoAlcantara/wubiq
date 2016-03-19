@@ -11,6 +11,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -59,7 +60,7 @@ public class ImageToEscaped extends BaseImageConversion {
 				pixels = (int[]) grabber.getPixels();
 			}
 		} catch (InterruptedException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 		}
 				
 		int w = width / 8;
@@ -207,7 +208,7 @@ public class ImageToEscaped extends BaseImageConversion {
 			printData.write(data);
 			printData.flush();
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 		}
 	}
 }

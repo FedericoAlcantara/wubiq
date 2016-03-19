@@ -12,6 +12,7 @@ import java.io.InputStream;
 
 import javax.imageio.ImageIO;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -58,7 +59,7 @@ public class ImageToBitmap extends BaseImageConversion {
 		try {
 			ImageIO.write(bw, "png", printData);
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 		}
 		return new ByteArrayInputStream(printData.toByteArray());
 	}

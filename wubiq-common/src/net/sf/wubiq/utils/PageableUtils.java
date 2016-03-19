@@ -18,6 +18,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectOutputStream;
+import java.io.OutputStream;
 import java.io.Reader;
 
 import javax.print.attribute.Attribute;
@@ -43,6 +44,105 @@ public enum PageableUtils {
 
 	public static final Log LOG = LogFactory.getLog(PageableUtils.class);
 	
+	/**
+	 * Converts a print data into a stream.
+	 * @param printData Print data to convert.
+	 * @param outputStream Recipient of the serialized print data.
+	 * @param pageFormat Default page format to use.
+	 * @param printRequestAttributes Print request attributes for formatting the print output.
+	 * @throws IOException
+	 */
+	public void writeToStream(Object printData, OutputStream outputStream, PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) throws IOException {
+		if (printData instanceof InputStream) {
+			IOUtils.INSTANCE.copy((InputStream)printData, outputStream);
+		} else if (printData instanceof Reader) {
+			IOUtils.INSTANCE.copy(((Reader)printData), outputStream);
+		} else if (printData instanceof Pageable) {
+			serializePageableToStream((Pageable)printData, outputStream, printRequestAttributes);
+		} else if (printData instanceof Printable) {
+			serializePrintableToStream((Printable)printData, outputStream, pageFormat, printRequestAttributes);
+		}
+	}
+	
+	/**
+	 * Serialize a pageable into an output stream.
+	 * @param inputPageable Pageable to serialize.
+	 * @param outputStream Recipient of the serialized pageable.
+	 * @param printRequestAttributes Print request attributes for formatting the print output.
+	 */
+	private void serializePageableToStream(Pageable inputPageable, OutputStream outputStream, PrintRequestAttributeSet printRequestAttributes) {
+		PageableWrapper pageable = new PageableWrapper(inputPageable);
+		int pageResult = Printable.PAGE_EXISTS;
+		int pageIndex = 0;
+		do {
+			try {
+				PageFormat originalPageFormat = getPageFormat(pageable.getOriginal().getPageFormat(pageIndex), printRequestAttributes);
+				PageFormatWrapper pageFormat = new PageFormatWrapper(originalPageFormat);
+				PrintableWrapper printable = new PrintableWrapper(pageable.getOriginal().getPrintable(pageIndex));
+				printable.setNotSerialized(true);
+				pageResult = printPrintable(printable, pageFormat, pageIndex);
+				if (pageResult == Printable.PAGE_EXISTS) {
+					pageable.addPageFormat(pageFormat);
+					pageable.addPrintable(printable);
+					pageIndex++;
+				}
+			} catch (IndexOutOfBoundsException e) {
+				LOG.debug("Reached end of printables");
+				break;
+			}
+		} while (pageResult == Printable.PAGE_EXISTS);
+		pageable.setNumberOfPages(pageIndex);
+		
+		ObjectOutputStream output;
+		try {
+			output = new ObjectOutputStream(outputStream);
+			output.writeObject(pageable);
+			output.flush();
+			output.close();
+			outputStream.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+	
+	/**
+	 * Serialize a printable into an output stream.
+	 * @param inputPrintable Printable to serialize.
+	 * @param outputStream Recipient of the serialized printable.
+	 * @param pageFormat Default page format to use.
+	 * @param printRequestAttributes Print request attributes for formatting the print output.
+	 */
+	private void serializePrintableToStream(Printable inputPrintable, OutputStream outputStream, PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
+		PrintableWrapper printable = new PrintableWrapper(inputPrintable);
+		printable.setNotSerialized(true);
+		try {
+			int result = Printable.PAGE_EXISTS;
+			int pageIndex = 0;
+			PageFormatWrapper printablePageFormat = new PageFormatWrapper(getPageFormat(pageFormat, printRequestAttributes));
+			do {
+				result = printPrintable(printable, printablePageFormat, pageIndex);
+				pageIndex++;
+			} while (result == Printable.PAGE_EXISTS);
+			ObjectOutputStream output = new ObjectOutputStream(outputStream);
+			output.writeObject(printable);
+			output.flush();
+			output.close();
+			outputStream.close();
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Converts a print data into a stream.
+	 * @param printData Print data to convert.
+	 * @param pageFormat Default page format to use.
+	 * @param printRequestAttributes Print request attributes for formatting the print output.
+	 * @return InputStream representing the print data as it should be printed.
+	 * @throws IOException
+	 */
 	public InputStream getStreamForBytes(Object printData,
 			PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) throws IOException {
 		InputStream returnValue = null;
@@ -65,7 +165,8 @@ public enum PageableUtils {
 	/**
 	 * Serialize a pageable and produce a input stream.
 	 * @param inputPageable Pageable to serialize.
-	 * @return Input stream representing the serialized pageable.
+	 * @param printRequestAttributes Print request attributes for formatting the print output.
+	 * @return InputStream representing the print data as serialized Pageable.
 	 */
 	private InputStream serializePageable(Pageable inputPageable, PrintRequestAttributeSet printRequestAttributes) {
 		InputStream returnValue = null;
@@ -105,9 +206,11 @@ public enum PageableUtils {
 	}
 	
 	/**
-	 * Serialize a pageable and produce a input stream.
-	 * @param inputPageable Pageable to serialize.
-	 * @return Input stream representing the serialized pageable.
+	 * Serialize a printable and produce a input stream.
+	 * @param inputPrintable Printable to serialize.
+	 * @param pageFormat Default page format to use.
+	 * @param printRequestAttributes Print request attributes for formatting the print output.
+	 * @return Input stream representing the serialized printable.
 	 */
 	private InputStream serializePrintable(Printable inputPrintable, PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
 		InputStream returnValue = null;
@@ -124,6 +227,9 @@ public enum PageableUtils {
 			ByteArrayOutputStream out = new ByteArrayOutputStream();
 			ObjectOutputStream output = new ObjectOutputStream(out);
 			output.writeObject(printable);
+			output.flush();
+			output.close();
+			out.close();
 			returnValue = new ByteArrayInputStream(out.toByteArray());
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);

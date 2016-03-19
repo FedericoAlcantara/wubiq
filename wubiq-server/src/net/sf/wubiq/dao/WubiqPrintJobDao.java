@@ -3,9 +3,6 @@ package net.sf.wubiq.dao;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
@@ -26,8 +23,8 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.utils.IOUtils;
+import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
-import net.sf.wubiq.utils.ServerLabels;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
@@ -69,6 +66,7 @@ public enum WubiqPrintJobDao {
 	}
 	
 	/**
+	 * TODO Implements saving of PrintJobDataType.SERIALIZED_PAGEABLE
 	 * Adds a print job.
 	 * @param queueId Id of the queue.
 	 * @param remotePrintJob Remote printJob.
@@ -82,19 +80,16 @@ public enum WubiqPrintJobDao {
 			String docAttributes = PrintServiceUtils.serializeAttributes(remotePrintJob.getDocAttributeSet());
 			String printRequestAttributes = PrintServiceUtils.serializeAttributes(remotePrintJob.getPrintRequestAttributeSet());
 			String printJobAttributes = PrintServiceUtils.serializeAttributes(remotePrintJob.getAttributes());
+			String originalDocFlavor = PrintServiceUtils.serializeDocFlavor(remotePrintJob.getOriginalDocFlavor());
 			String docFlavor = PrintServiceUtils.serializeDocFlavor(remotePrintJob.getDocFlavor());
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-			Object data = remotePrintJob.getTransformed() != null
-					? remotePrintJob.getTransformed() : remotePrintJob.getPrintDataObject();
+			Object data = remotePrintJob.getPrintDataObject();
 			if (data instanceof InputStream) {
 				IOUtils.INSTANCE.copy((InputStream)data, outputStream);
 				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
-			} else if (data instanceof Serializable){
-				ObjectOutputStream serialOutput = new ObjectOutputStream(outputStream);
-				serialOutput.writeObject(data);
-				job.setPrintJobDataType(PrintJobDataType.SERIALIZABLE);
 			} else {
-				throw new RuntimeException(ServerLabels.get("server.error_could_not_persist_job"));
+				//IOUtils.INSTANCE.copy(PageableUtils.INSTANCE.getStreamForBytes(data, remotePrintJob.getPageFormat(), remotePrintJob.getPrintRequestAttributeSet()), outputStream);
+				job.setPrintJobDataType(PrintJobDataType.SERIALIZED_PAGEABLE);
 			}
 			outputStream.flush();
 			outputStream.close();
@@ -104,12 +99,13 @@ public enum WubiqPrintJobDao {
 			job.setDocAttributes(docAttributes);
 			job.setPrintRequestAttributes(printRequestAttributes);
 			job.setPrintJobAttributes(printJobAttributes);
+			job.setOriginalDocFlavor(originalDocFlavor);
 			job.setDocFlavor(docFlavor);
+			job.setUsesDirectConnect(remotePrintJob.getUsesDirectConnect());
+			job.setSupportsOnlyPageable(remotePrintJob.getSupportsOnlyPageable());
 			job.setPrintData(outputStream.toByteArray());
 			job.setStatus(RemotePrintJobStatus.NOT_PRINTED);
 			job.setTime(new Date());
-			job.setCommunicationType(remotePrintJob.getCommunicationType());
-			job.setAppliedCommunicationType(remotePrintJob.getAppliedCommunicationType());
 			PersistenceManager.em().persist(job);
 			PersistenceManager.commit();
 			returnValue = job.getPrintJobId();
@@ -120,6 +116,7 @@ public enum WubiqPrintJobDao {
 	}
 	
 	/**
+	 * TODO Implement 
 	 * Remote print job.
 	 * @param jobId Id of the job.
 	 * @param fullPrintJob Full print job.
@@ -137,24 +134,23 @@ public enum WubiqPrintJobDao {
 					DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(job.getDocAttributes());
 					PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(job.getPrintRequestAttributes());
 					PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(job.getPrintJobAttributes());
+					DocFlavor originalDocFlavor = PrintServiceUtils.deSerializeDocFlavor(job.getOriginalDocFlavor());
 					DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(job.getDocFlavor());
 					returnValue.setDocAttributeSet(docAttributeSet);
 					returnValue.setPrintRequestAttributeSet(printRequestAttributeSet);
 					returnValue.setPrintJobAttributeSet(printJobAttributeSet);
+					returnValue.setOriginalDocFlavor(originalDocFlavor);
 					returnValue.setDocFlavor(docFlavor);
+					returnValue.setUsesDirectConnect(job.getUsesDirectConnect());
+					returnValue.setSupportsOnlyPageable(job.getSupportsOnlyPageable());
 					if (fullPrintJob) {
-						Object object = null;
-						ByteArrayInputStream inputStream = new ByteArrayInputStream(job.getPrintData());
-						if (PrintJobDataType.INPUT_STREAM.equals(job.getPrintJobDataType())) {
-							object = inputStream;
-						} else if (PrintJobDataType.SERIALIZABLE.equals(job.getPrintJobDataType())) {
-							ObjectInputStream input = new ObjectInputStream(inputStream);
-							object = input.readObject();
-							input.close();
+						if (!PrintJobDataType.SERIALIZED_PAGEABLE.equals(job.getPrintJobDataType())) {
+							returnValue.setPrintDataObject(new ByteArrayInputStream(job.getPrintData()));
+							job.setStatus(RemotePrintJobStatus.PRINTING);
+							PersistenceManager.em().merge(job);
+						} else {
+							returnValue = null;
 						}
-						returnValue.setPrintDataObject(object);
-						job.setStatus(RemotePrintJobStatus.PRINTING);
-						PersistenceManager.em().merge(job);
 					}
 				}
 			}
@@ -250,4 +246,5 @@ public enum WubiqPrintJobDao {
 		}
 		return queueId;
 	}
+	
 }

@@ -171,19 +171,21 @@ public enum PdfUtils {
 	 * Takes care of closing a PDDocument.
 	 * @param pageable Pageable (probably a PDDocument) to be closed.
 	 */
-	public void closePageable(Pageable pageable) {
-		if (pageable instanceof PdfPageable) {
-			try {
-				((PdfPageable)pageable).close();
-			} catch (IOException e) {
-				LOG.error(e.getMessage());
+	public void closePageable(Object pageable) {
+		if (pageable != null) {
+			if (pageable instanceof PdfPageable) {
+				try {
+					((PdfPageable)pageable).close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage());
+				}
 			}
-		}
-		if (pageable instanceof PDDocument) {
-			try {
-				((PDDocument)pageable).close();
-			} catch (IOException e) {
-				LOG.error(e.getMessage());
+			if (pageable instanceof PDDocument) {
+				try {
+					((PDDocument)pageable).close();
+				} catch (IOException e) {
+					LOG.error(e.getMessage());
+				}
 			}
 		}
 	}

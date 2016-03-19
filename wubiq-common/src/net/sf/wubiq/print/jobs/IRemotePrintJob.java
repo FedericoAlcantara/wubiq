@@ -13,8 +13,6 @@ import javax.print.attribute.DocAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
 
-import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
-
 /**
  * Represents the contract of a remote print job
  * @author Federico Alcantara
@@ -30,6 +28,18 @@ public interface IRemotePrintJob extends DocPrintJob {
 	/**
 	 * 
 	 * @return The original doc flavor for the print data.
+	 */
+	DocFlavor getOriginalDocFlavor();
+	
+	/**
+	 * Sets a new original doc flavor.
+	 * @param originalDocFlavor
+	 */
+	void setOriginalDocFlavor(DocFlavor originalDocFlavor);
+	
+	/**
+	 * 
+	 * @return The doc flavor for the data to be printed.
 	 */
 	DocFlavor getDocFlavor();
 	
@@ -94,16 +104,34 @@ public interface IRemotePrintJob extends DocPrintJob {
 	void setPrintDataObject(Object printDataObject);
 	
 	/**
-	 * Gets a transformed (normally a pageable or printable serialized) version of print data object.
-	 * @return Transformed as input stream.
-	 */
-	InputStream getTransformed();
-	
-	/**
 	 * Sets a new status for the print job
 	 * @param status the status to set.
 	 */
 	void setStatus(RemotePrintJobStatus status);
+
+	
+	/**
+	 * @return True if this print job uses direct connect.
+	 */
+	Boolean getUsesDirectConnect();
+	
+	/**
+	 * @param usesDirectConnect Indicates if uses direct connect.
+	 */
+	void setUsesDirectConnect(Boolean usesDirectConnect);
+	
+	/**
+	 * For compatibility for printers supporting only serialized pageable.
+	 * Or in the event that data was pageable and persisted.
+	 * @return True if the printer ONLY uses pageables.
+	 */
+	Boolean getSupportsOnlyPageable();
+	
+	/**
+	 * Sets the status of the uses Pageable.
+	 * @param supportsOnlyPageable New state.
+	 */
+	void setSupportsOnlyPageable(Boolean supportsOnlyPageable);
 	
 	/**
 	 * Return the current page format of the remote print object.
@@ -111,19 +139,4 @@ public interface IRemotePrintJob extends DocPrintJob {
 	 */
 	PageFormat getPageFormat();
 	
-	/**
-	 * @return Type of expected communication for the print job.
-	 */
-	RemotePrintJobCommunicationType getCommunicationType();
-
-	/**
-	 * @return Type of realized communication for the print job.
-	 */
-	RemotePrintJobCommunicationType getAppliedCommunicationType();
-
-	/**
-	 * Sets the type of communication applied.
-	 * @param appliedCommunicationType New communication applied.
-	 */
-	void setAppliedCommunicationType(RemotePrintJobCommunicationType appliedCommunicationType);
 }

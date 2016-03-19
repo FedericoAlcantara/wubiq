@@ -44,11 +44,20 @@ public interface IDirectConnectorQueue extends IAdapter {
 	boolean removePrintJob(long jobId);
 	
 	/**
+	 * @deprecated Use remotePrintJob(long jobId, boolean full)
 	 * Returns the associated remote print job.
 	 * @param jobId Id of the job being processed.
 	 * @return Found remote print job or null.
 	 */
 	IRemotePrintJob remotePrintJob(long jobId);
+	
+	/**
+	 * Returns the associated remote print job.
+	 * @param jobId Id of the job being processed.
+	 * @param full If true reads all pertinent data of the print job.
+	 * @return Found remote print job or null.
+	 */
+	IRemotePrintJob remotePrintJob(long jobId, boolean full);
 	
 	/**
 	 * List of pending print jobs.

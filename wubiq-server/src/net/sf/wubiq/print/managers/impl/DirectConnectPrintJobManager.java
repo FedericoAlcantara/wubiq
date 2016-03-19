@@ -11,7 +11,6 @@ import java.util.Map;
 import javax.print.PrintService;
 
 import net.sf.wubiq.dao.WubiqPrintJobDao;
-import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
@@ -55,10 +54,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 */
 	public boolean isDirectConnect(long jobId) {
 		IRemotePrintJob printJob = getRemotePrintJob(jobId, false);
-		if (printJob.getAppliedCommunicationType() == null) {
-			printJob.setAppliedCommunicationType(printJob.getCommunicationType());
-		}
-		return RemotePrintJobCommunicationType.DIRECT_CONNECT.equals(printJob.getAppliedCommunicationType());
+		return printJob.getUsesDirectConnect();
 	}
 
 	/**
@@ -122,23 +118,12 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	public synchronized IRemotePrintJob getRemotePrintJob(long jobId, boolean fullPrintJob) {
 		IRemotePrintJob returnValue = null;
 		IDirectConnectorQueue queue = associatedQueue(jobId);
-		returnValue = queue.remotePrintJob(jobId);
+		returnValue = queue.remotePrintJob(jobId, fullPrintJob);
 		if (returnValue == null) {
 			queue.removePrintJob(jobId);
 		} else {
 			if (fullPrintJob) {
 				// If we haven't tell the client the type of communication we used for the print job data transfer.
-				if (returnValue.getAppliedCommunicationType() == null) {
-					/* We will change it to the most efficient DIRECT_CONNECT 
-					 * That is determined by checking if the server queue has a local copy of the remote print job.
-					 */
-					if (RemotePrintJobCommunicationType.SERIALIZED.equals(returnValue.getCommunicationType())
-							&& queue.hasLocalPrintJob(jobId)) {
-						returnValue.setAppliedCommunicationType(RemotePrintJobCommunicationType.DIRECT_CONNECT);
-					} else {
-						returnValue.setAppliedCommunicationType(returnValue.getCommunicationType());
-					}
-				}
 				PrintService printService = returnValue.getPrintService();
 				if (printService != null) {
 					if (printService instanceof INotifiablePrintService) {
@@ -231,6 +216,9 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		}		
 	}
 	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectPrintJobManager#isPrinting(javax.print.PrintService)
+	 */
 	public synchronized boolean isPrinting(PrintService printService) {
 		if (PrintServiceUtils.isRemotePrintService(printService)) {
 			return ((RemotePrintService)printService).isPrinting();

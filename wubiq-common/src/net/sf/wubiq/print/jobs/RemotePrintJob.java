@@ -20,13 +20,11 @@ import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
 import net.sf.wubiq.common.WebKeys;
-import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
-import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.logging.Log;
@@ -46,12 +44,12 @@ public class RemotePrintJob implements IRemotePrintJob {
 	private String printServiceName;
 	private String printServiceClientName;
 	private RemotePrintJobStatus status;
-	private Object printData;
 	private PageFormat pageFormat;
+	private Object printData;
+	private DocFlavor originalDocFlavor;
+	private Boolean usesDirectConnect;
+	private Boolean supportsOnlyPageable;
 	private static Boolean persistenceActive;
-	private RemotePrintJobCommunicationType communicationType;
-	private RemotePrintJobCommunicationType appliedCommunicationType;
-	private InputStream transformed;
 	
 	public RemotePrintJob() {
 	}
@@ -142,17 +140,20 @@ public class RemotePrintJob implements IRemotePrintJob {
 			LOG.error(e.getMessage(), e);
 		}
 		if (!Is.emptyString(uuid)) {
-			boolean printSerialized = false;
+			boolean usesDirectConnect = isDirectCommunicationEnabled;
+			// Direct connect should be disable if the document is not a SERVICE_FORMATTED
+			// and the printer does not support the type of document.
+			// Direct connect is designed for pageables / printable.
+			/*
 			if (isDirectCommunicationEnabled) {
 				if (!(doc.getDocFlavor() instanceof DocFlavor.SERVICE_FORMATTED)) {
 					if (PrintServiceUtils.supportDocFlavor(printService, doc.getDocFlavor())) {
-						printSerialized = true;
+						usesDirectConnect = false;
 					}
 				}
-			} else {
-				printSerialized = true;
 			}
-			printRemote(uuid, doc, printRequestAttributeSet, printSerialized);
+			*/
+			printRemote(uuid, doc, printRequestAttributeSet, usesDirectConnect);
 		}
 	}
 
@@ -161,43 +162,31 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 * @param uuid Unique print service id.
 	 * @param doc Simple doc object.
 	 * @param printRequestAttributeSet Print request attribute set.
-	 * @param printSerialized If true job is printed as serialized, not service formatted.
+	 * @param printAsPageable If true job is printed converting it to Pageable / Printable.
 	 * @throws PrintException
 	 */
-	private void printRemote(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet,
-			boolean printSerialized) 
+	private void printRemote(String uuid, Doc doc, PrintRequestAttributeSet printRequestAttributeSet, 
+			boolean usesDirectConnect) 
 			throws PrintException {
 		try {
-			IRemotePrintJobManager manager = null;
+			IRemotePrintJobManager manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
+
 			this.printRequestAttributeSet = printRequestAttributeSet;
 			this.docAttributeSet = doc.getAttributes();
 			this.docFlavor = doc.getDocFlavor();
-			printData = doc.getPrintData();
-			boolean formatted = false;
-			
-			if (manager == null) {
-				manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
-			}
-			communicationType = RemotePrintJobCommunicationType.DIRECT_CONNECT;
-			appliedCommunicationType = null;
-
-			// DocFlavor.SERVICE_FORMATTED (Pageable and Printable) documents are not serializable.
-			if (docFlavor instanceof DocFlavor.SERVICE_FORMATTED) {
-				/* We must transform them if:
-				 * 1 - The client can not handle direct communication (old clients).
-				 * 2 - We have persistence active, that is that the print job MUST be serialized.
-				*/
-				if (printSerialized || persistenceActive) {
-					transformed = transformDocument(doc, printRequestAttributeSet);
-					communicationType = RemotePrintJobCommunicationType.SERIALIZED;
-				}				
-			}
-			if (!formatted) {
-				if (DocFlavor.INPUT_STREAM.PDF.equals(docFlavor) && !printSerialized) {
-					docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
-					printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)doc.getPrintData(), printService, printRequestAttributeSet);
+			this.originalDocFlavor = doc.getDocFlavor();
+			this.printData = doc.getPrintData();
+			this.usesDirectConnect = usesDirectConnect;
+			this.supportsOnlyPageable = false; // if false printer is capable of handling other types of sources.
+			if (usesDirectConnect) {
+				if (!(doc.getDocFlavor() instanceof DocFlavor.SERVICE_FORMATTED)) {
+					if (PrintServiceUtils.supportDocFlavor(printService, doc.getDocFlavor())) {
+						this.supportsOnlyPageable = true; // printer only handles pageable.
+						this.docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
+					}
 				}
 			}
+
 			manager.addRemotePrintJob(uuid, this);
 		} catch (IOException e) {
 			throw new PrintException(e);
@@ -206,31 +195,9 @@ public class RemotePrintJob implements IRemotePrintJob {
 		}
 	}
 	
-	
-	/**
-	 * Serializes this object this element with the doc information.
-	 * @param doc Document to be printed
-	 * @param printRequestAttributeSet Request attribute.
-	 * @throws PrintException
-	 */
-	public InputStream transformDocument(Doc doc, PrintRequestAttributeSet printRequestAttributeSet)
-			throws PrintException {
-		this.printRequestAttributeSet = printRequestAttributeSet;
-		this.docAttributeSet = doc.getAttributes();
-		this.docFlavor = doc.getDocFlavor();
-		InputStream transformed = null;
-		try {
-			printData = doc.getPrintData();
-			transformed = PageableUtils.INSTANCE.getStreamForBytes(printData, getPageFormat(), printRequestAttributeSet);
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-		}
-		return transformed;
-	}
-
 	/**
 	 * Updates this element with the doc information.
-	 * @deprecated Use transformDocument instead.
+	 * @deprecated Not is use anymore. SEVERE performance penalty.
 	 * @param doc Document to be printed
 	 * @param printRequestAttributeSet Request attribute.
 	 * @throws PrintException
@@ -291,6 +258,19 @@ public class RemotePrintJob implements IRemotePrintJob {
 		return printData;
 	}
 
+	@Override
+	public void setOriginalDocFlavor(DocFlavor originalDocFlavor) {
+		this.originalDocFlavor = originalDocFlavor;
+	}
+	
+	/**
+	 * 
+	 * @return The original doc flavor for the print data.
+	 */
+	public DocFlavor getOriginalDocFlavor() {
+		return originalDocFlavor;
+	}
+
 	/**
 	 * Sets the document flavor.
 	 * @param docFlavor New document flavor to set.
@@ -303,6 +283,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 * 
 	 * @return The original doc flavor for the print data.
 	 */
+	@Override
 	public DocFlavor getDocFlavor() {
 		return docFlavor;
 	}
@@ -397,37 +378,26 @@ public class RemotePrintJob implements IRemotePrintJob {
 	}
 
 	@Override
-	public InputStream getTransformed() {
-		return transformed;
+	public Boolean getUsesDirectConnect() {
+		return usesDirectConnect;
 	}
-	/**
-	 * @return the communicationType
-	 */
+	
 	@Override
-	public RemotePrintJobCommunicationType getCommunicationType() {
-		return communicationType;
+	public void setUsesDirectConnect(Boolean usesDirectConnect) {
+		this.usesDirectConnect = usesDirectConnect;
 	}
 
 	/**
-	 * @return the appliedCommunicationType
+	 * @return the supportsOnlyPageable
 	 */
-	@Override
-	public RemotePrintJobCommunicationType getAppliedCommunicationType() {
-		return appliedCommunicationType;
+	public Boolean getSupportsOnlyPageable() {
+		return supportsOnlyPageable;
 	}
 
 	/**
-	 * @param appliedCommunicationType the appliedCommunicationType to set
+	 * @param supportsOnlyPageable the supportsOnlyPageable to set
 	 */
-	@Override
-	public void setAppliedCommunicationType(RemotePrintJobCommunicationType appliedCommunicationType) {
-		this.appliedCommunicationType = appliedCommunicationType;
-	}
-
-	/**
-	 * @return the persistenceActive
-	 */
-	public static boolean getPersistenceActive() {
-		return persistenceActive;
+	public void setSupportsOnlyPageable(Boolean usesPageable) {
+		this.supportsOnlyPageable = usesPageable;
 	}
 }

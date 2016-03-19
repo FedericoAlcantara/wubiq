@@ -5,6 +5,9 @@ package net.sf.wubiq.print.managers.impl;
 
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -13,6 +16,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.UUID;
+
+import javax.print.PrintException;
 
 import net.sf.cglib.proxy.Enhancer;
 import net.sf.wubiq.adapters.PageableAdapter;
@@ -27,8 +32,10 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.proxies.ProxyAdapterMaster;
 import net.sf.wubiq.utils.DirectConnectUtils;
+import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.wrappers.GraphicParameter;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -76,6 +83,10 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 	 */
 	@Override
 	public synchronized boolean removePrintJob(long jobId) {
+		IRemotePrintJob printJob = jobBucket(jobId).printJob;
+		if (printJob != null) {
+			PdfUtils.INSTANCE.closePageable(printJob.getPrintDataObject());
+		}
 		jobBucket(jobId).registeredObjects = null;
 		jobBucket(jobId).remoteDatas = null;
 		jobBucket(jobId).printJob = null;
@@ -103,6 +114,27 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 		return jobBucket;
 	}
 	
+	/**
+	 * If required converts the stored data into appropriate type.
+	 * @param returnValue Value to be returned.
+	 */
+	protected void manageConversion(IRemotePrintJob returnValue) {
+		if (!returnValue.getOriginalDocFlavor().equals(returnValue.getDocFlavor())
+				&& returnValue.getUsesDirectConnect()
+				&& returnValue.getSupportsOnlyPageable()) {
+			try {
+				returnValue.setPrintDataObject(PdfUtils.INSTANCE.pdfToPageable(returnValue.getPrintData()));
+			} catch (PrintException e) {
+				LOG.fatal(ExceptionUtils.getMessage(e));
+				throw new RuntimeException(e);
+			} catch (IOException e) {
+				LOG.fatal(ExceptionUtils.getMessage(e));
+				throw new RuntimeException(e);
+			}
+			returnValue.setOriginalDocFlavor(returnValue.getDocFlavor()); // no more transformation for in memory queues.
+		}
+	}
+
 	/**
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#hasLocalPrintJob(java.lang.Long)
 	 */
@@ -204,9 +236,21 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 	@Override
 	public synchronized void startPrintJob(final long jobId) {
 		registeredObjects(jobId).put(getObjectUUID(), this);
-		IRemotePrintJob remotePrintJob = remotePrintJob(jobId);
+		IRemotePrintJob remotePrintJob = remotePrintJob(jobId, true);
 		if (remotePrintJob != null) {
 			Object printData = remotePrintJob.getPrintDataObject();
+			if (!(printData instanceof Pageable) &&
+					!(printData instanceof Printable)) {
+				if (printData instanceof ByteArrayInputStream) {
+					((ByteArrayInputStream)printData).reset();
+				}
+				try {
+					printData = PdfUtils.INSTANCE.pdfToPageable((InputStream)printData);
+				} catch (PrintException e) {
+					LOG.fatal(ExceptionUtils.getMessage(e));
+					throw new RuntimeException(e);
+				}
+			}
 			if (printData instanceof Printable) {
 				PrintableChunkAdapter remote = (PrintableChunkAdapter)
 						Enhancer.create(PrintableChunkAdapter.class,
@@ -320,8 +364,8 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 			} catch (TimeoutException e) {
 				DirectConnectUtils.INSTANCE.notifyTimeout(this, listeners());
 			} catch (Exception e) {
-				LOG.fatal(e.getMessage(), e);
-				DirectConnectUtils.INSTANCE.notifyException(this, listeners(), e.getMessage());
+				LOG.fatal(ExceptionUtils.getMessage(e), e);
+				DirectConnectUtils.INSTANCE.notifyException(this, listeners(), ExceptionUtils.getMessage(e));
 			}
 		}
 		returnedData = getReturnedData();
@@ -360,11 +404,7 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 					data = method.invoke(methodObject, parameterValues);
 				}
 			} catch (Exception e) {
-				if (e.getCause() != null) {
-					error = e.getCause().getMessage();
-				} else {
-					error = e.getMessage();
-				}
+				error = ExceptionUtils.getMessage(ExceptionUtils.getRootCause(e));
 			}
 			if (error != null) {
 				serializedData = DirectConnectKeys.DIRECT_CONNECT_EXCEPTION

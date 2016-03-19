@@ -48,6 +48,7 @@ public class ServerTest extends WubiqBaseTest {
 	public void tearDown() throws Exception {
 		super.tearDown();
 		manager.askServer(CommandKeys.KILL_MANAGER);
+		Thread.sleep(5000);
 	}
 
 	/**
@@ -133,8 +134,10 @@ public class ServerTest extends WubiqBaseTest {
 			assertFalse("Print service name should not be empty", Is.emptyString(printServiceName));
 			assertNotNull("Attributes data should not be null", attributesData);
 			assertNotNull("Content should contain the print test page", content);
-			checkTestPageSize(content);
+			assertEquals("Content must be blank as we are using DirectConnect", "", (String)content);
+			manager.closePrintJob(jobId);
 		}
+		
 	}
 	
 	/**
@@ -208,8 +211,8 @@ public class ServerTest extends WubiqBaseTest {
 	}	
 
 	public void testRemotePrintTestPageNonPageableOldRouting() throws Exception {
-		Thread.sleep(5000);
 		manager.getTestData().setForceSerializedBySystem(true);
+		Thread.sleep(5000);
 		remotePrintTestPageNonPageable(true);
 	}	
 

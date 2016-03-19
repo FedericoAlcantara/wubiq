@@ -26,6 +26,7 @@ import net.sf.wubiq.data.WubiqPrintService;
 import net.sf.wubiq.data.WubiqServer;
 import net.sf.wubiq.utils.ServerLabels;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.cfg.Configuration;
@@ -156,7 +157,7 @@ public final class PersistenceManager {
 				ctx = new InitialContext();
 				dataSource = (DataSource)ctx.lookup("java:comp/env/jdbc/wubiqDS");
 			} catch (NamingException e) {
-				LOG.debug(e.getMessage());
+				LOG.debug(ExceptionUtils.getMessage(e));
 			}
 		}
 		return dataSource;

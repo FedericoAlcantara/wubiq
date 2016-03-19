@@ -110,7 +110,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			
 			// We must read the input stream to set the type of connection at job level.
 			printData = pollServer(CommandKeys.READ_PRINT_JOB, parameter);
-			
+			// printData must come blank for directConnect to work.
 			String isDirectConnectData = "false";
 			try {
 				isDirectConnectData = askServer(CommandKeys.READ_IS_DIRECT_CONNECT, parameter);
@@ -144,7 +144,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				if (!docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PAGEABLE) &&
 						!docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
 					if (PrintServiceUtils.supportDocFlavor(printService, docFlavor)) {
-						forceSerialized = true; // this is different this is telling to handle by old printing routines but multi print services.
+						forceSerialized = true; // this is different this is telling to handle as pageable with direct connect
+						docFlavor = DocFlavor.SERVICE_FORMATTED.PAGEABLE;
 					}
 				}
 			}
@@ -236,7 +237,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 * Closes the print job.
 	 * @param jobId Job id to close.
 	 */
-	private void closePrintJob(String jobId) {
+	protected void closePrintJob(String jobId) {
 		try {
 			askServer(CommandKeys.CLOSE_PRINT_JOB, printJobPollString(jobId));
 			doLog("Job(" + jobId + ") closing print job.", 0);
@@ -470,6 +471,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 				doLog("Print service:" + printServiceName, 5);
 				StringBuffer printServiceRegister = new StringBuffer(printServiceName); 
 				StringBuffer categories = new StringBuffer(PrintServiceUtils.serializeServiceCategories(printService, isDebugMode()));
+				boolean forceSerialization = "true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION))
+						|| forceSerializedBySystem();
 				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 					.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
 				askServer(CommandKeys.REGISTER_PRINT_SERVICE_V2, printServiceRegister.toString(), categories.toString(), 
@@ -478,7 +481,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 							+DirectConnectUtils.INSTANCE.serialize(printService.getSupportedDocFlavors()),
 						DirectConnectKeys.DIRECT_CONNECT_ENABLED_PARAMETER 
 							+ ParameterKeys.PARAMETER_SEPARATOR
-							+ ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION)) ?
+							+ (forceSerialization ?
 									"FALSE" : "TRUE"),
 						DirectConnectKeys.DIRECT_CONNECT_CLIENT_VERSION
 							+ ParameterKeys.PARAMETER_SEPARATOR

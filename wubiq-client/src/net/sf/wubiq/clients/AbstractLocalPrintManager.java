@@ -228,15 +228,17 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		
 		String[]returnValue = new String[]{};
 		String pendingJobResponse = askServer(CommandKeys.PENDING_JOBS);
+		String pendingJobList = "";
 		if (!Is.emptyString(pendingJobResponse)
 				&& pendingJobResponse.startsWith(ParameterKeys.PENDING_JOB_SIGNATURE)) {
+			pendingJobList = pendingJobResponse.substring(ParameterKeys.PENDING_JOB_SIGNATURE.length());
 			returnValue = pendingJobResponse.substring(ParameterKeys.PENDING_JOB_SIGNATURE.length())
 				.split(ParameterKeys.CATEGORIES_SEPARATOR);
 		}
-		if (!Is.emptyString(pendingJobResponse)) {
-			doLog("pending jobs: " + pendingJobResponse, 1);
+		if (!Is.emptyString(pendingJobList)) {
+			doLog("pending jobs: " + pendingJobList, 1);
 		} else {
-			doLog("pending jobs: " + pendingJobResponse, 5);
+			doLog("pending jobs: " + pendingJobList, 5);
 		}
 		return returnValue;
 	}

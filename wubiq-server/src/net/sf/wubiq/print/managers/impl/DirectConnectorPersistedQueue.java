@@ -63,13 +63,25 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 	}
 	
 	/**
+	 * @deprecated 
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#remotePrintJob(long)
 	 */
 	@Override
 	public synchronized IRemotePrintJob remotePrintJob(long jobId) {
 		IRemotePrintJob printJob = jobBucket(jobId).printJob;
 		if (printJob == null) {
-			printJob = WubiqPrintJobDao.INSTANCE.remotePrintJob(jobId, true);
+			printJob = WubiqPrintJobDao.INSTANCE.remotePrintJob(jobId, false);
+		}
+		return printJob;
+	}
+	
+	/** TODO implement savings to the persistence **/
+	@Override
+	public IRemotePrintJob remotePrintJob(long jobId, boolean full) {
+		IRemotePrintJob printJob = jobBucket(jobId).printJob;
+		
+		if (printJob == null) { // If not in memory we must KILL if requires processing.
+			printJob = WubiqPrintJobDao.INSTANCE.remotePrintJob(jobId, full);
 		}
 		return printJob;
 	}

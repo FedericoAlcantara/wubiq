@@ -13,6 +13,8 @@ import java.net.NetworkInterface;
 import java.net.SocketException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -49,7 +51,7 @@ public enum ServerWebUtils {
 		String url =  "/" + context;
 		returnValue.append("<html>")
 			.append("<header>")
-			.append("<meta http-equiv=\"refresh\" content=\"3," + url + "\"/>")
+			.append("<meta http-equiv=\"refresh\" content=\"3, " + url + "\"/>")
 			.append("</header>")
 			.append("<body>")
 			.append(body)
@@ -177,10 +179,23 @@ public enum ServerWebUtils {
 				returnValue = localHost.getHostName();
 			}
 		} catch (UnknownHostException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			LOG.error(ExceptionUtils.getMessage(e));
 		}
 		
 		return returnValue;
+	}
+	
+	/**
+	 * Minimum date.
+	 * @return Minimum default date.
+	 */
+	public Date minimumDate() {
+		Calendar calendar = Calendar.getInstance();
+		calendar.set(1900, 00, 01);
+		calendar.set(Calendar.HOUR, 0);
+		calendar.set(Calendar.MINUTE,0);
+		calendar.set(Calendar.SECOND, 0);
+		calendar.set(Calendar.MILLISECOND, 1);
+		return calendar.getTime();
 	}
 }

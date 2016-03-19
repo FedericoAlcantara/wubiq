@@ -6,8 +6,10 @@ package net.sf.wubiq.data;
 import java.io.Serializable;
 import java.util.Date;
 
+import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -17,7 +19,6 @@ import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
 
 import net.sf.wubiq.enums.PrintJobDataType;
-import net.sf.wubiq.enums.RemotePrintJobCommunicationType;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 import org.hibernate.annotations.Type;
@@ -54,14 +55,18 @@ public class WubiqPrintJob implements Serializable {
 	private String printJobAttributes;
 	
 	@Column(length = 100)
+	private String originalDocFlavor;
+
+	@Column(length = 100)
 	private String docFlavor;
-	
-	private RemotePrintJobCommunicationType communicationType;
-	
-	private RemotePrintJobCommunicationType appliedCommunicationType;
 
 	private PrintJobDataType printJobDataType;
 	
+	private Boolean usesDirectConnect;
+	
+	private Boolean supportsOnlyPageable;
+	
+	@Basic(fetch = FetchType.LAZY)
 	private byte[] printData;
 	
 	private RemotePrintJobStatus status;
@@ -147,6 +152,20 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @return the originalDocFlavor
+	 */
+	public String getOriginalDocFlavor() {
+		return originalDocFlavor;
+	}
+
+	/**
+	 * @param originalDocFlavor the originalDocFlavor to set
+	 */
+	public void setOriginalDocFlavor(String originalDocFlavor) {
+		this.originalDocFlavor = originalDocFlavor;
+	}
+
+	/**
 	 * @param docFlavor the docFlavor to set
 	 */
 	public void setDocFlavor(String docFlavor) {
@@ -182,34 +201,6 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
-	 * @return the communicationType
-	 */
-	public RemotePrintJobCommunicationType getCommunicationType() {
-		return communicationType;
-	}
-
-	/**
-	 * @param communicationType the communicationType to set
-	 */
-	public void setCommunicationType(RemotePrintJobCommunicationType communicationType) {
-		this.communicationType = communicationType;
-	}
-
-	/**
-	 * @return the appliedCommunicationType
-	 */
-	public RemotePrintJobCommunicationType getAppliedCommunicationType() {
-		return appliedCommunicationType;
-	}
-
-	/**
-	 * @param appliedCommunicationType the appliedCommunicationType to set
-	 */
-	public void setAppliedCommunicationType(RemotePrintJobCommunicationType appliedCommunicationType) {
-		this.appliedCommunicationType = appliedCommunicationType;
-	}
-
-	/**
 	 * @return the printJobDataType
 	 */
 	public PrintJobDataType getPrintJobDataType() {
@@ -221,6 +212,34 @@ public class WubiqPrintJob implements Serializable {
 	 */
 	public void setPrintJobDataType(PrintJobDataType printJobDataType) {
 		this.printJobDataType = printJobDataType;
+	}
+
+	/**
+	 * @return the usesDirectConnect
+	 */
+	public Boolean getUsesDirectConnect() {
+		return usesDirectConnect;
+	}
+
+	/**
+	 * @param usesDirectConnect the usesDirectConnect to set
+	 */
+	public void setUsesDirectConnect(Boolean usesDirectConnect) {
+		this.usesDirectConnect = usesDirectConnect;
+	}
+
+	/**
+	 * @return the supportsOnlyPageable
+	 */
+	public Boolean getSupportsOnlyPageable() {
+		return supportsOnlyPageable;
+	}
+
+	/**
+	 * @param supportsOnlyPageable the supportsOnlyPageable to set
+	 */
+	public void setSupportsOnlyPageable(Boolean supportsOnlyPageable) {
+		this.supportsOnlyPageable = supportsOnlyPageable;
 	}
 
 	/**

@@ -17,6 +17,7 @@ import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.print.pdf.PdfImagePage;
 import net.sf.wubiq.utils.PdfUtils;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.imgscalr.Scalr;
@@ -71,7 +72,7 @@ public enum ConversionServerUtils {
 				outputStream.flush();
 				returnValue = new ByteArrayInputStream(outputStream.toByteArray());
 			} catch (IOException e) {
-				LOG.error(e.getMessage(), e);
+				LOG.error(ExceptionUtils.getMessage(e), e);
 			}
 		}
 		return returnValue;
@@ -89,7 +90,7 @@ public enum ConversionServerUtils {
 				returnValue = ImageIO.read(bitmaps.get(0).getImageFile());
 			}
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 		}
 		return returnValue;
 	}
@@ -147,7 +148,7 @@ public enum ConversionServerUtils {
         	try {
         		bottomSpace = (Integer) deviceInfo.getHints().get(MobileConversionHint.BOTTOM_SPACE);
         	} catch (Exception e) {
-        		LOG.error(e.getMessage(), e);
+        		LOG.error(ExceptionUtils.getMessage(e), e);
         	}
         }
         outer:
@@ -178,7 +179,7 @@ public enum ConversionServerUtils {
         	try {
         		rightSpace = (Integer) deviceInfo.getHints().get(MobileConversionHint.RIGHT_SPACE);
         	} catch (Exception e) {
-        		LOG.error(e.getMessage(), e);
+        		LOG.error(ExceptionUtils.getMessage(e), e);
         	}
         }
         outer:

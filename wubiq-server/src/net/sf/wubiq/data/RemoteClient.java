@@ -5,12 +5,15 @@ package net.sf.wubiq.data;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Id;
 import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
 
 /**
  * Contains the remote info and status. Each connected client is represented by an instance of this class.
@@ -29,7 +32,6 @@ public class RemoteClient implements Serializable {
 	@Column(length = 100)
 	private String computerName;
 	
-	
 	/**
 	 * @deprecated Services are handled by RemotePrintServiceLookup
 	 */
@@ -44,12 +46,16 @@ public class RemoteClient implements Serializable {
 	
 	private Boolean killed;
 	
+	@Temporal(TemporalType.TIMESTAMP)
+	private Date lastAccessed;
+	
 	/**
-	 * @deprecated Use lastAccessed
+	 * @deprecated Use lastAccessed.
 	 */
 	private transient Long lastAccessedTime;
 
 	/**
+	 * @deprecated Inactive time.
 	 * Time in milliseconds where after not having notification from remote the connection is considered dead.
 	 */
 	private transient long inactiveTime;
@@ -85,6 +91,7 @@ public class RemoteClient implements Serializable {
 	}
 
 	/**
+	 * @deprecated Not used anymore.
 	 * @return the inactiveTime
 	 */
 	public Long getInactiveTime() {
@@ -92,7 +99,8 @@ public class RemoteClient implements Serializable {
 	}
 
 	/**
-	 * @param inactiveTime the inactiveTime to set
+	 * @deprecated Never used.
+	 * @param inactiveTime the inactiveTime to set.
 	 */
 	public void setInactiveTime(Long inactiveTime) {
 		this.inactiveTime = inactiveTime;
@@ -176,6 +184,20 @@ public class RemoteClient implements Serializable {
 	 */
 	public Boolean isRefreshed() {
 		return refreshed;
+	}
+
+	/**
+	 * @return the lastAccessed
+	 */
+	public Date getLastAccessed() {
+		return lastAccessed;
+	}
+
+	/**
+	 * @param lastAccessed the lastAccessed to set
+	 */
+	public void setLastAccessed(Date lastAccessed) {
+		this.lastAccessed = lastAccessed;
 	}
 
 	/**

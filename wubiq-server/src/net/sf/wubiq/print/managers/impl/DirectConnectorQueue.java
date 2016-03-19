@@ -57,11 +57,18 @@ public class DirectConnectorQueue extends DirectConnectorQueueBase {
 	}
 	
 	/**
+	 * @deprecated
 	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#remotePrintJob(long)
 	 */
 	@Override
 	public synchronized IRemotePrintJob remotePrintJob(long jobId) {
 		return jobBucket(jobId).printJob;
+	}
+	
+	@Override
+	public IRemotePrintJob remotePrintJob(long jobId, boolean full) {
+		IRemotePrintJob returnValue = jobBucket(jobId).printJob;
+		return returnValue;
 	}
 	
 	/**

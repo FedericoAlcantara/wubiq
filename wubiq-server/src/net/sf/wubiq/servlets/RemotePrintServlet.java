@@ -49,6 +49,7 @@ import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
+import net.sf.wubiq.listeners.ContextListener;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.PrinterJobManager;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
@@ -150,7 +151,7 @@ public class RemotePrintServlet extends HttpServlet {
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_DOC_FLAVOR)) {
 							getDocFlavorCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_IS_DIRECT_CONNECT)) {
-							isDirectConnectionCommand(uuid, request, response, parameters);
+							isDirectConnectionCommand(uuid, request, response, parametersInputStream, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_IS_COMPRESSED)) {
 							serverSupportsCompressionCommand(uuid, request, response);
 						} else if (command.equalsIgnoreCase(CommandKeys.READ_PRINT_JOB)) {
@@ -158,7 +159,7 @@ public class RemotePrintServlet extends HttpServlet {
 						} else if (command.equalsIgnoreCase(CommandKeys.CLOSE_PRINT_JOB)) {
 							closePrintJobCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.DIRECT_CONNECT)) {
-							directConnect(uuid, request, response, clientSupportsCompression, parameters);
+							directConnect(uuid, request, response, clientSupportsCompression, parametersInputStream, parameters);
 						}
 					}
 				}
@@ -292,6 +293,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -317,6 +319,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -345,6 +348,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -376,6 +380,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -457,6 +462,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -471,7 +477,7 @@ public class RemotePrintServlet extends HttpServlet {
 			}
 			for (Long jobId : toBeRemoved) {
 				IRemotePrintJob printJob = manager.getRemotePrintJob(jobId, false);
-				if (printService.equals(printJob.getPrintService())) {
+				if (printService.getName().equals(printJob.getPrintService().getName())) {
 					manager.removeRemotePrintJob(jobId);
 					count++;
 				}
@@ -487,7 +493,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
-	 * @throws ServletException
+	 * @param parameters Processed request parameters. 
 	 * @throws IOException
 	 */
 	private void getPendingJobsCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
@@ -542,6 +548,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -562,6 +569,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -577,6 +585,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -591,6 +600,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -605,6 +615,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -631,6 +642,8 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parametersInputStream Original request input stream.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -639,21 +652,25 @@ public class RemotePrintServlet extends HttpServlet {
 			Map<String, Object> parameters) throws ServletException, IOException {
 		closeSession(request);
 		request.getSession();
-		String jobId = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
-		if (!forwarded(request, response, parametersInputStream, jobId)) {
-			IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), true);
+		String jobIdString = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
+		if (!forwarded(request, response, parametersInputStream, jobIdString)) {
+			long jobId = Long.parseLong(jobIdString);
+			IRemotePrintJob printJob = manager.getRemotePrintJob(jobId, true);
 			InputStream input = null;
 			// If it is remote we must convert pdf to image and then scale it to print size
 			try {
 				if (RemotePrintServiceLookup.isMobile(uuid)) {
 					input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
 				} else {
-					input = printJob.getTransformed() != null 
-							? printJob.getTransformed()
-							: printJob.getPrintData();
+					if ((manager instanceof IDirectConnectPrintJobManager)
+							&& ((IDirectConnectPrintJobManager)manager).isDirectConnect(jobId)) {
+						input = null;
+					} else {
+						input = printJob.getPrintData();
+					}
 				}
 			} catch (Throwable e) {
-				LOG.fatal(e.getMessage(), e);
+				LOG.debug(ExceptionUtils.getMessage(e)); // Now debug, because pageables can be performed.
 				input = null;
 			}
 			if (input != null) {
@@ -671,23 +688,29 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique Id of the print service.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parametersInputStream Original request input stream.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException 
 	 * @throws IOException
 	 */
-	private void isDirectConnectionCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws ServletException, IOException {
+	private void isDirectConnectionCommand(String uuid, HttpServletRequest request, HttpServletResponse response,
+			ByteArrayInputStream parametersInputStream,
+			Map<String, Object> parameters) throws ServletException, IOException {
 		Boolean returnValue = true;
-		if (manager instanceof IDirectConnectPrintJobManager) {
-			String jobIdString = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
-			Long jobId = null; // Old clients won't set this parameter at all.
-			try {
-				jobId = Long.parseLong(jobIdString);
-			} catch (NumberFormatException e) {
-				jobId = null;
+		String jobIdString = getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
+		if (!forwarded(request, response, parametersInputStream, jobIdString)) {
+			if (manager instanceof IDirectConnectPrintJobManager) {
+				Long jobId = null; // Old clients won't set this parameter at all.
+				try {
+					jobId = Long.parseLong(jobIdString);
+				} catch (NumberFormatException e) {
+					jobId = null;
+				}
+				// Called by NEW client, and after reading the print job data!
+				returnValue = ((IDirectConnectPrintJobManager) manager).isDirectConnect(jobId);
 			}
-			// Called by NEW client, and after reading the print job data!
-			returnValue = ((IDirectConnectPrintJobManager) manager).isDirectConnect(jobId);
+			respond(returnValue.toString(), response);
 		}
-		respond(returnValue.toString(), response);
 	}
 
 
@@ -696,6 +719,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
 	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
 	 * @throws ServletException
 	 * @throws IOException
 	 */
@@ -773,7 +797,7 @@ public class RemotePrintServlet extends HttpServlet {
 							printerJob.setPrintService(printService);
 							printerJob.print(requestAttributes);
 						} catch (PrinterException e) {
-							LOG.error(e.getMessage(), e);
+							LOG.error(ExceptionUtils.getMessage(e), e);
 							throw new ServletException(e);
 						}
 					}
@@ -825,110 +849,116 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @param uuid Unique printer uuid.
 	 * @param request Originating request.
 	 * @param response Output response.
+	 * @param clientSupportsCompression True if the client supports compression.
+	 * @param parametersInputStream Original request input stream.
+	 * @param parameters Processed request parameters. 
 	 * @throws IOException Thrown if any errors found.
 	 */
 	private void directConnect(String uuid, HttpServletRequest request, HttpServletResponse response,
 			boolean clientSupportsCompression,
+			ByteArrayInputStream parametersInputStream,
 			Map<String, Object> parameters)
 			throws IOException {
 		int ordinal = clientSupportsCompression
 				? (Integer)getParameterObject(request, parameters, DirectConnectKeys.DIRECT_CONNECT_PARAMETER)
 				: Integer.parseInt(getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_PARAMETER));
-		IDirectConnectPrintJobManager manager = (IDirectConnectPrintJobManager)this.manager;
-		IDirectConnectorQueue directConnector = manager.directConnector(uuid);
-		ReturnedData returnedData = null;
-		Object object = null;
-		if (clientSupportsCompression) {
-			object = getParameterObject(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA);
-		}
-		if (ordinal >= 0 && ordinal < DirectConnectCommand.values().length) {
-			DirectConnectCommand command = DirectConnectCommand.values()[ordinal];
-			String data = null;
-			String jobIdString = clientSupportsCompression
-					? (String)getParameterObject(request, parameters, ParameterKeys.PRINT_JOB_ID)
-					: getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
-			Long jobId = Long.parseLong(jobIdString);
-			switch (command) {
-				case START:
-					directConnector.startPrintJob(jobId);
-					manager.startPrintJob(jobId);
-					respondBlank(clientSupportsCompression, response);
-					break;
-					
-				case POLL:
-					if (directConnector.isCommandToSendReady()) {
-						RemoteCommand remoteCommand = directConnector.getCommandToSend();
-						if (clientSupportsCompression) {
-							respondObject(remoteCommand, response);
-						} else {
-							String serialized = DirectConnectUtils.INSTANCE.serialize(remoteCommand);
-							respond("application/octet-stream", serialized, response);
-						}
-						directConnector.resetCommandToSend();
-					} else {
+		String jobIdString = clientSupportsCompression
+				? (String)getParameterObject(request, parameters, ParameterKeys.PRINT_JOB_ID)
+				: getParameter(request, parameters, ParameterKeys.PRINT_JOB_ID);
+				IDirectConnectPrintJobManager manager = (IDirectConnectPrintJobManager)this.manager;
+		if (!forwarded(request, response, parametersInputStream, jobIdString)) {
+			IDirectConnectorQueue directConnector = manager.directConnector(uuid);
+			ReturnedData returnedData = null;
+			Object object = null;
+			if (clientSupportsCompression) {
+				object = getParameterObject(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA);
+			}
+			if (ordinal >= 0 && ordinal < DirectConnectCommand.values().length) {
+				DirectConnectCommand command = DirectConnectCommand.values()[ordinal];
+				String data = null;
+				Long jobId = Long.parseLong(jobIdString);
+				switch (command) {
+					case START:
+						directConnector.startPrintJob(jobId);
+						manager.startPrintJob(jobId);
 						respondBlank(clientSupportsCompression, response);
-					}
-					break;
-					
-				case DATA:
-					if (clientSupportsCompression) {
-						directConnector.queueReturnedData(new ReturnedData(object));
-					} else {
-						data = clientSupportsCompression
-								? (String)getParameterObject(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA)
-			 					: getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA);
-						object = null;
-						if (data != null) {
-							object = DirectConnectUtils.INSTANCE.deserialize(data);
+						break;
+						
+					case POLL:
+						if (directConnector.isCommandToSendReady()) {
+							RemoteCommand remoteCommand = directConnector.getCommandToSend();
+							if (clientSupportsCompression) {
+								respondObject(remoteCommand, response);
+							} else {
+								String serialized = DirectConnectUtils.INSTANCE.serialize(remoteCommand);
+								respond("application/octet-stream", serialized, response);
+							}
+							directConnector.resetCommandToSend();
+						} else {
+							respondBlank(clientSupportsCompression, response);
 						}
-					}
-					directConnector.queueReturnedData(new ReturnedData(object));
-					respondBlank(clientSupportsCompression, response);
-					break;
-					
-				case READ_REMOTE:
-					if (clientSupportsCompression) {
-						if (object instanceof RemoteCommand) {
-							Object output = directConnector.callCommand(jobId, (RemoteCommand) object, clientSupportsCompression);
-							respondObject(output, response);
-						}
-					} else {
-						data = getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA);
-						object = null;
-						if (data != null) {
-							object = DirectConnectUtils.INSTANCE.deserialize(data);
-							if (object instanceof RemoteCommand) {
-								data = (String)directConnector.callCommand(jobId, (RemoteCommand) object, clientSupportsCompression);
-								respond(data, response);
+						break;
+						
+					case DATA:
+						if (clientSupportsCompression) {
+							directConnector.queueReturnedData(new ReturnedData(object));
+						} else {
+							data = clientSupportsCompression
+									? (String)getParameterObject(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA)
+				 					: getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA);
+							object = null;
+							if (data != null) {
+								object = DirectConnectUtils.INSTANCE.deserialize(data);
 							}
 						}
-					}
-					if (object == null) {
+						directConnector.queueReturnedData(new ReturnedData(object));
 						respondBlank(clientSupportsCompression, response);
-					}
-					break;
-					
-				case EXCEPTION:
-					if (clientSupportsCompression) {
-						returnedData = new ReturnedData((String)object);
-					} else {
-						returnedData = new ReturnedData(getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA));
-					}
-					returnedData.setException(true);
-					break;
-					
-				case RUNTIME_EXCEPTION:
-					if (returnedData == null) {
+						break;
+						
+					case READ_REMOTE:
+						if (clientSupportsCompression) {
+							if (object instanceof RemoteCommand) {
+								Object output = directConnector.callCommand(jobId, (RemoteCommand) object, clientSupportsCompression);
+								respondObject(output, response);
+							}
+						} else {
+							data = getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA);
+							object = null;
+							if (data != null) {
+								object = DirectConnectUtils.INSTANCE.deserialize(data);
+								if (object instanceof RemoteCommand) {
+									data = (String)directConnector.callCommand(jobId, (RemoteCommand) object, clientSupportsCompression);
+									respond(data, response);
+								}
+							}
+						}
+						if (object == null) {
+							respondBlank(clientSupportsCompression, response);
+						}
+						break;
+						
+					case EXCEPTION:
 						if (clientSupportsCompression) {
 							returnedData = new ReturnedData((String)object);
 						} else {
 							returnedData = new ReturnedData(getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA));
 						}
-						returnedData.setRuntimeException(true);
-					}
-					directConnector.queueReturnedData(returnedData);
-					respondBlank(clientSupportsCompression, response);
-					break;
+						returnedData.setException(true);
+						break;
+						
+					case RUNTIME_EXCEPTION:
+						if (returnedData == null) {
+							if (clientSupportsCompression) {
+								returnedData = new ReturnedData((String)object);
+							} else {
+								returnedData = new ReturnedData(getParameter(request, parameters, DirectConnectKeys.DIRECT_CONNECT_DATA));
+							}
+							returnedData.setRuntimeException(true);
+						}
+						directConnector.queueReturnedData(returnedData);
+						respondBlank(clientSupportsCompression, response);
+						break;
+				}
 			}
 		}
 	}
@@ -958,7 +988,7 @@ public class RemotePrintServlet extends HttpServlet {
 			ByteArrayInputStream newInput = new ByteArrayInputStream(output.toByteArray());
 			IOUtils.INSTANCE.copy(newInput, response.getOutputStream());
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -977,7 +1007,7 @@ public class RemotePrintServlet extends HttpServlet {
 			IOUtils.INSTANCE.copy(input, response.getOutputStream());
 			input.close();
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -994,7 +1024,7 @@ public class RemotePrintServlet extends HttpServlet {
 		try {
 			IOUtils.INSTANCE.copy((InputStream)objectData[0], response.getOutputStream());
 		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
+			LOG.error(ExceptionUtils.getMessage(e), e);
 			throw new RuntimeException(e);
 		}
 	}
@@ -1100,8 +1130,10 @@ public class RemotePrintServlet extends HttpServlet {
 				if (!((IDirectConnectPrintJobManager)manager).hasLocalPrintJob(jobId)) {
 					String ip = WubiqServerDao.INSTANCE.associatedServer(jobId);
 					if (!Is.emptyString(ip)) { // we have a server
-						String url = request.getScheme() + "://" + ip + ":" + request.getServerPort() + request.getRequestURI();
-						returnValue = forwardTo(request, response, parametersInputStream, url);
+						if (!ContextListener.serverIps().contains(ip)) { // Do not forward to itself!
+							String url = request.getScheme() + "://" + ip + ":" + request.getServerPort() + request.getRequestURI();
+							returnValue = forwardTo(request, response, parametersInputStream, url);
+						}
 					}
 				}	
 			}
@@ -1122,16 +1154,21 @@ public class RemotePrintServlet extends HttpServlet {
 		boolean returnValue = false;
 		HttpURLConnection connection = null; 
 		try {
+			if (request.getHeader("forwarded") != null) {
+				return false; // already forwarded must resolve here.
+			}
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
 			IOUtils.INSTANCE.copy(parametersInputStream, output);
 			int length = output.toByteArray().length;
 			connection = (HttpURLConnection) new URL(url).openConnection();
+			connection.setReadTimeout(1000);
 			connection.setDoOutput(true);
 			connection.setDoInput(true);
 			connection.setRequestMethod("POST");
 			connection.setRequestProperty("User-Agent", "Mozilla/5.0 (Macintosh; U; Intel Mac OS X 10.4; en-US; rv:1.9.2.2) Gecko/20100316 Firefox/3.6.2");
 			connection.setRequestProperty("charset", "utf-8");
 			connection.setRequestProperty("Accept-Charset", "utf-8");
+			connection.setRequestProperty("forwarded", "true");
 			// Using content-type will force the use of input stream and that is not managed by older servers.
 			//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
 			connection.setRequestProperty("Content-Length", "" + length);
@@ -1141,6 +1178,11 @@ public class RemotePrintServlet extends HttpServlet {
 			if (HttpURLConnection.HTTP_OK  == connection.getResponseCode() ||
 					HttpURLConnection.HTTP_ACCEPTED == connection.getResponseCode() ||
 					HttpURLConnection.HTTP_CREATED == connection.getResponseCode()) {
+				if (connection.getContent() instanceof String) {
+					
+				}
+				response.setContentType(connection.getContentType());
+				response.setContentLength(connection.getContentLength());
 				IOUtils.INSTANCE.copy(connection.getInputStream(), response.getOutputStream());
 				returnValue = true;
 			}

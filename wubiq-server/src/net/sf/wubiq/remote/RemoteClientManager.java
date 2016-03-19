@@ -5,7 +5,6 @@ package net.sf.wubiq.remote;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
@@ -21,6 +20,7 @@ import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 import net.sf.wubiq.utils.PrintServiceUtils;
+import net.sf.wubiq.utils.ServerWebUtils;
 
 /**
  * Manages remote print clients. Each instance of RemoteClient represents a connected client.
@@ -29,13 +29,17 @@ import net.sf.wubiq.utils.PrintServiceUtils;
  */
 public class RemoteClientManager implements Serializable {
 	private static final long serialVersionUID = 1L;
-	
-	private transient Map<String, RemoteClient> remotes;
-	private transient Map<String, Date> remotesAccessedTimes;
+
+	private static long TIMEOUT = 20000;
+	private static long UPDATE_INTERVAL = 10000;
 	
 	private static boolean remoteLookupInstalled;
 
 	private static transient Boolean persistenceActive = null;
+	
+	private transient Map<String, RemoteClient> remotes;
+	private transient Map<String, Date> remotesAccessedTimes;
+	private transient Map<String, Date> remotesLastUpdated;
 	
 	public RemoteClientManager() {
 		if (persistenceActive == null) {
@@ -84,7 +88,7 @@ public class RemoteClientManager implements Serializable {
 		}
 		if (!doNotUpdateAccessedTime) {
 			if (returnValue != null && !returnValue.isKilled()) {
-				getRemotesAccessedTimes().put(uuid, new Date());
+				updateLastAccessed(uuid);
 			}
 		}
 		return returnValue;
@@ -199,17 +203,41 @@ public class RemoteClientManager implements Serializable {
 	 * @return True if the remote is active or false otherwise.
 	 */
 	public boolean isRemoteActive(String uuid) {
-		Date remoteTime = getRemotesAccessedTimes().get(uuid);
+		boolean returnValue = false;
+		Date remoteTime = remoteLastAccessed(uuid);
+		Date currentTime = new Date();
 		if (remoteTime != null 
-				&& (new Date().getTime() - remoteTime.getTime()) < 20000) {
-			RemoteClient client = getRemoteClient(uuid, true);
-			if (client != null && !client.isKilled()) {
-				return true;
+				&& (currentTime.getTime() - remoteTime.getTime()) >= TIMEOUT) {
+			if (persistenceActive) {
+				remoteTime = WubiqRemoteClientDao.INSTANCE.lastAccessed(uuid);
 			}
 		}
-		return false;
+		if (remoteTime != null 
+				&& (currentTime.getTime() - remoteTime.getTime()) < TIMEOUT) {
+			RemoteClient client = getRemoteClient(uuid, true);
+			if (client != null && !client.isKilled()) {
+				returnValue = true;
+			}
+		}
+		return returnValue;
 	}
 
+	/**
+	 * Updates the last access time.
+	 * @param uuid Unique id.
+	 */
+	public void updateLastAccessed(String uuid) {
+		Date updateDate = new Date();
+		getRemotesAccessedTimes().put(uuid, updateDate);
+		if (persistenceActive) {
+			Date previousUpdate = getRemotesLastUpdated().get(uuid);
+			if (previousUpdate == null ||
+					(updateDate.getTime() - previousUpdate.getTime()) > UPDATE_INTERVAL) {
+				WubiqRemoteClientDao.INSTANCE.updateLastAccessed(uuid, updateDate);
+				getRemotesLastUpdated().put(uuid, updateDate);
+			}
+		}
+	}
 	/**
 	 * Returns remote last accessed date.
 	 * @param uuid Unique id of the remote to test.
@@ -218,13 +246,11 @@ public class RemoteClientManager implements Serializable {
 	public Date remoteLastAccessed(String uuid) {
 		Date remoteTime = getRemotesAccessedTimes().get(uuid);
 		if (remoteTime == null) {
-			Calendar calendar = Calendar.getInstance();
-			calendar.set(1900, 00, 01);
-			calendar.set(Calendar.HOUR, 0);
-			calendar.set(Calendar.MINUTE,0);
-			calendar.set(Calendar.SECOND, 0);
-			calendar.set(Calendar.MILLISECOND, 1);
-			remoteTime = calendar.getTime();
+			if (persistenceActive) {
+				remoteTime = WubiqRemoteClientDao.INSTANCE.lastAccessed(uuid);
+			} else {
+				remoteTime = ServerWebUtils.INSTANCE.minimumDate();
+			}
 			getRemotesAccessedTimes().put(uuid, remoteTime);
 		}
 		return remoteTime;
@@ -250,8 +276,23 @@ public class RemoteClientManager implements Serializable {
 		}
 		return remotesAccessedTimes;
 	}
-	
+
+	/**
+	 * @return The last time the remote time was persisted.
+	 */
+	private Map<String, Date> getRemotesLastUpdated() {
+		if (remotesLastUpdated == null) {
+			remotesLastUpdated = new HashMap<String, Date>();
+		}
+		return remotesLastUpdated;
+	}
+
+	/**
+	 * If persistence active is active or not.
+	 * @return True if the persistence active.
+	 */
 	public boolean isPersistenceActive() {
 		return persistenceActive;
 	}
+	
 }
