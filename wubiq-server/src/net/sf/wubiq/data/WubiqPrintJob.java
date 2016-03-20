@@ -6,10 +6,8 @@ package net.sf.wubiq.data;
 import java.io.Serializable;
 import java.util.Date;
 
-import javax.persistence.Basic;
 import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.FetchType;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Id;
@@ -34,7 +32,7 @@ public class WubiqPrintJob implements Serializable {
 
 	@GeneratedValue(strategy = GenerationType.IDENTITY)
 	@Id
-	private long printJobId;
+	private Long printJobId;
 	
 	@Column(length = 100)
 	private String queueId;
@@ -66,7 +64,6 @@ public class WubiqPrintJob implements Serializable {
 	
 	private Boolean supportsOnlyPageable;
 	
-	@Basic(fetch = FetchType.LAZY)
 	private byte[] printData;
 	
 	private RemotePrintJobStatus status;
@@ -74,11 +71,65 @@ public class WubiqPrintJob implements Serializable {
 	@Temporal(TemporalType.TIMESTAMP)
 	private Date time;
 
+	public WubiqPrintJob() {
+		
+	}
+	
+	/**
+	 * Used for minimal retrieval.
+	 * @param printJobId Id of the print job.
+	 * @param queueId Queue id.
+	 * @param printServiceName Print service name.
+	 * @param docAttributes Doc attributes.
+	 * @param printRequestAttributes Print request attributes.
+	 * @param printJobAttributes Print job attributes
+	 * @param docFlavor Doc flavor.
+	 * @param usesDirectConnect Uses direct connect.
+	 * @param supportsOnlyPageable Supports only pageable.
+	 * @param status Status.
+	 */
+	public WubiqPrintJob(Long printJobId,
+			String queueId,
+			String printServiceName,
+			String docAttributes,
+			String printRequestAttributes,
+			String printJobAttributes,
+			String docFlavor,			
+			Boolean usesDirectConnect,
+			Boolean supportsOnlyPageable,
+			RemotePrintJobStatus status) {
+		this.printJobId = printJobId;
+		this.queueId = queueId;
+		this.printServiceName = printServiceName;
+		this.docAttributes = docAttributes;
+		this.printRequestAttributes = printRequestAttributes;
+		this.printJobAttributes = printJobAttributes;
+		this.docFlavor = docFlavor;
+		this.usesDirectConnect = usesDirectConnect;
+		this.supportsOnlyPageable = supportsOnlyPageable;
+		this.status = status;
+	}
+
+	public WubiqPrintJob(Long printJobId,
+			String queueId,
+			byte[] printData) {
+		this.printJobId = printJobId;
+		this.queueId = queueId;
+		this.printData = printData;
+	}
+
 	/**
 	 * @return the printJobId
 	 */
-	public long getPrintJobId() {
+	public Long getPrintJobId() {
 		return printJobId;
+	}
+
+	/**
+	 * @param printJobId the printJobId to set
+	 */
+	public void setPrintJobId(Long printJobId) {
+		this.printJobId = printJobId;
 	}
 
 	/**
@@ -89,38 +140,17 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @param queueId the queueId to set
+	 */
+	public void setQueueId(String queueId) {
+		this.queueId = queueId;
+	}
+
+	/**
 	 * @return the printServiceName
 	 */
 	public String getPrintServiceName() {
 		return printServiceName;
-	}
-
-	/**
-	 * @return the docAttributes
-	 */
-	public String getDocAttributes() {
-		return docAttributes;
-	}
-
-	/**
-	 * @return the printRequestAttributes
-	 */
-	public String getPrintRequestAttributes() {
-		return printRequestAttributes;
-	}
-
-	/**
-	 * @return the printJobAttributes
-	 */
-	public String getPrintJobAttributes() {
-		return printJobAttributes;
-	}
-
-	/**
-	 * @return the docFlavor
-	 */
-	public String getDocFlavor() {
-		return docFlavor;
 	}
 
 	/**
@@ -131,6 +161,13 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @return the docAttributes
+	 */
+	public String getDocAttributes() {
+		return docAttributes;
+	}
+
+	/**
 	 * @param docAttributes the docAttributes to set
 	 */
 	public void setDocAttributes(String docAttributes) {
@@ -138,10 +175,24 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @return the printRequestAttributes
+	 */
+	public String getPrintRequestAttributes() {
+		return printRequestAttributes;
+	}
+
+	/**
 	 * @param printRequestAttributes the printRequestAttributes to set
 	 */
 	public void setPrintRequestAttributes(String printRequestAttributes) {
 		this.printRequestAttributes = printRequestAttributes;
+	}
+
+	/**
+	 * @return the printJobAttributes
+	 */
+	public String getPrintJobAttributes() {
+		return printJobAttributes;
 	}
 
 	/**
@@ -166,38 +217,17 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @return the docFlavor
+	 */
+	public String getDocFlavor() {
+		return docFlavor;
+	}
+
+	/**
 	 * @param docFlavor the docFlavor to set
 	 */
 	public void setDocFlavor(String docFlavor) {
 		this.docFlavor = docFlavor;
-	}
-
-	/**
-	 * @return the printData
-	 */
-	public byte[] getPrintData() {
-		return printData;
-	}
-
-	/**
-	 * @return the time
-	 */
-	public Date getTime() {
-		return time;
-	}
-
-	/**
-	 * @param printJobId the printJobId to set
-	 */
-	public void setPrintJobId(long printJob) {
-		this.printJobId = printJob;
-	}
-
-	/**
-	 * @param queueId the queueId to set
-	 */
-	public void setQueueId(String queueId) {
-		this.queueId = queueId;
 	}
 
 	/**
@@ -243,10 +273,17 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @return the printData
+	 */
+	public byte[] getPrintData() {
+		return printData;
+	}
+
+	/**
 	 * @param printData the printData to set
 	 */
-	public void setPrintData(byte[] data) {
-		this.printData = data;
+	public void setPrintData(byte[] printData) {
+		this.printData = printData;
 	}
 
 	/**
@@ -264,9 +301,72 @@ public class WubiqPrintJob implements Serializable {
 	}
 
 	/**
+	 * @return the time
+	 */
+	public Date getTime() {
+		return time;
+	}
+
+	/**
 	 * @param time the time to set
 	 */
 	public void setTime(Date time) {
 		this.time = time;
 	}
+
+	/**
+	 * @see java.lang.Object#hashCode()
+	 */
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+		int result = 1;
+		result = prime * result
+				+ ((printJobId == null) ? 0 : printJobId.hashCode());
+		result = prime * result + ((queueId == null) ? 0 : queueId.hashCode());
+		return result;
+	}
+
+	/**
+	 * @see java.lang.Object#equals(java.lang.Object)
+	 */
+	@Override
+	public boolean equals(Object obj) {
+		if (this == obj) {
+			return true;
+		}
+		if (obj == null) {
+			return false;
+		}
+		if (getClass() != obj.getClass()) {
+			return false;
+		}
+		WubiqPrintJob other = (WubiqPrintJob) obj;
+		if (printJobId == null) {
+			if (other.printJobId != null) {
+				return false;
+			}
+		} else if (!printJobId.equals(other.printJobId)) {
+			return false;
+		}
+		if (queueId == null) {
+			if (other.queueId != null) {
+				return false;
+			}
+		} else if (!queueId.equals(other.queueId)) {
+			return false;
+		}
+		return true;
+	}
+
+	/**
+	 * @see java.lang.Object#toString()
+	 */
+	@Override
+	public String toString() {
+		return "WubiqPrintJob [printJobId=" + printJobId + ", queueId="
+				+ queueId + ", printServiceName=" + printServiceName
+				+ ", time=" + time + "]";
+	}
+	
 }

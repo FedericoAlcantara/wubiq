@@ -83,6 +83,13 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 		if (printJob == null) { // If not in memory we must KILL if requires processing.
 			printJob = WubiqPrintJobDao.INSTANCE.remotePrintJob(jobId, full);
 		}
+		if (printJob != null && full && printJob.getPrintDataObject() == null) {
+			printJob.setPrintDataObject(WubiqPrintJobDao.INSTANCE.findData(jobId));
+		}
+		if (printJob != null && full) {
+			printJob.setStatus(RemotePrintJobStatus.PRINTING);
+			WubiqPrintJobDao.INSTANCE.changePrintJobStatus(jobId, RemotePrintJobStatus.PRINTING);
+		}
 		return printJob;
 	}
 	

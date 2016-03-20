@@ -50,6 +50,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	private Boolean usesDirectConnect;
 	private Boolean supportsOnlyPageable;
 	private static Boolean persistenceActive;
+	private String remotePrintServiceName;
 	
 	public RemotePrintJob() {
 	}
@@ -83,6 +84,17 @@ public class RemotePrintJob implements IRemotePrintJob {
 		}
 	}
 
+	public RemotePrintJob(String printServiceName) {
+		this.remotePrintServiceName = printServiceName;
+		if (printServiceName.contains(WebKeys.REMOTE_SERVICE_SEPARATOR)) {
+			this.printServiceName = printServiceName.split(WebKeys.REMOTE_SERVICE_SEPARATOR)[0];
+			this.printServiceClientName = printServiceName.split(WebKeys.REMOTE_SERVICE_SEPARATOR)[1];
+		} else {
+			this.printServiceName = printServiceName;
+			this.printServiceClientName = printServiceName;
+		}
+	}
+	
 	/**
 	 * @see javax.print.DocPrintJob#addPrintJobAttributeListener(javax.print.event.PrintJobAttributeListener, javax.print.attribute.PrintJobAttributeSet)
 	 */
@@ -399,5 +411,16 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 */
 	public void setSupportsOnlyPageable(Boolean usesPageable) {
 		this.supportsOnlyPageable = usesPageable;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.jobs.IRemotePrintJob#getRemotePrintServiceName()
+	 */
+	@Override
+	public String getRemotePrintServiceName() {
+		if (printService == null) {
+			return remotePrintServiceName;
+		}
+		return printService.getName();
 	}
 }

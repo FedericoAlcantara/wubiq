@@ -477,7 +477,7 @@ public class RemotePrintServlet extends HttpServlet {
 			}
 			for (Long jobId : toBeRemoved) {
 				IRemotePrintJob printJob = manager.getRemotePrintJob(jobId, false);
-				if (printService.getName().equals(printJob.getPrintService().getName())) {
+				if (printService.getName().equals(printJob.getRemotePrintServiceName())) {
 					manager.removeRemotePrintJob(jobId);
 					count++;
 				}
@@ -531,8 +531,8 @@ public class RemotePrintServlet extends HttpServlet {
 		if (printService != null) {
 			for (Long printJobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.NOT_PRINTED)) {
 				IRemotePrintJob remotePrintJob = manager.getRemotePrintJob(printJobId, false);
-				if (remotePrintJob != null) {
-					if (printService.getName().equals(remotePrintJob.getPrintService().getName())) {
+				if (remotePrintJob != null) { 
+					if (printService.getName().equals(remotePrintJob.getRemotePrintServiceName())) {
 						count++;
 					}
 				}
@@ -557,7 +557,8 @@ public class RemotePrintServlet extends HttpServlet {
 		String printServiceName = "";
 		if (manager != null) {
 			IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
-			if (printJob != null) {
+			if (printJob != null 
+					&& RemotePrintJobStatus.NOT_PRINTED.equals(printJob.getStatus())) {
 				printServiceName = printJob.getPrintServiceName();
 			}
 		}

@@ -8,6 +8,7 @@ import java.util.Collection;
 import javax.print.PrintService;
 
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
  * Handles direct communication with printers.
@@ -68,6 +69,9 @@ public class DirectConnectorQueue extends DirectConnectorQueueBase {
 	@Override
 	public IRemotePrintJob remotePrintJob(long jobId, boolean full) {
 		IRemotePrintJob returnValue = jobBucket(jobId).printJob;
+		if (returnValue != null && full) {
+			returnValue.setStatus(RemotePrintJobStatus.PRINTING);
+		}
 		return returnValue;
 	}
 	

@@ -241,6 +241,9 @@ public abstract class DirectConnectorQueueBase implements IDirectConnectorQueue 
 			Object printData = remotePrintJob.getPrintDataObject();
 			if (!(printData instanceof Pageable) &&
 					!(printData instanceof Printable)) {
+				if (printData instanceof byte[]) {
+					printData = new ByteArrayInputStream((byte[])printData);
+				}
 				if (printData instanceof ByteArrayInputStream) {
 					((ByteArrayInputStream)printData).reset();
 				}

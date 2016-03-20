@@ -45,6 +45,8 @@ public final class PersistenceManager {
 	
 	private static DataSource dataSource = null;
 	
+	private static EntityManagerFactory emf = null;
+	
 	private final static ThreadLocal<EntityManager> entityManager = new ThreadLocal<EntityManager>();
 	
 	private PersistenceManager() {
@@ -77,11 +79,22 @@ public final class PersistenceManager {
 	public static EntityManager em() {
 		EntityManager em = entityManager.get();
 		if (em == null || !em.isOpen()) {
-			em = Persistence.createEntityManagerFactory("default").createEntityManager();
+			em = emf().createEntityManager();
 			em.getTransaction().begin();
 			entityManager.set(em);
 		}
 		return em;
+	}
+	
+	/**
+	 * Creates the entity manager factory.
+	 * @return Entity manager factory.
+	 */
+	private static EntityManagerFactory emf() {
+		if (emf == null) {
+			emf = Persistence.createEntityManagerFactory("default");
+		}
+		return emf;
 	}
 	
 	/**

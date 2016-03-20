@@ -23,7 +23,6 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.utils.IOUtils;
-import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -48,14 +47,71 @@ public enum WubiqPrintJobDao {
 		WubiqPrintJob returnValue = PersistenceManager.em().find(WubiqPrintJob.class, jobId);
 		return returnValue;
 	}
-	
+
+	/**
+	 * Finds a given print job.
+	 * @param jobId Print job to find.
+	 * @return Found object or null.
+	 */
+	private WubiqPrintJob findMinimal(long jobId) {
+		WubiqPrintJob returnValue = (WubiqPrintJob)
+			PersistenceManager.em().createQuery(
+				"SELECT new net.sf.wubiq.data.WubiqPrintJob("
+				+ "w.printJobId"
+				+ ", w.queueId"
+				+ ", w.printServiceName"
+				+ ", w.docAttributes"
+				+ ", w.printRequestAttributes"
+				+ ", w.printJobAttributes"
+				+ ", w.docFlavor"
+				+ ", w.usesDirectConnect"
+				+ ", w.supportsOnlyPageable"
+				+ ", w.status"
+				+ ") FROM WubiqPrintJob w"
+				+ " WHERE "
+				+ "w.printJobId = :jobId")
+				.setParameter("jobId", jobId)
+				.getSingleResult();
+		return returnValue;
+	}
+
+	/**
+	 * Finds a given print job and returns its data.
+	 * @param jobId Print job to find.
+	 * @return Found object or null.
+	 */
+	public byte[] findData(long jobId) {
+		byte[] returnValue = null;
+		try {
+			WubiqPrintJob job = (WubiqPrintJob)
+				PersistenceManager.em().createQuery(
+					"SELECT new net.sf.wubiq.data.WubiqPrintJob("
+					+ "w.printJobId"
+					+ ", w.queueId"
+					+ ", w.printData"
+					+ ") FROM WubiqPrintJob w"
+					+ " WHERE "
+					+ "w.printJobId = :jobId")
+					.setParameter("jobId", jobId)
+					.getSingleResult();
+			if (job != null) {
+				returnValue = job.getPrintData();
+			}
+			PersistenceManager.commit();
+		} catch (Exception e) {
+			PersistenceManager.rollback();
+			throw new RuntimeException(e);
+		}
+		return returnValue;
+	}
+
 	/**
 	 * Removes a given print job.
 	 * @param jobId Print job to remove.
 	 */
 	public void remove(long jobId) {
 		try {
-			WubiqPrintJob job = find(jobId);
+			WubiqPrintJob job = findMinimal(jobId);
 			if (job != null) {
 				PersistenceManager.em().remove(job);
 			}
@@ -110,6 +166,7 @@ public enum WubiqPrintJobDao {
 			PersistenceManager.commit();
 			returnValue = job.getPrintJobId();
 		} catch (Exception e) {
+			PersistenceManager.rollback();
 			throw new RuntimeException(e);
 		}
 		return returnValue;
@@ -126,31 +183,42 @@ public enum WubiqPrintJobDao {
 	public IRemotePrintJob remotePrintJob(long jobId, boolean fullPrintJob) {
 		IRemotePrintJob returnValue = null;
 		try {
-			WubiqPrintJob job = find(jobId);
+			WubiqPrintJob job = null;
+			if (fullPrintJob) {
+				job = find(jobId);
+			} else {
+				job = findMinimal(jobId);
+			}
 			if (job != null) {
-				PrintService printService = PrintServiceUtils.findPrinter(job.getPrintServiceName());
-				if (printService != null) {
-					returnValue = new RemotePrintJob(printService);
-					DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(job.getDocAttributes());
-					PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(job.getPrintRequestAttributes());
-					PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(job.getPrintJobAttributes());
+				if (fullPrintJob) {
+					PrintService printService = PrintServiceUtils.findPrinter(job.getPrintServiceName());
+					if (printService != null) {
+						returnValue = new RemotePrintJob(printService);
+					}
+				}
+				if (returnValue == null) {
+					returnValue = new RemotePrintJob(job.getPrintServiceName());
+				}
+				returnValue.setUsesDirectConnect(job.getUsesDirectConnect());
+				returnValue.setSupportsOnlyPageable(job.getSupportsOnlyPageable());
+				DocAttributeSet docAttributeSet = (DocAttributeSet) PrintServiceUtils.convertToDocAttributeSet(job.getDocAttributes());
+				PrintRequestAttributeSet printRequestAttributeSet = (PrintRequestAttributeSet) PrintServiceUtils.convertToPrintRequestAttributeSet(job.getPrintRequestAttributes());
+				PrintJobAttributeSet printJobAttributeSet = (PrintJobAttributeSet) PrintServiceUtils.convertToPrintJobAttributeSet(job.getPrintJobAttributes());
+				DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(job.getDocFlavor());
+				returnValue.setDocAttributeSet(docAttributeSet);
+				returnValue.setPrintRequestAttributeSet(printRequestAttributeSet);
+				returnValue.setPrintJobAttributeSet(printJobAttributeSet);
+				returnValue.setDocFlavor(docFlavor);
+				returnValue.setStatus(job.getStatus());
+				if (fullPrintJob) {
 					DocFlavor originalDocFlavor = PrintServiceUtils.deSerializeDocFlavor(job.getOriginalDocFlavor());
-					DocFlavor docFlavor = PrintServiceUtils.deSerializeDocFlavor(job.getDocFlavor());
-					returnValue.setDocAttributeSet(docAttributeSet);
-					returnValue.setPrintRequestAttributeSet(printRequestAttributeSet);
-					returnValue.setPrintJobAttributeSet(printJobAttributeSet);
 					returnValue.setOriginalDocFlavor(originalDocFlavor);
-					returnValue.setDocFlavor(docFlavor);
-					returnValue.setUsesDirectConnect(job.getUsesDirectConnect());
-					returnValue.setSupportsOnlyPageable(job.getSupportsOnlyPageable());
-					if (fullPrintJob) {
-						if (!PrintJobDataType.SERIALIZED_PAGEABLE.equals(job.getPrintJobDataType())) {
-							returnValue.setPrintDataObject(new ByteArrayInputStream(job.getPrintData()));
-							job.setStatus(RemotePrintJobStatus.PRINTING);
-							PersistenceManager.em().merge(job);
-						} else {
-							returnValue = null;
-						}
+					if (!PrintJobDataType.SERIALIZED_PAGEABLE.equals(job.getPrintJobDataType())) {
+						returnValue.setPrintDataObject(new ByteArrayInputStream(job.getPrintData()));
+						job.setStatus(RemotePrintJobStatus.PRINTING);
+						PersistenceManager.em().merge(job);
+					} else {
+						returnValue = null;
 					}
 				}
 			}
@@ -242,9 +310,33 @@ public enum WubiqPrintJobDao {
 			queueId = null;
 		} catch (Exception e) {
 			PersistenceManager.rollback();
+			LOG.debug(ExceptionUtils.getMessage(e));
 			throw new RuntimeException(e);
 		}
 		return queueId;
+	}
+	
+	/**
+	 * Change print job status.
+	 * @param jobId Id of the job.
+	 * @param status Status to set.
+	 */
+	public void changePrintJobStatus(Long jobId, RemotePrintJobStatus status) {
+		try {
+			PersistenceManager.em().createQuery("UPDATE WubiqPrintJob"
+					+ " SET "
+					+ " status = :status"
+					+ " WHERE "
+					+ "printJobId = :jobId")
+					.setParameter("status", status)
+					.setParameter("jobId", jobId)
+					.executeUpdate();
+			PersistenceManager.commit();
+		} catch (Exception e) {
+			PersistenceManager.rollback();
+			LOG.debug(ExceptionUtils.getMessage(e));
+			throw new RuntimeException(e);
+		}
 	}
 	
 }

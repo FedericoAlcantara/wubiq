@@ -206,11 +206,13 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		IDirectConnectorQueue queue = associatedQueue(jobId);
 		if (queue != null) {
 			IRemotePrintJob remotePrintJob = getRemotePrintJob(jobId, true);
-			PrintService printService = remotePrintJob.getPrintService();
-			if (printService != null) {
-				if (printService instanceof INotifiablePrintService) {
-					INotifiablePrintService notifiable = (INotifiablePrintService)printService;
-					notifiable.printJobStarted(jobId);
+			if (remotePrintJob != null) {
+				PrintService printService = remotePrintJob.getPrintService();
+				if (printService != null) {
+					if (printService instanceof INotifiablePrintService) {
+						INotifiablePrintService notifiable = (INotifiablePrintService)printService;
+						notifiable.printJobStarted(jobId);
+					}
 				}
 			}
 		}		

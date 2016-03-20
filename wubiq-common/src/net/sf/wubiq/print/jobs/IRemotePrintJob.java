@@ -26,6 +26,11 @@ public interface IRemotePrintJob extends DocPrintJob {
 	String getPrintServiceName();
 	
 	/**
+	 * @return The full name of the print service including remote client.
+	 */
+	String getRemotePrintServiceName();
+	
+	/**
 	 * 
 	 * @return The original doc flavor for the print data.
 	 */
@@ -102,6 +107,13 @@ public interface IRemotePrintJob extends DocPrintJob {
 	 * @param printDataObject Print data object to set.
 	 */
 	void setPrintDataObject(Object printDataObject);
+	
+	
+	/**
+	 * Gets current remote print job status.
+	 * @return Remote printJobStatus.
+	 */
+	RemotePrintJobStatus getStatus();
 	
 	/**
 	 * Sets a new status for the print job

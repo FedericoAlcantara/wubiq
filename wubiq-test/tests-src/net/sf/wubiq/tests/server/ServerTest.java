@@ -92,6 +92,10 @@ public class ServerTest extends WubiqBaseTest {
 		assertEquals("Content type should be application.pdf", "application/pdf", page.getWebResponse().getContentType());
 		InputStream input = page.getInputStream();
 		checkTestPageSize(input);
+		String[] printJobs = manager.getPendingJobs();
+		for (String jobId : printJobs) {
+			manager.closePrintJob(jobId);
+		}
 	}
 
 	/**
@@ -199,6 +203,10 @@ public class ServerTest extends WubiqBaseTest {
 		assertTrue("Page count must be at least one", manager.getTestData().getDirectPageableNumberOfPages() >= 1);
 		assertTrue("Graphic command must not be empty", manager.getTestData().getDirectPrintableGraphicsCommandCount() > 50);
 		assertFalse("Shouldn't be no errors", manager.getTestData().isErrors());
+		String[] printJobs = manager.getPendingJobs();
+		for (String jobId : printJobs) {
+			manager.closePrintJob(jobId);
+		}
 	}
 	/**
 	 * Test the local and direct print managers, by letting them start as a thread as it is 
@@ -280,6 +288,10 @@ public class ServerTest extends WubiqBaseTest {
 			assertTrue("Must be direct manager", manager.getTestData().isDirectManagerCalled());
 		}
 		assertFalse("Shouldn't be no errors", manager.getTestData().isErrors());
+		String[] printJobs = manager.getPendingJobs();
+		for (String jobId : printJobs) {
+			manager.closePrintJob(jobId);
+		}
 	}
 	
 	
