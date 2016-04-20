@@ -36,7 +36,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String, net.sf.wubiq.print.managers.RemotePrintJobManagerType)}
 	 * method instead.
 	 */
-	protected DirectConnectPrintJobManager() {
+	public DirectConnectPrintJobManager() {
 	}
 	
 	/**

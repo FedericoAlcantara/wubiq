@@ -108,7 +108,7 @@ public class RemotePrintServlet extends HttpServlet {
 				} else if (!Is.emptyString(uuid)) {
 					LOG.debug("accesing:" + uuid);
 					notifyRemote(uuid, request);
-					manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(uuid);
+					manager = RemotePrintJobManagerFactory.getRemotePrintJobManager(this.getClass().getClassLoader(), uuid);
 					
 					if (!Is.emptyString(command)) {
 						LOG.debug("command:" + command);

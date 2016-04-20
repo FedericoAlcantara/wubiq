@@ -24,12 +24,13 @@ import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.data.WubiqPrintJob;
 import net.sf.wubiq.data.WubiqPrintService;
 import net.sf.wubiq.data.WubiqServer;
-import net.sf.wubiq.utils.ServerLabels;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.cfg.Configuration;
+import org.hibernate.internal.SessionFactoryImpl;
+import org.hibernate.internal.SessionImpl;
 import org.hibernate.tool.hbm2ddl.SchemaExport;
 
 /**
@@ -52,10 +53,6 @@ public final class PersistenceManager {
 	private PersistenceManager() {
 	}
 	
-	public static void setDialect(String dialect) {
-		PersistenceManager.dialect = dialect;
-	}
-	
 	/**
 	 * Evaluates if the persistence is enabled.
 	 * @return
@@ -63,11 +60,7 @@ public final class PersistenceManager {
 	public static boolean isPersistenceEnabled() {
 		boolean returnValue = false;
 		if (getDataSource() != null) {
-			if (dialect == null) {
-				LOG.error(ServerLabels.get("server.error_must_define_dialect"));
-			} else {
-				returnValue = true;
-			}
+			returnValue = true;
 		}
 		return returnValue;
 	}
@@ -168,7 +161,7 @@ public final class PersistenceManager {
 			Context ctx;
 			try {
 				ctx = new InitialContext();
-				dataSource = (DataSource)ctx.lookup("java:comp/env/jdbc/wubiqDS");
+				dataSource = (DataSource)ctx.lookup("java://comp/env/jdbc/wubiqDS");
 			} catch (NamingException e) {
 				LOG.debug(ExceptionUtils.getMessage(e));
 			}
@@ -183,7 +176,7 @@ public final class PersistenceManager {
 		try {
 			Properties properties = new Properties();
 			properties.put("hibernate.default_schema", "");
-			properties.put("hibernate.dialect", dialect);
+			properties.put("hibernate.dialect", getHibernateDialectName());
 			EntityManagerFactory emf = Persistence.createEntityManagerFactory("default", properties);
 			emf.createEntityManager();
 			File tempFile = File.createTempFile("wubiq_server", ".sql");
@@ -192,7 +185,7 @@ public final class PersistenceManager {
 			cfg.addAnnotatedClass(RemoteClient.class);
 			cfg.addAnnotatedClass(WubiqPrintService.class);
 			cfg.addAnnotatedClass(WubiqServer.class);
-			cfg.setProperty("hibernate.dialect", dialect);
+			cfg.setProperty("hibernate.dialect", getHibernateDialectName());
 			
 			SchemaExport export = new SchemaExport(cfg);
 			export.setOutputFile(tempFile.getAbsolutePath());
@@ -255,6 +248,19 @@ public final class PersistenceManager {
 			throw new RuntimeException(e);
 		}
 		*/
+	}
+	
+	/**
+	 * Determines current connection dialect.
+	 * @return Hibernate dialect name.
+	 */
+	private static String getHibernateDialectName() {
+		if (dialect == null) {
+			SessionImpl impl = (SessionImpl) em().getDelegate();
+			SessionFactoryImpl sessionFactory = (SessionFactoryImpl)impl.getSessionFactory();
+			dialect = sessionFactory.getDialect().getClass().getName();
+		}
+		return dialect;
 	}
 
 }

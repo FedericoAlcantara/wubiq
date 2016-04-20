@@ -74,7 +74,6 @@
 		<copy file="../wubiq-android/dist/wubiq-android.apk" todir="${basedir}/WebContent" />
 		<copy file="../wubiq-client/dist/wubiq-client.jar" todir="${basedir}/WebContent" />
 		<copy file="../wubiq-installer/dist/wubiq-setup.jar" todir="${basedir}/WebContent" />
-		<copy file="../wubiq-common/dist/wubiq-common.jar" todir="${basedir}/WebContent/WEB-INF/lib" />
 		
 		<antcall target="create-wubiq-server-war" />
 

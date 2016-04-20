@@ -28,7 +28,6 @@ public class ContextListener implements ServletContextListener {
 
 	@Override
 	public void contextInitialized(ServletContextEvent context) {
-		PersistenceManager.setDialect(context.getServletContext().getInitParameter("dialect"));
 		ServerProperties.INSTANCE.setRealPath(context.getServletContext().getRealPath(""));
 		persistenceActive = PersistenceManager.isPersistenceEnabled();
 		if (persistenceActive) {
