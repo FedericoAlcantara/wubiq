@@ -319,9 +319,7 @@ public class ESCPrinter {
 
 	/**
 	 * Just advance to the next print position.
-	 * @param textField Holder of the field information
-	 * @param cpi Characters per inch.
-	 * @return Used 1/120 advancement performed.
+	 * @param textField Holder of the field information.
 	 * @throws IOException
 	 */
 	public void advanceTo(TextField textField) throws IOException {
@@ -341,9 +339,8 @@ public class ESCPrinter {
 	
 	/**
 	 * Prints the text to the given printer.
-	 * @param writer Printer receiving the data.
-	 * @param text Text to print.
-	 * @return Advancement performed.
+	 * @param textField Text to print.
+	 * @return Print head advance performed.
 	 * @throws IOException
 	 */
 	public float print(TextField textField) throws IOException {

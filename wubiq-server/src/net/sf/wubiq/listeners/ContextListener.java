@@ -10,9 +10,14 @@ import javax.servlet.ServletContextListener;
 
 import net.sf.wubiq.common.ConfigurationKeys;
 import net.sf.wubiq.persistence.PersistenceManager;
+import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
+import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.servlets.ServletsStatus;
 import net.sf.wubiq.utils.ServerProperties;
 import net.sf.wubiq.utils.ServerWebUtils;
+
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Federico Alcantara
@@ -21,6 +26,7 @@ import net.sf.wubiq.utils.ServerWebUtils;
 public class ContextListener implements ServletContextListener {
 	private static List<String> serverIps = null;
 	private static String computerName = null;
+	private static final Log LOG = LogFactory.getLog(ContextListener.class);
 	
 	@Override
 	public void contextDestroyed(ServletContextEvent context) {
@@ -37,6 +43,7 @@ public class ContextListener implements ServletContextListener {
 		}
 		// Notify common elements.
 		ConfigurationKeys.setPersistenceActive(persistenceActive);
+		registerPrintJobManager();
 		ServletsStatus.setReady();
 	}
 	
@@ -55,4 +62,28 @@ public class ContextListener implements ServletContextListener {
 	public static String computerName() {
 		return computerName;
 	}
+	
+	/**
+	 * Creates a Singleton print job manager.
+	 */
+	@SuppressWarnings("rawtypes")
+	private static void registerPrintJobManager() {
+		IDirectConnectPrintJobManager directInstance;
+		String manager = ServerProperties.INSTANCE.getRemotePrintJobManager();
+		try {
+			Class managerClass = Class.forName(manager);
+			directInstance = (IDirectConnectPrintJobManager)managerClass.newInstance();
+			directInstance.initialize();
+			RemotePrintJobManagerFactory.registerRemotePrintJobManager(directInstance);
+		} catch (ClassNotFoundException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (InstantiationException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (IllegalAccessException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (Exception e) {
+			LOG.error(e.getMessage(), e);
+		}
+	}
+
 }

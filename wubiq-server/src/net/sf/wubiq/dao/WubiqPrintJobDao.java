@@ -126,7 +126,7 @@ public enum WubiqPrintJobDao {
 	 * Adds a print job.
 	 * @param queueId Id of the queue.
 	 * @param remotePrintJob Remote printJob.
-	 * @return
+	 * @return Assigned print job number.
 	 */
 	public long addPrintJob(String queueId, IRemotePrintJob remotePrintJob) {
 		long returnValue = 0;
@@ -264,8 +264,8 @@ public enum WubiqPrintJobDao {
 	/**
 	 * Reads all remote print jobs.
 	 * @param queueId Id of the queue.
-	 * @param status Status to be read. If null reads all print jobs regardless of its status.
-	 * @return List of remote printjobs.
+	 * @param printService Associated print service.
+	 * @return List of remote print jobs.
 	 */
 	public Integer pendingPrintJobs(String queueId, PrintService printService) {
 		Integer returnValue = 0;

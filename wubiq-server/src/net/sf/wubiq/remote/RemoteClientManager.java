@@ -48,9 +48,9 @@ public class RemoteClientManager implements Serializable {
 	}
 	
 	/**
-	 * Finds or create the appropriate Remote client manager.
-	 * @param request
-	 * @return
+	 * Finds or create the appropriate remote client manager.
+	 * @param request Originating request.
+	 * @return Created or found remote client manager.
 	 */
 	public static RemoteClientManager getRemoteClientManager(HttpServletRequest request) {
 		RemoteClientManager remoteClientManager = null;

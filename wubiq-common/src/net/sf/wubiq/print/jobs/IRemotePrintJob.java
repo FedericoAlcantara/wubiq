@@ -73,7 +73,7 @@ public interface IRemotePrintJob extends DocPrintJob {
 	
 	/**
 	 * Sets a new print request attribute set.
-	 * @param attributeSet
+	 * @param printRequestAttributeSet Print request attribute set to set.
 	 */
 	void setPrintRequestAttributeSet(PrintRequestAttributeSet printRequestAttributeSet);
 	

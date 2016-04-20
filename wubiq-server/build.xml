@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 
-<project name="wubiq-war" basedir="." default="distribute">
+<project name="wubiq-server" basedir="." default="distribute">
 
 	<property name="project" value="wubiq-server" />
 	<property name="dist" value="${basedir}/dist" />
@@ -25,29 +25,45 @@
 		<pathelement path="${src}"/>
 	</path>	
 		
-	<target name="create-wubiq-server-war" depends="clean, copy">
+	<target name="create-wubiq-server-output" description="creates war for wubiq-server">
+		<!-- WAR creation -->
+		<!-- clean and prepare the build directory for war creation --> 
+		<antcall target="cleanForWar" />
+		<!-- copy the required files -->
+		<antcall target="copyForWar" />
+		<!-- make the war -->
 		<war jarfile="${output.war}">
 			<fileset dir="${war.build}" />
 		</war>
 	</target>
 	
-	<target name="copy">
-		<copy todir="${war.build}">
-			<fileset dir="${web}" includes = "**/*" />
-		</copy>
-		<copy todir="${war.build}/WEB-INF/classes">		
-			<fileset dir="${bin}" includes = "**/*" />
-		</copy>
-		<delete file ="${war.build}/WEB-INF/classes/net/sf/wubiq/reports/TestPage-50.pdf" />
-		<delete file ="${war.build}/WEB-INF/classes/net/sf/wubiq/reports/TestPage-50x2.pdf" />
-	</target>
-	
-	<target name="clean">
+	<target name="cleanForWar" description="Clean the directory for war creation">
 		<delete dir="${dist}" failonerror="false" />
 		<delete dir="${war.build}" failonerror="false" />
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${war.build}"/>
 		<mkdir dir="${war.build}/WEB-INF/classes"/>
+	</target>
+	
+	<target name="copyForWar" description="Copy the required classes for war creation">
+		<copy todir="${war.build}">
+			<fileset dir="${web}">
+				<include name="**/*" />
+				<exclude name="WEB-INF/lib/*" /> 
+			</fileset>
+		</copy>
+		<copy todir="${war.build}/WEB-INF/lib">
+			<fileset dir="${lib}">
+				<include name="**/*.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${war.build}/WEB-INF/classes">		
+			<fileset dir="${bin}">
+				<include name="**/*" />
+			</fileset>
+		</copy>
+		<delete file ="${war.build}/WEB-INF/classes/net/sf/wubiq/reports/TestPage-50.pdf" />
+		<delete file ="${war.build}/WEB-INF/classes/net/sf/wubiq/reports/TestPage-50x2.pdf" />
 	</target>
 	
 	<target name="deploy" description="deploys to server" if="deploy.dir">
@@ -66,7 +82,6 @@
 		    <equals arg1="n" arg2="${do.continue}"/>
 		  </condition>
 		<fail if="do.abort">Build android.apk and generate the documentation to continue</fail>
-
 		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
 		<ant antfile="../wubiq-installer/build.xml" inheritall="false" />
 		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />
@@ -75,7 +90,7 @@
 		<copy file="../wubiq-client/dist/wubiq-client.jar" todir="${basedir}/WebContent" />
 		<copy file="../wubiq-installer/dist/wubiq-setup.jar" todir="${basedir}/WebContent" />
 		
-		<antcall target="create-wubiq-server-war" />
+		<antcall target="create-wubiq-server-output" />
 
 		<delete file="${basedir}/WebContent/WEB-INF/lib/wubiq-common.jar" />
 
@@ -93,7 +108,9 @@
 				<include name="wubiq-setup.jar" />
 				<include name="wubiq-installer.jar" />
 			</fileset>
-			<fileset dir="${basedir}/dist" includes="wubiq-server.war" />
+			<fileset dir="${basedir}/dist">
+				<include name="wubiq-server.war" />
+			</fileset>
 			<fileset dir="${basedir}/lib-nondeploy" includes="hsqldb*.*" />
 			<fileset dir="../wubiq-common">
 				<include name="ChangeLog.txt" />
@@ -103,6 +120,6 @@
 		<antcall target="deploy" />
 		<zip basedir="${basedir}/dist/${version}" zipfile="${basedir}/dist/${version}.zip" />
 		
-		<delete file="${basedir}/dist/wubiq-server.war" />
+		<delete file="${output.war}" />
 	</target>
 </project>

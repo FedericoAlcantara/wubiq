@@ -1,5 +1,6 @@
 /bin/
 /build/
+/build-jar/
 /dist/
 /src/net/sf/wubiq/reports/TestPage-*.pdf
 /settings.properties

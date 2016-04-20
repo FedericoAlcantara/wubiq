@@ -32,7 +32,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	
 	/**
 	 * While you can directly create an instance of this queue, we encourage to use the
-	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String, net.sf.wubiq.print.managers.RemotePrintJobManagerType)}
+	 * {@link net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory#getRemotePrintJobManager(String)}
 	 * method instead.
 	 */
 	public DirectConnectPrintJobManager() {

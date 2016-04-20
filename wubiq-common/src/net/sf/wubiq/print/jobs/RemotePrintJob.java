@@ -401,7 +401,8 @@ public class RemotePrintJob implements IRemotePrintJob {
 	}
 
 	/**
-	 * @param supportsOnlyPageable the supportsOnlyPageable to set
+	 * Indicates if the remote supports ONLY pageable documents.
+	 * @param usesPageable The state to set.
 	 */
 	public void setSupportsOnlyPageable(Boolean usesPageable) {
 		this.supportsOnlyPageable = usesPageable;

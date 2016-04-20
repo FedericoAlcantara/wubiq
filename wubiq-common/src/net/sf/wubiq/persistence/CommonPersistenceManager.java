@@ -42,7 +42,7 @@ public final class CommonPersistenceManager {
 	
 	/**
 	 * Finds current datasource
-	 * @return
+	 * @return Datasource found or null if not found.
 	 */
 	private static DataSource getDataSource() {
 		if (dataSource == null) {

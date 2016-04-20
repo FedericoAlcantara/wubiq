@@ -1,9 +1,7 @@
 ==========================
-Wubiq 2.2 ()
+Wubiq 2.2.1 (2016-04-20)
 ==========================
--Support for printing directly to printer streams (ESC/P).
 -Support of data sources for cluster and servers escalation capabilities.
--PdfBox and FontBox upgraded to version 1.8.11
 
 ==========================
 Wubiq 2.1.6 (2015-12-16)

@@ -54,8 +54,8 @@ public final class PersistenceManager {
 	}
 	
 	/**
-	 * Evaluates if the persistence is enabled.
-	 * @return
+	 * Checks if the context has a proper data source.
+	 * @return True if the persistence is enabled by context.
 	 */
 	public static boolean isPersistenceEnabled() {
 		boolean returnValue = false;
@@ -153,8 +153,8 @@ public final class PersistenceManager {
 	
 	
 	/**
-	 * Finds current datasource
-	 * @return
+	 * Finds data source associated with the context.
+	 * @return Found data source or null if not available.
 	 */
 	private static DataSource getDataSource() {
 		if (dataSource == null) {

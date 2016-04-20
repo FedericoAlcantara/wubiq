@@ -166,7 +166,6 @@ public enum WubiqPrintServiceDao {
 	/**
 	 * Removes remote print services associated to client uuid.
 	 * @param uuid Remote client unique id.
-	 * @return List of remote print services ordered by uuid and name.
 	 */
 	public void removePrintServices(String uuid) {
 		Connection connection = null;
@@ -196,7 +195,6 @@ public enum WubiqPrintServiceDao {
 	 * Removes a single remote print services associated to client uuid.
 	 * @param uuid Remote client unique id.
 	 * @param name Remote print service.
-	 * @return List of remote print services ordered by uuid and name.
 	 */
 	public void removePrintService(String uuid, String name) {
 		Connection connection = null;

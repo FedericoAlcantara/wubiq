@@ -222,7 +222,8 @@ public class RemoteClient implements Serializable {
 	}
 
 	/**
-	 * @return
+	 * Remote client pause state.
+	 * @return Current pause state of the remote client.
 	 */
 	public Boolean isPaused() {
 		return paused;

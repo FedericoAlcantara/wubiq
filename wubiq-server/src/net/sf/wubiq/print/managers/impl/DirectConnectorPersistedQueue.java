@@ -103,7 +103,7 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 	
 	
 	/**
-	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#pendingPrintJobs()
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#pendingPrintJobs(PrintService)
 	 */
 	@Override
 	public synchronized int pendingPrintJobs(PrintService printService) {
