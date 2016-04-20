@@ -10,9 +10,9 @@ import java.util.Map;
 
 import javax.print.PrintService;
 
+import net.sf.wubiq.common.ConfigurationKeys;
 import net.sf.wubiq.dao.WubiqPrintJobDao;
 import net.sf.wubiq.interfaces.INotifiablePrintService;
-import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
@@ -29,7 +29,6 @@ import net.sf.wubiq.utils.PrintServiceUtils;
 public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManager {
 	private Map<String, IDirectConnectorQueue> connectors;
 	private Map<Long, String> associatedQueue;
-	private boolean persistenceActive = false;
 	
 	/**
 	 * While you can directly create an instance of this queue, we encourage to use the
@@ -44,7 +43,6 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 */
 	@Override
 	public synchronized void initialize() throws Exception {
-		persistenceActive = PersistenceManager.isPersistenceEnabled();
 		connectors = new HashMap<String, IDirectConnectorQueue>();
 		associatedQueue = new HashMap<Long, String>();
 	}
@@ -64,7 +62,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	public synchronized long addRemotePrintJob(String queueId, IRemotePrintJob remotePrintJob) {
 		IDirectConnectorQueue queue = directConnector(queueId);
 		long lastJobId = queue.addPrintJob(remotePrintJob);
-		if (!persistenceActive) {
+		if (!ConfigurationKeys.isPersistenceActive()) {
 			associatedQueue.put(lastJobId, queueId);
 		}
 		PrintService printService = remotePrintJob.getPrintService();
@@ -158,7 +156,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	 */
 	private synchronized IDirectConnectorQueue associatedQueue(long jobId) {
 		String queueId = null;
-		if (persistenceActive) {
+		if (ConfigurationKeys.isPersistenceActive()) {
 			queueId = WubiqPrintJobDao.INSTANCE.associatedQueue(jobId);
 		} else {
 			queueId = associatedQueue.get(jobId);
@@ -175,7 +173,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		if (!Is.emptyString(queueId)) {
 			queue = connectors.get(queueId);
 			if (queue == null) {
-				if (persistenceActive) {
+				if (ConfigurationKeys.isPersistenceActive()) {
 					queue = new DirectConnectorPersistedQueue(queueId);
 				} else {
 					queue = new DirectConnectorQueue(queueId);
@@ -227,6 +225,5 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		} else {
 			return false;
 		}
-	}
-	
+	}	
 }

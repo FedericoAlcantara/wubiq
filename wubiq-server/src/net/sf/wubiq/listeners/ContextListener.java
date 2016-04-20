@@ -8,6 +8,7 @@ import java.util.List;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
 
+import net.sf.wubiq.common.ConfigurationKeys;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.servlets.ServletsStatus;
 import net.sf.wubiq.utils.ServerProperties;
@@ -18,7 +19,6 @@ import net.sf.wubiq.utils.ServerWebUtils;
  *
  */
 public class ContextListener implements ServletContextListener {
-	private static boolean persistenceActive = false;
 	private static List<String> serverIps = null;
 	private static String computerName = null;
 	
@@ -29,12 +29,14 @@ public class ContextListener implements ServletContextListener {
 	@Override
 	public void contextInitialized(ServletContextEvent context) {
 		ServerProperties.INSTANCE.setRealPath(context.getServletContext().getRealPath(""));
-		persistenceActive = PersistenceManager.isPersistenceEnabled();
+		boolean persistenceActive = PersistenceManager.isPersistenceEnabled();
 		if (persistenceActive) {
 			PersistenceManager.createSchemas();
 			serverIps = ServerWebUtils.INSTANCE.serverIps();
 			computerName = ServerWebUtils.INSTANCE.computerName();
 		}
+		// Notify common elements.
+		ConfigurationKeys.setPersistenceActive(persistenceActive);
 		ServletsStatus.setReady();
 	}
 	

@@ -67,7 +67,6 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	private Set<String> groups;
 	private boolean printing = false;
 	private long currentJobId = 0l;
-	private static Boolean persistenceActive;
 	
 	public RemotePrintService(OutputStream outputStream) {
 		super(outputStream);
@@ -481,19 +480,4 @@ public class RemotePrintService extends StreamPrintService implements INotifiabl
 	public Map<String, Object> getDefaultAttributes() {
 		return defaultAttributes;
 	}
-	
-	/**
-	 * @return the persistenceActive
-	 */
-	public Boolean getPersistenceActive() {
-		return persistenceActive;
-	}
-
-	/**
-	 * @param persistenceActive the persistenceActive to set
-	 */
-	public void setPersistenceActive(Boolean persistenceActive) {
-		RemotePrintService.persistenceActive = persistenceActive;
-	}
-
 }

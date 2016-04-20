@@ -4,7 +4,7 @@
 package net.sf.wubiq.common;
 
 /**
- * Keys used for hadling web pages.
+ * Keys used for handling web pages.
  * @author Federico Alcantara
  *
  */

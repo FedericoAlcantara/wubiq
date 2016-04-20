@@ -157,9 +157,6 @@ public class RemoteClientManager implements Serializable {
 	 */
 	public void registerPrintService(String uuid, RemotePrintService printService) {
 		validateRemoteLookup();
-		if (printService.getPersistenceActive() == null) {
-			printService.setPersistenceActive(persistenceActive);
-		}
 		RemotePrintServiceLookup.registerRemoteService(printService);
 	}
 	

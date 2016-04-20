@@ -67,6 +67,21 @@ public final class ConfigurationKeys {
 	public static final String PROPERTY_JDBC_USERNAME = "jdbc.username";
 	public static final String PROPERTY_JDBC_PASSWORD = "jdbc.password";
 
+	private static boolean persistenceActive = false;
 
-
+	/**
+	 * Sets the new state of the persistence.
+	 * @param state New state to set.
+	 */
+	public static void setPersistenceActive(boolean state) {
+		ConfigurationKeys.persistenceActive = state;
+	}
+	
+	/**
+	 * Gets the current persistence state.
+	 * @return Persistence state.
+	 */
+	public static boolean isPersistenceActive() {
+		return ConfigurationKeys.persistenceActive;
+	}
 }

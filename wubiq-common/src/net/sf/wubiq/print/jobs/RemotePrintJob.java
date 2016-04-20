@@ -22,7 +22,6 @@ import javax.print.event.PrintJobListener;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
-import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -49,17 +48,12 @@ public class RemotePrintJob implements IRemotePrintJob {
 	private DocFlavor originalDocFlavor;
 	private Boolean usesDirectConnect;
 	private Boolean supportsOnlyPageable;
-	private static Boolean persistenceActive;
 	private String remotePrintServiceName;
 	
 	public RemotePrintJob() {
 	}
 
 	public RemotePrintJob(PrintService printService) {
-		if (persistenceActive == null &&
-				printService instanceof RemotePrintService) {
-			persistenceActive = ((RemotePrintService)printService).getPersistenceActive();
-		}
 		this.printService = printService;
 		status = RemotePrintJobStatus.NOT_PRINTED;
 		Method getRemoteName;

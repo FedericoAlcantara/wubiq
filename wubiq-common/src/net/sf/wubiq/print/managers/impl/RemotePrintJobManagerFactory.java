@@ -20,21 +20,18 @@ public final class RemotePrintJobManagerFactory {
 	private static final Log LOG = LogFactory.getLog(RemotePrintJobManagerFactory.class);
 	private static IDirectConnectPrintJobManager directInstance;
 	private static long jobId = 0;
-	
+
 	private RemotePrintJobManagerFactory(){
 	}
 	
-	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(String uuid) {
-		return directInstance;
-	}
 	/**
 	 * Finds the associated manager for the given printer.
 	 * @param uuid Unique printer id.
 	 * @return Singleton object.
 	 */
-	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(ClassLoader classLoader, String uuid) {
+	public synchronized static IRemotePrintJobManager getRemotePrintJobManager(String uuid) {
 		if (directInstance == null) {
-			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(classLoader, ServerProperties.INSTANCE.getRemotePrintJobManager());
+			directInstance = (IDirectConnectPrintJobManager)getPrintJobManager(ServerProperties.INSTANCE.getRemotePrintJobManager());
 		}
 		return directInstance;
 	}
@@ -48,10 +45,10 @@ public final class RemotePrintJobManagerFactory {
 	 * @return Returns a Singleton print job manager.
 	 */
 	@SuppressWarnings("rawtypes")
-	private static IRemotePrintJobManager getPrintJobManager(ClassLoader classLoader, String manager) {
+	private static IRemotePrintJobManager getPrintJobManager(String manager) {
 		IRemotePrintJobManager newInstance = null;
 		try {
-			Class managerClass = Class.forName(manager, true, classLoader);
+			Class managerClass = Class.forName(manager);
 			newInstance = (IRemotePrintJobManager)managerClass.newInstance();
 			newInstance.initialize();
 		} catch (ClassNotFoundException e) {
