@@ -8,6 +8,7 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -28,9 +29,7 @@ public enum IOUtils {
 	 */
 	public void copy(InputStream input, OutputStream output) throws IOException {
 		try {
-			if (input instanceof ByteArrayInputStream) {
-				input.reset();
-			}
+			resetInputStream(input);
 			int readData = -1;
 			byte[] readBuffer = new byte[65535];
 			while ((readData = input.read(readBuffer)) > -1) {
@@ -84,6 +83,21 @@ public enum IOUtils {
 				} catch (IOException e) {
 					LOG.error(e.getMessage(), e);
 				}
+			}
+		}
+	}
+	
+	/**
+	 * Resets input stream to initial position.
+	 * @param input Input Stream to be reset.
+	 */
+	public void resetInputStream(InputStream input) {
+		if (input != null 
+				&& input instanceof ByteArrayInputStream) {
+			try {
+				input.reset();
+			} catch (IOException e) {
+				LOG.debug(ExceptionUtils.getMessage(e));
 			}
 		}
 	}

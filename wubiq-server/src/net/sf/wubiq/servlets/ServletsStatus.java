@@ -19,8 +19,12 @@ public class ServletsStatus {
 		Thread thread = new Thread(new Runnable() {
 			@Override
 			public void run() {
+				long time = 30000;
+				if ("true".equalsIgnoreCase(System.getProperty("net.sf.wubiq.development"))) {
+					time = 10;
+				}
 				try {
-					Thread.sleep(30000); // Sleep for 30 seconds
+					Thread.sleep(time); // Sleep for 30 seconds
 					ready = true;
 				} catch (InterruptedException e) {
 				} 

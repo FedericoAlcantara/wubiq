@@ -4,6 +4,7 @@
 package net.sf.wubiq.android;
 
 import java.awt.Color;
+import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -15,6 +16,7 @@ import javax.imageio.ImageIO;
 
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.print.pdf.PdfImagePage;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.PdfUtils;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -34,10 +36,10 @@ public enum ConversionServerUtils {
 	/*
 	 * Perform the steps according to device specifications
 	 */
-	public InputStream convertToMobile(String deviceName, InputStream pdf) {
+	public InputStream convertToMobile(String deviceName, InputStream inputPdf) {
 		InputStream returnValue = null;
 		String[] deviceData = deviceName.split(ParameterKeys.ATTRIBUTE_SET_SEPARATOR);
-		Object convertedValue = pdf;
+		Object convertedValue = inputPdf;
 		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2].replaceAll("_", " ")); 
 		for (MobileServerConversionStep step : deviceInfo.getServerSteps()) {
 			if (step.equals(MobileServerConversionStep.PDF_TO_IMAGE)) {
@@ -83,11 +85,12 @@ public enum ConversionServerUtils {
 	 * @return a stream representing a bitmap
 	 */
 	protected BufferedImage pdfToImg(MobileDeviceInfo deviceInfo, InputStream pdf) {
+		IOUtils.INSTANCE.resetInputStream(pdf);
 		List<PdfImagePage> bitmaps = PdfUtils.INSTANCE.convertPdfToPng(pdf, deviceInfo.getResolutionDpi());
 		BufferedImage returnValue = null;
 		try {
 			if (bitmaps.size() >= 1) {
-				returnValue = ImageIO.read(bitmaps.get(0).getImageFile());
+				returnValue = removeAlphaChannel(ImageIO.read(bitmaps.get(0).getImageFile()));
 			}
 		} catch (IOException e) {
 			LOG.error(ExceptionUtils.getMessage(e), e);
@@ -152,8 +155,11 @@ public enum ConversionServerUtils {
         	}
         }
         outer:
-        for(int j = height - 1; j >= 0; j--) {
-            for(int i = 0; i < width; i++) {
+        for (int j = height - 1; j >= 0; j--) {
+            for (int i = 0; i < width; i++) {
+            	if ((img.getRGB(i, j) >> 24) == 0x00) { // Transparent
+            		continue;
+            	}
                 if(img.getRGB(i, j) != Color.WHITE.getRGB() &&
                         j > trimmedHeight) {
                     trimmedHeight = j + 1;
@@ -183,9 +189,12 @@ public enum ConversionServerUtils {
         	}
         }
         outer:
-        for(int j = width - 1; j >= 0; j--) {
-            for(int i = 0; i < trimmedHeight; i++) {
-                if(img.getRGB(j, i) != Color.WHITE.getRGB() &&
+        for (int j = width - 1; j >= 0; j--) {
+            for (int i = 0; i < trimmedHeight; i++) {
+            	if ((img.getRGB(j, i) >> 24) == 0x00) { // Transparent
+            		continue;
+            	}
+                if (img.getRGB(j, i) != Color.WHITE.getRGB() &&
                         j > trimmedWidth) {
                     trimmedWidth = j + 1;
                     break outer;
@@ -196,4 +205,18 @@ public enum ConversionServerUtils {
         return trimmedWidth + rightSpace;
     }
 
+	/**
+	 * Removes the alpha channel of the image.
+	 * @param img Image to remove the alpha channel from.
+	 * @return Buffered image without alpha channel.
+	 */
+	private BufferedImage removeAlphaChannel(BufferedImage img) {
+		BufferedImage copy = new BufferedImage(img.getWidth(), img.getHeight(), BufferedImage.TYPE_INT_RGB);
+		Graphics2D g2d = copy.createGraphics();
+		g2d.setColor(Color.WHITE); // Or what ever fill color you want...
+		g2d.fillRect(0, 0, copy.getWidth(), copy.getHeight());
+		g2d.drawImage(img, 0, 0, null);
+		g2d.dispose();
+		return copy;
+	}
 }

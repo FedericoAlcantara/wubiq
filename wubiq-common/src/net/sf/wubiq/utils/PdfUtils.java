@@ -68,7 +68,7 @@ public enum PdfUtils {
 			String imageFormat = suffix;
 	        tempFile = File.createTempFile("temp", "pdf-." + suffix);
 	        String outputPrefix = tempFile.getPath().substring(0, tempFile.getPath().lastIndexOf('.'));
-	        int imageType = BufferedImage.TYPE_INT_RGB;
+	        int imageType = BufferedImage.TYPE_INT_ARGB;
 	        Pageable pageable = (Pageable)document;
 	        for (int pageIndex = 0; pageIndex < pageable.getNumberOfPages(); pageIndex++) {
 	        	PDPage page = (PDPage)pageable.getPrintable(pageIndex);
