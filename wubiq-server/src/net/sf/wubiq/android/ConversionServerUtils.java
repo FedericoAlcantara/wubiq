@@ -40,7 +40,13 @@ public enum ConversionServerUtils {
 		InputStream returnValue = null;
 		String[] deviceData = deviceName.split(ParameterKeys.ATTRIBUTE_SET_SEPARATOR);
 		Object convertedValue = inputPdf;
-		MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2].replaceAll("_", " ")); 
+		MobileDeviceInfo deviceInfo = null;
+		if (deviceData.length >= 3) {
+			deviceInfo = MobileDevices.INSTANCE.getDevices().get(deviceData[2].replaceAll("_", " "));
+		}
+		if (deviceInfo == null) {
+			deviceInfo = MobileDevices.INSTANCE.getDevices().get("Generic 3 in");
+		}
 		for (MobileServerConversionStep step : deviceInfo.getServerSteps()) {
 			if (step.equals(MobileServerConversionStep.PDF_TO_IMAGE)) {
 				convertedValue = pdfToImg(deviceInfo, (InputStream)convertedValue);

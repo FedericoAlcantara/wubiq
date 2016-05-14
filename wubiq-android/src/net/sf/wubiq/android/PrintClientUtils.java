@@ -45,40 +45,52 @@ public enum PrintClientUtils {
 		boolean returnValue = false;
 		printDelay = preferences.getInt(WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
 		printPause = preferences.getInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
+		long pauseBetweenPrints = preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
+		int errorRetries = preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
 		ByteArrayOutputStream output = new ByteArrayOutputStream();
-		BluetoothDevice device = BluetoothUtils.device(context, deviceAddress);
-		if (device != null) {
-			String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();
-			String selection = preferences.getString(deviceKey, null);
-			MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(selection);
-			if (currentDevice == null ||
-					!currentDevice.isAlive()) {
-				if (currentDevice != null &&
-						currentDevice.getPrintingStatus().equals(PrintingStatus.FINISHED_OKEY)) {
-				}
-					
-				try {
-					returnValue = true;
-					IOUtils.INSTANCE.copy(input, output);
-					output.flush();
-					byte[] printData = output.toByteArray();
-					for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
-						currentDevice = WubiqDeviceFactory.INSTANCE.getInstance(step);
-						if (currentDevice != null) {
-							currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause);
-							currentDevice.start();
+		while (returnValue == false) {
+			BluetoothDevice device = BluetoothUtils.device(context, deviceAddress);
+			if (device != null) {
+				String deviceKey = WubiqActivity.DEVICE_PREFIX + device.getAddress();
+				String selection = preferences.getString(deviceKey, null);
+				MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(selection);
+				if (currentDevice == null ||
+						!currentDevice.isAlive()) {
+					if (currentDevice != null &&
+							currentDevice.getPrintingStatus().equals(PrintingStatus.FINISHED_OKEY)) {
+					}
+						
+					try {
+						returnValue = true;
+						IOUtils.INSTANCE.copy(input, output);
+						output.flush();
+						byte[] printData = output.toByteArray();
+						for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
+							currentDevice = WubiqDeviceFactory.INSTANCE.getInstance(step);
+							if (currentDevice != null) {
+								currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause);
+								currentDevice.start();
+							}
+						}
+					} catch (Throwable e) {
+						Log.e(TAG, e.getMessage());
+						returnValue = false;
+					} finally {
+						try {
+							output.close();
+						} catch (IOException e) {
+							Log.e(TAG, e.getMessage());
 						}
 					}
-				} catch (Throwable e) {
-					Log.e(TAG, e.getMessage());
-					returnValue = false;
-				} finally {
-					try {
-						output.close();
-					} catch (IOException e) {
-						Log.e(TAG, e.getMessage());
-					}
 				}
+			}
+			if (returnValue || errorRetries-- < 0) {
+				break;
+			}
+			try {
+				Thread.sleep(pauseBetweenPrints);
+			} catch (InterruptedException e) {
+				throw new ConnectException(e.getMessage());
 			}
 		}
 		return returnValue;

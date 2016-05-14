@@ -17,11 +17,24 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.wubiq.clients.AbstractLocalPrintManager;
 import net.sf.wubiq.clients.DirectPrintManager;
 import net.sf.wubiq.clients.LocalPrintManager;
+import net.sf.wubiq.common.CommandKeys;
 
 public class LocalManagerTestWrapper extends LocalPrintManager implements Serializable {
 	private static final long serialVersionUID = 1L;
 
 	private TestData testData;
+
+	private String printServiceType;
+	
+	private boolean stopProcessing;
+	
+	public LocalManagerTestWrapper(String printServiceType) {
+		this.printServiceType = printServiceType;
+	}
+	
+	public LocalManagerTestWrapper() {
+		this(CommandKeys.REGISTER_PRINT_SERVICE_V2);
+	}
 	
 	@Override
 	public boolean isKilled() {
@@ -38,6 +51,11 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 		super.registerPrintServices();
 		getTestData().setRegisteredServices(true);
 	}	
+	
+	@Override
+	protected String printServiceType() {
+		return printServiceType;
+	}
 	
 	@Override
 	public Map<String, PrintService> getPrintServicesName() {
@@ -58,6 +76,9 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 	@Override
 	protected void processPendingJob(String jobId, String printServiceName) throws ConnectException {
 		getTestData().setJobId(jobId);
+		if (stopProcessing) {
+			return;
+		}
 		try {
 			super.processPendingJob(jobId, printServiceName);
 		} catch (ConnectException e) {
@@ -223,5 +244,13 @@ public class LocalManagerTestWrapper extends LocalPrintManager implements Serial
 	 */
 	public synchronized void resetTestData() {
 		this.testData = null;
+	}
+	
+	/**
+	 * Allows the process of print jobs or not.
+	 * @param status Status to set. True no print jobs are processed, false (default) all print jobs are processed.
+	 */
+	public synchronized void stopProcessing(boolean status) {
+		this.stopProcessing = status;
 	}
 }

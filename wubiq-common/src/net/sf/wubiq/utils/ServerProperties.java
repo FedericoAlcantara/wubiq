@@ -35,7 +35,7 @@ public class ServerProperties extends BaseProperties {
 	}
 	
 	public String getHsqldbHost() {
-		return INSTANCE.get(ConfigurationKeys.PROPERTY_HSQLDB_HOST, 
+		return get(ConfigurationKeys.PROPERTY_HSQLDB_HOST, 
 				ConfigurationKeys.DEFAULT_HSQLDB_HOST);
 	}
 	
@@ -57,6 +57,24 @@ public class ServerProperties extends BaseProperties {
 
 	public String getRemotePrintJobManager() {
 		return get(ConfigurationKeys.PROPERTY_REMOTE_PRINT_JOB_MANAGER, ConfigurationKeys.DEFAULT_REMOTE_PRINT_JOB_MANAGER);
+	}
+	
+	/**
+	 * Pdf to image dots per inch. Default value is 144dpi.
+	 * @return Dots per inches for image conversion, never less than 72 dpi.
+	 */
+	public Integer getPdfToImageDotsPerInch() {
+		String dpiString = get(ConfigurationKeys.PROPERTY_PDF_TO_IMAGE_DOTS_PER_INCH, ConfigurationKeys.DEFAULT_PDF_TO_IMAGE_DOTS_PER_INCH.toString());
+		Integer returnValue = ConfigurationKeys.DEFAULT_PDF_TO_IMAGE_DOTS_PER_INCH;
+		try {
+			returnValue = Integer.parseInt(dpiString);
+		} catch (NumberFormatException e) {
+			returnValue = ConfigurationKeys.DEFAULT_PDF_TO_IMAGE_DOTS_PER_INCH;
+		}
+		if (returnValue < 72) {
+			returnValue = 72;
+		}
+		return returnValue;
 	}
 	
 	/**

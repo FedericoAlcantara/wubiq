@@ -44,18 +44,21 @@ import net.sf.wubiq.android.ConversionServerUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.listeners.ContextListener;
+import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.PrinterJobManager;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.IDirectConnectorQueue;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
+import net.sf.wubiq.print.managers.impl.DirectConnectPrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
@@ -160,7 +163,10 @@ public class RemotePrintServlet extends HttpServlet {
 							closePrintJobCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.DIRECT_CONNECT)) {
 							directConnect(uuid, request, response, clientSupportsCompression, parametersInputStream, parameters);
+						} else if (command.equalsIgnoreCase(CommandKeys.CLEAR_IN_MEMORY_JOBS)) {
+							clearInMemoryJobs(uuid, request, response, parameters);
 						}
+						
 					}
 				}
 			}
@@ -399,6 +405,15 @@ public class RemotePrintServlet extends HttpServlet {
 					DocFlavor.SERVICE_FORMATTED.PRINTABLE});
 			getRemoteClientManager(request).addRemote(uuid, client);
 			getRemoteClientManager(request).registerPrintService(uuid, remotePrintService);
+			// Resets all status of PRINTING to NOT_PRINTED
+			if (manager != null) {
+				for (Long jobId : manager.getPrintJobs(uuid, RemotePrintJobStatus.PRINTING)) {
+					IRemotePrintJob printJob = manager.getRemotePrintJob(jobId, false);
+					if (printJob != null) {
+						printJob.setStatus(RemotePrintJobStatus.NOT_PRINTED);
+					}
+				}
+			}
 			respond("ok", response);
 		}
 	}
@@ -414,7 +429,8 @@ public class RemotePrintServlet extends HttpServlet {
 	protected void showPrintServicesCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
 		String tr = "<tr style='border:1px solid black'>";
 		String th = "<th style='border:1px solid black'>";
-		String td = "<td style='border:1px solid black'>";
+		String tdName = "<td style='border:1px solid black' class='" + WebKeys.SHOW_SERVICES_ROW_CLASS  + "'>";
+		String td = "<th style='border:1px solid black'>";
 		String tdc = "<td style='border:1px solid black; text-align:center' align='center'>";
 		StringBuffer buffer = new StringBuffer("")
 			.append("<table style='border:2px solid black; background-color:#FFFAFA' id='")
@@ -442,7 +458,7 @@ public class RemotePrintServlet extends HttpServlet {
 				remoteUuid = ((RemotePrintService)printService).getUuid();
 			}
 			buffer.append(tr)
-				.append(td)
+				.append(tdName)
 				.append(printService.getName())
 				.append("</td>")
 				.append(td)
@@ -557,8 +573,7 @@ public class RemotePrintServlet extends HttpServlet {
 		String printServiceName = "";
 		if (manager != null) {
 			IRemotePrintJob printJob = manager.getRemotePrintJob(Long.parseLong(jobId), false);
-			if (printJob != null 
-					&& RemotePrintJobStatus.NOT_PRINTED.equals(printJob.getStatus())) {
+			if (printJob != null) {
 				printServiceName = printJob.getPrintServiceName();
 			}
 		}
@@ -748,7 +763,6 @@ public class RemotePrintServlet extends HttpServlet {
 		if (RemotePrintServiceLookup.isMobile(uuid)) {
 			testPageName = "MobileTestPage.pdf";
 		}
-//testPageName = "TestPage.pdf";
 
 		String testPage = "net/sf/wubiq/reports/" + testPageName;  
 		String printServiceName = getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_NAME);
@@ -1192,5 +1206,32 @@ public class RemotePrintServlet extends HttpServlet {
 			returnValue = false;
 		}
 		return returnValue;
+	}
+	
+	/* **************************************************************
+	 * Developers routines should not be enabled during production.
+	 * Useful for enabling testing.
+	 * **************************************************************
+	 */
+	/**
+	 * Returns okey if the command was successfully executed on a persisted enabled environment.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @param parameters Processed request parameters. 
+	 * @throws ServletException
+	 * @throws IOException
+	 */
+	private void clearInMemoryJobs(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) {
+		String answer = "no";
+		if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DEVELOPMENT_MODE))) {
+			if (manager != null && manager instanceof DirectConnectPrintJobManager) {
+				if (PersistenceManager.isPersistenceEnabled()) {
+					((DirectConnectPrintJobManager) manager).clearInMemoryPrintJobs(uuid);
+					answer = "ok";
+				}
+			}
+		}
+		respond(answer, response);
 	}
 }

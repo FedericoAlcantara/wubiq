@@ -1,5 +1,7 @@
 package net.sf.wubiq.dao;
 
+import java.awt.print.Pageable;
+import java.awt.print.Printable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -23,6 +25,7 @@ import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.utils.IOUtils;
+import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -113,7 +116,10 @@ public enum WubiqPrintJobDao {
 		try {
 			WubiqPrintJob job = findMinimal(jobId);
 			if (job != null) {
-				PersistenceManager.em().remove(job);
+				PersistenceManager.em()
+					.createQuery("delete from WubiqPrintJob where printJobId=:printJobId")
+					.setParameter("printJobId", jobId)
+					.executeUpdate();
 			}
 			PersistenceManager.commit();
 		} catch (Exception e) {
@@ -143,9 +149,14 @@ public enum WubiqPrintJobDao {
 			if (data instanceof InputStream) {
 				IOUtils.INSTANCE.copy((InputStream)data, outputStream);
 				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
+			} else if (data instanceof Pageable) {
+				PageableUtils.INSTANCE.pageableToPdf((Pageable) data, outputStream, remotePrintJob.getPrintRequestAttributeSet());
+				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
+			} else if (data instanceof Printable) {
+				PageableUtils.INSTANCE.printableToPdf((Printable) data, outputStream, remotePrintJob.getPrintRequestAttributeSet());
+				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
 			} else {
-				//IOUtils.INSTANCE.copy(PageableUtils.INSTANCE.getStreamForBytes(data, remotePrintJob.getPageFormat(), remotePrintJob.getPrintRequestAttributeSet()), outputStream);
-				job.setPrintJobDataType(PrintJobDataType.SERIALIZED_PAGEABLE);
+				job.setPrintJobDataType(PrintJobDataType.UNDEFINED);
 			}
 			outputStream.flush();
 			outputStream.close();
@@ -213,12 +224,12 @@ public enum WubiqPrintJobDao {
 				if (fullPrintJob) {
 					DocFlavor originalDocFlavor = PrintServiceUtils.deSerializeDocFlavor(job.getOriginalDocFlavor());
 					returnValue.setOriginalDocFlavor(originalDocFlavor);
-					if (!PrintJobDataType.SERIALIZED_PAGEABLE.equals(job.getPrintJobDataType())) {
+					if (PrintJobDataType.INPUT_STREAM.equals(job.getPrintJobDataType())) {
 						returnValue.setPrintDataObject(new ByteArrayInputStream(job.getPrintData()));
 						job.setStatus(RemotePrintJobStatus.PRINTING);
 						PersistenceManager.em().merge(job);
 					} else {
-						returnValue = null;
+						return null;
 					}
 				}
 			}

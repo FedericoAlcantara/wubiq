@@ -6,7 +6,6 @@ package net.sf.wubiq.print.pdf;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
-import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.IOException;
 
@@ -15,7 +14,7 @@ import javax.print.PrintException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.pdmodel.PDPageable;
+import org.apache.pdfbox.printing.PDFPageable;
 
 /**
  * Holds a converted Pdf document to pageable.
@@ -26,7 +25,8 @@ public class PdfPageable implements Pageable {
 	private static final Log LOG = LogFactory.getLog(PdfPageable.class);
 	
 	PDDocument document;
-	PDPageable pageable;
+	PDFPageable pageable;
+	PrinterJob printerJob;
 	
 	public PdfPageable() {
 		
@@ -40,11 +40,8 @@ public class PdfPageable implements Pageable {
 	public PdfPageable(PDDocument document) throws PrintException {
 		this.document = document;
 		try {
-			pageable = new PDPageable(document);
+			pageable = new PDFPageable(document);
 		} catch (IllegalArgumentException e) {
-			LOG.error(e.getMessage(), e);
-			throw new PrintException(e);
-		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		}
@@ -69,11 +66,9 @@ public class PdfPageable implements Pageable {
 	private void createPageable(PDDocument document, PrinterJob printerJob) throws PrintException {
 		this.document = document;
 		try {
-			pageable = new PDPageable(document, printerJob);
+			pageable = new PDFPageable(document);
+			this.printerJob = printerJob;
 		} catch (IllegalArgumentException e) {
-			LOG.error(e.getMessage(), e);
-			throw new PrintException(e);
-		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		}
@@ -86,7 +81,7 @@ public class PdfPageable implements Pageable {
 
 	@Override
 	public PageFormat getPageFormat(int pageIndex) throws IndexOutOfBoundsException {
-		PageFormat pageFormat = pageable.getPrinterJob().defaultPage();
+		PageFormat pageFormat = printerJob != null ? printerJob.defaultPage() : null;
 		return pageFormat;
 	}
 

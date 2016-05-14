@@ -23,17 +23,25 @@ import java.io.Reader;
 
 import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Media;
 import javax.print.attribute.standard.MediaPrintableArea;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
 
+import net.sf.wubiq.wrappers.GraphicsPdfRecorder;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
 import net.sf.wubiq.wrappers.PrintableWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.pdmodel.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.common.PDRectangle;
+import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
+import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
 
 /**
  * @author Federico Alcantara
@@ -359,4 +367,182 @@ public enum PageableUtils {
 	public void printPageableToStream(Pageable pageable) {
 		
 	}
+	
+	/**
+	 * Creates a pdf from a pageable.
+	 * @param pageable Pageable to be converted.
+	 * @param outputStream Output stream.
+	 * @param printRequestAttributes Print request attributes.
+	 */
+	public void pageableToPdf(Pageable pageable, OutputStream outputStream, PrintRequestAttributeSet printRequestAttributes) {
+		int pageResult = Printable.PAGE_EXISTS;
+		int pageIndex = 0;
+		
+		int dpi = ServerProperties.INSTANCE.getPdfToImageDotsPerInch();
+		PDDocument document = new PDDocument();
+		do {
+			try {
+				Printable printable = pageable.getPrintable(0);
+				PageFormat pageFormat = pageable.getPageFormat(0);
+
+				preparePageFormatAndAttributes(pageFormat, printRequestAttributes);
+
+				pageResult = addPrintableToPdf(printable, pageFormat, pageIndex, dpi, document);
+				if (pageResult == Printable.PAGE_EXISTS) {
+					pageIndex++;
+				}
+			} catch (IndexOutOfBoundsException e) {
+				LOG.debug("Reached end of printables");
+				break;
+			}
+		} while (pageResult == Printable.PAGE_EXISTS);
+		try {
+			if (document != null) {
+				document.save(outputStream);
+			}
+			outputStream.flush();
+			outputStream.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+
+	}
+	
+	/**
+	 * Creates a pdf from a printable.
+	 * @param printable Printable to be converted.
+	 * @param outputStream Output stream.
+	 * @param printRequestAttributes Print request attributes.
+	 */
+	public void printableToPdf(Printable printable, OutputStream outputStream, PrintRequestAttributeSet printRequestAttributes) {
+		int dpi = ServerProperties.INSTANCE.getPdfToImageDotsPerInch();
+		PDDocument document = new PDDocument();
+		PageFormat pageFormat = getPageFormat(printRequestAttributes);
+		preparePageFormatAndAttributes(pageFormat, printRequestAttributes);
+		addPrintableToPdf(printable, pageFormat, 0, dpi, document);
+		try {
+			if (document != null) {
+				document.save(outputStream);
+			}
+			outputStream.flush();
+			outputStream.close();
+		} catch (IOException e) {
+			throw new RuntimeException(e);
+		}
+	}
+	
+	/**
+	 * Prepares the page format and the print request attribute set for pageables / printables proper creation.
+	 * @param pageFormat Current page format (will be updated).
+	 * @param printRequestAttributes Print request attribute set to be updated.
+	 */
+	private void preparePageFormatAndAttributes(PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
+		Paper paper = pageFormat.getPaper();
+		MediaSizeName mediaName = (MediaSizeName) printRequestAttributes.get(MediaSizeName.class);
+		if (mediaName == null) {
+			mediaName = (MediaSizeName) printRequestAttributes.get(Media.class);
+		}
+		MediaPrintableArea printableArea = (MediaPrintableArea) printRequestAttributes.get(MediaPrintableArea.class);
+		OrientationRequested orientation = (OrientationRequested) printRequestAttributes.get(OrientationRequested.class);
+		if (mediaName != null) {
+			MediaSize mediaSize = MediaSize.getMediaSizeForName(mediaName);
+			double x = 0d;
+			double y = 0d;
+			double width = (double)mediaSize.getX(MediaSize.INCH) * 72f;
+			double height = (double)mediaSize.getY(MediaSize.INCH) * 72f;
+			paper = pageFormat.getPaper();
+			paper.setImageableArea(x, y, width, height);
+			pageFormat.setPaper(paper);
+		}
+		
+		if (OrientationRequested.LANDSCAPE.equals(orientation)) {
+			pageFormat.setOrientation(PageFormat.LANDSCAPE);
+		} else if (OrientationRequested.REVERSE_LANDSCAPE.equals(orientation)) {
+			pageFormat.setOrientation(PageFormat.REVERSE_LANDSCAPE);
+		} else if (OrientationRequested.PORTRAIT.equals(orientation) ||
+				OrientationRequested.REVERSE_PORTRAIT.equals(orientation)) {
+			pageFormat.setOrientation(PageFormat.PORTRAIT);
+		}
+		
+		// Without a MediaPrintableArea, the output is shifted out of its default margins.
+		if (printableArea == null) {
+			float x = (float)pageFormat.getImageableX() / 72f;
+			float y = (float)pageFormat.getImageableY() / 72f;
+			float width = (float)pageFormat.getWidth() / 72f;
+			float height = (float)pageFormat.getHeight() /72f;
+			// We ask inverse as we are taking the values from an already rotated paper bounds.
+			if (((OrientationRequested.LANDSCAPE.equals(orientation)
+					|| OrientationRequested.REVERSE_LANDSCAPE.equals(orientation))
+					&& width > height) 
+					||
+				((OrientationRequested.PORTRAIT.equals(orientation)
+					|| OrientationRequested.REVERSE_PORTRAIT.equals(orientation))
+					&& height > width)
+					) {
+				printableArea = new MediaPrintableArea(y, x, height, width,
+						MediaPrintableArea.INCH);
+			} else {
+				printableArea = new MediaPrintableArea(x, y, width, height,
+						MediaPrintableArea.INCH);
+			}
+
+			printRequestAttributes.add(printableArea);
+		}
+
+	}
+	
+	/**
+	 * Outputs a printable to stream as PNG file.
+	 * @param printable Printable object.
+	 * @param pageFormat Page format.
+	 * @param pageIndex Page index.
+	 * @param dpi Dots per inches (resolution). Minimal recommended 144.
+	 * @param output Output stream to put the png.
+	 * @return Status of printable.
+	 */
+	private int addPrintableToPdf(Printable printable, PageFormat pageFormat, int pageIndex, double dpi, PDDocument document) {
+		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES;
+		double resolution = dpi / 72d;
+		int width = new Double(pageFormat.getWidth() * resolution).intValue();
+		int height = new Double(pageFormat.getHeight() * resolution).intValue();
+		float x = (float) (pageFormat.getImageableX());
+		float y = (float) (pageFormat.getImageableY());
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+		Graphics2D graph = new GraphicsPdfRecorder(img.createGraphics());
+		try {
+			AffineTransform scaleTransform = new AffineTransform();
+			scaleTransform.scale(resolution, resolution);
+			graph.setTransform(scaleTransform);
+			graph.translate(x, y);
+			graph.setClip(new Rectangle2D.Double(
+					0,
+					0,
+					pageFormat.getPaper().getImageableWidth(), 
+					pageFormat.getPaper().getImageableHeight()));
+			graph.setBackground(Color.WHITE);
+			graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
+					(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
+			returnValue = printable.print(graph, pageFormat, pageIndex);
+			if (Printable.PAGE_EXISTS == returnValue) {
+				PDRectangle mediaBox = new PDRectangle((float)pageFormat.getWidth(), (float)pageFormat.getHeight());
+				PDPage page = new PDPage(mediaBox);
+				document.addPage(page);
+				PDImageXObject pdImage = LosslessFactory.createFromImage(document, img);
+				PDPageContentStream contents = new PDPageContentStream(document, page);
+				contents.drawImage(pdImage, 0, 0,
+						new Double(pageFormat.getWidth()).intValue(),
+						new Double(pageFormat.getHeight()).intValue());
+				contents.close();
+			}
+			graph.dispose();
+		} catch (PrinterException e) {
+			LOG.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+		return returnValue;
+	}
+
 }

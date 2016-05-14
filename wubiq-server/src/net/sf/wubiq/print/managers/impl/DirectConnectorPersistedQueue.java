@@ -7,6 +7,7 @@ import java.util.Collection;
 
 import javax.print.PrintService;
 
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.dao.WubiqPrintJobDao;
 import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
@@ -89,6 +90,7 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 		if (printJob != null && full) {
 			printJob.setStatus(RemotePrintJobStatus.PRINTING);
 			WubiqPrintJobDao.INSTANCE.changePrintJobStatus(jobId, RemotePrintJobStatus.PRINTING);
+			jobBucket(jobId).printJob = printJob;
 		}
 		return printJob;
 	}
@@ -116,4 +118,20 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 	private void resetProcess() {
 		onProcess = -1l;
 	}	
+	
+	/* **************************************************************
+	 * Developers routines should not be enabled during production.
+	 * Useful for enabling testing.
+	 * **************************************************************
+	 */
+	/**
+	 * Just clears the jobs in memory, but keeps the persisted image intact.
+	 */
+	public synchronized void clearInMemoryPrintJobs() {
+		if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DEVELOPMENT_MODE))) {
+			for (Long jobId : printJobs()) {
+				super.removePrintJob(jobId);
+			}
+		}
+	}
 }

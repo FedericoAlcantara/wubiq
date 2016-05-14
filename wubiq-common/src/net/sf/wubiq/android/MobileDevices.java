@@ -41,6 +41,14 @@ public enum MobileDevices {
 	}
 	
 	/**
+	 * The default device for mobile printing.
+	 * @return The default device.
+	 */
+	public MobileDeviceInfo defaultDevice() {
+		return getDevices().get("Generic 3 in");
+	}
+	
+	/**
 	 * 
 	 * @return Device name list
 	 */

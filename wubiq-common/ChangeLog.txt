@@ -1,4 +1,15 @@
 ==========================
+Wubiq 2.2.3 (2016-05-11)
+==========================
+-Fixed unnecessary errors when printing on mobiles.
+-Fixed failure to remove printed print jobs.
+
+==========================
+Wubiq 2.2.2 (2016-05-10)
+==========================
+-Fixed dropped prints on mobile devices when successive prints were sent.
+
+==========================
 Wubiq 2.2.1 (2016-04-20)
 ==========================
 -Support of data sources for cluster and servers escalation capabilities.

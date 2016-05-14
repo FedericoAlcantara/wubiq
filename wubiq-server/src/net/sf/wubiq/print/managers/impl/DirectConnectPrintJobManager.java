@@ -11,6 +11,7 @@ import java.util.Map;
 import javax.print.PrintService;
 
 import net.sf.wubiq.common.ConfigurationKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.dao.WubiqPrintJobDao;
 import net.sf.wubiq.interfaces.INotifiablePrintService;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
@@ -225,5 +226,24 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		} else {
 			return false;
 		}
-	}	
+	}
+	
+	/* **************************************************************
+	 * Developers routines should not be enabled during production.
+	 * Useful for enabling testing.
+	 * **************************************************************
+	 */
+	/**
+	 * Just clears the jobs in memory for the given queue, but keeps the persisted image intact.
+	 * @param queueId Id of the queue.
+	 */
+	public synchronized void clearInMemoryPrintJobs(String queueId) {
+		if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DEVELOPMENT_MODE))) {
+			IDirectConnectorQueue queue = directConnector(queueId);
+			if (queue != null
+					&& queue instanceof DirectConnectorPersistedQueue) {
+				((DirectConnectorPersistedQueue) queue).clearInMemoryPrintJobs();
+			}
+		}
+	}
 }

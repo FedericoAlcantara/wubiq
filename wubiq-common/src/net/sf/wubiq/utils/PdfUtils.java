@@ -27,6 +27,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
+import org.apache.pdfbox.printing.PDFPageable;
+import org.apache.pdfbox.rendering.ImageType;
+import org.apache.pdfbox.rendering.PDFRenderer;
 
 /**
  * @author Federico Alcantara
@@ -68,11 +71,14 @@ public enum PdfUtils {
 			String imageFormat = suffix;
 	        tempFile = File.createTempFile("temp", "pdf-." + suffix);
 	        String outputPrefix = tempFile.getPath().substring(0, tempFile.getPath().lastIndexOf('.'));
-	        int imageType = BufferedImage.TYPE_INT_ARGB;
-	        Pageable pageable = (Pageable)document;
+	        //int imageType = BufferedImage.TYPE_INT_ARGB;
+	        ImageType imageType = ImageType.ARGB;
+	        Pageable pageable = new PDFPageable(document);
+	        PDFRenderer renderer = new PDFRenderer(document);
 	        for (int pageIndex = 0; pageIndex < pageable.getNumberOfPages(); pageIndex++) {
-	        	PDPage page = (PDPage)pageable.getPrintable(pageIndex);
-	        	BufferedImage image = page.convertToImage(imageType, resolution);
+	        	PDPage page = document.getPage(pageIndex);
+	        	BufferedImage image = renderer.renderImageWithDPI(pageIndex, new Float(resolution).floatValue(), imageType);
+	        	//BufferedImage image = page.convertToImage(imageType, resolution);
 	        	String indexed = ("000000" + pageIndex);
 	        	indexed = indexed.substring(indexed.length() - 6);
 	        	File fileOutput = new File(outputPrefix + indexed + "." + imageFormat);
@@ -176,13 +182,6 @@ public enum PdfUtils {
 			if (pageable instanceof PdfPageable) {
 				try {
 					((PdfPageable)pageable).close();
-				} catch (IOException e) {
-					LOG.error(e.getMessage());
-				}
-			}
-			if (pageable instanceof PDDocument) {
-				try {
-					((PDDocument)pageable).close();
 				} catch (IOException e) {
 					LOG.error(e.getMessage());
 				}

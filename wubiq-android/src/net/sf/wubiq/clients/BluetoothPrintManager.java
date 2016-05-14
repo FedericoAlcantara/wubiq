@@ -7,8 +7,10 @@ package net.sf.wubiq.clients;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.UUID;
@@ -22,6 +24,7 @@ import net.sf.wubiq.android.utils.BluetoothUtils;
 import net.sf.wubiq.android.utils.NotificationUtils;
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.Labels;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
@@ -44,6 +47,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	private final String TAG = "BluetoothPrintManager";
 	private int printingErrors = 0;
 	private boolean needsRefresh = true;
+	private List<String> currentPendingJobs;
 
 	/**
 	 * Create a new instance of the bluetooth print manager.
@@ -56,6 +60,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		this.preferences = preferences;
 		this.context = context;
 		printServicesName = new HashMap<String, String>();
+		currentPendingJobs = new ArrayList<String>();
 
 		initializeDefault(this);
 		setCheckPendingJobInterval(preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default)));
@@ -113,7 +118,16 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	 */
 	@Override
 	protected String[] getPendingJobs() throws ConnectException {
-		String[] returnValue = super.getPendingJobs();
+		if (currentPendingJobs.isEmpty()) {
+			String[] serverPendingJobs = super.getPendingJobs();
+			for (String pendingJob : serverPendingJobs) {
+				if (!Is.emptyString(pendingJob)) {
+					currentPendingJobs.add(pendingJob);
+				}
+			}
+		}
+		String[] returnValue = new String[currentPendingJobs.size()];
+		returnValue = currentPendingJobs.toArray(returnValue);
 		NotificationUtils.INSTANCE.cancelNotification(context,
 				NotificationIds.CONNECTION_ERROR_ID);
 		PrintManagerService.connectionErrors = 0;
@@ -159,6 +173,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				BluetoothUtils.cancelError(context);
 				NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_ERROR_ID);
 				printingErrors = 0;
+				currentPendingJobs.remove(jobId);
 			} else {
 				BluetoothUtils.notifyError(context);
 			}
@@ -340,9 +355,9 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.JobSheets", "xJSHx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Finishings", "xFINx");
 			compressionMap.put("javax\\.print\\.attribute\\.standard\\.CopiesSupported", "xCSUx");
-			compressionMap.put("javax.print.attribute.standard.Chromaticity", "xCHRx");
-			compressionMap.put("javax.print.attribute.standard.Destination", "xDSTx");
-			compressionMap.put("sun.print.CustomMediaSizeName", "xSCMx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Chromaticity", "xCHRx");
+			compressionMap.put("javax\\.print\\.attribute\\.standard\\.Destination", "xDSTx");
+			compressionMap.put("sun\\.print\\.CustomMediaSizeName", "xCMSx");
 		}
 		return compressionMap;
 	}

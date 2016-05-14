@@ -26,7 +26,7 @@ public final class ConfigurationKeys {
 	public static final Integer DEFAULT_LOG_LEVEL = 0;
 	public static final Integer DEFAULT_POLL_INTERVAL = 300; // Default interval for checking for pending jobs. 300 ms.
 	public static final Integer DEFAULT_PRINT_JOB_WAIT = 500; // Pause between print jobs, default 1/2 a second.
-
+	public static final Integer DEFAULT_PDF_TO_IMAGE_DOTS_PER_INCH = 144; // Dots per inch.
 	
 	/**
 	 * @since version 2.2 HsqlDB Job manager is deprecated in favor of DirectConnectPrintJobManager for all cases.
@@ -66,6 +66,8 @@ public final class ConfigurationKeys {
 	public static final String PROPERTY_JDBC_URL = "jdbc.url";
 	public static final String PROPERTY_JDBC_USERNAME = "jdbc.username";
 	public static final String PROPERTY_JDBC_PASSWORD = "jdbc.password";
+	
+	public static final String PROPERTY_PDF_TO_IMAGE_DOTS_PER_INCH = "pdf.to.image.dpi";
 
 	private static boolean persistenceActive = false;
 

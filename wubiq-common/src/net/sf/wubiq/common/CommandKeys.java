@@ -41,4 +41,7 @@ public final class CommandKeys {
 	public static final String READ_VERSION = "v1";
 	public static final String READ_CONNECTIONS = "rc";
 	public static final String CONNECTION_TEST = "ct";
+	
+	/* Developers keys not used or ignored in production */
+	public static final String CLEAR_IN_MEMORY_JOBS = "z01";
 }

@@ -475,7 +475,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						|| forceSerializedBySystem();
 				categories.insert(0, ParameterKeys.PARAMETER_SEPARATOR)
 					.insert(0, ParameterKeys.PRINT_SERVICE_CATEGORIES);
-				askServer(CommandKeys.REGISTER_PRINT_SERVICE_V2, printServiceRegister.toString(), categories.toString(), 
+				askServer(printServiceType(), printServiceRegister.toString(), categories.toString(), 
 						ParameterKeys.PRINT_SERVICE_DOC_FLAVORS
 							+ParameterKeys.PARAMETER_SEPARATOR
 							+DirectConnectUtils.INSTANCE.serialize(printService.getSupportedDocFlavors()),
@@ -491,6 +491,14 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			}
 			lastServerTimestamp = serverTimestamp;
 		}
+	}
+		
+	/**
+	 * Print service type.
+	 * @return Type of print service.
+	 */
+	protected String printServiceType() {
+		return CommandKeys.REGISTER_PRINT_SERVICE_V2;
 	}
 
 	protected Map<String, PrintService> getPrintServicesName() {

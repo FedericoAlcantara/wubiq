@@ -18,4 +18,6 @@ public final class PropertyKeys {
 	public static final String WUBIQ_PRINTERS_PHOTO = "wubiq.printers.photo";
 	public static final String WUBIQ_PRINTERS_DOTMATRIX = "wubiq.printers.dotmatrix";
 	public static final String WUBIQ_PRINTERS_DOTMATRIX_HQ = "wubiq.printers.dotmatrix.hq";
+	
+	public static final String WUBIQ_DEVELOPMENT_MODE = "net.sf.wubiq.development";
 }

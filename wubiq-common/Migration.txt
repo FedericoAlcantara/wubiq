@@ -1,6 +1,19 @@
+Migrate from 2.2.x to 2.3.x
+============================
+- We've upgraded from pdfbox/fontbox 1.8.6 to pdfbox/fontbox 2.0.1.
+The following is no longer valid:
+java.awt.print.Pageable pageable = (java.awt.print.Pageable)new org.apache.pdfbox.pdmodel.PDDocument();
+
+You should instead instantiate a org.apache.pdfbox.printing.PDFPageable, 
+please do not confuse with our net.sf.wubiq.print.pdf.PdfPageable).
+This is an example on how to use a PDDocument as a Pageable.
+java.awt.print.Pageable pageable = new org.apache.pdfbox.printing.PDFPageable(new org.apache.pdfbox.pdmodel.PDDocument());
+
+For other changes related to pdfbox/fontbox see https://pdfbox.apache.org/2.0/migration.html
+
 Migrate from 2.1.x to 2.2.x
 ============================
--PrintServiceUtils has been splitted in PrintServiceUtils and ServerPrintServiceUtils.
+- PrintServiceUtils has been splitted in PrintServiceUtils and ServerPrintServiceUtils.
 The following methods now exists ONLY in ServerPrintServiceUtils
   replacePrintService
   isSameVersion
@@ -9,7 +22,4 @@ The following methods now exists ONLY in ServerPrintServiceUtils
   convertedVersion
   getPrintServices(String group, boolean includeLocals, boolean includeNonGrouped)
   deSerializeService
-  
-  
-The following methods are DUPLICATED in both, but with different behaviors.
   

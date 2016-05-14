@@ -11,5 +11,6 @@ package net.sf.wubiq.enums;
  */
 public enum PrintJobDataType {
 	INPUT_STREAM,
-	SERIALIZED_PAGEABLE;
+	SERIALIZED_PAGEABLE,
+	UNDEFINED;
 }
