@@ -19,7 +19,7 @@ import android.test.ServiceTestCase;
  * In that xml create host and port properties to the server running wubiq. 
  * Remember that this test will be run on an Android device or emulator.
  * If you don't provide a wubiq-client.properties with host and port it will attempt
- * to connect to http://localhost:8080 that most probably fail.
+ * to connect to http://localhost:8080 and that will most probably fail.
  * 
  * @author Federico Alcantara
  *

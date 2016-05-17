@@ -76,9 +76,9 @@ public enum MobileDevices {
 	}
 	
 	private void registerPortiS() {
-		devices.put("Porti-S 2 in", portiS("2"));
-		devices.put("Porti-S 3 in", portiS("3"));
-		devices.put("Porti-S 4 in", portiS("4"));
+		devices.put("Porti S 2 in", portiS("2"));
+		devices.put("Porti S 3 in", portiS("3"));
+		devices.put("Porti S 4 in", portiS("4"));
 	}
 	
 	private void registerStarMicronics() {
@@ -142,14 +142,14 @@ public enum MobileDevices {
 		ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
 		Map<MobileConversionHint, Object> hints = new HashMap<MobileConversionHint, Object>();
 		Collection<String> compatibleDevices = new ArrayList<String>();
-		device.setName("Porti-S -" + width + " in.");
+		device.setName("Porti S -" + width + " in.");
 		device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
 		device.setColorCapable(false);
 		serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
 		serverSteps.add(MobileServerConversionStep.RESIZE);
 		serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
 		clientSteps.add(MobileClientConversionStep.OUTPUT_BYTES);
-		compatibleDevices.add("Porti-S -" + width + " in.");
+		compatibleDevices.add("Porti S -" + width + " in.");
 		device.setServerSteps(serverSteps);
 		device.setClientSteps(clientSteps);
 		device.setHints(hints);

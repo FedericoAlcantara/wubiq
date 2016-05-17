@@ -25,7 +25,7 @@ import android.util.Log;
  */
 public class PrintManagerService extends Service {
 
-	private static final String TAG = "PrintManagerService";
+	private static final String TAG = PrintManagerService.class.getSimpleName();
 	public static int connectionErrors = 0;
 	private Thread managerThread;
 	private Resources resources;

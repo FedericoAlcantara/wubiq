@@ -21,7 +21,7 @@ import com.zebra.android.comm.ZebraPrinterConnectionException;
  *
  */
 public class DeviceZebra extends BaseWubiqDevice {
-	private final static String TAG = "DeviceZebra";
+	private final static String TAG = DeviceZebra.class.getSimpleName();
 
 	/**
 	 * @see net.sf.wubiq.android.devices.BaseWubiqDevice#print()

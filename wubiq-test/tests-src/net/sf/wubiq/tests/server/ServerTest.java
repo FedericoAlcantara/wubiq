@@ -17,7 +17,6 @@ import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
 import net.sf.wubiq.wrappers.LocalManagerTestWrapper;
 
-import com.gargoylesoftware.htmlunit.TextPage;
 import com.gargoylesoftware.htmlunit.UnexpectedPage;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlTable;

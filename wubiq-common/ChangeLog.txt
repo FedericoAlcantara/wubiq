@@ -1,8 +1,9 @@
 ==========================
-Wubiq 2.2.3 (2016-05-11)
+Wubiq 2.3.1 (2016-05-17)
 ==========================
--Fixed unnecessary errors when printing on mobiles.
+-Fixed unnecessary errors when printing on mobile devices.
 -Fixed failure to remove printed print jobs.
+-Fixed bug when using multiple connection addresses.
 
 ==========================
 Wubiq 2.2.2 (2016-05-10)

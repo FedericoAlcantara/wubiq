@@ -4,6 +4,7 @@
 package net.sf.wubiq.servlets;
 
 import java.awt.print.Pageable;
+import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.ByteArrayInputStream;
@@ -67,6 +68,7 @@ import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.Labels;
+import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
@@ -427,17 +429,18 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws IOException
 	 */
 	protected void showPrintServicesCommand(String uuid, HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-		String tr = "<tr style='border:1px solid black'>";
+		String trHeader = "<tr style='border:1px solid black'>";
+		String trService = "<tr style='border:1px solid black' class='" + WebKeys.SHOW_SERVICES_SERVICE_CLASS + "'>";
 		String th = "<th style='border:1px solid black'>";
 		String tdName = "<td style='border:1px solid black' class='" + WebKeys.SHOW_SERVICES_ROW_CLASS  + "'>";
-		String td = "<th style='border:1px solid black'>";
-		String tdc = "<td style='border:1px solid black; text-align:center' align='center'>";
+		String tdRemote = "<td style='border:1px solid black' class='" + WebKeys.SHOW_SERVICES_ROW_REMOTE_CLASS  + "'>";
+		String tdUuid = "<td style='border:1px solid black; text-align:center' align='center' class='" + WebKeys.SHOW_SERVICES_ROW_UUID_CLASS + "'>";
 		StringBuffer buffer = new StringBuffer("")
 			.append("<table style='border:2px solid black; background-color:#FFFAFA' id='")
 			.append(WebKeys.SHOW_SERVICES_TABLE_ID)
 			.append('\'')
 			.append('>')
-			.append(tr)
+			.append(trHeader)
 			.append(th)
 			.append(ServerLabels.get("server.service_name"))
 			.append("</th>")
@@ -457,14 +460,14 @@ public class RemotePrintServlet extends HttpServlet {
 				remote = true;
 				remoteUuid = ((RemotePrintService)printService).getUuid();
 			}
-			buffer.append(tr)
+			buffer.append(trService)
 				.append(tdName)
 				.append(printService.getName())
 				.append("</td>")
-				.append(td)
+				.append(tdRemote)
 				.append(remote ? remoteYes : remoteNo)
 				.append("</td>")
-				.append(tdc)
+				.append(tdUuid)
 				.append(remoteUuid)
 				.append("</td>")
 				.append("</tr>");
@@ -676,7 +679,20 @@ public class RemotePrintServlet extends HttpServlet {
 			// If it is remote we must convert pdf to image and then scale it to print size
 			try {
 				if (RemotePrintServiceLookup.isMobile(uuid)) {
-					input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), printJob.getPrintData());
+					Object printData = printJob.getPrintDataObject();
+					boolean trimAll = false;
+					if (printData instanceof Pageable) {
+						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+						PageableUtils.INSTANCE.pageableToPdf((Pageable)printData, outputStream, printJob.getPrintRequestAttributeSet());
+						printData = new ByteArrayInputStream(outputStream.toByteArray());
+						trimAll = true;
+					} else if (printData instanceof Printable) {
+						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+						PageableUtils.INSTANCE.printableToPdf((Printable)printData, outputStream, printJob.getPrintRequestAttributeSet());
+						printData = new ByteArrayInputStream(outputStream.toByteArray());
+						trimAll = true;
+					}
+					input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), (InputStream)printData, trimAll);
 				} else {
 					if ((manager instanceof IDirectConnectPrintJobManager)
 							&& ((IDirectConnectPrintJobManager)manager).isDirectConnect(jobId)) {

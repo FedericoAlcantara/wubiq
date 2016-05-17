@@ -490,6 +490,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 						doLog("Connected! to:" + webUrl, 5);
 					}
 					preferredURL = webUrl;
+					break;
 				} catch (UnknownServiceException e) {
 					throw e;
 				} catch (IOException e) {
@@ -615,7 +616,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 	 * @param connection Connection to encapsulate.
 	 * @return Valid URL or null.
 	 */
-	private URL hostServletUrl(String connection) {
+	protected URL hostServletUrl(String connection) {
 		URL returnValue = null;
 		StringBuffer buffer = new StringBuffer("");
 		if (!Is.emptyString(connection)) {

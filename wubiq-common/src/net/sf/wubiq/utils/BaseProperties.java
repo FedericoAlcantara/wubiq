@@ -203,7 +203,7 @@ public abstract class BaseProperties {
 		} else {
 			propertyFile = null;
 			showPropertiesFileNotFound();
-			URL resource = Class.class.getResource("/" + filePrefix + ".properties");
+			URL resource = this.getClass().getResource("/" + filePrefix + ".properties");
 			if (resource != null) {
 				showPropertiesFound();
 				propertyFile = new File(resource.getPath());

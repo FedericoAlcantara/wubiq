@@ -14,7 +14,7 @@ import com.starmicronics.stario.StarIOPortException;
  *
  */
 public class DeviceStarMicronics extends BaseWubiqDevice {
-	private static final String TAG = "DeviceStarMicronics";
+	private static final String TAG = DeviceStarMicronics.class.getSimpleName();
 	
 	/**
 	 * Outputs to a star micronics portable printer.

@@ -60,12 +60,24 @@ public class MobileCommunicationPrintTest extends WubiqBaseTest {
 		assertEquals("Should be no remote print services registered", originalPrintServicesCount, actualPrintServicesCount);
 	}
 	
+	public void testRemotePrintTestPage() throws Exception {
+		// Test as non pageable
+		runRemotePrintTestPage("remoteMobileTestPageAsHex.txt", null);
+	}
+
+	public void testRemotePrintTestPagePageable() throws Exception {
+		// Test as pageable
+		runRemotePrintTestPage("remoteMobileTestPageAsHex-pageable.txt", ParameterKeys.PRINT_TEST_DIRECT_PAGEABLE
+				+ ParameterKeys.PARAMETER_SEPARATOR
+				+ "true");
+	}
+	
 	/**
 	 * Tests the functionality of the local print manager, by calling its parts. No thread is started.
 	 *
 	 * @throws Exception
 	 */
-	public void testRemotePrintTestPage() throws Exception{
+	private void runRemotePrintTestPage(String fileName, String addParameter) throws Exception{
 		int rowCount = countPrintServices(uuid);
 		startManager();
 		assertTrue("Should be at least another remote service", rowCount < countPrintServices(uuid));
@@ -79,7 +91,7 @@ public class MobileCommunicationPrintTest extends WubiqBaseTest {
 				.append(ParameterKeys.PARAMETER_SEPARATOR)
 				.append(cellValue);
 		int jobCount = manager.getPendingJobs().length;
-		String response = ((HtmlPage)getNewTestPage(CommandKeys.PRINT_TEST_PAGE, buffer.toString())).asText();
+		String response = ((HtmlPage)getNewTestPage(CommandKeys.PRINT_TEST_PAGE, buffer.toString(), addParameter)).asText();
 		assertTrue("Response ", response != null && response.contains(ServerLabels.get("server.test_page_sent", cellValue)));
 		// Validate job count
 		int newJobCount = manager.getPendingJobs().length;
@@ -98,7 +110,7 @@ public class MobileCommunicationPrintTest extends WubiqBaseTest {
 			assertNotNull("Content should contain the print test page", content);
 			assertTrue("Content must be of type input stream", content instanceof InputStream);
 			String contentHex = convertToHex((InputStream)content);
-			BufferedReader reader = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/remoteMobileTestPageAsHex.txt")));
+			BufferedReader reader = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/" + fileName)));
 			String textHex = reader.readLine();
 			reader.close();
 			assertEquals("Content must be valid", textHex, contentHex);

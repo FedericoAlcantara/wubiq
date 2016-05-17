@@ -11,6 +11,7 @@ import net.sf.wubiq.android.MobileClientConversionStep;
  */
 public enum WubiqDeviceFactory {
 	INSTANCE;
+	
 	public BaseWubiqDevice getInstance(MobileClientConversionStep step) {
 		BaseWubiqDevice returnValue = null;
 		if (step.equals(MobileClientConversionStep.OUTPUT_SM_BYTES)) {

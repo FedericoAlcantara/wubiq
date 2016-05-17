@@ -20,7 +20,7 @@ import android.util.Log;
 public class BluetoothUtils {
 	
 	public static int bluetoothErrors = 0;
-	private static final String TAG = "BluetoothAdapter";
+	private static final String TAG = BluetoothUtils.class.getSimpleName();
 
 	
 	/**
@@ -35,6 +35,7 @@ public class BluetoothUtils {
 		try {
 			bAdapter = BluetoothAdapter.getDefaultAdapter();
 		} catch (Exception e) {
+			Log.e(TAG, e.getMessage());
     		notifyError(context);
     		bAdapter = null;
 		}

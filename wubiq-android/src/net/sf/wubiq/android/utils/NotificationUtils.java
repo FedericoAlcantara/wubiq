@@ -22,7 +22,7 @@ import android.util.Log;
  */
 public enum NotificationUtils {
 	INSTANCE;
-	private final String TAG = "NotificationUtils";
+	private final String TAG = NotificationUtils.class.getSimpleName();
 	
 	/**
 	 * Cancels previous notifications.

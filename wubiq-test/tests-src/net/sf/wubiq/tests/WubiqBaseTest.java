@@ -93,6 +93,7 @@ public abstract class WubiqBaseTest extends TestCase {
 		String returnValue = null;
 		HtmlPage page = (HtmlPage)getNewTestPage(CommandKeys.SHOW_PRINT_SERVICES);
 		HtmlTable table = (HtmlTable) page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
+		outer:
 		for (HtmlTableRow row : table.getRows()) {
 			for (HtmlTableCell cell : row.getCells()) {
 				String classAttribute = cell.getAttribute("class");
@@ -100,7 +101,7 @@ public abstract class WubiqBaseTest extends TestCase {
 					String cellContents = cell.asText();
 					if (cellContents.contains("@" + uuid)) {
 						returnValue = cellContents;
-						break;
+						break outer;
 					}
 				}
 			}

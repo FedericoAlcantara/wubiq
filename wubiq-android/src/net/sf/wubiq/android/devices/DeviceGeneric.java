@@ -19,7 +19,7 @@ import android.util.Log;
  *
  */
 public class DeviceGeneric extends BaseWubiqDevice {
-	private static final String TAG = "DeviceGeneric";
+	private static final String TAG = DeviceGeneric.class.getSimpleName();
 
 	/**
 	 * Called from a run() method as a Thread runnable method.
@@ -51,6 +51,7 @@ public class DeviceGeneric extends BaseWubiqDevice {
 		    				Thread.sleep(getPrintDelay());
 		    			}
 		    			catch(InterruptedException e) {
+		    				Log.e(TAG, e.getMessage());
 		    				e.printStackTrace();
 		    			}
 		        	}
