@@ -90,12 +90,31 @@ public class DirectConnectorQueue extends DirectConnectorQueueBase {
 	public synchronized int pendingPrintJobs(PrintService printService) {
 		int returnValue = 0;
 		for (Long jobId : printJobs()) {
-			IRemotePrintJob printJob = remotePrintJob(jobId);
+			IRemotePrintJob printJob = remotePrintJob(jobId, false);
 			if (printJob != null) {
 				if (printJob.getPrintService().equals(printService)) {
 					returnValue++;
 				}
 			} 
+		}
+		return returnValue;
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#calculatePrintJobs(javax.print.PrintService, net.sf.wubiq.print.jobs.RemotePrintJobStatus)
+	 */
+	@Override
+	public synchronized int calculatePrintJobs(PrintService printService,
+			RemotePrintJobStatus status) {
+		int returnValue = 0;
+		for (Long jobId : printJobs()) {
+			IRemotePrintJob printJob = remotePrintJob(jobId, false);
+			if (printJob != null && printJob.getPrintService().equals(printService)) {
+				if (status == null ||
+						status.equals(printJob.getStatus())) {
+					returnValue++;
+				}
+			}
 		}
 		return returnValue;
 	}

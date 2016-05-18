@@ -1,3 +1,5 @@
 .DS_Store
 /wubiq-server/wubiq-server.properties
+/wubiq-test/properties-src/wubiq-client.properties
+
 

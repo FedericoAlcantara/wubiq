@@ -41,7 +41,10 @@ public final class CommandKeys {
 	public static final String READ_VERSION = "v1";
 	public static final String READ_CONNECTIONS = "rc";
 	public static final String CONNECTION_TEST = "ct";
-	
+	public static final String RELOAD_SERVER_CONFIGURATION = "r1";
+			
 	/* Developers keys not used or ignored in production */
-	public static final String CLEAR_IN_MEMORY_JOBS = "z01";
+	public static final String DEVELOPMENT_CLEAR_IN_MEMORY_JOBS = "z01";
+	public static final String DEVELOPMENT_GET_SERVER_FILE_PATH = "z02";
+	public static final String DEVELOPMENT_GET_SERVER_PROPERTY_VALUE = "z03";
 }

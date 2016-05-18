@@ -12,6 +12,7 @@ import net.sf.wubiq.adapters.ReturnedData;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.interfaces.IAdapter;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
+import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 
 /**
  * Represents the contract for direct connectors.
@@ -156,6 +157,14 @@ public interface IDirectConnectorQueue extends IAdapter {
 	 * @return The count of pending jobs.
 	 */
 	int pendingPrintJobs(PrintService printService);
+	
+	/**
+	 * Calculates the total print jobs.
+	 * @param printService Print service to calculate the total print jobs.
+	 * @param status Status of the requested print job. If null ALL print jobs should be counted.
+	 * @return Total number of print jobs found or null.
+	 */
+	int calculatePrintJobs(PrintService printService, RemotePrintJobStatus status);
 	
 	/**
 	 * Checks if the connector has a local (in memory) copy of the print job.

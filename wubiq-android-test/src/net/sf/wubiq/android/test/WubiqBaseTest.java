@@ -127,7 +127,7 @@ public abstract class WubiqBaseTest extends InstrumentationTestCase {
 		for (Element row : table.getElementsByClass(WebKeys.SHOW_SERVICES_ROW_CLASS)) {
 			String contents = row.html();
 			if (uuid == null ||
-					contents.contains("@" + uuid)) {
+					contents.contains(WebKeys.REMOTE_SERVICE_SEPARATOR + uuid)) {
 				returnValue++;
 			}
 		}
@@ -146,7 +146,7 @@ public abstract class WubiqBaseTest extends InstrumentationTestCase {
 		Element table = page.getElementById(WebKeys.SHOW_SERVICES_TABLE_ID);
 		for (Element row : table.getElementsByClass(WebKeys.SHOW_SERVICES_ROW_CLASS)) {
 			String contents = row.html();
-			if (contents.contains("@" + uuid)) {
+			if (contents.contains(WebKeys.REMOTE_SERVICE_SEPARATOR + uuid)) {
 				returnValue = contents;
 				break;
 			}

@@ -11,6 +11,10 @@ java.awt.print.Pageable pageable = new org.apache.pdfbox.printing.PDFPageable(ne
 
 For other changes related to pdfbox/fontbox see https://pdfbox.apache.org/2.0/migration.html
 
+- Mobile devices 'Porti-S 2 in', 'Porti-S 3 in' and 'Porti-S 4 in' were renamed to:
+'Porti S 2 in', 'Porti S 3 in' and 'Porti S 4 in' respectively, update those names in
+your mobile devices configuration
+
 Migrate from 2.1.x to 2.2.x
 ============================
 - PrintServiceUtils has been splitted in PrintServiceUtils and ServerPrintServiceUtils.

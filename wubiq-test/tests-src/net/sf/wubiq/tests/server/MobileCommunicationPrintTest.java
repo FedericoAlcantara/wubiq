@@ -133,6 +133,13 @@ public class MobileCommunicationPrintTest extends WubiqBaseTest {
 		for (byte byteVal : stream.toByteArray()) {
 			value.append(String.format("%02X ", byteVal));
 		}
+		 
+		/*
+		// To store the stream properly
+		PrintWriter writer = new PrintWriter(new FileWriter());
+		writer.println(value.toString());
+		writer.close();
+		*/
 		return value.toString();
 	}
 }

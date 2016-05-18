@@ -16,6 +16,7 @@ public final class WebKeys {
 	public static final String SHOW_SERVICES_ROW_CLASS = "wubiq_sd_table_td_name";
 	public static final String SHOW_SERVICES_ROW_UUID_CLASS = "wubiq_sd_table_td_uuid";
 	public static final String SHOW_SERVICES_ROW_REMOTE_CLASS = "wubiq_sd_table_td_remote";
+	public static final String SHOW_SERVICES_ROW_TOTAL_JOBS_CLASS = "wubiq_sd_table_td_total_jobs";
 	public static final String REMOTE_SERVICE_SEPARATOR = "@";
 	public static final String UUID_COOKIE_NAME = "wubiq-uuid-cookie";
 	public static final String REMOTE_CLIENT_MANAGER = "wubiq-remote-info-manager";

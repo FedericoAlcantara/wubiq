@@ -48,6 +48,7 @@ public final class ConfigurationKeys {
 	public static final String PROPERTY_CONNECTION_RETRIES = "connection.retries";
 	public static final String PROPERTY_DEBUG_ENABLED = "debug.enabled";
 	public static final String PROPERTY_DEBUG_LOG_LEVEL = "debug.log_level";
+	public static final String PROPERTY_DEFAULT_PRINTER = "printer";
 	
 	public static final String PROPERTY_HSQLDB_HOST = "hsqldb.host";
 	public static final String PROPERTY_HSQLDB_PORT = "hsqldb.port";

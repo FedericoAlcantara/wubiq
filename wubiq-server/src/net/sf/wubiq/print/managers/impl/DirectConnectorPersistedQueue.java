@@ -76,7 +76,6 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 		return printJob;
 	}
 	
-	/** TODO implement savings to the persistence **/
 	@Override
 	public IRemotePrintJob remotePrintJob(long jobId, boolean full) {
 		IRemotePrintJob printJob = jobBucket(jobId).printJob;
@@ -110,6 +109,15 @@ public class DirectConnectorPersistedQueue extends DirectConnectorQueueBase {
 	@Override
 	public synchronized int pendingPrintJobs(PrintService printService) {
 		return WubiqPrintJobDao.INSTANCE.pendingPrintJobs(queueId(), printService);
+	}
+	
+	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectorQueue#calculatePrintJobs(javax.print.PrintService, net.sf.wubiq.print.jobs.RemotePrintJobStatus)
+	 */
+	@Override
+	public int calculatePrintJobs(PrintService printService,
+			RemotePrintJobStatus status) {
+		return WubiqPrintJobDao.INSTANCE.calculatePrintJobs(queueId(), printService, status);
 	}
 	
 	/**

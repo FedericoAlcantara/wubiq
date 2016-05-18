@@ -72,6 +72,7 @@ import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerLabels;
+import net.sf.wubiq.utils.ServerProperties;
 import net.sf.wubiq.utils.ServerWebUtils;
 import net.sf.wubiq.utils.WebUtils;
 
@@ -105,6 +106,15 @@ public class RemotePrintServlet extends HttpServlet {
 			boolean clientSupportsCompression = "true".equalsIgnoreCase(getParameter(request, parameters, ParameterKeys.CLIENT_SUPPORTS_COMPRESSION));
 			if (command.equalsIgnoreCase(CommandKeys.IS_ACTIVE)) {
 				isActiveCommand(uuid, request, response);
+			} else if (command.equalsIgnoreCase(CommandKeys.RELOAD_SERVER_CONFIGURATION)) {
+				reloadServerConfiguration(response);
+			/* THESE COMMANDS ARE ONLY ENABLE IN DEVELOPMENT MODE */
+			} else if (command.equalsIgnoreCase(CommandKeys.DEVELOPMENT_CLEAR_IN_MEMORY_JOBS)) {
+				developmentClearInMemoryJobs(uuid, request, response, parameters);
+			} else if (command.equalsIgnoreCase(CommandKeys.DEVELOPMENT_GET_SERVER_FILE_PATH)) {
+				developmentServerPropertiesPath(uuid, request, response, parameters);
+			} else if (command.equalsIgnoreCase(CommandKeys.DEVELOPMENT_GET_SERVER_PROPERTY_VALUE)) {
+				developmentServerPropertyValue(uuid, request, response, parameters);
 			} else  {
 				if (CommandKeys.READ_VERSION.equalsIgnoreCase(command)) {
 					respond(Labels.VERSION, response);
@@ -165,10 +175,7 @@ public class RemotePrintServlet extends HttpServlet {
 							closePrintJobCommand(uuid, request, response, parameters);
 						} else if (command.equalsIgnoreCase(CommandKeys.DIRECT_CONNECT)) {
 							directConnect(uuid, request, response, clientSupportsCompression, parametersInputStream, parameters);
-						} else if (command.equalsIgnoreCase(CommandKeys.CLEAR_IN_MEMORY_JOBS)) {
-							clearInMemoryJobs(uuid, request, response, parameters);
 						}
-						
 					}
 				}
 			}
@@ -450,16 +457,26 @@ public class RemotePrintServlet extends HttpServlet {
 			.append(th)
 			.append(ServerLabels.get("server.uuid"))
 			.append("</th>")
+			.append(th)
+			.append(ServerLabels.get("server.jobs.total"))
+			.append("</th>")
 			.append("</tr>");
 		String remoteNo=ServerLabels.get("server.remote_no");
 		String remoteYes=ServerLabels.get("server.remote_yes");
 		for (PrintService printService : PrintServiceUtils.getPrintServices()) {
 			boolean remote = false;
 			String remoteUuid = "";
+			int totalJobs = 0;
 			if (printService instanceof RemotePrintService) {
 				remote = true;
 				remoteUuid = ((RemotePrintService)printService).getUuid();
+				IRemotePrintJobManager mn = RemotePrintJobManagerFactory.getRemotePrintJobManager(remoteUuid);
+				if (mn != null) {
+					totalJobs = mn.calculatePrintJobs(remoteUuid, printService, null);
+				}
 			}
+
+			String totalJobId = "job-id-" + printService.getName();
 			buffer.append(trService)
 				.append(tdName)
 				.append(printService.getName())
@@ -469,6 +486,9 @@ public class RemotePrintServlet extends HttpServlet {
 				.append("</td>")
 				.append(tdUuid)
 				.append(remoteUuid)
+				.append("</td>")
+				.append("<td style='border:1px solid black; text-align:center' class='" + WebKeys.SHOW_SERVICES_ROW_TOTAL_JOBS_CLASS + "' id='" + totalJobId + "'>")
+				.append(totalJobs)
 				.append("</td>")
 				.append("</tr>");
 		}
@@ -995,6 +1015,14 @@ public class RemotePrintServlet extends HttpServlet {
 	}
 	
 	/**
+	 * Reloads the server configuration.
+	 */
+	private void reloadServerConfiguration(HttpServletResponse response) {
+		ServerProperties.INSTANCE.resetServerProperties();
+		respond("ok", response);
+	}
+	
+	/**
 	 * Creates the answer for the response.
 	 * @param text Text to return to the caller.
 	 * @param response Response channel.
@@ -1238,7 +1266,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @throws ServletException
 	 * @throws IOException
 	 */
-	private void clearInMemoryJobs(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) {
+	private void developmentClearInMemoryJobs(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) {
 		String answer = "no";
 		if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DEVELOPMENT_MODE))) {
 			if (manager != null && manager instanceof DirectConnectPrintJobManager) {
@@ -1247,6 +1275,23 @@ public class RemotePrintServlet extends HttpServlet {
 					answer = "ok";
 				}
 			}
+		}
+		respond(answer, response);
+	}
+	
+	private void developmentServerPropertiesPath(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) {
+		String answer = "";
+		if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DEVELOPMENT_MODE))) {
+			answer = ServerProperties.INSTANCE.getServerPropertiesFilePath();
+		}
+		respond(answer, response);
+	}
+	
+	private void developmentServerPropertyValue(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) {
+		String answer = "";
+		if ("true".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DEVELOPMENT_MODE))) {
+			String key = getParameter(request, parameters, ParameterKeys.DEVELOPMENT_PROPERTY_NAME);
+			answer = ServerProperties.INSTANCE.get(key, "");
 		}
 		respond(answer, response);
 	}

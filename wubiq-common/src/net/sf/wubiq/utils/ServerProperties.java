@@ -29,6 +29,8 @@ public class ServerProperties extends BaseProperties {
 	private static Map<String, String> users;
 	private static String realPath;
 	
+	private String serverPropertiesFilePath;
+	
 	public static final ServerProperties INSTANCE = new ServerProperties();
 	
 	private ServerProperties(){
@@ -109,6 +111,11 @@ public class ServerProperties extends BaseProperties {
 				getUsers().get(userId).equals(ServerUtils.INSTANCE.normalizedPassword(password));
 	}
 
+	@Override
+	public String get(String key, String defaultValue) {
+		return super.get(key, defaultValue);
+	}
+	
 	/**
 	 * It lookup for wubiq-server.properties file.
 	 * First it searches in ../tomcat/webapps/wubiq-server/WEB-INF/classes. Then searches in:<br/>
@@ -120,7 +127,7 @@ public class ServerProperties extends BaseProperties {
 	 * 
 	 * @return the properties.
 	 */
-	protected Properties getProperties() {
+	protected synchronized Properties getProperties() {
 		if (properties == null) {
 			try {
 				properties = new Properties();
@@ -151,10 +158,12 @@ public class ServerProperties extends BaseProperties {
 				FileInputStream inputStream = null;
 				try {
 					if (propertyFile != null && propertyFile.exists()) {
+						serverPropertiesFilePath = propertyFile.getAbsolutePath();
 						inputStream = new FileInputStream(propertyFile);
 						properties.load(inputStream);
 						LOG.info(ServerLabels.get("server.info_server_properties_found"));
 					} else {
+						serverPropertiesFilePath = null;
 						LOG.info(ServerLabels.get("server.info_no_server_properties_found"));
 					}
 				} finally {
@@ -204,4 +213,18 @@ public class ServerProperties extends BaseProperties {
 	protected void showPropertiesNotFound() {
 	}
 	
+	/**
+	 * Resets server properties.
+	 */
+	public synchronized void resetServerProperties() {
+		properties = null;
+	}
+	
+	/**
+	 * Location of server properties file.
+	 * @return File absolute location. Null if not server properties file was loaded.
+	 */
+	public String getServerPropertiesFilePath() {
+		return serverPropertiesFilePath;
+	}
 }

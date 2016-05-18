@@ -200,6 +200,20 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 	}
 	
 	/**
+	 * @see net.sf.wubiq.print.managers.IDirectConnectPrintJobManager#calculatePrintJobs(java.lang.String, javax.print.PrintService, net.sf.wubiq.print.jobs.RemotePrintJobStatus)
+	 */
+	@Override
+	public int calculatePrintJobs(String queueId, PrintService printService,
+			RemotePrintJobStatus status) {
+		int returnValue = 0;
+		IDirectConnectorQueue queue = directConnector(queueId);
+		if (queue != null) {
+			returnValue = queue.calculatePrintJobs(printService, status);
+		}
+		return returnValue;
+	}
+	
+	/**
 	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#startPrintJob(long)
 	 */
 	@Override

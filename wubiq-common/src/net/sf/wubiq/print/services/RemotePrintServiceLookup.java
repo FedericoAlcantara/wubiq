@@ -16,6 +16,7 @@ import javax.print.PrintService;
 import javax.print.PrintServiceLookup;
 import javax.print.attribute.AttributeSet;
 
+import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.dao.WubiqPrintServiceDao;
 
 /**
@@ -201,8 +202,8 @@ public class RemotePrintServiceLookup extends PrintServiceLookup implements Seri
 		String formattedPrintServiceName = remotePrintServiceName.replace("\\", "\\\\");
 		for (Entry<String, RemotePrintService> entry: getRemotePrintServices(uuid).entrySet()) {
 			String printServiceName = entry.getKey();
-			if (printServiceName.contains("@")) {
-				printServiceName = printServiceName.substring(0, printServiceName.indexOf("@")).trim();
+			if (printServiceName.contains(WebKeys.REMOTE_SERVICE_SEPARATOR)) {
+				printServiceName = printServiceName.substring(0, printServiceName.indexOf(WebKeys.REMOTE_SERVICE_SEPARATOR)).trim();
 			}
 			if (printServiceName.equals(formattedPrintServiceName)) {
 				returnValue = entry.getValue();

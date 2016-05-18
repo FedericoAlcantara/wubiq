@@ -42,4 +42,7 @@ public final class ParameterKeys {
 	public static final String PRINT_TEST_STREAM_URL = "TPT";
 	public static final String CLIENT_VERSION = "cv";
 	public static final String CLIENT_SUPPORTS_COMPRESSION = "csp";
+	
+	/* Developers parameters not used or ignored in production */
+	public static final String DEVELOPMENT_PROPERTY_NAME="zp01";
 }

@@ -38,6 +38,5 @@ public interface IDirectConnectPrintJobManager extends IRemotePrintJobManager {
 	 * @return true if the manager has a local copy.
 	 */
 	boolean hasLocalPrintJob(Long jobId);
-
-
 }
+

@@ -65,6 +65,15 @@ public interface IRemotePrintJobManager {
 	int getPrintServicePendingJobs(String queueId, PrintService printService);
 	
 	/**
+	 * Calculates the total print jobs.
+	 * @param queueId Id of the associated queue.
+	 * @param printService Print service to calculate the total print jobs.
+	 * @param status Status of the requested print job. If null ALL print jobs should be counted.
+	 * @return Total number of print jobs found or null.
+	 */
+	int calculatePrintJobs(String queueId, PrintService printService, RemotePrintJobStatus status);
+
+	/**
 	 * Starts a print job.
 	 * @param jobId Job Id to start.
 	 */

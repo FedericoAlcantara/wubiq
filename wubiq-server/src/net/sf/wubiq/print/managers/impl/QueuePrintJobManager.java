@@ -158,6 +158,15 @@ public class QueuePrintJobManager implements IRemotePrintJobManager {
 		return 0;
 	}
 
+	/**
+	 * @see net.sf.wubiq.print.managers.IRemotePrintJobManager#calculatePrintJobs(java.lang.String, javax.print.PrintService, net.sf.wubiq.print.jobs.RemotePrintJobStatus)
+	 */
+	@Override
+	public int calculatePrintJobs(String queueId, PrintService printService,
+			RemotePrintJobStatus status) {
+		return 0;
+	}
+	
 	@Override
 	public void startPrintJob(long jobId) {
 	}

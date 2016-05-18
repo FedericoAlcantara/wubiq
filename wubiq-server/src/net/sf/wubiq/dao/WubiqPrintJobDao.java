@@ -273,7 +273,7 @@ public enum WubiqPrintJobDao {
 	}
 
 	/**
-	 * Reads all remote print jobs.
+	 * Reads remote print jobs.
 	 * @param queueId Id of the queue.
 	 * @param printService Associated print service.
 	 * @return List of remote print jobs.
@@ -292,6 +292,41 @@ public enum WubiqPrintJobDao {
 			query.setParameter("queueId", queueId);
 			query.setParameter("status", RemotePrintJobStatus.NOT_PRINTED);
 			query.setParameter("printServiceName", printService != null ? printService.getName() : "");
+			returnValue = ((Long) query.getSingleResult()).intValue();
+			PersistenceManager.commit();
+		} catch (Exception e) {
+			PersistenceManager.rollback();
+			throw new RuntimeException(e);
+		}
+		return returnValue;
+	}
+
+	/**
+	 * Reads remote print jobs.
+	 * @param queueId Id of the queue.
+	 * @param printService Associated print service.
+	 * @param status Status to get the count from, if null counts all.
+	 * @return List of remote print jobs.
+	 */
+	public Integer calculatePrintJobs(String queueId, PrintService printService, RemotePrintJobStatus status) {
+		Integer returnValue = 0;
+		try {
+			StringBuffer sql = new StringBuffer("SELECT count(printJobId) FROM WubiqPrintJob"
+					+ " WHERE queueId = :queueId")
+					.append(" AND ")
+					.append("printServiceName = :printServiceName");
+			if (status != null) {
+				sql.append(" AND ")
+					.append("status = :status");
+			}
+					
+			Query query = PersistenceManager.em().createQuery(sql.toString());
+			query.setParameter("queueId", queueId);
+			query.setParameter("printServiceName", printService != null ? printService.getName() : "");
+			if (status != null) {
+				query.setParameter("status", status);
+			}
+
 			returnValue = ((Long) query.getSingleResult()).intValue();
 			PersistenceManager.commit();
 		} catch (Exception e) {

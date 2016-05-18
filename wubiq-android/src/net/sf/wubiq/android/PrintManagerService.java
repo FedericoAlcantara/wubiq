@@ -58,7 +58,7 @@ public class PrintManagerService extends Service {
 	}
 	
 	/**
-	 * @see android.app.Service#onBind(android.content.Intent)
+	 * @see android.app.Service#onBind(Intent)
 	 */
 	@Override
 	public IBinder onBind(Intent intent) {
