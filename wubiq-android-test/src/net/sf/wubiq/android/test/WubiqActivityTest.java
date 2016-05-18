@@ -295,13 +295,13 @@ public class WubiqActivityTest extends WubiqBaseTest {
 		edit.remove(DeviceForTesting.TEST_DEVICE_RESULT_KEY);
 		edit.commit();
 
-		//String failedDevices = printToDevices("", md5Map());
+		String failedDevices = printToDevices("", md5Map());
 		String failedDevicesPageable = printToDevices(
 				ParameterKeys.PRINT_TEST_DIRECT_PAGEABLE
 				+ ParameterKeys.PARAMETER_SEPARATOR
 				+ "true", md5MapPageable());
 		
-		//assertEquals("No devices should have failed", "", failedDevices.toString());
+		assertEquals("No devices should have failed", "", failedDevices.toString());
 		assertEquals("No devices should have failed on pageable", "", failedDevicesPageable.toString());
 	}
 	
