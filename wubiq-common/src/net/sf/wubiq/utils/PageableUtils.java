@@ -40,7 +40,7 @@ import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
-import org.apache.pdfbox.pdmodel.graphics.xobject.PDJpeg;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDPixelMap;
 import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectImage;
 
 /**
@@ -533,11 +533,11 @@ public enum PageableUtils {
 				PDRectangle mediaBox = new PDRectangle((float)pageFormat.getWidth(), (float)pageFormat.getHeight());
 				PDPage page = new PDPage(mediaBox);
 				document.addPage(page);
-				PDXObjectImage pdImage = new PDJpeg(document, img, 0.99999f);
-				//PDXObjectImage pdImage = new PDPixelMap(document, img);
+				//PDXObjectImage pdImage = new PDJpeg(document, img, 0.99999f);
+				PDXObjectImage pdImage = new PDPixelMap(document, img);
 				PDPageContentStream contents = new PDPageContentStream(document, page);
-				contents.drawXObject(pdImage, 0, 0, new Double(pageFormat.getWidth()).intValue(),
-						new Double(pageFormat.getHeight()).intValue());
+				contents.drawXObject(pdImage, 0, 0, new Double(pageFormat.getImageableWidth()).intValue(),
+						new Double(pageFormat.getImageableHeight()).intValue());
 				contents.close();
 			}
 			graph.dispose();
