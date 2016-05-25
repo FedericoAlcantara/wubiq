@@ -27,9 +27,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.printing.PDFPageable;
-import org.apache.pdfbox.rendering.ImageType;
-import org.apache.pdfbox.rendering.PDFRenderer;
 
 /**
  * @author Federico Alcantara
@@ -63,6 +60,55 @@ public enum PdfUtils {
 	 * @return File object or null if something failed.
 	 */
 	public List<PdfImagePage> convertPdfToImg(InputStream pdf, int resolution, String suffix) {
+		List<PdfImagePage> returnValue = new ArrayList<PdfImagePage>();
+		PDDocument document = null;
+		File tempFile = null;
+		try {
+			document = PDDocument.load(pdf);
+			String imageFormat = suffix;
+	        tempFile = File.createTempFile("temp", "pdf-." + suffix);
+	        String outputPrefix = tempFile.getPath().substring(0, tempFile.getPath().lastIndexOf('.'));
+	        int imageType = BufferedImage.TYPE_INT_ARGB;
+	        Pageable pageable = (Pageable)document;
+	        for (int pageIndex = 0; pageIndex < pageable.getNumberOfPages(); pageIndex++) {
+	        	PDPage page = (PDPage)pageable.getPrintable(pageIndex);
+	        	BufferedImage image = page.convertToImage(imageType, resolution);
+	        	String indexed = ("000000" + pageIndex);
+	        	indexed = indexed.substring(indexed.length() - 6);
+	        	File fileOutput = new File(outputPrefix + indexed + "." + imageFormat);
+	        	ImageIO.write(image, imageFormat, fileOutput);
+	        	float height = page.getArtBox().getHeight() / 72;
+	        	float width = page.getArtBox().getWidth() / 72;
+	        	PdfImagePage pdfImagePage = new PdfImagePage(pageIndex, fileOutput, height, width);
+	        	returnValue.add(pdfImagePage);
+	        }
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+			e.printStackTrace();
+		} finally {
+			if (document != null) {
+				try {
+					document.close();
+				} catch (IOException e) {
+					LOG.debug(e.getMessage());
+				}
+			}
+	        if (tempFile != null) {
+	        	tempFile.delete();
+	        }
+		}
+		LOG.info("Converted:" + returnValue);
+		return returnValue;
+	}
+	
+	
+	/**
+	 * Converts a pdf input stream into a bitmap file of given type
+	 * @param pdf Pdf file.
+	 * @return File object or null if something failed.
+	 */
+/*
+	public List<PdfImagePage> convertPdfToImg-PDFBOX2(InputStream pdf, int resolution, String suffix) {
 		List<PdfImagePage> returnValue = new ArrayList<PdfImagePage>();
 		PDDocument document = null;
 		File tempFile = null;
@@ -106,7 +152,7 @@ public enum PdfUtils {
 		LOG.info("Converted:" + returnValue);
 		return returnValue;
 	}
-	
+*/
 	/**
 	 * Pdf to pageable.
 	 * @param printDocument Converts a pdf into a pageable.

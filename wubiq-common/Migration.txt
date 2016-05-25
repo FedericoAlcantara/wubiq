@@ -1,5 +1,15 @@
-Migrate from 2.2.x to 2.3.x
+Migration from 2.3.1 to 2.3.2+
 ============================
+- We've downgraded 2.3.1 pdfbox/fontbox from 2.0.1 to 1.8.6, if you are coming from 2.2.x no changes are needed.
+- If you are updating from 2.3.1 you must use either:
+java.awt.print.Pageable pageable = (java.awt.print.Pageable)new org.apache.pdfbox.pdmodel.PDDocument();
+
+or 
+
+java.awt.print.Pageable pageable = new org.apache.pdfbox.pdmodel.PDPageable(org.apache.pdfbox.pdmodel.PDDocument());
+
+Migration from 2.2.x to 2.3.1 (These changes does not apply for 2.3.2+)
+=============================
 - We've upgraded from pdfbox/fontbox 1.8.6 to pdfbox/fontbox 2.0.1.
 The following is no longer valid:
 java.awt.print.Pageable pageable = (java.awt.print.Pageable)new org.apache.pdfbox.pdmodel.PDDocument();
@@ -11,9 +21,12 @@ java.awt.print.Pageable pageable = new org.apache.pdfbox.printing.PDFPageable(ne
 
 For other changes related to pdfbox/fontbox see https://pdfbox.apache.org/2.0/migration.html
 
+Migrate from 2.2.x to 2.3.x
+============================
 - Mobile devices 'Porti-S 2 in', 'Porti-S 3 in' and 'Porti-S 4 in' were renamed to:
 'Porti S 2 in', 'Porti S 3 in' and 'Porti S 4 in' respectively, update those names in
 your mobile devices configuration
+
 
 Migrate from 2.1.x to 2.2.x
 ============================

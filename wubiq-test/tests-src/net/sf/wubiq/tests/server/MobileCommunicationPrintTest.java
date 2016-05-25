@@ -110,6 +110,8 @@ public class MobileCommunicationPrintTest extends WubiqBaseTest {
 			assertNotNull("Content should contain the print test page", content);
 			assertTrue("Content must be of type input stream", content instanceof InputStream);
 			String contentHex = convertToHex((InputStream)content);
+			double blackPercent = blackPercent(contentHex);
+			assertTrue("Content black should not exceed 10% and should be more than 2.5%", blackPercent < 10d && blackPercent > 2.5d);
 			BufferedReader reader = new BufferedReader(new InputStreamReader(this.getClass().getResourceAsStream("/" + fileName)));
 			String textHex = reader.readLine();
 			reader.close();
@@ -134,12 +136,38 @@ public class MobileCommunicationPrintTest extends WubiqBaseTest {
 			value.append(String.format("%02X ", byteVal));
 		}
 		 
-		/*
+	
 		// To store the stream properly
-		PrintWriter writer = new PrintWriter(new FileWriter());
+		/*
+		PrintWriter writer = new PrintWriter(new FileWriter("/Users/xxxx/OpenSource/JavaProjects/Wubiq/wubiq-test/tests-src/remoteMobileTestPageAsHex.txt"));
 		writer.println(value.toString());
 		writer.close();
-		*/
+		 */
 		return value.toString();
+	}
+	
+	/**
+	 * Calculates the percent of black elements.
+	 * @param hexInput Hexadecimal input.
+	 * @return Percentage of black's in the hex values.
+	 */
+	private double blackPercent(String hexInput) {
+		String[] hexData = hexInput.split(" ");
+		double count = 0d;
+		double blackCount = 0d;
+		for (String hex : hexData) {
+			String trimmedHex = hex.trim();
+			if (!"".equals(trimmedHex)) {
+				count++;
+				if ("FF".equals(trimmedHex)) {
+					blackCount++;
+				}
+			}
+		}
+		if (count > 0) {
+			return blackCount / count * 100;
+		} else {
+			return -1; // empty file.
+		}
 	}
 }

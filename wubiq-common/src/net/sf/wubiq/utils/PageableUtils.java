@@ -29,19 +29,19 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
 
-import net.sf.wubiq.wrappers.GraphicsPdfRecorder;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
 import net.sf.wubiq.wrappers.PrintableWrapper;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.pdfbox.exceptions.COSVisitorException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
-import org.apache.pdfbox.pdmodel.PDPageContentStream;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
-import org.apache.pdfbox.pdmodel.graphics.image.LosslessFactory;
-import org.apache.pdfbox.pdmodel.graphics.image.PDImageXObject;
+import org.apache.pdfbox.pdmodel.edit.PDPageContentStream;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDJpeg;
+import org.apache.pdfbox.pdmodel.graphics.xobject.PDXObjectImage;
 
 /**
  * @author Federico Alcantara
@@ -382,8 +382,8 @@ public enum PageableUtils {
 		PDDocument document = new PDDocument();
 		do {
 			try {
-				Printable printable = pageable.getPrintable(0);
-				PageFormat pageFormat = pageable.getPageFormat(0);
+				Printable printable = pageable.getPrintable(pageIndex);
+				PageFormat pageFormat = pageable.getPageFormat(pageIndex);
 
 				preparePageFormatAndAttributes(pageFormat, printRequestAttributes);
 
@@ -399,10 +399,14 @@ public enum PageableUtils {
 		try {
 			if (document != null) {
 				document.save(outputStream);
+				document.close();
 			}
 			outputStream.flush();
 			outputStream.close();
+			
 		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (COSVisitorException e) {
 			throw new RuntimeException(e);
 		}
 
@@ -427,6 +431,8 @@ public enum PageableUtils {
 			outputStream.flush();
 			outputStream.close();
 		} catch (IOException e) {
+			throw new RuntimeException(e);
+		} catch (COSVisitorException e) {
 			throw new RuntimeException(e);
 		}
 	}
@@ -507,6 +513,62 @@ public enum PageableUtils {
 		int height = new Double(pageFormat.getHeight() * resolution).intValue();
 		float x = (float) (pageFormat.getImageableX());
 		float y = (float) (pageFormat.getImageableY());
+		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		Graphics2D graph = img.createGraphics();
+		try {
+			AffineTransform scaleTransform = new AffineTransform();
+			scaleTransform.scale(resolution, resolution);
+			graph.setTransform(scaleTransform);
+			graph.translate(x, y);
+			graph.setClip(new Rectangle2D.Double(
+					0,
+					0,
+					pageFormat.getPaper().getImageableWidth(), 
+					pageFormat.getPaper().getImageableHeight()));
+			graph.setBackground(Color.WHITE);
+			graph.clearRect(0, 0, (int)Math.rint(pageFormat.getPaper().getImageableWidth()),
+					(int)Math.rint(pageFormat.getPaper().getImageableHeight()));
+			returnValue = printable.print(graph, pageFormat, pageIndex);
+			if (Printable.PAGE_EXISTS == returnValue) {
+				PDRectangle mediaBox = new PDRectangle((float)pageFormat.getWidth(), (float)pageFormat.getHeight());
+				PDPage page = new PDPage(mediaBox);
+				document.addPage(page);
+				PDXObjectImage pdImage = new PDJpeg(document, img, 0.99999f);
+				//PDXObjectImage pdImage = new PDPixelMap(document, img);
+				PDPageContentStream contents = new PDPageContentStream(document, page);
+				contents.drawXObject(pdImage, 0, 0, new Double(pageFormat.getWidth()).intValue(),
+						new Double(pageFormat.getHeight()).intValue());
+				contents.close();
+			}
+			graph.dispose();
+		} catch (PrinterException e) {
+			LOG.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		} catch (IOException e) {
+			LOG.error(e.getMessage(), e);
+			throw new RuntimeException(e);
+		}
+		return returnValue;
+	}
+
+
+	/**
+	 * Outputs a printable to stream as PNG file.
+	 * @param printable Printable object.
+	 * @param pageFormat Page format.
+	 * @param pageIndex Page index.
+	 * @param dpi Dots per inches (resolution). Minimal recommended 144.
+	 * @param output Output stream to put the png.
+	 * @return Status of printable.
+	 */
+/*
+	private int addPrintableToPdf-PDFBOX2(Printable printable, PageFormat pageFormat, int pageIndex, double dpi, PDDocument document) {
+		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES;
+		double resolution = dpi / 72d;
+		int width = new Double(pageFormat.getWidth() * resolution).intValue();
+		int height = new Double(pageFormat.getHeight() * resolution).intValue();
+		float x = (float) (pageFormat.getImageableX());
+		float y = (float) (pageFormat.getImageableY());
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D graph = new GraphicsPdfRecorder(img.createGraphics());
 		try {
@@ -544,5 +606,6 @@ public enum PageableUtils {
 		}
 		return returnValue;
 	}
+*/
 
 }
