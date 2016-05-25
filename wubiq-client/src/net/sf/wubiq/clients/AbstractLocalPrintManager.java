@@ -506,7 +506,10 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			if (connection.getContentType() != null) {
 				if (connection.getContentType().equals("application/pdf") ||
 						"application/octet-stream".equals(connection.getContentType())) {
-					returnValue = (InputStream)content;
+					InputStream inputStream = (InputStream) content;
+					ByteArrayOutputStream output = new ByteArrayOutputStream();
+					IOUtils.INSTANCE.copy(inputStream, output);
+					returnValue = new ByteArrayInputStream(output.toByteArray());
 				} else if (connection.getContentType().equals("text/html")) {
 					InputStream inputStream = (InputStream) content;
 					ByteArrayOutputStream output = new ByteArrayOutputStream();

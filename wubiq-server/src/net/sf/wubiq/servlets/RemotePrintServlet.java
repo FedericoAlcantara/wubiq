@@ -936,7 +936,20 @@ public class RemotePrintServlet extends HttpServlet {
 						break;
 						
 					case POLL:
-						if (directConnector.isCommandToSendReady()) {
+						boolean ready = false;
+						int timeout = 5; // 5 seconds retries
+						do {
+							ready = directConnector.isCommandToSendReady();
+							if (ready || timeout-- <= 0) {
+								break;
+							}
+							try {
+								Thread.sleep(1000);
+							} catch (InterruptedException e) {
+								LOG.debug(ExceptionUtils.getMessage(e));
+							}
+						} while (!ready);
+						if (ready) {
 							RemoteCommand remoteCommand = directConnector.getCommandToSend();
 							if (clientSupportsCompression) {
 								respondObject(remoteCommand, response);
