@@ -22,6 +22,7 @@ import javax.sql.DataSource;
 
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.data.WubiqPrintJob;
+import net.sf.wubiq.data.WubiqPrintJobPage;
 import net.sf.wubiq.data.WubiqPrintService;
 import net.sf.wubiq.data.WubiqServer;
 
@@ -182,6 +183,7 @@ public final class PersistenceManager {
 			File tempFile = File.createTempFile("wubiq_server", ".sql");
 			Configuration cfg = new Configuration();
 			cfg.addAnnotatedClass(WubiqPrintJob.class);
+			cfg.addAnnotatedClass(WubiqPrintJobPage.class);
 			cfg.addAnnotatedClass(RemoteClient.class);
 			cfg.addAnnotatedClass(WubiqPrintService.class);
 			cfg.addAnnotatedClass(WubiqServer.class);

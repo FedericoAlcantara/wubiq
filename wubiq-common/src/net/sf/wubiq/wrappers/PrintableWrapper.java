@@ -52,7 +52,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	private Map<Integer, Integer> printedPages;
 	private boolean noScale = false;
 	private transient boolean notSerialized = false;
-	private PrinterType printerType;
+	protected PrinterType printerType;
 	private transient AffineTransform initialTransform;
 	private boolean initialTransformApplied = false;
 	
@@ -124,7 +124,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param xScale new scale to apply horizontally wise.
 	 * @param yScale new scale to apply vertically wise.
 	 */
-	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
+	protected void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
 		initialTransform = graph.getTransform();
 		initialTransformApplied = false;
 		Set<GraphicCommand> graphicCommands = getGraphicCommands(pageIndex);
@@ -295,7 +295,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param pageIndex Page index to the graphic commands set.
 	 * @return Found instance or null if not found.
 	 */
-	private Set<GraphicCommand> getGraphicCommands(int pageIndex) {
+	protected Set<GraphicCommand> getGraphicCommands(int pageIndex) {
 		Set<GraphicCommand> returnValue = null;
 		if (graphicCommandsList == null) {
 			graphicCommandsList = new HashMap<Integer, Set<GraphicCommand>>();

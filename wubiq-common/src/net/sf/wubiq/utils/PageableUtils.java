@@ -442,7 +442,7 @@ public enum PageableUtils {
 	 * @param pageFormat Current page format (will be updated).
 	 * @param printRequestAttributes Print request attribute set to be updated.
 	 */
-	private void preparePageFormatAndAttributes(PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
+	public void preparePageFormatAndAttributes(PageFormat pageFormat, PrintRequestAttributeSet printRequestAttributes) {
 		Paper paper = pageFormat.getPaper();
 		MediaSizeName mediaName = (MediaSizeName) printRequestAttributes.get(MediaSizeName.class);
 		if (mediaName == null) {
@@ -561,7 +561,7 @@ public enum PageableUtils {
 	 * @param output Output stream to put the png.
 	 * @return Status of printable.
 	 */
-/*
+	/*
 	private int addPrintableToPdf-PDFBOX2(Printable printable, PageFormat pageFormat, int pageIndex, double dpi, PDDocument document) {
 		int returnValue = Pageable.UNKNOWN_NUMBER_OF_PAGES;
 		double resolution = dpi / 72d;
@@ -570,7 +570,7 @@ public enum PageableUtils {
 		float x = (float) (pageFormat.getImageableX());
 		float y = (float) (pageFormat.getImageableY());
 		BufferedImage img = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
-		Graphics2D graph = new GraphicsPdfRecorder(img.createGraphics());
+		Graphics2D graph = img.createGraphics();
 		try {
 			AffineTransform scaleTransform = new AffineTransform();
 			scaleTransform.scale(resolution, resolution);

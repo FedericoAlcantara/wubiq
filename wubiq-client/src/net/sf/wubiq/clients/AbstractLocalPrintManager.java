@@ -453,7 +453,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
 					connection.setRequestProperty("Content-Length", "" + length);
 					if (!Is.emptyString(getSessionId())) {
-						connection.setRequestProperty("Cookie", "JSESSIONID=" + sessionId);
+						connection.setRequestProperty("Cookie", "JSESSIONID=" + getSessionId());
 					}
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());

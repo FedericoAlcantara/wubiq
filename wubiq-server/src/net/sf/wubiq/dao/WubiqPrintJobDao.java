@@ -5,6 +5,8 @@ import java.awt.print.Printable;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Date;
 import java.util.Set;
 import java.util.TreeSet;
@@ -21,11 +23,12 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import net.sf.wubiq.data.WubiqPrintJob;
 import net.sf.wubiq.enums.PrintJobDataType;
 import net.sf.wubiq.persistence.PersistenceManager;
+import net.sf.wubiq.print.JpaPageable;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.utils.IOUtils;
-import net.sf.wubiq.utils.PageableUtils;
+import net.sf.wubiq.utils.JpaPageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
 
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -120,6 +123,10 @@ public enum WubiqPrintJobDao {
 					.createQuery("delete from WubiqPrintJob where printJobId=:printJobId")
 					.setParameter("printJobId", jobId)
 					.executeUpdate();
+				PersistenceManager.em().createQuery("delete from WubiqPrintJobPage where printJobId=:printJobId")
+					.setParameter("printJobId", jobId)
+					.executeUpdate();
+				
 			}
 			PersistenceManager.commit();
 		} catch (Exception e) {
@@ -149,17 +156,16 @@ public enum WubiqPrintJobDao {
 			if (data instanceof InputStream) {
 				IOUtils.INSTANCE.copy((InputStream)data, outputStream);
 				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
+				outputStream.flush();
+				outputStream.close();
+				job.setPrintData(outputStream.toByteArray());
 			} else if (data instanceof Pageable) {
-				PageableUtils.INSTANCE.pageableToPdf((Pageable) data, outputStream, remotePrintJob.getPrintRequestAttributeSet());
-				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
+				job.setPrintJobDataType(PrintJobDataType.SERIALIZED_PAGEABLE);
 			} else if (data instanceof Printable) {
-				PageableUtils.INSTANCE.printableToPdf((Printable) data, outputStream, remotePrintJob.getPrintRequestAttributeSet());
-				job.setPrintJobDataType(PrintJobDataType.INPUT_STREAM);
+				job.setPrintJobDataType(PrintJobDataType.SERIALIZED_PRINTABLE);
 			} else {
 				job.setPrintJobDataType(PrintJobDataType.UNDEFINED);
 			}
-			outputStream.flush();
-			outputStream.close();
 			job.setQueueId(queueId);
 			job.setPrintServiceName(remotePrintJob.getPrintService() != null 
 					? remotePrintJob.getPrintService().getName() : remotePrintJob.getPrintServiceName());
@@ -170,12 +176,31 @@ public enum WubiqPrintJobDao {
 			job.setDocFlavor(docFlavor);
 			job.setUsesDirectConnect(remotePrintJob.getUsesDirectConnect());
 			job.setSupportsOnlyPageable(remotePrintJob.getSupportsOnlyPageable());
-			job.setPrintData(outputStream.toByteArray());
 			job.setStatus(RemotePrintJobStatus.NOT_PRINTED);
 			job.setTime(new Date());
 			PersistenceManager.em().persist(job);
-			PersistenceManager.commit();
 			returnValue = job.getPrintJobId();
+			if (PrintJobDataType.SERIALIZED_PAGEABLE.equals(job.getPrintJobDataType())) {
+				JpaPageable jpaPageable = JpaPageableUtils.INSTANCE.persistPageable(job, (Pageable) data, remotePrintJob.getPrintRequestAttributeSet());
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				ObjectOutputStream stream = new ObjectOutputStream(out);
+				stream.writeObject(jpaPageable);
+				stream.close();
+				out.close();
+				job.setPrintData(out.toByteArray());
+				PersistenceManager.em().merge(job);
+			} else if (PrintJobDataType.SERIALIZED_PRINTABLE.equals(job.getPrintJobDataType())) {
+				Long pageId = JpaPageableUtils.INSTANCE.persistPrintable(job, (Printable) data, remotePrintJob.getPrintRequestAttributeSet());
+				ByteArrayOutputStream out = new ByteArrayOutputStream();
+				ObjectOutputStream stream = new ObjectOutputStream(out);
+				stream.writeLong(pageId);
+				stream.close();
+				out.close();
+				job.setPrintData(out.toByteArray());
+				PersistenceManager.em().merge(job);
+			}
+			PersistenceManager.commit();
+
 		} catch (Exception e) {
 			PersistenceManager.rollback();
 			throw new RuntimeException(e);
@@ -228,6 +253,18 @@ public enum WubiqPrintJobDao {
 						returnValue.setPrintDataObject(new ByteArrayInputStream(job.getPrintData()));
 						job.setStatus(RemotePrintJobStatus.PRINTING);
 						PersistenceManager.em().merge(job);
+					} else if (PrintJobDataType.SERIALIZED_PAGEABLE.equals(job.getPrintJobDataType())){
+						if (job.getPrintData() != null) {
+							ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(job.getPrintData()));
+							returnValue.setPrintDataObject((JpaPageable) in.readObject());
+						}
+					} else if (PrintJobDataType.SERIALIZED_PRINTABLE.equals(job.getPrintJobDataType())){
+						if (job.getPrintData() != null) {
+							ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(job.getPrintData()));
+							Long pageId = in.readLong();
+							returnValue.setPrintDataObject(WubiqPrintJobPageDao.INSTANCE.findPrintable(pageId));
+						}
+						
 					} else {
 						return null;
 					}
