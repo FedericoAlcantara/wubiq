@@ -1,10 +1,15 @@
 ==========================
-Wubiq 2.3.3 (2016-06-01)
+Wubiq 2.3.3 ()
 ==========================
 -Implemented serialized pageable / printable for jpa persistence.
 
 ==========================
-Wubiq 2.3.2 (2016-05-25)
+Wubiq 2.3.2.1 (2017-04-08)
+==========================
+-Copyrighted images eliminated from android app.
+
+==========================
+Wubiq 2.3.2 (2017-02-18)
 ==========================
 -PdfBox / FontBox libraries downgraded to 1.8.6
 
