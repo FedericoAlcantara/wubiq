@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.3.2.2 (2017-07-02)
+==========================
+-Fixed missing groups information when creating print job from persistence.
+
+==========================
 Wubiq 2.3.2.1 (2017-04-08)
 ==========================
 -Copyrighted images eliminated from android app.
