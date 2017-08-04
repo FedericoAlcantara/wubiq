@@ -1,4 +1,10 @@
 ==========================
+Wubiq 2.3.2.3 (2017-08-04)
+==========================
+-Fixed missing groups information when received from mobile devices
+-Shows group for remote services
+
+==========================
 Wubiq 2.3.2.2 (2017-07-02)
 ==========================
 -Fixed missing groups information when creating print job from persistence.

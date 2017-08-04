@@ -404,6 +404,11 @@ public class RemotePrintServlet extends HttpServlet {
 		if (client != null) {
 			String serviceName = (getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_NAME));
 			String categoriesString = (getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_CATEGORIES));
+			String groups = (getParameter(request, parameters, ParameterKeys.GROUPS));
+			if (Is.emptyString(groups)
+					&& uuid.contains("-")) {
+				groups = uuid.substring(0, uuid.indexOf("-")).toLowerCase();
+			}
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);
@@ -412,6 +417,7 @@ public class RemotePrintServlet extends HttpServlet {
 			remotePrintService.setSupportedDocFlavors(new DocFlavor[]{PrintServiceUtils.DEFAULT_DOC_FLAVOR, 
 					DocFlavor.SERVICE_FORMATTED.PAGEABLE, 
 					DocFlavor.SERVICE_FORMATTED.PRINTABLE});
+			remotePrintService.registerGroups(groups);
 			getRemoteClientManager(request).addRemote(uuid, client);
 			getRemoteClientManager(request).registerPrintService(uuid, remotePrintService);
 			// Resets all status of PRINTING to NOT_PRINTED
