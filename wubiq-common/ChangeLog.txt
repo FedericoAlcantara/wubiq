@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.3.2.4 (2017-09-08)
+==========================
+-Fixed hangs when trying to run corrupted wubiq-cient.jar on services (wubiq-installer)
+ 
+==========================
 Wubiq 2.3.2.3 (2017-08-04)
 ==========================
 -Fixed missing groups information when received from mobile devices

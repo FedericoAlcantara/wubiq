@@ -306,8 +306,9 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 				method.setAccessible(true);
 				method.invoke(graph, parameterValues);
 			} catch (Exception e) {
-				LOG.error(e.getMessage(), e);
-				throw new RuntimeException(e);
+				String message = e.getMessage() + "-" + methodName + "(" + parameterValues + ")";
+				LOG.error(message, e);
+				throw new RuntimeException(message, e);
 			}
 		} else {
 			LOG.info("Method not FOUND:" + methodName);

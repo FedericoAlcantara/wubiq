@@ -6,6 +6,7 @@ package net.sf.wubiq.utils;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -14,9 +15,11 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
 /**
+ * Utilities for installing.
  * @author Federico Alcantara
  *
  */
+
 public enum InstallerUtils {
 	INSTANCE;
 	
@@ -44,19 +47,32 @@ public enum InstallerUtils {
 	 * @return String containing the client version or blank if client is too old or does not exists.
 	 */
 	public String wubiqClientVersion() {
+		System.out.println("Checking VERSION");
 		String returnValue = "";
+		System.out.println("Creating process builder");
 		ProcessBuilder processBuilder = new ProcessBuilder();
 		processBuilder.command(jrePath(), "-cp", wubiqClientFile().toString(), "net.sf.wubiq.clients.VersionInformation");
 		try {
+			System.out.println("Starting the process");
 			Process process = processBuilder.start();
-			BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
-			String line = null;
-			while ((line = reader.readLine()) != null) {
-				returnValue = line;
-			}
+			System.out.println("Waiting for response...");
+			
+			StreamGobbler errors = new StreamGobbler(process.getErrorStream());
+			StreamGobbler messages = new StreamGobbler(process.getInputStream());
+			
+			errors.start();
+			messages.start();
+			
+			System.out.println("Waiting for version...");
 			process.waitFor();
+			if (errors.output != null 
+					&& !"".equals(errors.output)) {
+				throw new IOException(errors.output);
+			}
+			returnValue = messages.output;
 		} catch (IOException e) {
 			LOG.error(e.getMessage(), e);
+			e.printStackTrace();
 		} catch (InterruptedException e) {
 			LOG.fatal(e.getMessage(), e);
 		} finally {
@@ -64,7 +80,7 @@ public enum InstallerUtils {
 		}
 		return returnValue;
 	}
-	
+		
 	/**
 	 * Validates the given address.
 	 * @param address Address to be validated.
@@ -140,5 +156,38 @@ public enum InstallerUtils {
 		
 		return returnValue.toString().trim().replaceAll(" ", "_");
 	}
-	
 }
+
+/**
+ * Stream globber for consuming messages and error from process. 
+ * @author Federico Alcantara
+ *
+ */
+class StreamGobbler extends Thread {
+    InputStream is;
+    String output;
+    
+    StreamGobbler(InputStream is) {
+        this.is = is;
+        output = "";
+    }
+    
+    /**
+     * Will consume stream, then close it.
+     */
+    public void run() {
+        try {
+            InputStreamReader isr = new InputStreamReader(is);
+            BufferedReader br = new BufferedReader(isr);
+            String line=null;
+            while ( (line = br.readLine()) != null) {
+                output = output + line;
+            }
+            br.close();
+        } catch (IOException ioe) {
+            ioe.printStackTrace();  
+        }
+    }
+}
+
+

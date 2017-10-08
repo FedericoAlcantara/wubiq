@@ -3,3 +3,5 @@
 /wubiq-test/properties-src/wubiq-client.properties
 /wubiq-test/*.log
 /wubiq-android-test/*.log
+/wubiq-installer/wubiq-client.jar
+/wubiq-installer/wubiq-installer.properties
