@@ -148,16 +148,12 @@ public class WubiqActivityTest extends WubiqBaseTest {
 		EditText groupsField = (EditText) localActivity.findViewById(net.sf.wubiq.android.R.id.groupsField);
 		EditText connectionsField = (EditText) localActivity.findViewById(net.sf.wubiq.android.R.id.connectionsField);
 		CheckBox suppressNotificationsField = (CheckBox) localActivity.findViewById(net.sf.wubiq.android.R.id.suppressNotifications);
-		EditText hostField = (EditText) localActivity.findViewById(net.sf.wubiq.android.R.id.hostField);
-		EditText portField = (EditText) localActivity.findViewById(net.sf.wubiq.android.R.id.portField);
 		
 		// Assert default values;
 		assertNotSame("Uuid should not be blank", "", uuidField.getText().toString());
 		assertEquals("Groups should be blank", "", groupsField.getText().toString());
 		assertEquals("Connections should be http://localhost:8080", "http://localhost:8080", connectionsField.getText().toString());
 		assertFalse("Suppress notifications must be unchecked", suppressNotificationsField.isChecked());
-		assertEquals("Host should be empty", "", hostField.getText().toString());
-		assertEquals("Port should be empty", "", portField.getText().toString());
 		
 		// Sets the new values;
 		groups = AndroidTestProperties.get(ConfigurationKeys.PROPERTY_GROUPS, "");
@@ -178,9 +174,6 @@ public class WubiqActivityTest extends WubiqBaseTest {
 		sendKeys(KeyEvent.KEYCODE_BACK);
 		
 		pause(WAIT_TIME_SECONDS);
-		
-		setText(hostField, "http://localhost");
-		setText(portField, "8090");
 		
 		localActivity.finish();
 		instrumentation.removeMonitor(localMonitor);

@@ -119,6 +119,7 @@ public class RemoteClientManager implements Serializable {
 			addRemote(uuid, client);
 		}
 		RemotePrintServiceLookup.removePrintServices(uuid);
+		WubiqRemoteClientDao.INSTANCE.removeRemote(uuid);
 	}
 	
 	/**

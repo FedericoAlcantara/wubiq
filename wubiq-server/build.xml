@@ -75,7 +75,8 @@
 	
 	<target name="distribute" description="creates the distribution">
 		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
-		<input message="Common has been built. Did you produce the android.apk and generate the documentation (Y/N)?"
+		<ant antfile="../wubiq-android/build.xml" inheritall="false" />
+		<input message="Common and android has been built. Did you generate the documentation (Y/N)?"
 			validargs="y,n"
 		    addproperty="do.continue" />
 		<condition property="do.abort">

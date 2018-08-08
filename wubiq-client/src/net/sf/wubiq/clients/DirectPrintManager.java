@@ -6,8 +6,11 @@ package net.sf.wubiq.clients;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.PrintWriter;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.util.HashMap;
@@ -25,6 +28,7 @@ import net.sf.wubiq.clients.remotes.PageableRemote;
 import net.sf.wubiq.clients.remotes.PrintableChunkRemote;
 import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
 import net.sf.wubiq.exceptions.TimeoutException;
@@ -191,7 +195,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				Object object = serverSupportsCompression
 						? DirectConnectUtils.INSTANCE.deserializeObject((InputStream) response)
 						: DirectConnectUtils.INSTANCE.deserialize((InputStream)response);
-				final RemoteCommand remoteCommand = (RemoteCommand) object;
+				final RemoteCommand remoteCommand = (object instanceof RemoteCommand) ? (RemoteCommand) object : null;
 				if (remoteCommand != null) {
 					callCommand(remoteCommand);
 				}
@@ -314,7 +318,8 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	 * @return True if an error ocurred.
 	 */
 	@SuppressWarnings("rawtypes")
-	protected boolean callCommand(RemoteCommand printerCommand) {
+	protected boolean callCommand(RemoteCommand printerCommand) {		
+		logRemoteCommandToFile("callCommand", printerCommand);
 		boolean returnValue = false;
 		String methodName = printerCommand.getMethodName();
 		Class[] parameterTypes = new Class[printerCommand.getParameters().length];
@@ -418,6 +423,7 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 				returnValue = DirectConnectUtils.INSTANCE.deserialize(remoteData);
 			}
 		}
+		logRemoteCommandToFile("readFromRemote. Return:" + returnValue, remoteCommand);
 		return returnValue;
 	}
 	
@@ -465,5 +471,23 @@ public class DirectPrintManager extends AbstractLocalPrintManager {
 	@Override
 	public void doLog(Object message, int logLevel) {
 		super.doLog(message, logLevel);
+	}
+	
+	private void logRemoteCommandToFile(String method, RemoteCommand remoteCommand) {
+		if (System.getProperty(PropertyKeys.WUBIQ_REMOTE_COMMAND_LOG_DIR) != null) {
+			File file = new File(System.getProperty(PropertyKeys.WUBIQ_REMOTE_COMMAND_LOG_DIR) + "/wubiq_commands_log_" + jobId + ".txt");
+			try {
+				if (!file.exists()) {
+					file.createNewFile();
+				}
+				FileWriter fileWriter = new FileWriter(file, true);
+				PrintWriter writer = new PrintWriter(fileWriter);
+				writer.println(method + " -> " + remoteCommand.toString());
+				writer.close();
+				fileWriter.close();
+			} catch (IOException e) {
+				doLog("Could not write to log:" + file.getPath() + ". Error:" + e.getMessage());
+			}
+		}
 	}
 }

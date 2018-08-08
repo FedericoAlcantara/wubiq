@@ -7,6 +7,7 @@ import java.io.Serializable;
 
 
 
+
 /**
  * Holds the data which is gathered during test running.
  * @author Federico Alcantara

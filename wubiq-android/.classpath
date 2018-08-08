@@ -6,8 +6,8 @@
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.LIBRARIES"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/wubiq-client"/>
 	<classpathentry combineaccessrules="false" exported="true" kind="src" path="/wubiq-common"/>
-	<classpathentry exported="true" kind="lib" path="ZSDK_API.jar"/>
 	<classpathentry exported="true" kind="lib" path="lib/StarIOPort3.1.jar"/>
+	<classpathentry kind="lib" path="lib/ZSDK_API.jar"/>
 	<classpathentry exported="true" kind="con" path="com.android.ide.eclipse.adt.DEPENDENCIES"/>
 	<classpathentry kind="output" path="bin/classes"/>
 </classpath>

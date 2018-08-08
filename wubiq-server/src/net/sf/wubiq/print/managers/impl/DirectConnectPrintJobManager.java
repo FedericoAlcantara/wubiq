@@ -154,6 +154,7 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 
 	/**
 	 * Returns the direct connector queue manager.
+	 * Uses the local queue as a preferred way.
 	 * @param jobId Id of the associated job.
 	 * @return Queue handler for print jobs.
 	 */

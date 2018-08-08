@@ -106,6 +106,7 @@ public class PrintableWrapper implements Printable, Serializable {
 				returnValue = Printable.PAGE_EXISTS;
 				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
 				Point2D scaleValue = GraphicsUtils.INSTANCE.scaleGraphics(graph, pageFormat, noScale);
+				LOG.info("Page (" + pageIndex + ") scaled for " + graph.getDeviceConfiguration().getDevice().getIDstring() + " as type:" + printerType + ", to: (x:" + scaleValue.getX() + ", y:" + scaleValue.getY() + "). Page format size is: (x:" + pageFormat.getImageableX() + ", y:" + pageFormat.getImageableY() + ", height:" + pageFormat.getImageableHeight() + ", width:" + pageFormat.getImageableWidth());
 				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY(), pageIndex);
 				printed += 1;
 				printedPages.put(pageIndex, printed);

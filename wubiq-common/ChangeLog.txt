@@ -1,4 +1,19 @@
 ==========================
+Wubiq 2.3.3 (2018-08-08)
+==========================
+-Wubiq-server: Java 8 / Tomcat 8 compatible
+-Wubiq-server: Can handle multiple ports for communication.
+-Wubiq-server: Can be in more than one tomcat instance in the same server.
+-Wubiq-android: Support removed for compatible option of single host / port combination.
+-Wubiq-android: For Android 4.0 Ice Cream Sandwich (Api level 14).
+-Packaging: Relies on provided ant task for packaging wubiq components.
+
+==========================
+Wubiq 2.3.2.5 (2018-03-22)
+==========================
+-Improved log information for PrintableWrapper.
+
+==========================
 Wubiq 2.3.2.4 (2017-10-08)
 ==========================
 -Fixed hangs when trying to run corrupted wubiq-cient.jar on services (wubiq-installer)

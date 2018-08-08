@@ -1,0 +1,192 @@
+<project name="wubiq-android" basedir="." default="create-apk">
+<!-- 
+This build was made based on the information found in these pages:
+https://www.hanshq.net/command-line-android.html
+https://www.apriorit.com/dev-blog/233-how-to-build-apk-file-from-command-line
+https://spin.atomicobject.com/2011/08/22/building-android-application-bundles-apks-by-hand/
+
+The android sdk (command line tools only) is required and can be download from google
+https://developer.android.com/studio/#downloads
+
+YOU MUST DEFINE an android-build.properties file with the following information.
+android.sdk=location_of_sdk_home_folder
+android.keystore=Location_of_keystore
+android.keystore.password=Password_for_the_keystore
+android.store.password=Password_for_the_stored_alias
+android.store.alias=Alias_used
+
+Optionally you can redefine (on windows most probably) the bin names
+android.dx.bin=dx.exe
+android.aapt.bin=aapt.exe
+android.zipalign.bin=zipalign.exe
+
+-->
+	<property name="project" value="wubiq-android" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="lib" value="${basedir}/lib" />
+	<property name="gen" value="${basedir}/gen" />
+	<property name="bin" value="${basedir}/bin" />
+	<property name="build" value="${basedir}/build" />
+	<property file="android-default-build.properties" />
+	<property file="android-build.properties" />
+	<property file="project.properties" />
+
+	
+	<path id="project.classpath">
+		<pathelement path="${lib}"/>
+		<pathelement path="${bin}"/>
+		<fileset dir="${lib}"> 
+			<include name="**/*.jar"/> 
+		</fileset>
+		<fileset dir="${android.sdk}/platforms/${target}">
+			<include name="android.jar"/>
+		</fileset>
+	</path>
+	
+	<path id="project.src">
+		<pathelement path="${basedir}/src"/>
+		<pathelement path="${build}/gen"/>
+	</path>	
+	
+	<path id="android.last.build_tools.id">
+		<last>
+			<sort>
+				<fileset dir="${android.sdk}/build-tools" includes="**/*">
+					<depth max="1"/>
+				</fileset>
+			</sort>
+		</last>
+	</path>
+	
+	<target name="initialize">
+		<dirname property="android.last.build_tools.dir" file="${toString:android.last.build_tools.id}" />
+		<basename property="android.last.build_tools" file="${android.last.build_tools.dir}" />
+		<property name="android.aapt" value="${android.sdk}/build-tools/${android.last.build_tools}/${android.aapt.bin}"/>
+		<property name="android.jar" value="${android.sdk}/platforms/${target}/android.jar"/>
+		<property name="android.dx" value="${android.sdk}/build-tools/${android.last.build_tools}/${android.dx.bin}" />
+		<property name="android.zipalign" value="${android.sdk}/build-tools/${android.last.build_tools}/${android.zipalign.bin}" />
+		<property name="android.apksigner" value="${android.sdk}/build-tools/${android.last.build_tools}/${android.apksigner.bin}" />
+	</target>
+	
+	<target name="create-apk" 
+			depends="initialize, clean, create-common-jar, create-client-jar, aapt-pack, compile, dx, copy-resources, aapt-add, zipalign, sign">
+		<copy file="${build}/bin/${project}.apk" tofile="${dist}/${project}.apk" />
+	</target>
+		
+	<target name="clean">
+		<delete dir="${dist}" failonerror="false" />
+		<delete dir="${build}" failonerror="false" />
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${build}/gen"/>
+		<mkdir dir="${build}/bin"/>
+	</target>
+
+	<target name="create-common-jar">
+		<ant antfile="${basedir}/../wubiq-common/build.xml" inheritall="false" 
+			target="create-common-jar"/>
+		<copy todir="${basedir}/../wubiq-client/lib/">
+			<fileset dir="${basedir}/../wubiq-common/dist">
+				<include name="wubiq-common.jar" />
+			</fileset>
+		</copy>
+		<copy todir="${lib}">
+			<fileset dir="${basedir}/../wubiq-common/dist">
+				<include name="wubiq-common.jar" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="create-client-jar">
+		<ant antfile="${basedir}/../wubiq-client/build.xml" inheritall="false" 
+			target="create-client-jar"/>
+		<copy todir="${lib}">
+			<fileset dir="${basedir}/../wubiq-client/dist">
+				<include name="wubiq-client.jar" />
+			</fileset>
+		</copy>
+	</target>
+	
+	<target name="aapt-pack">
+		<exec dir="${basedir}" executable="${android.aapt}">
+			<arg value="package"/>
+			<arg value="-v" />
+			<arg value="-f" />
+			<arg value="-I" />
+			<arg value="${android.jar}" />
+			<arg value="-M"/>
+			<arg value="AndroidManifest.xml"/>
+<!--		<arg value="-A" />
+			<arg value="assets" /> -->
+			<arg value="-S" />
+			<arg value="res" />
+			<arg value="-m" />
+			<arg value="-J" />
+			<arg value="${build}/gen" />
+			<arg value="-F" />
+			<arg value="${build}/bin/resources.ap_" />
+		</exec>
+	</target>
+	
+	<target name="compile">
+		<javac classpathref="project.classpath" destdir="${build}/bin"
+			nowarn="true" failonerror="true" source="1.6" target="1.6">
+			<src refid="project.src"/>
+			<classpath refid="project.classpath" /> 
+		</javac>
+	</target>
+	
+	<target name="dx">
+		<unjar dest="${build}/bin" src="${lib}/wubiq-client.jar">
+		</unjar>
+		<unjar dest="${build}/bin" src="${lib}/wubiq-common.jar">
+		</unjar>
+		<exec dir="${build}/bin" executable="${android.dx}">
+			<arg value="--dex"/>
+			<arg value="--output=${build}/bin/classes.dex"/>
+			<arg value="${build}/bin" />
+			<arg value="${lib}/StarIOPort3.1.jar" />
+			<arg value="${lib}/ZSDK_API.jar" />
+		</exec>
+	</target>
+	
+	<target name="copy-resources">
+		<copy file="${build}/bin/resources.ap_" tofile="${build}/bin/${project}.unsigned.apk">
+		</copy>
+	</target>
+	
+	<target name="aapt-add">
+		<exec dir="${build}/bin" executable="${android.aapt}">
+			<arg value="add" />
+			<arg value="${build}/bin/${project}.unsigned.apk" />
+			<arg value="classes.dex" />
+		</exec>
+	</target>
+		
+	<target name="zipalign">
+		<exec executable="${android.zipalign}">
+			<arg value="-f" />
+			<arg value="-p" />
+			<arg value="4" />
+			<arg value="${build}/bin/${project}.unsigned.apk" />
+			<arg value="${build}/bin/${project}.aligned.apk" />
+		</exec>
+	</target>
+		
+	<target name="sign">
+		<exec dir="${build}/bin" executable="${android.apksigner}">
+			<arg value="sign" />
+			<arg value="--ks" />
+			<arg value="${android.keystore}" />
+			<arg value="--ks-pass" />
+			<arg value="pass:${android.keystore.password}" />
+			<arg value="--ks-key-alias" />
+			<arg value="${android.store.alias}" />
+			<arg value="--key-pass" />
+			<arg value="pass:${android.store.password}" />
+			<arg value="--out" />
+			<arg value="${build}/bin/${project}.apk" />
+			<arg value="${build}/bin/${project}.aligned.apk" />
+		</exec>
+	</target>
+
+</project>

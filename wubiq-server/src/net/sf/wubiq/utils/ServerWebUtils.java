@@ -20,6 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.management.MBeanServer;
+import javax.management.MBeanServerFactory;
+import javax.management.ObjectName;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.SystemUtils;
@@ -66,6 +69,7 @@ public enum ServerWebUtils {
 	 * @return A list of servers ips. 
 	 */
 	public List<String> serverIps() {
+		List<Integer> serverPorts = httpPorts();
 		List<String> returnValue = new ArrayList<String>();
 		Set<String> ips = new HashSet<String>();
 		File ipConfFile = ipConfFile();
@@ -78,7 +82,13 @@ public enum ServerWebUtils {
 						String processLine = (line.trim().split("#")[0]).trim();
 						if (!Is.emptyString(processLine) &&
 								!LOCALHOST.equals(processLine)) {
-							ips.add(processLine);
+							if (serverPorts.size() > 0) {
+								for (int serverPort : serverPorts) {
+									ips.add(processLine + ":" + serverPort);
+								}
+							} else {
+								ips.add(processLine);
+							}
 						}
 					}
 				}
@@ -100,7 +110,13 @@ public enum ServerWebUtils {
 						InetAddress address = addresses.nextElement();
 						if (address.getAddress().length == 4 &&
 								!LOCALHOST.equals(address.getHostAddress().trim())) { // IPv4
-							ips.add(address.getHostAddress().trim());
+							if (serverPorts.size() > 0) {
+								for (int serverPort : serverPorts) {
+									ips.add(address.getHostAddress().trim() + ":" + serverPort);
+								}
+							} else {
+								ips.add(address.getHostAddress().trim());
+							}
 						}
 					}
 				}
@@ -156,7 +172,7 @@ public enum ServerWebUtils {
 	 */
 	public boolean canConnect(String ip) {
 		try {
-			return InetAddress.getByName(ip).isReachable(200);
+			return InetAddress.getByName(ip.split(":")[0]).isReachable(200);
 		} catch (UnknownHostException e) {
 			LOG.debug(ExceptionUtils.getMessage(e));
 		} catch (IOException e) {
@@ -176,7 +192,7 @@ public enum ServerWebUtils {
 		try {
 			InetAddress localHost = InetAddress.getLocalHost();
 			if (localHost != null) {
-				returnValue = localHost.getHostName();
+				returnValue = localHost.getHostName();		
 			}
 		} catch (UnknownHostException e) {
 			LOG.error(ExceptionUtils.getMessage(e));
@@ -197,5 +213,46 @@ public enum ServerWebUtils {
 		calendar.set(Calendar.SECOND, 0);
 		calendar.set(Calendar.MILLISECOND, 1);
 		return calendar.getTime();
+	}
+		
+	/**
+	 * Gets the http (or https) ports.
+	 * @return Http/s ports.
+	 */
+	private List<Integer> httpPorts() {
+		List<Integer> returnValue = new ArrayList<Integer>();
+		MBeanServer mBeanServer = MBeanServerFactory.findMBeanServer(null).get(0);
+		ObjectName name;
+		try {
+			name = new ObjectName("Catalina:type=Connector,*");
+			for (ObjectName connector : mBeanServer.queryNames(name, null)) {
+//				MBeanInfo info = mBeanServer.getMBeanInfo(connector);
+//				System.out.println(connector);
+//				for (MBeanAttributeInfo atInf : info.getAttributes()) {
+//					System.out.println("     " + atInf.getName() + "=" + mBeanServer.getAttribute(connector, atInf.getName()));
+//				}
+				String scheme = (String) mBeanServer.getAttribute(connector, "scheme");
+				String protocol = (String) mBeanServer.getAttribute(connector, "protocol");
+
+				if ("http".equalsIgnoreCase(scheme)
+						&& protocolIsHttp(protocol)) {
+					int port = (Integer)mBeanServer.getAttribute(connector, "port");
+					if (port > 0) {
+						returnValue.add(port);
+					}
+				}
+			}
+		} catch (Exception e) {
+			LOG.error(ExceptionUtils.getMessage(e));
+		}
+		return returnValue;
+	}
+	/**
+	 * Determines if the protocol is HTTP or HTTPS.
+	 * @param protocol Protocol to check
+	 * @return True if protocol is http/s.
+	 */
+	private boolean protocolIsHttp(String protocol) {
+		return protocol.toLowerCase().indexOf("http") > -1;
 	}
 }
