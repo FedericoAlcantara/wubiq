@@ -20,10 +20,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import javax.management.MBeanAttributeInfo;
+import javax.management.MBeanInfo;
 import javax.management.MBeanServer;
 import javax.management.MBeanServerFactory;
 import javax.management.ObjectName;
 import javax.servlet.http.HttpServletRequest;
+
+import net.sf.wubiq.listeners.ContextListener;
 
 import org.apache.commons.lang3.SystemUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -98,6 +102,20 @@ public enum ServerWebUtils {
 				LOG.debug(ExceptionUtils.getMessage(e));
 			} catch (IOException e) {
 				LOG.debug(ExceptionUtils.getMessage(e));
+			}
+		}
+		// Tries to use the ips of the server.
+		if (ips.isEmpty()) {
+			String serverIp = serverIp();
+			if (!Is.emptyString(serverIp)) {
+				if (serverPorts.size() > 0) {
+					for (int serverPort : serverPorts) {
+						ips.add(serverIp + ":" + serverPort);
+					}
+				} else {
+					ips.add(serverIp);
+				}
+
 			}
 		}
 		if (ips.isEmpty()) {
@@ -216,6 +234,26 @@ public enum ServerWebUtils {
 	}
 		
 	/**
+	 * Determines if the server ip contains the given ip.
+	 * Takes into account if the server is an old version.
+	 * @param ip Current ip.
+	 * @return True if the ip is within the list of server.
+	 */
+	public boolean containsIp(String ip) {
+		boolean removeSemicolon = ip.contains(":");
+		for (String ipRead : ContextListener.serverIps()) {
+			String cleanedIp = ipRead;
+			if (removeSemicolon && ipRead.contains(":")) {
+				cleanedIp = ipRead.split(":")[0];
+			}
+			if (cleanedIp.equals(ip)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	/**
 	 * Gets the http (or https) ports.
 	 * @return Http/s ports.
 	 */
@@ -226,11 +264,11 @@ public enum ServerWebUtils {
 		try {
 			name = new ObjectName("Catalina:type=Connector,*");
 			for (ObjectName connector : mBeanServer.queryNames(name, null)) {
-//				MBeanInfo info = mBeanServer.getMBeanInfo(connector);
-//				System.out.println(connector);
-//				for (MBeanAttributeInfo atInf : info.getAttributes()) {
-//					System.out.println("     " + atInf.getName() + "=" + mBeanServer.getAttribute(connector, atInf.getName()));
-//				}
+				MBeanInfo info = mBeanServer.getMBeanInfo(connector);
+				System.out.println(connector);
+				for (MBeanAttributeInfo atInf : info.getAttributes()) {
+					System.out.println("     " + atInf.getName() + "=" + mBeanServer.getAttribute(connector, atInf.getName()));
+				}
 				String scheme = (String) mBeanServer.getAttribute(connector, "scheme");
 				String protocol = (String) mBeanServer.getAttribute(connector, "protocol");
 
@@ -247,6 +285,36 @@ public enum ServerWebUtils {
 		}
 		return returnValue;
 	}
+	
+	/**
+	 * Tries to get the server Ip from the engine or the host.
+	 * @return
+	 */
+	private String serverIp() {
+		String returnValue = "";
+		MBeanServer mBeanServer = MBeanServerFactory.findMBeanServer(null).get(0);
+		ObjectName name;
+		try {
+			name = new ObjectName("Catalina:type=Engine");
+			String defaultHost = (String) mBeanServer.getAttribute(name, "defaultHost");
+			if (!LOCALHOST.equalsIgnoreCase(defaultHost)
+					&& defaultHost.contains(".")) {
+				returnValue = defaultHost;
+			} else {
+				name = new ObjectName("Catalina:type=Host");
+				defaultHost = (String) mBeanServer.getAttribute(name, "name");
+				if (!LOCALHOST.equalsIgnoreCase(defaultHost)
+						&& defaultHost.contains(".")) {
+					returnValue = defaultHost;
+				}
+			}
+			
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		return returnValue;
+	}
+	
 	/**
 	 * Determines if the protocol is HTTP or HTTPS.
 	 * @param protocol Protocol to check

@@ -52,7 +52,6 @@ import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.listeners.ContextListener;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.PrinterJobManager;
@@ -1212,7 +1211,7 @@ public class RemotePrintServlet extends HttpServlet {
 				if (!((IDirectConnectPrintJobManager)manager).hasLocalPrintJob(jobId)) {
 					String ip = WubiqServerDao.INSTANCE.associatedServer(jobId);
 					if (!Is.emptyString(ip)) { // we have a server
-						if (!ContextListener.serverIps().contains(ip)) { // Do not forward to itself!
+						if (!ServerWebUtils.INSTANCE.containsIp(ip)) { // Do not forward to itself!
 							String url = "";
 							if (ip.contains(":")) {
 								url = request.getScheme() + "://" + ip + request.getRequestURI();

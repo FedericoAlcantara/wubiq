@@ -1,4 +1,8 @@
 ==========================
+Wubiq 2.3.3.2 (2018-08-10)
+==========================
+-Wubiq-server: Ip/host discovery improved.
+==========================
 Wubiq 2.3.3 (2018-08-08)
 ==========================
 -Wubiq-server: Java 8 / Tomcat 8 compatible
