@@ -1,7 +1,13 @@
 ==========================
+Wubiq 2.3.3.3 (2018-08-10)
+==========================
+-Wubiq-server: Allow the server to continue start even on table creation errors.
+
+==========================
 Wubiq 2.3.3.2 (2018-08-10)
 ==========================
 -Wubiq-server: Ip/host discovery improved.
+
 ==========================
 Wubiq 2.3.3 (2018-08-08)
 ==========================
