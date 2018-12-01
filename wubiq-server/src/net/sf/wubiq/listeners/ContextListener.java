@@ -52,6 +52,9 @@ public class ContextListener implements ServletContextListener {
 	 * @return List of ip addresses.
 	 */
 	public static List<String> serverIps() {
+		if (serverIps == null) {
+			serverIps = ServerWebUtils.INSTANCE.serverIps();
+		}
 		return serverIps;
 	}
 	

@@ -18,12 +18,12 @@
         android:text="@string/client_uuid"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-    <EditText
-        android:id="@+id/clientUUIDField"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:inputType="textCapCharacters" />
+	<EditText
+		android:id="@+id/clientUUIDField"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:ems="10"
+		android:inputType="text" />
     
     <TextView
         android:id="@+id/textView7"
@@ -31,13 +31,13 @@
         android:layout_height="wrap_content"
         android:text="@string/groups"
         android:textAppearance="?android:attr/textAppearanceMedium" />
-    
-    <EditText
-	    android:id="@+id/groupsField"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:ems="10"
-	    android:inputType="textMultiLine|textUri" />
+
+	<EditText
+		android:id="@+id/groupsField"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:ems="10"
+		android:inputType="textMultiLine|text" />
     
     <TextView
         android:id="@+id/textView6"
@@ -60,67 +60,5 @@
 	    android:button="?android:attr/listChoiceIndicatorMultiple"
 	    android:gravity="center_vertical"
 	    android:text="@string/suppress_notifications" />
-
-	<TextView
-	    android:id="@+id/textView5"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:gravity="center_horizontal"
-	    android:text="@string/compatibility"
-	    android:textAppearance="?android:attr/textAppearanceSmall" />
-
-	<TableLayout
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content" >
-
-	    <TableRow
-	        android:id="@+id/tableRow1"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content" >
-
-	        <TextView
-	            android:id="@+id/textView2"
-	            android:layout_width="fill_parent"
-	            android:layout_height="wrap_content"
-	            android:text="@string/server_host"
-	            android:textAppearance="?android:attr/textAppearanceSmall" />
-
-	        <TextView
-	            android:id="@+id/textView3"
-	            android:layout_width="fill_parent"
-	            android:layout_height="wrap_content"
-	            android:text="@string/server_port"
-	            android:textAppearance="?android:attr/textAppearanceSmall" />
-
-	    </TableRow>
-
-	    <TableRow
-	        android:id="@+id/tableRow2"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content" >
-
-	        <EditText
-	            android:id="@+id/hostField"
-	            android:layout_width="fill_parent"
-	            android:layout_height="wrap_content"
-	            android:ems="10"
-	            android:inputType="textEmailAddress|textWebEditText"
-	            android:text="@string/server_host_default"
-	            android:textAppearance="?android:attr/textAppearanceSmall" >
-
-	            <requestFocus />
-	        </EditText>
-
-	        <EditText
-	            android:id="@+id/portField"
-	            android:layout_width="fill_parent"
-	            android:layout_height="wrap_content"
-	            android:ems="10"
-	            android:inputType="text"
-	            android:text="@string/server_port_default"
-	            android:textAppearance="?android:attr/textAppearanceSmall" />
-
-	    </TableRow>
-	</TableLayout>
 
 </LinearLayout>

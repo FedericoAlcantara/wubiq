@@ -7,7 +7,7 @@
 	<property name="bin" value="${basedir}/bin" />
 	<property name="lib" value="${basedir}/lib" />
 	<property name="lib-nondeploy" value="${basedir}/lib-nondeploy" />
-	<property name="output.jar" value="${dist}/${project}.jar" />
+	<property name="output.jar" value="${dist}/${project}" />
 	<property name="jar.build" value="${basedir}/dist/build" />
 	<property name="workspace.dir" value="${basedir}/.." />
 	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
@@ -27,7 +27,7 @@
 	<path id="project.src">
 		<pathelement path="${src}"/>
 	</path>	
-		
+	
 	<target name="create-client-jar" depends="clean">
 		<available file="${basedir.common}" property="wubiq-common-exists" />
 		<antcall target="create-common-jar" />
@@ -41,7 +41,7 @@
 
 		<delete file="${lib}/wubiq-common.jar"/>
 
-		<jar jarfile="${output.jar}">
+		<jar jarfile="${output.jar}.jar">
 			<fileset dir="${jar.build}" />
 			<manifest>
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	

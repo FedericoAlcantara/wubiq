@@ -35,7 +35,7 @@
 	private Collection<String[]> getPrintServices(String uuid, PrintService[] printServices) {
 		Collection<String[]> returnValue = new ArrayList<String[]>();
 		for (PrintService printService : printServices) {
-			String[] printServiceData = new String[5];
+			String[] printServiceData = new String[6];
 			RemotePrintService remotePrintService = null;
 			boolean remote = PrintServiceUtils.isRemotePrintService(printService);
 			if (remote) {
@@ -51,6 +51,14 @@
 					printServiceData[2] = remotePrintService.getUuid();
 					printServiceData[3] = count;
 					printServiceData[4] = Boolean.toString(remotePrintService.isPrinting());
+					StringBuilder groups = new StringBuilder();
+					for (String group : remotePrintService.getGroups()) {
+						if (groups.length() > 0) {
+							groups.append(",");
+						}
+						groups.append(group);
+					}
+					printServiceData[5] = groups.toString();
 				}
 			} else {
 				if (uuid.isEmpty()) {
@@ -59,6 +67,7 @@
 					printServiceData[2] = "";
 					printServiceData[3] = "0";
 					printServiceData[4] = "false";
+					printServiceData[5] = "";
 				}
 			}
 			
@@ -199,9 +208,20 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 			String disconnection = "";
 			String failures = "";
 			String printTestButtonStyle = "";
+			String[] firstPrintService = null;
+			for (String[] printService : getPrintServices(uuid, printServices)) {
+				firstPrintService = printService;
+			}
+			String groups = "";
+			if (firstPrintService != null
+					&& !Is.emptyString(firstPrintService[5])) {
+				groups = " - " + firstPrintService[5];
+			}
 			if (remoteClient != null) {
 				clientVersion = " (" + remoteClient.getClientVersion() + ") " 
-						+ " - " + df.format(manager.remoteLastAccessed(uuid));
+						+ groups 
+						+ " - " 
+						+ df.format(manager.remoteLastAccessed(uuid));
 				disconnection = (!manager.isRemoteActive(uuid)
 								? ServerLabels.get("server.client_disconnected")
 								: "");

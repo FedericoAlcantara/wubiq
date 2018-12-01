@@ -20,4 +20,5 @@ public final class PropertyKeys {
 	public static final String WUBIQ_PRINTERS_DOTMATRIX_HQ = "wubiq.printers.dotmatrix.hq";
 	
 	public static final String WUBIQ_DEVELOPMENT_MODE = "net.sf.wubiq.development";
+	public static final String WUBIQ_REMOTE_COMMAND_LOG_DIR = "wubiq.client.remote_command.log.dir";
 }

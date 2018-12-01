@@ -12,7 +12,6 @@ import java.io.IOException;
 
 import javax.print.PrintException;
 
-import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.pdfbox.pdmodel.PDDocument;
@@ -44,10 +43,10 @@ public class PdfPageable implements Pageable {
 		try {
 			pageable = new PDPageable(document);
 		} catch (IllegalArgumentException e) {
-			LOG.error(ExceptionUtils.getMessage(e), e);
+			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		} catch (PrinterException e) {
-			LOG.error(ExceptionUtils.getMessage(e), e);
+			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		}
 	}
@@ -71,13 +70,13 @@ public class PdfPageable implements Pageable {
 	private void createPageable(PDDocument document, PrinterJob printerJob) throws PrintException {
 		this.document = document;
 		try {
-			pageable = new PDPageable(document);
+			pageable = new PDPageable(document, printerJob);
 			this.printerJob = printerJob;
 		} catch (IllegalArgumentException e) {
-			LOG.error(ExceptionUtils.getMessage(e), e);
+			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		} catch (PrinterException e) {
-			LOG.error(ExceptionUtils.getMessage(e), e);
+			LOG.error(e.getMessage(), e);
 			throw new PrintException(e);
 		}
 	}

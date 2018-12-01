@@ -1,7 +1,50 @@
 ==========================
-Wubiq 2.3.3 ()
+Wubiq 2.3.4 (2018-11-30)
 ==========================
--Implemented serialized pageable / printable for jpa persistence.
+-Wubiq-android: Frozen build compatible up to version 22 (5.1 lollipop). New development will be on wubiq-android-gradle
+-Wubiq-client: Build script modified to produce a jar without wubiq-common bits.
+-Wubiq-common: Remote print job handles fixed wrong behavior with test pdf sent from wubiq-server page.
+
+==========================
+Wubiq 2.3.3.3 (2018-08-10)
+==========================
+-Wubiq-server: Allow the server to continue start even on table creation errors.
+
+==========================
+Wubiq 2.3.3.2 (2018-08-10)
+==========================
+-Wubiq-server: Ip/host discovery improved.
+
+==========================
+Wubiq 2.3.3 (2018-08-08)
+==========================
+-Wubiq-server: Java 8 / Tomcat 8 compatible
+-Wubiq-server: Can handle multiple ports for communication.
+-Wubiq-server: Can be in more than one tomcat instance in the same server.
+-Wubiq-android: Support removed for compatible option of single host / port combination.
+-Wubiq-android: For Android 4.0 Ice Cream Sandwich (Api level 14).
+-Packaging: Relies on provided ant task for packaging wubiq components.
+
+==========================
+Wubiq 2.3.2.5 (2018-03-22)
+==========================
+-Improved log information for PrintableWrapper.
+
+==========================
+Wubiq 2.3.2.4 (2017-10-08)
+==========================
+-Fixed hangs when trying to run corrupted wubiq-cient.jar on services (wubiq-installer)
+ 
+==========================
+Wubiq 2.3.2.3 (2017-08-04)
+==========================
+-Fixed missing groups information when received from mobile devices
+-Shows group for remote services
+
+==========================
+Wubiq 2.3.2.2 (2017-07-02)
+==========================
+-Fixed missing groups information when creating print job from persistence.
 
 ==========================
 Wubiq 2.3.2.1 (2017-04-08)
@@ -11,7 +54,7 @@ Wubiq 2.3.2.1 (2017-04-08)
 ==========================
 Wubiq 2.3.2 (2017-02-18)
 ==========================
--PdfBox / FontBox libraries downgraded to 1.8.6
+-PdfBox / FontBox libraries downgraded to 1.8.12
 
 ==========================
 Wubiq 2.3.1 (2016-05-17)

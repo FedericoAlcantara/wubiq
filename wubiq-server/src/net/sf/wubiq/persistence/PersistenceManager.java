@@ -22,7 +22,6 @@ import javax.sql.DataSource;
 
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.data.WubiqPrintJob;
-import net.sf.wubiq.data.WubiqPrintJobPage;
 import net.sf.wubiq.data.WubiqPrintService;
 import net.sf.wubiq.data.WubiqServer;
 
@@ -174,16 +173,23 @@ public final class PersistenceManager {
 	 * Creates the schema.
 	 */
 	public static void createSchemas() {
+		File tempDir = new File(System.getProperty("java.io.tmpdir"));
+		File tempFile = null;
 		try {
 			Properties properties = new Properties();
 			properties.put("hibernate.default_schema", "");
 			properties.put("hibernate.dialect", getHibernateDialectName());
 			EntityManagerFactory emf = Persistence.createEntityManagerFactory("default", properties);
 			emf.createEntityManager();
-			File tempFile = File.createTempFile("wubiq_server", ".sql");
+			if (!tempDir.exists() || !tempDir.isDirectory()) {
+				throw new IOException("java.io.tmpdir:" + tempDir.getAbsolutePath() + " is invalid"
+						+ ". Exists?:" + tempDir.exists()
+						+ ". Directory?:" + tempDir.isDirectory());
+			}
+			tempFile = File.createTempFile("wubiq_server", ".sql", tempDir);
+
 			Configuration cfg = new Configuration();
 			cfg.addAnnotatedClass(WubiqPrintJob.class);
-			cfg.addAnnotatedClass(WubiqPrintJobPage.class);
 			cfg.addAnnotatedClass(RemoteClient.class);
 			cfg.addAnnotatedClass(WubiqPrintService.class);
 			cfg.addAnnotatedClass(WubiqServer.class);
@@ -208,7 +214,15 @@ public final class PersistenceManager {
 				reader.close();
 			}
 		} catch (IOException e) {
-			throw new RuntimeException(e);
+			LOG.error(ExceptionUtils.getRootCauseMessage(e), e);
+		} finally {
+			if (tempFile != null && tempFile.exists()) {
+				try {
+					tempFile.delete();
+				} catch (Exception ex) {
+					LOG.error(ExceptionUtils.getRootCauseMessage(ex), ex);
+				}
+			}
 		}
 	}
 	

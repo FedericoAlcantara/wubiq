@@ -47,11 +47,11 @@ import net.sf.wubiq.common.DirectConnectKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.common.WebKeys;
+import net.sf.wubiq.dao.WubiqRemoteClientDao;
 import net.sf.wubiq.dao.WubiqServerDao;
 import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.enums.DirectConnectCommand;
 import net.sf.wubiq.enums.RemoteCommand;
-import net.sf.wubiq.listeners.ContextListener;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.PrinterJobManager;
@@ -314,6 +314,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void registerComputerNameCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws ServletException, IOException {
 		RemotePrintServiceLookup.removePrintServices(uuid);
+		WubiqRemoteClientDao.INSTANCE.removeRemote(uuid);
 		notifyRemote(uuid, request);
 		String clientVersion = getParameter(request, parameters, ParameterKeys.CLIENT_VERSION);
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, false);
@@ -404,6 +405,11 @@ public class RemotePrintServlet extends HttpServlet {
 		if (client != null) {
 			String serviceName = (getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_NAME));
 			String categoriesString = (getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_CATEGORIES));
+			String groups = (getParameter(request, parameters, ParameterKeys.GROUPS));
+			if (Is.emptyString(groups)
+					&& uuid.contains("-")) {
+				groups = uuid.substring(0, uuid.indexOf("-")).toLowerCase();
+			}
 			RemotePrintService remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteName(serviceName);
@@ -412,6 +418,7 @@ public class RemotePrintServlet extends HttpServlet {
 			remotePrintService.setSupportedDocFlavors(new DocFlavor[]{PrintServiceUtils.DEFAULT_DOC_FLAVOR, 
 					DocFlavor.SERVICE_FORMATTED.PAGEABLE, 
 					DocFlavor.SERVICE_FORMATTED.PRINTABLE});
+			remotePrintService.registerGroups(groups);
 			getRemoteClientManager(request).addRemote(uuid, client);
 			getRemoteClientManager(request).registerPrintService(uuid, remotePrintService);
 			// Resets all status of PRINTING to NOT_PRINTED
@@ -695,41 +702,44 @@ public class RemotePrintServlet extends HttpServlet {
 		if (!forwarded(request, response, parametersInputStream, jobIdString)) {
 			long jobId = Long.parseLong(jobIdString);
 			IRemotePrintJob printJob = manager.getRemotePrintJob(jobId, true);
-			InputStream input = null;
-			// If it is remote we must convert pdf to image and then scale it to print size
-			try {
-				if (RemotePrintServiceLookup.isMobile(uuid)) {
-					Object printData = printJob.getPrintDataObject();
-					boolean trimAll = false;
-					if (printData instanceof Pageable) {
-						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-						PageableUtils.INSTANCE.pageableToPdf((Pageable)printData, outputStream, printJob.getPrintRequestAttributeSet());
-						printData = new ByteArrayInputStream(outputStream.toByteArray());
-						trimAll = true;
-					} else if (printData instanceof Printable) {
-						ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-						PageableUtils.INSTANCE.printableToPdf((Printable)printData, outputStream, printJob.getPrintRequestAttributeSet());
-						printData = new ByteArrayInputStream(outputStream.toByteArray());
-						trimAll = true;
-					}
-					input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), (InputStream)printData, trimAll);
-				} else {
-					if ((manager instanceof IDirectConnectPrintJobManager)
-							&& ((IDirectConnectPrintJobManager)manager).isDirectConnect(jobId)) {
-						input = null;
+			if (printJob != null) {
+				InputStream input = null;
+				// If it is remote we must convert pdf to image and then scale it to print size
+				try {
+					if (RemotePrintServiceLookup.isMobile(uuid)) {
+						Object printData = printJob.getPrintDataObject();
+						boolean trimAll = false;
+						if (printData instanceof Pageable) {
+							ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+							PageableUtils.INSTANCE.pageableToPdf((Pageable)printData, outputStream, printJob.getPrintRequestAttributeSet());
+							printData = new ByteArrayInputStream(outputStream.toByteArray());
+							trimAll = true;
+						} else if (printData instanceof Printable) {
+							ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+							PageableUtils.INSTANCE.printableToPdf((Printable)printData, outputStream, printJob.getPrintRequestAttributeSet());
+							printData = new ByteArrayInputStream(outputStream.toByteArray());
+							trimAll = true;
+						}
+						input = ConversionServerUtils.INSTANCE.convertToMobile(printJob.getPrintServiceName(), (InputStream)printData, trimAll);
 					} else {
-						input = printJob.getPrintData();
+						if ((manager instanceof IDirectConnectPrintJobManager)
+								&& ((IDirectConnectPrintJobManager)manager).isDirectConnect(jobId)) {
+							input = null;
+						} else {
+							input = printJob.getPrintData();
+						}
 					}
+				} catch (Throwable e) {
+					LOG.debug(ExceptionUtils.getMessage(e)); // Now debug, because pageables can be performed.
+					input = null;
 				}
-			} catch (Throwable e) {
-				LOG.debug(ExceptionUtils.getMessage(e)); // Now debug, because pageables can be performed.
-				input = null;
-			}
-			if (input != null) {
-				respond("application/pdf", input, response);
-				input.close();
-			} else {
-				respond("", response);
+				if (input != null) {
+					respond("application/pdf", input, response);
+					input.close();
+				} else {
+					manager.removeRemotePrintJob(jobId);
+					respond("", response);
+				}
 			}
 		}
 	}
@@ -1202,10 +1212,17 @@ public class RemotePrintServlet extends HttpServlet {
 				if (!((IDirectConnectPrintJobManager)manager).hasLocalPrintJob(jobId)) {
 					String ip = WubiqServerDao.INSTANCE.associatedServer(jobId);
 					if (!Is.emptyString(ip)) { // we have a server
-						if (!ContextListener.serverIps().contains(ip)) { // Do not forward to itself!
-							String url = request.getScheme() + "://" + ip + ":" + request.getServerPort() + request.getRequestURI();
+						if (!ServerWebUtils.INSTANCE.containsIp(ip)) { // Do not forward to itself!
+							String url = "";
+							if (ip.contains(":")) {
+								url = request.getScheme() + "://" + ip + request.getRequestURI();
+							} else {
+								url = request.getScheme() + "://" + ip + ":" + request.getServerPort() + request.getRequestURI();
+							}
 							returnValue = forwardTo(request, response, parametersInputStream, url);
 						}
+					} else {
+						returnValue = true; // Actually NOT forwarded, probably consumed by another server
 					}
 				}	
 			}
@@ -1223,7 +1240,7 @@ public class RemotePrintServlet extends HttpServlet {
 	 * @return True if the forwarding was successful.
 	 */
 	private boolean forwardTo(HttpServletRequest request, HttpServletResponse response, ByteArrayInputStream parametersInputStream, String url) {
-		boolean returnValue = false;
+		boolean returnValue = true;
 		HttpURLConnection connection = null; 
 		try {
 			if (request.getHeader("forwarded") != null) {
@@ -1256,7 +1273,6 @@ public class RemotePrintServlet extends HttpServlet {
 				response.setContentType(connection.getContentType());
 				response.setContentLength(connection.getContentLength());
 				IOUtils.INSTANCE.copy(connection.getInputStream(), response.getOutputStream());
-				returnValue = true;
 			}
 		} catch (Exception e) {
 			LOG.error(ExceptionUtils.getMessage(e));

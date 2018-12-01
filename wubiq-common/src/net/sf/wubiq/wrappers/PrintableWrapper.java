@@ -52,7 +52,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	private Map<Integer, Integer> printedPages;
 	private boolean noScale = false;
 	private transient boolean notSerialized = false;
-	protected PrinterType printerType;
+	private PrinterType printerType;
 	private transient AffineTransform initialTransform;
 	private boolean initialTransformApplied = false;
 	
@@ -106,6 +106,7 @@ public class PrintableWrapper implements Printable, Serializable {
 				returnValue = Printable.PAGE_EXISTS;
 				printerType = PrintServiceUtils.printerType(graph.getDeviceConfiguration().getDevice().getIDstring());
 				Point2D scaleValue = GraphicsUtils.INSTANCE.scaleGraphics(graph, pageFormat, noScale);
+				LOG.info("Page (" + pageIndex + ") scaled for " + graph.getDeviceConfiguration().getDevice().getIDstring() + " as type:" + printerType + ", to: (x:" + scaleValue.getX() + ", y:" + scaleValue.getY() + "). Page format size is: (x:" + pageFormat.getImageableX() + ", y:" + pageFormat.getImageableY() + ", height:" + pageFormat.getImageableHeight() + ", width:" + pageFormat.getImageableWidth());
 				executeGraphics(graph, pageFormat, scaleValue.getX(), scaleValue.getY(), pageIndex);
 				printed += 1;
 				printedPages.put(pageIndex, printed);
@@ -124,7 +125,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param xScale new scale to apply horizontally wise.
 	 * @param yScale new scale to apply vertically wise.
 	 */
-	protected void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
+	private void executeGraphics(Graphics2D graph, PageFormat pageFormat, double xScale, double yScale, int pageIndex) {
 		initialTransform = graph.getTransform();
 		initialTransformApplied = false;
 		Set<GraphicCommand> graphicCommands = getGraphicCommands(pageIndex);
@@ -295,7 +296,7 @@ public class PrintableWrapper implements Printable, Serializable {
 	 * @param pageIndex Page index to the graphic commands set.
 	 * @return Found instance or null if not found.
 	 */
-	protected Set<GraphicCommand> getGraphicCommands(int pageIndex) {
+	private Set<GraphicCommand> getGraphicCommands(int pageIndex) {
 		Set<GraphicCommand> returnValue = null;
 		if (graphicCommandsList == null) {
 			graphicCommandsList = new HashMap<Integer, Set<GraphicCommand>>();

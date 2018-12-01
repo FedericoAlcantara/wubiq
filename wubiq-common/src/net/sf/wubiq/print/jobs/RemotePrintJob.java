@@ -4,6 +4,8 @@
 package net.sf.wubiq.print.jobs;
 
 import java.awt.print.PageFormat;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
@@ -19,15 +21,16 @@ import javax.print.attribute.PrintRequestAttributeSet;
 import javax.print.event.PrintJobAttributeListener;
 import javax.print.event.PrintJobListener;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+
 import net.sf.wubiq.common.WebKeys;
 import net.sf.wubiq.print.managers.IRemotePrintJobManager;
 import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
+import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 
 /**
  * @author Federico Alcantara
@@ -49,6 +52,7 @@ public class RemotePrintJob implements IRemotePrintJob {
 	private Boolean usesDirectConnect;
 	private Boolean supportsOnlyPageable;
 	private String remotePrintServiceName;
+	private boolean asInputStream;
 	
 	public RemotePrintJob() {
 	}
@@ -181,7 +185,14 @@ public class RemotePrintJob implements IRemotePrintJob {
 			this.docAttributeSet = doc.getAttributes();
 			this.docFlavor = doc.getDocFlavor();
 			this.originalDocFlavor = doc.getDocFlavor();
-			this.printData = doc.getPrintData();
+			if (doc.getPrintData() instanceof InputStream) {
+				ByteArrayOutputStream output = new ByteArrayOutputStream();
+				IOUtils.INSTANCE.copy((InputStream)doc.getPrintData(), output);
+				asInputStream = true;
+				this.printData = output.toByteArray();
+			} else {
+				this.printData = doc.getPrintData();
+			}
 			this.usesDirectConnect = usesDirectConnect;
 			this.supportsOnlyPageable = false; // if false printer is capable of handling other types of sources.
 			if (usesDirectConnect) {
@@ -261,6 +272,10 @@ public class RemotePrintJob implements IRemotePrintJob {
 	 * @return Print data object.
 	 */
 	public Object getPrintDataObject() {
+		if (printData instanceof byte[]
+				&& asInputStream) {
+			return new ByteArrayInputStream((byte[]) printData);
+		}
 		return printData;
 	}
 

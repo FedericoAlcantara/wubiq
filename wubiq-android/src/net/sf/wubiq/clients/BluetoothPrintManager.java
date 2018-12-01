@@ -255,6 +255,11 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		return preferences.getString(WubiqActivity.UUID_KEY, UUID.randomUUID().toString());
 	}
 	
+	@Override
+	public String getGroups() {
+		return preferences.getString(WubiqActivity.GROUPS_KEY, null);
+	}
+	
 	/** 
 	 * Public for testing purposes.
 	 */

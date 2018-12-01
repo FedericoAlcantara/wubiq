@@ -141,13 +141,16 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 		
 		String serverVersion = serverVersion();
 		if (wubiqClientJar.exists()) {
+			System.out.println("Wubiq Client Exists!");
 			String clientVersion = InstallerUtils.INSTANCE.wubiqClientVersion();
+			System.out.println("Client Version:" + clientVersion + ". Server Version:" + serverVersion);
 			if (clientVersion.equals(serverVersion)) {
 				loadNewJar = false;
 			}
 		}
 		if (loadNewJar) {
 			try {
+				System.out.println("Loading a new Jar");
 				URL downloadURL = new URL(getPreferredURL(), "wubiq-client.jar");
 				HttpURLConnection connection = (HttpURLConnection) downloadURL.openConnection();
 				connection.connect();

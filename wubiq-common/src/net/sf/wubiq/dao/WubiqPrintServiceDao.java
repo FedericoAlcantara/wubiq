@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
 
 import javax.print.DocFlavor;
 
@@ -288,6 +289,7 @@ public enum WubiqPrintServiceDao {
 			output.writeObject(printService.getSupportedDocFlavors());
 			output.writeBoolean(printService.isMobile());
 			output.writeBoolean(printService.getDirectCommunicationEnabled());
+			output.writeObject(printService.getGroups());
 			output.close();
 			stream.flush();
 			stream.close();
@@ -305,6 +307,7 @@ public enum WubiqPrintServiceDao {
 	 * @throws IOException If stream is corrupted or not valid.
 	 * @throws ClassNotFoundException If can't produce an instance of RemotePrintService.
 	 */
+	@SuppressWarnings("unchecked")
 	private RemotePrintService deserialize(byte[] service) throws IOException, ClassNotFoundException {
 		RemotePrintService remotePrintService = null;
 		if (service != null) {
@@ -318,7 +321,12 @@ public enum WubiqPrintServiceDao {
 			DocFlavor[] docFlavors = (DocFlavor[])input.readObject();
 			boolean mobile = input.readBoolean();
 			boolean directCommunication = input.readBoolean();
-			
+			Set<String> groups = null;
+			try {
+				groups = (Set<String>)input.readObject();
+			} catch(Exception e) {
+				LOG.debug(ExceptionUtils.getMessage(e));
+			}
 			remotePrintService = (RemotePrintService) PrintServiceUtils.deSerializeService(serviceName, categoriesString);
 			remotePrintService.setUuid(uuid);
 			remotePrintService.setRemoteComputerName(remoteComputerName);
@@ -326,6 +334,7 @@ public enum WubiqPrintServiceDao {
 			remotePrintService.setRemoteName(remoteName);
 			remotePrintService.setMobile(mobile);
 			remotePrintService.setDirectCommunicationEnabled(directCommunication);
+			remotePrintService.getGroups().addAll(groups);
 		}
 		return remotePrintService;
 	}
