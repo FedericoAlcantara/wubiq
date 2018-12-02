@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Wubiq Print Manager Configurator</string>
+    <string name="print_manager_service">Wubiq Print Manager Service</string>
+    <string name="configure_bluetooth">Configure Bluetooth devices</string>
+    <string name="suppress_notifications">Suppress Notifications</string>
+    <string name="select_driver">Select Driver</string>
+    <string name="configure_server">Configure Server Connection</string>
+    <string name="connections">Connections</string>
+    <string name="server_port_default"></string>
+    <string name="server_host_default"></string>
+    <string name="server_connection_default">http://localhost:8080</string>
+    <string name="client_uuid">UUID</string>
+    <string name="groups">Groups</string>
+    <string name="start_service">Start Print Manager</string>
+    <string name="stop_service">Stop Print Manager</string>
+    <string name="error_cant_connect_to">Connection: Couldn´t connect</string>
+    <string name="error_bluetooth">Bluetooth: Check your printer</string>
+    <string name="service_started">Wubiq print services started</string>
+    <string name="wubiq_version_title">Wubiq Android Version: </string>
+    <string name="advanced_configuration">Advanced Configuration</string>
+    <string name="print_reset_default_values">Reset Default Values</string>
+    <string name="print_delay">Print Delay(ms)</string>
+    <string name="print_pause">Pause after Print(ms)</string>
+    <string name="print_poll_interval">Print Jobs Poll Interval(ms)</string>
+    <string name="pause_between_jobs">Pause Between Jobs(ms)</string>
+    <string name="print_connection_errors_retries">Connection Errors Retries</string>
+    <string name="info_printing">Printing&#8230;</string>
+    <integer name="print_delay_default">500</integer>
+    <integer name="print_pause_default">200</integer>
+    <integer name="print_poll_interval_default">5000</integer>
+    <integer name="print_pause_between_jobs_default">1000</integer>
+    <integer name="print_connection_errors_retries_default">3</integer>
+    <string name="enable_development_mode">Enable Development Mode</string>
+    <string name="refresh_test_results">Refresh test results</string>
+    <string name="clear_test_results">Clear test results</string>
+</resources>

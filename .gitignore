@@ -3,3 +3,58 @@
 /wubiq-test/properties-src/wubiq-client.properties
 /wubiq-test/*.log
 /wubiq-android-test/*.log
+
+# wubiq-android-gradle
+# Built application files
+wubiq-android-gradle/*.apk
+wubiq-android-gradle/*.ap_
+wubiq-android-gradle/*.aab
+
+# Files for the ART/Dalvik VM
+wubiq-android-gradle/*.dex
+
+# Java class files
+wubiq-android-gradle/*.class
+
+# Generated files
+wubiq-android-gradle/bin/
+wubiq-android-gradle/gen/
+wubiq-android-gradle/out/
+
+# Gradle files
+wubiq-android-gradle/.gradle/
+wubiq-android-gradle/build/
+wubiq-android-gradle/app/build/
+# Here depending on your project you might need to include more build direcories
+
+# Local configuration file (sdk path, etc)
+wubiq-android-gradle/local.properties
+
+# Log Files
+wubiq-android-gradle/*.log
+
+# Android Studio Navigation editor temp files
+wubiq-android-gradle/.navigation/
+
+# Android Studio captures folder
+wubiq-android-gradle/captures/
+
+# IntelliJ
+wubiq-android-gradle/*.iml
+wubiq-android-gradle/.idea/workspace.xml
+wubiq-android-gradle/.idea/tasks.xml
+wubiq-android-gradle/.idea/gradle.xml
+wubiq-android-gradle/.idea/assetWizardSettings.xml
+wubiq-android-gradle/.idea/dictionaries
+wubiq-android-gradle/.idea/libraries
+wubiq-android-gradle/.idea/caches
+
+# Keystore files
+wubiq-android-gradle/*.jks
+wubiq-android-gradle/*.keystore
+
+# External native build folder generated in Android Studio 2.2 and later
+wubiq-android-gradle/.externalNativeBuild
+
+# OSX_files
+wubiq-android-gradle/.DS_Store

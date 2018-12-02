@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:gravity="center_horizontal|fill_horizontal"
+    android:orientation="vertical" >
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/configure_server"
+        android:textAppearance="?android:attr/textAppearanceLarge" />
+
+    <TextView
+        android:id="@+id/textView4"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/client_uuid"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+	<EditText
+		android:id="@+id/clientUUIDField"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:ems="10"
+		android:inputType="text" />
+    
+    <TextView
+        android:id="@+id/textView7"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/groups"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+	<EditText
+		android:id="@+id/groupsField"
+		android:layout_width="fill_parent"
+		android:layout_height="wrap_content"
+		android:ems="10"
+		android:inputType="textCapCharacters|textMultiLine" />
+    
+    <TextView
+        android:id="@+id/textView6"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/connections"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+	<EditText
+	    android:id="@+id/connectionsField"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:ems="10"
+	    android:inputType="textMultiLine|textUri" />
+
+	<CheckBox
+	    android:id="@+id/suppressNotifications"
+	    android:layout_width="fill_parent"
+	    android:layout_height="wrap_content"
+	    android:button="?android:attr/listChoiceIndicatorMultiple"
+	    android:gravity="center_vertical"
+	    android:text="@string/suppress_notifications" />
+
+</LinearLayout>

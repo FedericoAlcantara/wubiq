@@ -1,0 +1,28 @@
+/**
+ * 
+ */
+package net.sf.wubiq.android;
+
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+
+/**
+ * Receiver for ensuring boot up service initialization.
+ * @author Federico Alcantara
+ *
+ */
+public class PrintManagerBroadcastReceiver extends BroadcastReceiver {
+
+	/**
+	 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+	 */
+	@Override
+	public void onReceive(Context context, Intent intent) {
+		if (intent.getAction().equalsIgnoreCase(Intent.ACTION_BOOT_COMPLETED)) {
+			Intent printManagerIntent = new Intent(context, PrintManagerService.class);
+			PrintManagerService.enqueueWork(context, PrintManagerService.class, PrintManagerService.JOB_ID, printManagerIntent);
+		}
+	}
+
+}
