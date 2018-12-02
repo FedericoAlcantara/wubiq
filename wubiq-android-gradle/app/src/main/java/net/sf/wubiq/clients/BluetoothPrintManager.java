@@ -11,6 +11,7 @@ import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.util.Log;
 
+import net.sf.wubiq.android.MobileDevices;
 import net.sf.wubiq.android.PrintClientUtils;
 import net.sf.wubiq.android.PrintManagerService;
 import net.sf.wubiq.android.R;
@@ -102,7 +103,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			for (int index = 1; index <= DeviceForTesting.TEST_DEVICE_COUNT; index++) {
 				String suffix = index != 1 ? "_" + index : "";
 				String address = DeviceForTesting.TEST_DEVICE_ADDRESS + suffix;
-				String deviceName = DeviceForTesting.TEST_DEVICE_NAME + suffix;
+				String deviceName = MobileDevices.TEST_DEVICE_NAME + suffix;
 				virtualDevices.add(deviceName);
 				registerPrintService(deviceName, address, true);
 			}
@@ -201,7 +202,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				if (!process 
 						&& (preferences.getBoolean(PropertyKeys.WUBIQ_DEVELOPMENT_MODE, false)
                             || preferences.getBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false))) {
-					String prefix = DeviceForTesting.TEST_DEVICE_NAME
+					String prefix = MobileDevices.TEST_DEVICE_NAME
 							+ ParameterKeys.ATTRIBUTE_SET_SEPARATOR
 							+ DeviceForTesting.TEST_DEVICE_ADDRESS
 							+ ParameterKeys.ATTRIBUTE_SET_SEPARATOR;

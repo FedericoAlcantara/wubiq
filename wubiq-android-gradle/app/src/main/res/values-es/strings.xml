@@ -34,4 +34,6 @@
     <string name="enable_development_mode">Habilitar Modo Desarrollo</string>
     <string name="refresh_test_results">Refrescar resultados</string>
     <string name="clear_test_results">Limpiar resultados</string>
+    <string name="channel_name">Canal Wubiq Android</string>
+    <string name="channel_description">El canal de Wubiq para android</string>
 </resources>

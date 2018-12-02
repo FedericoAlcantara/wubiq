@@ -39,7 +39,8 @@ public class WubiqActivity extends Activity {
 	public static final String DEVICE_PREFIX = "wubiq-android-bt_";
 	public static final String SUPPRESS_NOTIFICATIONS_KEY="suppress_notifications";
 	public static final String ENABLE_DEVELOPMENT_MODE="enable_development_mode";
-	public static final String STOP_SERVICE_STATUS="stop_wubi_service";
+	public static final String STOP_SERVICE_STATUS="stop_wubiq_service";
+	public static final String PACKAGE_NAME="net.sf.wubiq.android";
 
 	private ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -111,9 +112,8 @@ public class WubiqActivity extends Activity {
 
     public static String getVersion(Context context, Resources resources) {
         PackageInfo pInfo;
-        String packageName="net.sf.wubiq/android";
         try {
-            pInfo = context.getPackageManager().getPackageInfo(packageName, 0);
+            pInfo = context.getPackageManager().getPackageInfo(PACKAGE_NAME, 0);
             return resources.getString(R.string.wubiq_version_title) + pInfo.versionName;
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, e.getMessage());

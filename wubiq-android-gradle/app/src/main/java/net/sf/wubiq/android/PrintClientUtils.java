@@ -72,7 +72,7 @@ public enum PrintClientUtils {
 				MobileDeviceInfo deviceInfo = MobileDevices.INSTANCE.getDevices().get(selection);
 				if (deviceInfo == null
                         && useDeviceTest) {
-				    deviceInfo = DeviceForTesting.testDeviceInfo();
+				    deviceInfo = MobileDevices.INSTANCE.getDevices().get(MobileDevices.TEST_DEVICE_NAME.replaceAll("_", " "));
                 }
 				if (currentDevice == null ||
 						!currentDevice.isAlive()) {
@@ -136,7 +136,7 @@ public enum PrintClientUtils {
 	}
 
 	/**
-	 * @param printService Returns a cleaned print service name.
+	 * @param printServiceName Returns a cleaned print service name.
 	 * @return A cleaned (no strange characters) print service name.
 	 */
 	private String cleanPrintServiceName(String printServiceName) {

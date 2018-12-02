@@ -48,7 +48,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 				|| preferences.getBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false)) {
 			for (int index = 1; index <= DeviceForTesting.TEST_DEVICE_COUNT; index++) {
 				String suffix = index != 1 ? "_" + index : "";
-				Spinner spinner = addDevice(DeviceForTesting.TEST_DEVICE_NAME + suffix, DeviceForTesting.TEST_DEVICE_ADDRESS + suffix);
+				Spinner spinner = addDevice(MobileDevices.TEST_DEVICE_NAME + suffix, DeviceForTesting.TEST_DEVICE_ADDRESS + suffix);
 				spinner.setOnItemSelectedListener(new BluetoothDeviceListListener(preferences, key(DeviceForTesting.TEST_DEVICE_ADDRESS + suffix)));
 				this.deviceCount = this.deviceCount + 1;
 			}
@@ -69,7 +69,6 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	 * Adds a device to the list of available devices.
 	 * @param name Name of the device
 	 * @param address Address.
-	 * @param deviceKey Device key.
 	 * @return Created spinner for device configuration.
 	 */
 	private Spinner addDevice(String name, String address) {
@@ -78,7 +77,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		TextView deviceName = new TextView(context);
 		deviceName.setText(name + " " + address);
 		deviceName.setHeight(minimumHeight);
-		deviceName.setTextAppearance(context, android.R.attr.textAppearanceMedium);
+		deviceName.setTextAppearance(R.style.TextAppearance_Compat_Notification_Info);
 		texts.add(deviceName);
 
 		Spinner spinner = new Spinner(context);

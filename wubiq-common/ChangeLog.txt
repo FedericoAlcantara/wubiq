@@ -1,4 +1,13 @@
 ==========================
+Wubiq 2.4 (2018-12-02)
+==========================
+-Wubiq-android-gradle: All changes to android development are produced here.
+-Wubiq-android-gradle: Virtual device enabled for testing purposes.
+-Wubiq-android-gradle: Compatible from android version 23 and up.
+-Wubiq-android-gradle: Removed suppress notification checkbox, notification suppression relies on android os settings.
+-Wubiq-common: Code compatible with virtual devices. 
+
+==========================
 Wubiq 2.3.4 (2018-11-30)
 ==========================
 -Wubiq-android: Frozen build compatible up to version 22 (5.1 lollipop). New development will be on wubiq-android-gradle

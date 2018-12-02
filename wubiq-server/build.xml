@@ -75,19 +75,16 @@
 	
 	<target name="distribute" description="creates the distribution">
 		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
-		<ant antfile="../wubiq-android/build.xml" inheritall="false" />
-		<input message="Common and android has been built. Did you generate the documentation (Y/N)?"
+		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
+		<input message="Common and client has been built. You should have generated the project documentation for wubiq-client, wubiq-common, wubiq-installer, wubiq-printerjob and wubiq-server. Since the Wubiq-ANDROID is now on Android Studio, you must generate the signed android application and it's documentation from within the Android Studio right NOW. If you have set up everything as described, press Y to continue with the packaging process. (Y/N)?"
 			validargs="y,n"
 		    addproperty="do.continue" />
 		<condition property="do.abort">
 		    <equals arg1="n" arg2="${do.continue}"/>
 		  </condition>
 		<fail if="do.abort">Build android.apk and generate the documentation to continue</fail>
-		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
 		<ant antfile="../wubiq-installer/build.xml" inheritall="false" />
-		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />
-		
-		<copy file="../wubiq-android/dist/wubiq-android.apk" todir="${basedir}/WebContent" />
+		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />		
 		<copy file="../wubiq-client/dist/wubiq-client.jar" todir="${basedir}/WebContent" />
 		<copy file="../wubiq-installer/dist/wubiq-setup.jar" todir="${basedir}/WebContent" />
 		
@@ -98,10 +95,9 @@
 		<java classname="net.sf.wubiq.utils.VersionInfo" classpath="${bin}" outputproperty="build" />
 		<property name="version" value="wubiq-${build}"/>
 		
-		<zip basedir="../wubiq-android/doc" zipfile="${basedir}/dist/${version}/android-doc.zip" />
 		<zip basedir="../wubiq-common/doc" zipfile="${basedir}/dist/${version}/doc.zip" />
+		<zip basedir="../wubiq-android-gradle/doc" zipfile="${basedir}/dist/${version}/android-doc.zip" />
 		<copy todir="${basedir}/dist/${version}" >
-			<fileset dir="../wubiq-android/dist" includes="wubiq-android.apk" />
 			<fileset dir="../wubiq-client/dist" includes="wubiq-client.jar" />
 			<fileset dir="../wubiq-common/dist" includes="wubiq-common.jar" />
 			<fileset dir="../wubiq-printerjob/dist" includes="wubiq-printerjob.jar" />
@@ -117,7 +113,11 @@
 				<include name="ChangeLog.txt" />
 				<include name="README.rst" />
 			</fileset>
+			<fileset dir="../wubiq-android-gradle/app/release" includes="wubiq-android-release.apk"/>
 		</copy>
+		<rename src="${basedir}/dist/${version}/wubiq-android-release.apk" dest="${basedir}/dist/${version}/wubiq-android.apk"/>
+		<copy file="${basedir}/dist/${version}/wubiq-android.apk" todir="${basedir}/WebContent" />
+		
 		<antcall target="deploy" />
 		<zip basedir="${basedir}/dist/${version}" zipfile="${basedir}/dist/${version}.zip" />
 		

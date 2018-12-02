@@ -53,12 +53,4 @@
 	    android:ems="10"
 	    android:inputType="textMultiLine|textUri" />
 
-	<CheckBox
-	    android:id="@+id/suppressNotifications"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:button="?android:attr/listChoiceIndicatorMultiple"
-	    android:gravity="center_vertical"
-	    android:text="@string/suppress_notifications" />
-
 </LinearLayout>

@@ -17,7 +17,8 @@ import java.util.Map;
  */
 public enum MobileDevices {
 	INSTANCE;
-	
+	public final static String TEST_DEVICE_NAME = "test_device";
+
 	/**
 	 * Order is important.
 	 */
@@ -35,7 +36,8 @@ public enum MobileDevices {
 			registerGenerics();
 			registerPortiS();
 			registerStarMicronics();
-			registerZebra(); 
+			registerZebra();
+			registerTestDevice();
 		}
 		return devices;
 	}
@@ -90,6 +92,10 @@ public enum MobileDevices {
 	private void registerZebra() {
 		devices.put("Zebra MZ220 2 in", zebra("2", "Zebra MZ220"));
 		devices.put("Zebra MZ320 3 in", zebra("3", "Zebra MZ320"));
+	}
+	
+	private void registerTestDevice() {
+		devices.put(TEST_DEVICE_NAME.replaceAll("_", " "), testDeviceInfo("3"));
 	}
 	
 	private MobileDeviceInfo genericBw(String width) {
@@ -226,4 +232,26 @@ public enum MobileDevices {
 		device.setCompatibleDevices(compatibleDevices);
 		return device;
 	}
+	
+    private MobileDeviceInfo testDeviceInfo(String width) {
+        MobileDeviceInfo device = new MobileDeviceInfo();
+        ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
+        ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
+        Collection<String> compatibleDevices = new ArrayList<String>();
+        device.setName("Virtual Device -" + width + " in.");
+        device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
+        device.setColorCapable(false);
+        serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
+        serverSteps.add(MobileServerConversionStep.RESIZE);
+//        serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
+        clientSteps.add(MobileClientConversionStep.OUTPUT_SM_BYTES);
+        compatibleDevices.add("SM-S" + width + "00");
+        compatibleDevices.add("SM-T"+ width + "00");
+        device.setServerSteps(serverSteps);
+        device.setClientSteps(clientSteps);
+        device.setCompatibleDevices(compatibleDevices);
+        return device;
+    }
+
+
 }

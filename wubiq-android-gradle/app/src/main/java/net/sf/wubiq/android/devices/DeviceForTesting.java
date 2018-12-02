@@ -39,8 +39,7 @@ import java.util.Map;
 public class DeviceForTesting extends BaseWubiqDevice {
 	private final static String TAG = DeviceForTesting.class.getSimpleName();
 
-	public final static String TEST_DEVICE_NAME = "test_device";
-	public final static String TEST_DEVICE_ADDRESS = "test_address";
+    public final static String TEST_DEVICE_ADDRESS = "test_address";
 	public final static int TEST_DEVICE_COUNT = 1;
 	public final static String TEST_DEVICE_RESULT_KEY = "test_device_result_key";
     public final static String TEST_DEVICE_RESULT_IMAGE_KEY = "test_device_result_image_key";
@@ -71,26 +70,4 @@ public class DeviceForTesting extends BaseWubiqDevice {
 		edit.commit();
 		return true;
 	}
-	
-    public static synchronized MobileDeviceInfo testDeviceInfo() {
-	    String width = "3";
-        MobileDeviceInfo device = new MobileDeviceInfo();
-        ArrayList<MobileServerConversionStep> serverSteps = new ArrayList<MobileServerConversionStep>();
-        ArrayList<MobileClientConversionStep> clientSteps = new ArrayList<MobileClientConversionStep>();
-        Collection<String> compatibleDevices = new ArrayList<String>();
-        device.setName("Virtual Device -" + width + " in.");
-        device.setMaxHorPixels(Integer.parseInt(width) * device.getResolutionDpi());
-        device.setColorCapable(false);
-        serverSteps.add(MobileServerConversionStep.PDF_TO_IMAGE);
-        serverSteps.add(MobileServerConversionStep.RESIZE);
-//        serverSteps.add(MobileServerConversionStep.IMAGE_TO_ESCAPED);
-        clientSteps.add(MobileClientConversionStep.OUTPUT_SM_BYTES);
-        compatibleDevices.add("SM-S" + width + "00");
-        compatibleDevices.add("SM-T"+ width + "00");
-        device.setServerSteps(serverSteps);
-        device.setClientSteps(clientSteps);
-        device.setCompatibleDevices(compatibleDevices);
-        return device;
-    }
-
 }

@@ -11,6 +11,7 @@
 	<property name="jar.build" value="${basedir}/dist/build" />
 	<property name="workspace.dir" value="${basedir}/.." />
 	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
+	<property name="basedir.gradle" value="${workspace.dir}/wubiq-android-gradle" />
 	
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
@@ -47,11 +48,12 @@
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	
 			</manifest>		
 		</jar>
+		<copy todir="${basedir.gradle}/app/libs/" file="${output.jar}.jar"/>
 	</target>
 	
 	<target name="create-common-jar" if="wubiq-common-exists">
-		<!--  ant antfile="${basedir.common}/build.xml" dir="${basedir.common}" target="create-common-jar" 
-				inheritall="false" inheritrefs="false"/-->
+		<ant antfile="${basedir.common}/build.xml" dir="${basedir.common}" target="create-common-jar" 
+				inheritall="false" inheritrefs="false"/>
 		<copy file="${basedir.common}/dist/wubiq-common.jar" todir="${lib}" />
 	</target>
 	
