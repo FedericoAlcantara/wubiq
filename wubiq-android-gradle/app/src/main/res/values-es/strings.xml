@@ -17,7 +17,7 @@
 	<string name="error_cant_connect_to">Conexion: No se ha podido conectar</string>
     <string name="error_bluetooth">Bluetooth: verifique impresora</string>
 	<string name="service_started">Servicios de Impresión Wubiq Iniciados</string>
-    <string name="wubiq_version_title">Wubiq Android Version: 2.3.4</string>
+    <string name="wubiq_version_title">Wubiq Android Version:</string>
     <string name="advanced_configuration">Configuración Avanzada</string>
     <string name="print_reset_default_values">Restaurar Valores Predeterminados</string>
     <string name="print_delay">Retraso Impresión(ms)</string>

@@ -156,13 +156,17 @@
                 android:id="@+id/textView8"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="end"
+                android:layout_gravity="start"
+                android:gravity="end"
                 android:text="@string/enable_development_mode" />
 
             <Switch
                 android:id="@+id/enableDevelopmentMode"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content" />
+                android:layout_height="wrap_content"
+                android:layout_marginRight="100dp"
+                />
+
         </TableRow>
 
         <TableRow
@@ -193,7 +197,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_span="2"
-                android:editable="false" />
+                android:enabled="false" />
 
         </TableRow>
 

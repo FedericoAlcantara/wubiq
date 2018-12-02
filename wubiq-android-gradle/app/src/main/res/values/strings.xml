@@ -17,7 +17,7 @@
     <string name="error_cant_connect_to">Connection: Couldn´t connect</string>
     <string name="error_bluetooth">Bluetooth: Check your printer</string>
     <string name="service_started">Wubiq print services started</string>
-    <string name="wubiq_version_title">Wubiq Android Version: </string>
+    <string name="wubiq_version_title">Wubiq Android Version:</string>
     <string name="advanced_configuration">Advanced Configuration</string>
     <string name="print_reset_default_values">Reset Default Values</string>
     <string name="print_delay">Print Delay(ms)</string>
