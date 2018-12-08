@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.4.1 (2018-12-06)
+==========================
+-Wubiq-android-gradle: Fixed incompatibility with android version 23 - 24.
+
+==========================
 Wubiq 2.4b (2018-12-02)
 ==========================
 -Wubiq-android-gradle: Fixed displayed items for spanish locale.

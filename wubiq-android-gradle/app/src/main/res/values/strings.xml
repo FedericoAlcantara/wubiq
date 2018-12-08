@@ -36,4 +36,5 @@
     <string name="clear_test_results">Clear test results</string>
     <string name="channel_name">Wubiq Android Channel</string>
     <string name="channel_description">The Wubiq\'s android channel</string>
+    <string name="service_stopped">Wubiq print services stopped</string>
 </resources>

@@ -4,9 +4,6 @@
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/src"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/persistence"/>
         <wb-resource deploy-path="/WEB-INF/classes" source-path="/logging"/>
-        <dependent-module archiveName="wubiq-common.jar" deploy-path="/WEB-INF/lib" handle="module:/resource/wubiq-common/wubiq-common">
-            <dependency-type>uses</dependency-type>
-        </dependent-module>
         <property name="context-root" value="wubiq-server"/>
         <property name="java-output-path" value="/wubiq-server/bin"/>
     </wb-module>

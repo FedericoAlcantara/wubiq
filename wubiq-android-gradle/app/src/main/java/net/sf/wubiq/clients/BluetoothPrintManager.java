@@ -57,6 +57,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	private boolean needsRefresh = true;
 	private List<String> currentPendingJobs;
 	private String versionTitle;
+    private String versionName;
     private Set<String> virtualDevices;
 
 	/**
@@ -81,7 +82,8 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		String connectionsString = preferences.getString(WubiqActivity.CONNECTIONS_KEY, resources.getString(R.string.server_connection_default));
 		addConnectionsString(this, hostPortConnection(host, port));
 		addConnectionsString(this, connectionsString);
-		this.versionTitle = WubiqActivity.getVersion(context, resources);
+		this.versionTitle = WubiqActivity.getVersionTitle(context, resources);
+		this.versionName = WubiqActivity.getVersionName(context);
 		this.virtualDevices = new HashSet<>();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, false);
@@ -295,7 +297,18 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	public String askServer(String command, String... parameters)
 			throws ConnectException {
 		try {
-			return super.askServer(command, parameters);
+			String[] newParameters = new String[parameters.length];
+			String toSearch = ParameterKeys.CLIENT_VERSION + ParameterKeys.PARAMETER_SEPARATOR;
+
+			for (int index = 0; index < parameters.length; index++) {
+                if (CommandKeys.REGISTER_COMPUTER_NAME.equals(command)
+                        && parameters[index].startsWith(toSearch)) {
+                    newParameters[index] = ParameterKeys.CLIENT_VERSION + ParameterKeys.PARAMETER_SEPARATOR + versionName;
+                } else {
+    			    newParameters[index] = parameters[index];
+                }
+	        }
+			return super.askServer(command, newParameters);
 		} catch (ConnectException e) {
 			needsRefresh = true;
 			throw e;
@@ -467,9 +480,6 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 
 	private void checkStopService() {
 	    if (preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)) {
-            SharedPreferences.Editor editor = preferences.edit();
-            editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, false);
-            editor.commit();
             setKillManager(true);
             setCancelManager(true);
         }

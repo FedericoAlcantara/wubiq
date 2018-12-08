@@ -9,6 +9,7 @@ import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.IBinder;
 import android.util.Log;
@@ -63,7 +64,7 @@ public class WubiqActivity extends Activity {
         LinearLayout versionLayout = findViewById(R.id.versionLayout);
 		TextView version = versionLayout.findViewById(R.id.version);
         Resources resources = getResources();
-		String versionTitle = getVersion(this, resources);
+		String versionTitle = getVersionTitle(this, resources);
 		version.setText(versionTitle);
     }
     
@@ -95,8 +96,12 @@ public class WubiqActivity extends Activity {
      * @param view Calling view object.
      */
     public void startService(View view) {
-		Intent printManagerIntent = new Intent(this, PrintManagerService.class);
-		PrintManagerService.enqueueWork(this, PrintManagerService.class, PrintManagerService.JOB_ID, printManagerIntent);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            Intent printManagerIntent = new Intent(this, PrintManagerService.class);
+            PrintManagerService.enqueueWork(this, PrintManagerService.class, PrintManagerService.JOB_ID, printManagerIntent);
+        } else {
+            bindService(new Intent(this, PrintManagerServiceV7.class), serviceConnection, Context.BIND_AUTO_CREATE);
+        }
     }
     
     /**
@@ -110,11 +115,33 @@ public class WubiqActivity extends Activity {
         editor.commit();
     }
 
-    public static String getVersion(Context context, Resources resources) {
+    /**
+     * Get version title.
+     * @param context Application context.
+     * @param resources Resources which contains application data.
+     * @return Version title.
+     */
+    public static String getVersionTitle(Context context, Resources resources) {
         PackageInfo pInfo;
         try {
             pInfo = context.getPackageManager().getPackageInfo(PACKAGE_NAME, 0);
             return resources.getString(R.string.wubiq_version_title) + pInfo.versionName;
+        } catch (PackageManager.NameNotFoundException e) {
+            Log.e(TAG, e.getMessage());
+        }
+        return "";
+    }
+
+    /**
+     * Get version number
+     * @param context Application context.
+     * @return Version number.
+     */
+    public static String getVersionName(Context context) {
+        PackageInfo pInfo;
+        try {
+            pInfo = context.getPackageManager().getPackageInfo(PACKAGE_NAME, 0);
+            return pInfo.versionName;
         } catch (PackageManager.NameNotFoundException e) {
             Log.e(TAG, e.getMessage());
         }

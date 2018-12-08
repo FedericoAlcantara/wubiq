@@ -737,7 +737,6 @@ public class RemotePrintServlet extends HttpServlet {
 					respond("application/pdf", input, response);
 					input.close();
 				} else {
-					manager.removeRemotePrintJob(jobId);
 					respond("", response);
 				}
 			}

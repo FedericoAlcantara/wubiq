@@ -310,7 +310,7 @@ public enum ServerWebUtils {
 			}
 			
 		} catch (Exception e) {
-			LOG.error(ExceptionUtils.getRootCauseMessage(e), e);
+			LOG.error(ExceptionUtils.getRootCauseMessage(e));
 		}
 		return returnValue;
 	}

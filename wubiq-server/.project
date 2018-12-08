@@ -3,7 +3,6 @@
 	<name>wubiq-server</name>
 	<comment></comment>
 	<projects>
-		<project>wubiq-common</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>

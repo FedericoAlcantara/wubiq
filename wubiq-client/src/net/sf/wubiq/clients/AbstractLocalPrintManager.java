@@ -453,7 +453,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 					//connection.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
 					connection.setRequestProperty("Content-Length", "" + length);
 					if (!Is.emptyString(getSessionId())) {
-						connection.setRequestProperty("Cookie", "JSESSIONID=" + getSessionId());
+						connection.setRequestProperty("Cookie", "JSESSIONID=" + sessionId);
 					}
 					connection.setUseCaches (false);
 					IOUtils.INSTANCE.copy(input, connection.getOutputStream());
@@ -529,7 +529,7 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			doLog(e.getMessage(), 5);
 		} catch (IOException e) {
 			preferredURL = null;
-			LOG.error(e.getMessage());
+			LOG.error(e.getMessage(), e);
 			throw new ConnectException(e.getMessage());
 		} catch (Exception e) {
 			preferredURL = null;

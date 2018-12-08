@@ -26,25 +26,32 @@ import java.lang.Thread.State;
  * @author Federico Alcantara
  *
  */
-public class PrintManagerService extends JobIntentService {
-    public static int connectionErrors = 0;
-    public static final int JOB_ID = 19640229;
+public class PrintManagerServiceV7 extends Service {
+    private static int connectionErrors = 0;
 
-	private static final String TAG = PrintManagerService.class.getSimpleName();
+	private static final String TAG = PrintManagerServiceV7.class.getSimpleName();
 	private Thread managerThread;
+
 	private Resources resources;
 	private SharedPreferences preferences;
 	private BluetoothPrintManager manager;
+	private boolean cancelManager;
 	private Handler timerHandler = new Handler();
-	
+
 	private Runnable timerRunnable = new Runnable() {
 		public void run() {
 			if (checkPrintManagerStatus()) {
-				timerHandler.postDelayed(this, 15000);
-			}
+                timerHandler.postDelayed(this, 15000);
+            }
 		}
-		
+
 	};
+
+	public class PrintManagerBinder extends Binder {
+		PrintManagerServiceV7 getService() {
+			return PrintManagerServiceV7.this;
+		}
+	}
 
 	/**
 	 * Keep the service sticky.
@@ -54,40 +61,64 @@ public class PrintManagerService extends JobIntentService {
 	public int onStartCommand(Intent intent, int flags, int startId) {
 		return Service.START_STICKY + Service.START_STICKY_COMPATIBILITY;
 	}
-	
+
+	/**
+	 * @see android.app.Service#onBind(Intent)
+	 */
+	@Override
+	public IBinder onBind(Intent intent) {
+		return null;
+	}
+
 	@Override
 	public void onCreate() {
 		super.onCreate();
 		resources = getResources();
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
+		startPrintManager();
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
 	}
-	
-    @Override
-    protected void onHandleWork(@NonNull Intent intent) {
-        manager = new BluetoothPrintManager(this, resources, preferences);
-        managerThread = new Thread(manager, "Wubiq-PrintManager thread");
-        managerThread.start();
-        startTimer();
-    }
 
-    private void startTimer() {
-    	timerHandler.removeCallbacks(timerRunnable);
-    	timerHandler.postDelayed(timerRunnable, 5000);
-    }
+	@Override
+	public boolean onUnbind(Intent intent) {
+		cancelManager = true;
+		if (manager != null) {
+			manager.setCancelManager(true);
+		}
+		timerHandler.removeCallbacks(timerRunnable);
+		timerHandler = null;
 
-    /**
-     * @return True if print manager is running
-     */
-    public boolean checkPrintManagerStatus() {
-    	boolean returnValue = false;
-    	if (managerThread.getState().equals(State.TERMINATED)) {
-			if (preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)) {
-				String message = getString(R.string.service_stopped);
+		return super.onUnbind(intent);
+	}
+
+	private void startPrintManager() {
+		if (!cancelManager) {
+			manager = new BluetoothPrintManager(this, resources, preferences);
+			managerThread = new Thread(manager);
+			managerThread.start();
+			startTimer();
+		} else {
+			manager = null;
+		}
+	}
+
+	private void startTimer() {
+		timerHandler.removeCallbacks(timerRunnable);
+		timerHandler.postDelayed(timerRunnable, 5000);
+	}
+
+	/**
+	 * @return True if print manager is running
+	 */
+	public boolean checkPrintManagerStatus() {
+		boolean returnValue = false;
+		if (managerThread.getState().equals(State.TERMINATED)) {
+            if (preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)) {
+                String message = getString(R.string.service_stopped);
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, false);
                 editor.commit();
@@ -96,7 +127,7 @@ public class PrintManagerService extends JobIntentService {
                         NotificationIds.PRINTING_INFO_ID,
                         0,
                         message);
-			} else {
+            } else {
                 String message = getString(R.string.error_cant_connect_to);
                 Log.e(TAG, message);
                 connectionErrors++;
@@ -104,12 +135,17 @@ public class PrintManagerService extends JobIntentService {
                         NotificationIds.CONNECTION_ERROR_ID,
                         connectionErrors,
                         message);
+                returnValue = true;
+                startPrintManager();
             }
-    	} else {
-    	    connectionErrors = 0;
-			returnValue = true;
-    	}
-    	return returnValue;
-    }
-    
+		} else {
+			if (cancelManager) {
+				manager.setCancelManager(true);
+			} else {
+				returnValue = true;
+			}
+		}
+		return returnValue;
+	}
+
 }
