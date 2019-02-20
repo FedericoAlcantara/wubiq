@@ -1,4 +1,9 @@
 ==========================
+Wubiq 2.4.2 (2018-12-13)
+==========================
+-Wubiq-android-gradle: Compatible up to android (9) version 28.
+ 
+==========================
 Wubiq 2.4.1 (2018-12-06)
 ==========================
 -Wubiq-android-gradle: Fixed incompatibility with android version 23 - 24.

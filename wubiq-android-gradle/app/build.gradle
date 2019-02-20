@@ -6,7 +6,7 @@ android {
 
     defaultConfig {
         applicationId "net.sf.wubiq.android"
-        minSdkVersion 23
+        minSdkVersion 14
         targetSdkVersion 28
 
         testApplicationId "net.sf.wubiq.android.test"
