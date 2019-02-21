@@ -13,6 +13,7 @@ import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -77,7 +78,9 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		TextView deviceName = new TextView(context);
 		deviceName.setText(name + " " + address);
 		deviceName.setHeight(minimumHeight);
-		deviceName.setTextAppearance(R.style.TextAppearance_Compat_Notification_Info);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+			deviceName.setTextAppearance(R.style.TextAppearance_Compat_Notification_Info);
+		}
 		texts.add(deviceName);
 
 		Spinner spinner = new Spinner(context);

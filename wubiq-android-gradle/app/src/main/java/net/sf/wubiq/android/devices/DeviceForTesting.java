@@ -55,14 +55,7 @@ public class DeviceForTesting extends BaseWubiqDevice {
 	protected boolean print() {
         String base64Image = "";
         byte[] data = getPrintData();
-        try (ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
-//            Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
-//            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream);
-//            outputStream.flush();
-            base64Image = Base64.encodeToString(data, Base64.DEFAULT);
-        } catch (IOException e) {
-            Log.e(TAG, e.getMessage());
-        }
+		base64Image = Base64.encodeToString(data, Base64.DEFAULT);
 		String key = sdf.format(new Date()) + "-" + getMobileDeviceInfo().getName();
         Editor edit = preferences.edit();
 		edit.putString(TEST_DEVICE_RESULT_KEY, key);

@@ -56,6 +56,8 @@ wubiq-android-gradle/*.keystore
 
 # External native build folder generated in Android Studio 2.2 and later
 wubiq-android-gradle/.externalNativeBuild
+wubiq-android-gradle/local.properties
+
 
 # OSX_files
 wubiq-android-gradle/.DS_Store

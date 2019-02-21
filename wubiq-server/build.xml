@@ -112,10 +112,12 @@
 			<fileset dir="../wubiq-common">
 				<include name="ChangeLog.txt" />
 				<include name="README.rst" />
+				<include name="terms_and_conditions.md" />
+				<include name="privacy_policy.md" />
 			</fileset>
 			<fileset dir="../wubiq-android-gradle/app/release" includes="wubiq-android-release.apk"/>
 		</copy>
-		<rename src="${basedir}/dist/${version}/wubiq-android-release.apk" dest="${basedir}/dist/${version}/wubiq-android.apk"/>
+		<move file="${basedir}/dist/${version}/wubiq-android-release.apk" tofile="${basedir}/dist/${version}/wubiq-android.apk"/>
 		<copy file="${basedir}/dist/${version}/wubiq-android.apk" todir="${basedir}/WebContent" />
 		
 		<antcall target="deploy" />
