@@ -2,8 +2,8 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
-      <module fileurl="file://$PROJECT_DIR$/wubiq-android-gradle.iml" filepath="$PROJECT_DIR$/wubiq-android-gradle.iml" />
+      <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" group="wubiq-android-gradle/app" />
+      <module fileurl="file://$PROJECT_DIR$/wubiq-android-gradle.iml" filepath="$PROJECT_DIR$/wubiq-android-gradle.iml" group="wubiq-android-gradle" />
     </modules>
   </component>
 </project>

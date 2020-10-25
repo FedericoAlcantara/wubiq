@@ -314,7 +314,9 @@ public class RemotePrintServlet extends HttpServlet {
 	 */
 	private void registerComputerNameCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws ServletException, IOException {
 		RemotePrintServiceLookup.removePrintServices(uuid);
-		WubiqRemoteClientDao.INSTANCE.removeRemote(uuid);
+		if (PersistenceManager.isPersistenceEnabled()) {
+			WubiqRemoteClientDao.INSTANCE.removeRemote(uuid);
+		}
 		notifyRemote(uuid, request);
 		String clientVersion = getParameter(request, parameters, ParameterKeys.CLIENT_VERSION);
 		RemoteClient client = getRemoteClientManager(request).getRemoteClient(uuid, false);

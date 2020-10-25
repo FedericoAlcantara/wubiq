@@ -1,4 +1,14 @@
 ==========================
+Wubiq 2.4.3e (2020-10-25)
+==========================
+-Wubiq-server: Fixed data source errors when NOT using persistence.
+
+==========================
+Wubiq 2.4.3d (2019-03-13)
+==========================
+-Wubiq-android-gradle: Fix to handle notification errors with version less than android 8.
+
+==========================
 Wubiq 2.4.3b (2019-02-21)
 ==========================
 -Wubiq-android-gradle: Compatible from android(4.0) version 14 up to android (9) version 28.

@@ -114,7 +114,7 @@ public class PrintManagerServiceV7 extends Service {
 	/**
 	 * @return True if print manager is running
 	 */
-	public boolean checkPrintManagerStatus() {
+	private boolean checkPrintManagerStatus() {
 		boolean returnValue = false;
 		if (managerThread.getState().equals(State.TERMINATED)) {
             if (preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)) {

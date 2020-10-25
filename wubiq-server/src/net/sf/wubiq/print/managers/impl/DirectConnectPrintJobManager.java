@@ -14,6 +14,7 @@ import net.sf.wubiq.common.ConfigurationKeys;
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.dao.WubiqPrintJobDao;
 import net.sf.wubiq.interfaces.INotifiablePrintService;
+import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.jobs.IRemotePrintJob;
 import net.sf.wubiq.print.jobs.RemotePrintJobStatus;
 import net.sf.wubiq.print.managers.IDirectConnectPrintJobManager;
@@ -177,7 +178,8 @@ public class DirectConnectPrintJobManager implements IDirectConnectPrintJobManag
 		if (!Is.emptyString(queueId)) {
 			queue = connectors.get(queueId);
 			if (queue == null) {
-				if (ConfigurationKeys.isPersistenceActive()) {
+				if (ConfigurationKeys.isPersistenceActive()
+						&& PersistenceManager.isPersistenceEnabled()) {
 					queue = new DirectConnectorPersistedQueue(queueId);
 				} else {
 					queue = new DirectConnectorQueue(queueId);

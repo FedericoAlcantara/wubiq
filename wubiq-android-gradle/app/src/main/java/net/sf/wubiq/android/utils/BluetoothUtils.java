@@ -50,7 +50,7 @@ public class BluetoothUtils {
 	 */
 	public static BluetoothDevice device(Context context,
 			String deviceAddress) throws ConnectException {
-		return device(getAdapter(context), deviceAddress);
+		return device(context, getAdapter(context), deviceAddress);
 	}
 
 	
@@ -60,16 +60,22 @@ public class BluetoothUtils {
 	 * @param deviceAddress
 	 * @return Found bluetooth device or null if not bonded.
 	 */
-	public static BluetoothDevice device(BluetoothAdapter adapter,
+	public static BluetoothDevice device(Context context, BluetoothAdapter adapter,
 			String deviceAddress) throws ConnectException {
 		BluetoothDevice returnValue = null;
 		if (adapter != null) {
-			for (BluetoothDevice device : adapter.getBondedDevices()) {
-				if (device.getAddress().equals(deviceAddress)) {
-					returnValue = device;
-					break;
+			try {
+				for (BluetoothDevice device : adapter.getBondedDevices()) {
+					if (device.getAddress().equals(deviceAddress)) {
+						returnValue = device;
+						break;
+					}
 				}
-			}
+			} catch (Exception e) {
+                Log.e(TAG, e.getMessage());
+                notifyError(context);
+                return null;
+            }
 		}
 		return returnValue;		
 	}

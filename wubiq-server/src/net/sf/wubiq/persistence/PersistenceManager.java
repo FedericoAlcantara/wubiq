@@ -48,7 +48,9 @@ public final class PersistenceManager {
 	
 	private static EntityManagerFactory emf = null;
 	
+	private static Boolean persistenceEnabled = null;
 	private final static ThreadLocal<EntityManager> entityManager = new ThreadLocal<EntityManager>();
+	
 	
 	private PersistenceManager() {
 	}
@@ -58,11 +60,14 @@ public final class PersistenceManager {
 	 * @return True if the persistence is enabled by context.
 	 */
 	public static boolean isPersistenceEnabled() {
-		boolean returnValue = false;
-		if (getDataSource() != null) {
-			returnValue = true;
+		if (persistenceEnabled == null) {
+			if (getDataSource() != null) {
+				persistenceEnabled = true;
+			} else {
+				persistenceEnabled = false;
+			}
 		}
-		return returnValue;
+		return persistenceEnabled;
 	}
 	
 	/**
