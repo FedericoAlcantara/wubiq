@@ -3,10 +3,6 @@
  */
 package net.sf.wubiq.android;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
@@ -16,6 +12,10 @@ import android.widget.ArrayAdapter;
 import android.widget.BaseAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 
 /**
  * Represents the spinner adapter with the driver information for 
@@ -72,7 +72,7 @@ public class DeviceAdapter extends BaseAdapter {
 	}
 
 	/**
-	 * @see android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)
+	 * @see android.widget.Adapter#getView(int, View, ViewGroup)
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {

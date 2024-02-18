@@ -3,15 +3,16 @@
  */
 package net.sf.wubiq.android.utils;
 
-import java.net.ConnectException;
-
-import net.sf.wubiq.android.R;
-import net.sf.wubiq.android.enums.NotificationIds;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.os.Looper;
 import android.util.Log;
+
+import net.sf.wubiq.android.R;
+import net.sf.wubiq.android.enums.NotificationIds;
+
+import java.net.ConnectException;
 
 /**
  * @author Federico Alcantara

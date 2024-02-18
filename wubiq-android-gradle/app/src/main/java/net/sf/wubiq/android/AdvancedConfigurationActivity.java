@@ -4,7 +4,6 @@
 package net.sf.wubiq.android;
 
 import android.app.Activity;
-import android.bluetooth.BluetoothClass;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -15,11 +14,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Switch;
-import android.widget.TextView;
 
 import net.sf.wubiq.android.devices.DeviceForTesting;
-
-import java.util.Arrays;
 
 /**
  * Advanced configuration activity.

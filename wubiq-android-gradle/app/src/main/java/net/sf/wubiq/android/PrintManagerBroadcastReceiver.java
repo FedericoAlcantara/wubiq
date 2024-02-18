@@ -16,7 +16,7 @@ import android.os.Build;
 public class PrintManagerBroadcastReceiver extends BroadcastReceiver {
 
 	/**
-	 * @see android.content.BroadcastReceiver#onReceive(android.content.Context, android.content.Intent)
+	 * @see BroadcastReceiver#onReceive(Context, Intent)
 	 */
 	@Override
 	public void onReceive(Context context, Intent intent) {

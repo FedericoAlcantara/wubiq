@@ -3,18 +3,19 @@
  */
 package net.sf.wubiq.android.devices;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.net.ConnectException;
-
-import net.sf.wubiq.android.enums.DeviceStatus;
-import net.sf.wubiq.android.utils.BluetoothUtils;
 import android.content.Context;
 import android.util.Log;
 
 import com.zebra.android.comm.BluetoothPrinterConnection;
 import com.zebra.android.comm.ZebraPrinterConnection;
 import com.zebra.android.comm.ZebraPrinterConnectionException;
+
+import net.sf.wubiq.android.enums.DeviceStatus;
+import net.sf.wubiq.android.utils.BluetoothUtils;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.ConnectException;
 
 /**
  * @author Federico Alcantara
@@ -24,7 +25,7 @@ public class DeviceZebra extends BaseWubiqDevice {
 	private final static String TAG = DeviceZebra.class.getSimpleName();
 
 	/**
-	 * @see net.sf.wubiq.android.devices.BaseWubiqDevice#print()
+	 * @see BaseWubiqDevice#print()
 	 */
 	@Override
 	protected boolean print() {

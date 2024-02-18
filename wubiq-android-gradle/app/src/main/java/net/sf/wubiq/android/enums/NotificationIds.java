@@ -3,12 +3,13 @@
  */
 package net.sf.wubiq.android.enums;
 
+import android.content.Context;
+import android.content.Intent;
+
 import net.sf.wubiq.android.CancelBluetoothNotificationActivity;
 import net.sf.wubiq.android.CancelConnectionNotificationActivity;
 import net.sf.wubiq.android.CancelPrintingErrorNotificationActivity;
 import net.sf.wubiq.android.CancelPrintingInfoNotificationActivity;
-import android.content.Context;
-import android.content.Intent;
 
 /**
  * Different notifications.

@@ -3,10 +3,11 @@
  */
 package net.sf.wubiq.android;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.net.ConnectException;
+import android.bluetooth.BluetoothDevice;
+import android.content.Context;
+import android.content.SharedPreferences;
+import android.content.res.Resources;
+import android.util.Log;
 
 import net.sf.wubiq.android.devices.BaseWubiqDevice;
 import net.sf.wubiq.android.devices.DeviceForTesting;
@@ -16,11 +17,11 @@ import net.sf.wubiq.android.utils.BluetoothUtils;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.utils.IOUtils;
-import android.bluetooth.BluetoothDevice;
-import android.content.Context;
-import android.content.SharedPreferences;
-import android.content.res.Resources;
-import android.util.Log;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.ConnectException;
 
 /**
  * Handles the necessary steps for printing on the client.

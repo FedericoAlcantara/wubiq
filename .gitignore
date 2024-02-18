@@ -4,6 +4,9 @@
 /wubiq-test/*.log
 /wubiq-android-test/*.log
 
+/wubiq-android/.idea/
+/wubiq-android/out/
+
 # wubiq-android-gradle
 # Built application files
 wubiq-android-gradle/*.apk
@@ -50,6 +53,7 @@ wubiq-android-gradle/.idea/assetWizardSettings.xml
 wubiq-android-gradle/.idea/dictionaries
 wubiq-android-gradle/.idea/libraries
 wubiq-android-gradle/.idea/caches
+wubiq-android-gradle/.idea/
 
 # Keystore files
 wubiq-android-gradle/*.jks
