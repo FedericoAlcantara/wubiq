@@ -5,31 +5,11 @@ package net.sf.wubiq.android.devices;
 
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.util.Base64;
-import android.util.Log;
 
-import net.sf.wubiq.android.MobileClientConversionStep;
-import net.sf.wubiq.android.MobileDeviceInfo;
-import net.sf.wubiq.android.MobileServerConversionStep;
-
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Date;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * Validates the output of any of the printer types.

@@ -7,16 +7,15 @@ import android.app.Service;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
-import android.os.Binder;
 import android.os.Handler;
-import android.os.IBinder;
-import android.support.annotation.NonNull;
-import android.support.v4.app.JobIntentService;
 import android.util.Log;
 
+import androidx.annotation.NonNull;
+import androidx.core.app.JobIntentService;
+
+import net.sf.wubiq.android.clients.BluetoothPrintManager;
 import net.sf.wubiq.android.enums.NotificationIds;
 import net.sf.wubiq.android.utils.NotificationUtils;
-import net.sf.wubiq.clients.BluetoothPrintManager;
 
 import java.lang.Thread.State;
 
@@ -48,7 +47,7 @@ public class PrintManagerService extends JobIntentService {
 
 	/**
 	 * Keep the service sticky.
-	 * @see android.app.Service#onStartCommand(android.content.Intent, int, int)
+	 * @see Service#onStartCommand(Intent, int, int)
 	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {

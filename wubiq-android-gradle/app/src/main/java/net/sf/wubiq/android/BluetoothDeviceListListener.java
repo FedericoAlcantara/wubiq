@@ -23,7 +23,7 @@ public class BluetoothDeviceListListener implements OnItemSelectedListener {
 	}
 	
 	/**
-	 * @see android.widget.AdapterView.OnItemSelectedListener#onItemSelected(android.widget.AdapterView, android.view.View, int, long)
+	 * @see OnItemSelectedListener#onItemSelected(AdapterView, View, int, long)
 	 */
 	@Override
 	public void onItemSelected(AdapterView<?> parent, View view, int pos,
@@ -34,7 +34,7 @@ public class BluetoothDeviceListListener implements OnItemSelectedListener {
 	}
 
 	/**
-	 * @see android.widget.AdapterView.OnItemSelectedListener#onNothingSelected(android.widget.AdapterView)
+	 * @see OnItemSelectedListener#onNothingSelected(AdapterView)
 	 */
 	@Override
 	public void onNothingSelected(AdapterView<?> parent) {

@@ -9,7 +9,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Build;
-import android.support.v4.app.NotificationCompat;
+
+import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
 import net.sf.wubiq.android.R;
@@ -49,7 +50,7 @@ public enum NotificationUtils {
         try {
             createNotificationChannel(ctx);
             Intent notifyIntent = notificationId.getIntent(ctx);
-            PendingIntent intent = PendingIntent.getActivity(ctx, 0,notifyIntent, PendingIntent.FLAG_ONE_SHOT);
+            PendingIntent intent = PendingIntent.getActivity(ctx, 0,notifyIntent, PendingIntent.FLAG_IMMUTABLE);
 
             NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(ctx, CHANNEL_ID)
                     .setSmallIcon(R.drawable.ic_notification)

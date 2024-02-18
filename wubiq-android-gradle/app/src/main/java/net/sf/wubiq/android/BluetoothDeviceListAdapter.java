@@ -1,18 +1,13 @@
 /**
- * 
+ *
  */
 package net.sf.wubiq.android;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-
-import net.sf.wubiq.android.devices.DeviceForTesting;
-import net.sf.wubiq.common.PropertyKeys;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,6 +16,15 @@ import android.widget.BaseAdapter;
 import android.widget.Spinner;
 import android.widget.TextView;
 
+import androidx.core.app.ActivityCompat;
+
+import net.sf.wubiq.android.devices.DeviceForTesting;
+import net.sf.wubiq.common.PropertyKeys;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
 /**
  * Creates the bluetooth list of paired devices.
  * @author Federico Alcantara
@@ -28,13 +32,13 @@ import android.widget.TextView;
  */
 public class BluetoothDeviceListAdapter extends BaseAdapter {
 	private final String DEVICE_PREFIX = "wubiq-android-bt_";
-	
+
 	int deviceCount;
 	List<TextView> texts = new ArrayList<TextView>();
 	List<Spinner> spinners = new ArrayList<Spinner>();
 	Context context;
 	SharedPreferences preferences;
-	
+
 	/**
 	 * Constructor.
 	 * @param context Context running the application.
@@ -56,13 +60,22 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		}
 		BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (btAdapter != null) {
-			Set<BluetoothDevice> devices = btAdapter.getBondedDevices();
-			for (BluetoothDevice device : devices) {
-				String deviceKey = key(device.getAddress());
-				Spinner spinner = addDevice(device.getName(), device.getAddress());
-				spinner.setOnItemSelectedListener(new BluetoothDeviceListListener(preferences, deviceKey));
+			if (ActivityCompat.checkSelfPermission(this.context, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+				// TODO: Consider calling
+				//    ActivityCompat#requestPermissions
+				// here to request the missing permissions, and then overriding
+				//   public void onRequestPermissionsResult(int requestCode, String[] permissions,
+				//                                          int[] grantResults)
+				// to handle the case where the user grants the permission. See the documentation
+				// for ActivityCompat#requestPermissions for more details.
+				Set<BluetoothDevice> devices = btAdapter.getBondedDevices();
+				for (BluetoothDevice device : devices) {
+					String deviceKey = key(device.getAddress());
+					Spinner spinner = addDevice(device.getName(), device.getAddress());
+					spinner.setOnItemSelectedListener(new BluetoothDeviceListListener(preferences, deviceKey));
+				}
+				this.deviceCount += devices.size();
 			}
-			this.deviceCount += devices.size();
 		}
 	}
 	
@@ -76,10 +89,10 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		String deviceKey = key(address);
 		int minimumHeight = 50;
 		TextView deviceName = new TextView(context);
-		deviceName.setText(name + " " + address);
+		deviceName.setText(context.getString(R.string.device_name_address, name, address));
 		deviceName.setHeight(minimumHeight);
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-			deviceName.setTextAppearance(R.style.TextAppearance_Compat_Notification_Info);
+			deviceName.setTextAppearance(androidx.core.R.style.TextAppearance_Compat_Notification_Info);
 		}
 		texts.add(deviceName);
 
@@ -132,7 +145,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 	}
 
 	/**
-	 * @see android.widget.Adapter#getView(int, android.view.View, android.view.ViewGroup)
+	 * @see android.widget.Adapter#getView(int, View, ViewGroup)
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {

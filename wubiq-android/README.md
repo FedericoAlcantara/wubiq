@@ -1,0 +1,3 @@
+## wubiq-android
+
+-- DEPRECATED --

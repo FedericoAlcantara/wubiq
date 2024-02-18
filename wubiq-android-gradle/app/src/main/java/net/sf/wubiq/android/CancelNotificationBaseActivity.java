@@ -1,9 +1,10 @@
 package net.sf.wubiq.android;
 
-import net.sf.wubiq.android.enums.NotificationIds;
-import net.sf.wubiq.android.utils.NotificationUtils;
 import android.app.Activity;
 import android.os.Bundle;
+
+import net.sf.wubiq.android.enums.NotificationIds;
+import net.sf.wubiq.android.utils.NotificationUtils;
 
 /**
  * Cancels a given notification type.
