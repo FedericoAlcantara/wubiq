@@ -45,6 +45,7 @@ wubiq-android-gradle/.navigation/
 wubiq-android-gradle/captures/
 
 # IntelliJ
+/.idea/*
 wubiq-android-gradle/*.iml
 wubiq-android-gradle/.idea/workspace.xml
 wubiq-android-gradle/.idea/tasks.xml
