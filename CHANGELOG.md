@@ -1,7 +1,7 @@
 ## Changelog
 | version | date | description |
 | ------- | ---- | ----------- |
-| Wubiq 2.5.2 | 2024-09-14 | -Wubiq-android-gradle: Compatible from android version 28 to android api version 35
+| Wubiq 2.5.2 | 2024-09-14 | -Wubiq-android-gradle: Compatible from android version 28 to android api version 35. Improved Bluetooth handling.
 | Wubiq 2.5.1 | 2020-10-25 | -Wubiq-android-gradle: Compatible from android(5.1) version 22 to android(14.0) api version 34 
 | Wubiq 2.4.3e | 2020-10-25 | -Wubiq-server: Fixed data source errors when NOT using persistence.
 | Wubiq 2.4.3d | 2019-03-13 | -Wubiq-android-gradle: Fix to handle notification errors with version less than android 8.
@@ -16,7 +16,7 @@
 | Wubiq 2.3.3 | 018-08-08 | -Wubiq-server: Java 8 / Tomcat 8 compatible.<br/> -Wubiq-server: Can handle multiple ports for communication.<br/> -Wubiq-server: Can be in more than one tomcat instance in the same server.<br/> -Wubiq-android: Support removed for compatible option of single host / port combination.<br/> -Wubiq-android: For Android 4.0 Ice Cream Sandwich (Api level 14).<br/> -Packaging: Relies on provided ant task for packaging wubiq components.
 | Wubiq 2.3.2.5 | 2018-03-22 | -Improved log information for PrintableWrapper.
 
-## OLD VERSIONS
+#OLD VERSIONS
 
 Wubiq 2.3.2.4 (2017-10-08)
 -Fixed hangs when trying to run corrupted wubiq-cient.jar on services (wubiq-installer)
