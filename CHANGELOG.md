@@ -1,7 +1,7 @@
 ## Changelog
 | version | date | description |
 | ------- | ---- | ----------- |
-| Wubiq 2.5.2 | 2024-09-14 | -Wubiq-android-gradle: Compatible from android version 28 to android api version 35. Improved Bluetooth handling.
+| Wubiq 2.5.3 | 2024-09-22 | -Wubiq-android-gradle: Compatible from android version 28 to android api version 35. Improved Bluetooth handling.
 | Wubiq 2.5.1 | 2020-10-25 | -Wubiq-android-gradle: Compatible from android(5.1) version 22 to android(14.0) api version 34 
 | Wubiq 2.4.3e | 2020-10-25 | -Wubiq-server: Fixed data source errors when NOT using persistence.
 | Wubiq 2.4.3d | 2019-03-13 | -Wubiq-android-gradle: Fix to handle notification errors with version less than android 8.
