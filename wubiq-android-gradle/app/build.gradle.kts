@@ -9,9 +9,9 @@ android {
     defaultConfig {
         applicationId = "net.sf.wubiq.android"
         minSdk = 28
-        targetSdk = 34
-        versionCode = 55
-        versionName = "2.5.3"
+        targetSdk = 35
+        versionCode = 56
+        versionName = "2.6.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -26,7 +26,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    buildToolsVersion = "34.0.0"
+    buildToolsVersion = "36.0.0"
 }
 
 dependencies {
