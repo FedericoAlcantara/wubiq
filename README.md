@@ -10,7 +10,7 @@ that will receive the document. The clients polls the server for its pending pri
 takes care of them and notifies the server of its success.
 
 ### Documentation
-Wiki pages are available at: **http://sourceforge.net/p/wubiq/wiki/Main_Page/**
+Wiki pages are available at: **https://github.com/FedericoAlcantara/wubiq/wiki/Main_Page/**
 
 ### Installing wubiq as a server
 1. Download wubiq.zip and extract its files.
