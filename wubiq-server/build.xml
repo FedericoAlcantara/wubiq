@@ -10,6 +10,7 @@
 	<property name="lib" value="${web}/WEB-INF/lib" />
 	<property name="output.war" value="${dist}/${project}.war" />
 	<property name="war.build" value="${basedir}/build" />
+	<property name="war.classes" value="${war.build}/WEB-INF/classes"/>
 	<property file="settings.properties" />
 	
 	<path id="project.classpath">
@@ -23,12 +24,14 @@
 	
 	<path id="project.src">
 		<pathelement path="${src}"/>
-	</path>	
+	</path>
 		
 	<target name="create-wubiq-server-output" description="creates war for wubiq-server">
 		<!-- WAR creation -->
 		<!-- clean and prepare the build directory for war creation --> 
 		<antcall target="cleanForWar" />
+		<!-- compile war into build --> 
+		<antcall target="compileWar" />
 		<!-- copy the required files -->
 		<antcall target="copyForWar" />
 		<!-- make the war -->
@@ -42,7 +45,17 @@
 		<delete dir="${war.build}" failonerror="false" />
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${war.build}"/>
-		<mkdir dir="${war.build}/WEB-INF/classes"/>
+		<mkdir dir="${war.classes}"/>
+	</target>
+
+	<target name="compileWar" description="Compiles classes into build dir">
+		<!-- <ant antfile="../wubiq-common/build.xml" inheritall="false" /> -->
+		<javac srcdir="${src}" destdir="${war.classes}" includeantruntime="false">
+			<classpath refid="project.classpath" />
+			<classpath location="../wubiq-common/dist/wubiq-common.jar" />
+			<classpath location="../wubiq-common/lib-nondeploy/cglib-nodep-3.1.jar" />
+			<classpath location="${basedir}/lib-nondeploy/servlet-api.jar" />
+		</javac>
 	</target>
 	
 	<target name="copyForWar" description="Copy the required classes for war creation">
