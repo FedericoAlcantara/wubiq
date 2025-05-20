@@ -1,0 +1,38 @@
+# 
+# Enables a wubiq-server on tomcat
+#
+services:
+  wubiq-server:
+    image: tomcat:7.0
+    ports:
+      - 8080:8080
+    volumes:
+      - /tmp/logs:/usr/local/tomcat/logs
+      - ./wubiq-common/dist/wubiq-common.jar:/usr/local/tomcat/lib/wubiq-common.jar
+      - ./wubiq-common/lib-nondeploy/cglib-nodep-3.1.jar:/usr/local/tomcat/lib/cglib-nodep-3.1.jar
+      - ./wubiq-common/lib-nondeploy/fontbox-1.8.6.jar:/usr/local/tomcat/lib/fontbox-1.8.6.jar
+      - ./wubiq-common/lib-nondeploy/pdfbox-1.8.6.jar:/usr/local/tomcat/lib/pdfbox-1.8.6.jar
+      - ./wubiq-printerjob/dist/wubiq-printerjob.jar:/usr/local/tomcat/endorsed/wubiq-printerjob.jar
+      - ./wubiq-test/lib/apache-mime4j-0.6.jar:/usr/local/tomcat/lib/apache-mime4j-0.6.jar
+      - ./wubiq-test/lib/commons-cli-1.2.jar:/usr/local/tomcat/lib/commons-cli-1.2.jar
+      - ./wubiq-test/lib/commons-codec-1.4.jar:/usr/local/tomcat/lib/commons-codec-1.4.jar
+      - ./wubiq-test/lib/commons-collections-3.2.1.jar:/usr/local/tomcat/lib/commons-collections-3.2.1.jar
+      - ./wubiq-test/lib/commons-io-1.4.jar:/usr/local/tomcat/lib/commons-io-1.4.jar
+      - ./wubiq-test/lib/commons-lang-2.4.jar:/usr/local/tomcat/lib/commons-lang-2.4.jar
+      - ./wubiq-test/lib/commons-logging-1.1.1.jar:/usr/local/tomcat/lib/commons-logging-1.1.1.jar
+      - ./wubiq-test/lib/cssparser-0.9.5.jar:/usr/local/tomcat/lib/cssparser-0.9.5.jar
+      - ./wubiq-test/lib/hsqldb.jar:/usr/local/tomcat/lib/hsqldb.jar
+      - ./wubiq-test/lib/htmlunit-2.8.jar:/usr/local/tomcat/lib/htmlunit-2.8.jar
+      - ./wubiq-test/lib/htmlunit-core-js-2.8.jar:/usr/local/tomcat/lib/htmlunit-core-js-2.8.jar
+      - ./wubiq-test/lib/httpclient-4.0.1.jar:/usr/local/tomcat/lib/httpclient-4.0.1.jar
+      - ./wubiq-test/lib/httpcore-4.0.1.jar:/usr/local/tomcat/lib/httpcore-4.0.1.jar
+      - ./wubiq-test/lib/httpmime-4.0.1.jar:/usr/local/tomcat/lib/httpmime-4.0.1.jar
+      - ./wubiq-test/lib/nekohtml-1.9.14.jar:/usr/local/tomcat/lib/nekohtml-1.9.14.jar
+      - ./wubiq-test/lib/sac-1.3.jar:/usr/local/tomcat/lib/sac-1.3.jar
+      - ./wubiq-test/lib/serializer-2.7.1.jar:/usr/local/tomcat/lib/serializer-2.7.1.jar
+      - ./wubiq-test/lib/xalan-2.7.1.jar:/usr/local/tomcat/lib/xalan-2.7.1.jar
+      - ./wubiq-test/lib/xercesImpl-2.9.1.jar:/usr/local/tomcat/lib/xercesImpl-2.9.1.jar
+      - ./wubiq-test/lib/xml-apis-1.3.04.jar:/usr/local/tomcat/lib/xml-apis-1.3.04.jar
+      - ./wubiq-server/dist/wubiq-server.war:/usr/local/tomcat/webapps/wubiq-server.war
+
+

@@ -50,6 +50,7 @@
 
 	<target name="compileWar" description="Compiles classes into build dir">
 		<!-- <ant antfile="../wubiq-common/build.xml" inheritall="false" /> -->
+		<!-- <ant antfile="../wubiq-printerjob/build.xml" inheritall="false" /> -->
 		<javac srcdir="${src}" destdir="${war.classes}" includeantruntime="false">
 			<classpath refid="project.classpath" />
 			<classpath location="../wubiq-common/dist/wubiq-common.jar" />
