@@ -54,15 +54,20 @@ public class ConfigureBluetoothActivity extends Activity {
 
 	private void requestBluetooth() {
 		boolean hasBluetooth = getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
-
+		boolean initialize = false;
 		if (hasBluetooth) {
 			if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_DENIED) {
 				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
 					ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_CODE);
+				} else {
+					initialize = true;
 				}
 			} else {
-				initialize();
+				initialize = true;
 			}
+		}
+		if (initialize) {
+			initialize();
 		}
 	}
 }

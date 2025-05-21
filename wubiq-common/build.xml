@@ -32,6 +32,9 @@
 		<jar jarfile="${outputjar}">
 			<fileset dir="${bin}" />
 			<fileset dir="${basedir}/i18n" />
+			<manifest>
+				<attribute name="Main-Class" value="net.sf.wubiq.utils.VersionInfo"/>	
+			</manifest>
 		</jar>
 	</target>
 		

@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
     package="net.sf.wubiq.android"
-    android:versionCode="59"
-    android:versionName="2.5.4">
+    android:versionCode="60"
+    android:versionName="2.6.2">
 
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
@@ -25,6 +25,7 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.Wubiq"
+        android:usesCleartextTraffic="true"
         tools:targetApi="34">
 
         <activity
