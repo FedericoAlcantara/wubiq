@@ -78,7 +78,7 @@ public class AdvancedConfigurationActivity extends Activity {
 		editor.putInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
 		editor.putInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
 		editor.putBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false);
-		editor.commit();
+		editor.apply();
 		initialize();
 	}
 
@@ -102,7 +102,7 @@ public class AdvancedConfigurationActivity extends Activity {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString(DeviceForTesting.TEST_DEVICE_RESULT_KEY, "");
         editor.putString(DeviceForTesting.TEST_DEVICE_RESULT_IMAGE_KEY, "");
-        editor.commit();
+        editor.apply();
         refreshTestResults(null);
     }
 
@@ -123,7 +123,7 @@ public class AdvancedConfigurationActivity extends Activity {
 		editor.putInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, Integer.parseInt(printConnectionErrorsRetry.getText().toString()));
 		editor.putBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, enableDevelopmentMode.isChecked());
 
-		editor.commit();
+		editor.apply();
 	}
 
 }

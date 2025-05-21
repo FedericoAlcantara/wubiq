@@ -60,7 +60,7 @@ public class ConfigureServerActivity extends Activity {
 		editor.putString(WubiqActivity.UUID_KEY, uuid.getText().toString());
 		editor.putString(WubiqActivity.GROUPS_KEY, groups.getText().toString());
 		editor.putString(WubiqActivity.CONNECTIONS_KEY, connections.getText().toString());
-		editor.commit();
+		editor.apply();
 	}
 	
 }

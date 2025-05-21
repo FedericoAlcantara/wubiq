@@ -18,6 +18,7 @@ import java.util.Map;
 public enum MobileDevices {
 	INSTANCE;
 	public final static String TEST_DEVICE_NAME = "test_device";
+	public final static String TEST_DEVICE_INFO_KEY = TEST_DEVICE_NAME.replaceAll("_", " ");
 
 	/**
 	 * Order is important.
@@ -95,7 +96,7 @@ public enum MobileDevices {
 	}
 	
 	private void registerTestDevice() {
-		devices.put(TEST_DEVICE_NAME.replaceAll("_", " "), testDeviceInfo("3"));
+		devices.put(TEST_DEVICE_INFO_KEY, testDeviceInfo("3"));
 	}
 	
 	private MobileDeviceInfo genericBw(String width) {

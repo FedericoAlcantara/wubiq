@@ -6,17 +6,24 @@
 - New docker-compose.yml to run a wubiq-server
 - Prompt for documentation using AI
 
+### Wubiq-assets
+- New, to hold assets common to all other projects.
+- Created images for different resolution and compatible with android's vector drawables.
+
+### Wubiq-android (old version)
+- Removed, was replaced by wubiq-android-gradle.
+
 ### Wubiq-android-gradle
 - Upgrade gradle.
 - Fix bluetooth discovery to work on devices below Api level 31 (Android 12 - Snow Cone)
-- Lifted a temporary security constraint that allows connection to http protocols.
+- Update all images to reflect the wubiq design
+- ***** Lifted a temporary security constraint that allows connection to http protocols.
 
 ### Wubiq-common
 - build.xml added the manifest to the produced wubiq-common.jar
 
 ### Wubiq-server
 - build.xml can be used to just generate wubiq-server.war
-
 
 ## Wubiq 2.6.1 (2025-04-13)
 ### Wubiq-android-gradle

@@ -30,7 +30,7 @@ public class BluetoothDeviceListListener implements OnItemSelectedListener {
 			long id) {
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.putString(deviceKey, parent.getItemAtPosition(pos).toString());
-		editor.commit();
+		editor.apply();
 	}
 
 	/**
@@ -40,7 +40,7 @@ public class BluetoothDeviceListListener implements OnItemSelectedListener {
 	public void onNothingSelected(AdapterView<?> parent) {
 		SharedPreferences.Editor editor = preferences.edit();
 		editor.remove(deviceKey);
-		editor.commit();
+		editor.apply();
 	}
 
 }

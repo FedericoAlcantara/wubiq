@@ -89,7 +89,7 @@ public class PrintManagerService extends JobIntentService {
 				String message = getString(R.string.service_stopped);
                 SharedPreferences.Editor editor = preferences.edit();
                 editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, false);
-                editor.commit();
+                editor.apply();
                 Log.e(TAG, message);
                 NotificationUtils.INSTANCE.notify(getApplicationContext(),
                         NotificationIds.PRINTING_INFO_ID,
