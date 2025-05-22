@@ -88,7 +88,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		this.virtualDevices = new HashSet<>();
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, false);
-        editor.commit();
+        editor.apply();
     }
 	
 	/**

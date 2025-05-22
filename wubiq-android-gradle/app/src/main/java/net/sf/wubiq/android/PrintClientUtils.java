@@ -52,7 +52,7 @@ public enum PrintClientUtils {
 		printPause = preferences.getInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
 		long pauseBetweenPrints = preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
 		int errorRetries = preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
-		while (returnValue == false) {
+		while (!returnValue) {
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
 			boolean useDeviceTest = false;
 			String deviceKey = null;

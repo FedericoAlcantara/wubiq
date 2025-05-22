@@ -18,6 +18,8 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import net.sf.wubiq.android.devices.DeviceForTesting;
+
 /**
  * Main activity.
  * @author Federico Alcantara
@@ -38,12 +40,11 @@ public class WubiqActivity extends Activity {
 	public static final String UUID_KEY="client_uuid";
 	public static final String GROUPS_KEY="groups";
 	public static final String DEVICE_PREFIX = "wubiq-android-bt_";
-	public static final String SUPPRESS_NOTIFICATIONS_KEY="suppress_notifications";
+    public static final String ANDROID_TEST_DEVICE_KEY = DEVICE_PREFIX + DeviceForTesting.TEST_DEVICE_ADDRESS;
 	public static final String ENABLE_DEVELOPMENT_MODE="enable_development_mode";
 	public static final String STOP_SERVICE_STATUS="stop_wubiq_service";
 	public static final String PACKAGE_NAME="net.sf.wubiq.android";
-
-	private ServiceConnection serviceConnection = new ServiceConnection() {
+	private final ServiceConnection serviceConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder binder) {
 			Toast toast = Toast.makeText(WubiqActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
@@ -66,6 +67,8 @@ public class WubiqActivity extends Activity {
         Resources resources = getResources();
 		String versionTitle = getVersionTitle(this, resources);
 		version.setText(versionTitle);
+
+        setAndroidTestDeviceKey(this);
     }
     
     /**
@@ -112,7 +115,7 @@ public class WubiqActivity extends Activity {
         SharedPreferences preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, true);
-        editor.commit();
+        editor.apply();
     }
 
     /**
@@ -148,4 +151,11 @@ public class WubiqActivity extends Activity {
         return "";
     }
 
+    private void setAndroidTestDeviceKey(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putString(WubiqActivity.ANDROID_TEST_DEVICE_KEY, MobileDevices.TEST_DEVICE_INFO_KEY);
+        editor.apply();
+
+    }
 }
