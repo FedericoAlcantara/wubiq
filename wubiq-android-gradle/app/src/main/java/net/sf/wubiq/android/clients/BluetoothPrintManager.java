@@ -148,43 +148,62 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		if (!needsRefresh) {
 			needsRefresh = printServicesName.isEmpty()
 					|| (preferences.getBoolean(PropertyKeys.WUBIQ_DEVELOPMENT_MODE, false)
-                        || preferences.getBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false));
+                        || preferences.getBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false)
+						|| force_devices_refresh());
 		}
 		return needsRefresh;
 	}
-	
+
+	private boolean force_devices_refresh() {
+		boolean forceDeviceRefresh = preferences.getBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, false);
+
+		if (forceDeviceRefresh) {
+			SharedPreferences.Editor editor = preferences.edit();
+			editor.putBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, false);
+			editor.apply();
+		}
+
+		return forceDeviceRefresh;
+	}
 	/**
 	 * @see net.sf.wubiq.clients.AbstractLocalPrintManager#getPendingJobs()
 	 */
 	@Override
 	protected String[] getPendingJobs() throws ConnectException {
-	    checkStopService();
-	    if (isActive()) {
-            if (currentPendingJobs.isEmpty()) {
-                String[] serverPendingJobs = super.getPendingJobs();
-                for (String pendingJob : serverPendingJobs) {
-                    if (!Is.emptyString(pendingJob)) {
-                        currentPendingJobs.add(pendingJob);
-                    }
-                }
-            }
-            String[] returnValue = new String[currentPendingJobs.size()];
-            returnValue = currentPendingJobs.toArray(returnValue);
-            NotificationUtils.INSTANCE.cancelNotification(context,
-                    NotificationIds.CONNECTION_ERROR_ID);
+		checkStopService();
+		if (isActive()) {
+	    	if (!isPaused()) {
+				if (currentPendingJobs.isEmpty()) {
+					String[] serverPendingJobs = super.getPendingJobs();
+					for (String pendingJob : serverPendingJobs) {
+						if (!Is.emptyString(pendingJob)) {
+							currentPendingJobs.add(pendingJob);
+						}
+					}
+				}
+				String[] returnValue = new String[currentPendingJobs.size()];
+				returnValue = currentPendingJobs.toArray(returnValue);
+				NotificationUtils.INSTANCE.cancelNotification(context,
+						NotificationIds.CONNECTION_ERROR_ID);
 
-            if (returnValue != null && returnValue.length > 0) {
-                NotificationUtils.INSTANCE.notify(context, NotificationIds.PRINTING_INFO_ID,
-                        returnValue.length,
-                        context.getString(R.string.info_printing));
-            } else {
-                NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
-            }
-            return returnValue;
-        }
+				if (returnValue != null && returnValue.length > 0) {
+					NotificationUtils.INSTANCE.notify(context, NotificationIds.PRINTING_INFO_ID,
+							returnValue.length,
+							context.getString(R.string.info_printing));
+				} else {
+					NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.PRINTING_INFO_ID);
+				}
+				return returnValue;
+			}
+        } else {
+			bringAlive();
+		}
         return new String[]{};
 	}
 
+	private boolean isPaused(){
+		return preferences.getBoolean(WubiqActivity.PAUSE_PRINTING_TO_DEVICES, false);
+	}
 	/**
 	 * Print pending jobs to the client.
 	 */

@@ -32,7 +32,20 @@ public class ConfigureBluetoothActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.configure_bluetooth);
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
+
+		SharedPreferences.Editor editor = preferences.edit();
+		editor.putBoolean(WubiqActivity.PAUSE_PRINTING_TO_DEVICES, true);
+		editor.apply();
+
 		requestBluetooth();
+	}
+
+	@Override
+	protected void onPause() {
+		super.onPause();
+		SharedPreferences.Editor editor = preferences.edit();
+		editor.putBoolean(WubiqActivity.PAUSE_PRINTING_TO_DEVICES, false);
+		editor.apply();
 	}
 
 	@Override

@@ -46,7 +46,10 @@ public class WubiqActivity extends Activity {
     public static final String ENABLE_DEVELOPMENT_MODE="enable_development_mode";
 	public static final String STOP_SERVICE_STATUS="stop_wubiq_service";
 	public static final String PACKAGE_NAME="net.sf.wubiq.android";
-	private final ServiceConnection serviceConnection = new ServiceConnection() {
+    public static final String FORCE_DEVICES_REFRESH="force_devices_refresh";
+    public static final String PAUSE_PRINTING_TO_DEVICES="pause_printing_to_devices";
+
+    private final ServiceConnection serviceConnection = new ServiceConnection() {
 
 		public void onServiceConnected(ComponentName className, IBinder binder) {
 			Toast toast = Toast.makeText(WubiqActivity.this, R.string.service_started, Toast.LENGTH_SHORT);
@@ -101,6 +104,11 @@ public class WubiqActivity extends Activity {
      * @param view Calling view object.
      */
     public void startService(View view) {
+        SharedPreferences preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, true);
+        editor.apply();
+
         PrintManagerService.startService(WubiqActivity.this);
     }
     
@@ -112,6 +120,7 @@ public class WubiqActivity extends Activity {
         SharedPreferences preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, true);
+
         editor.apply();
     }
 
@@ -160,6 +169,12 @@ public class WubiqActivity extends Activity {
         putNewValue(preferences, WubiqActivity.KEEP_SERVICE_ALIVE, resources.getBoolean(R.bool.keep_service_alive_default_value));
         putNewValue(preferences, WubiqActivity.SUPPRESS_NOTIFICATIONS, resources.getBoolean(R.bool.suppress_notifications_default_value));
         putNewValue(preferences, WubiqActivity.ENABLE_DEVELOPMENT_MODE, resources.getBoolean(R.bool.enable_development_mode_default_value));
+
+        // FORCED initial values
+        SharedPreferences.Editor editor = preferences.edit();
+        editor.putBoolean(WubiqActivity.PAUSE_PRINTING_TO_DEVICES, false);
+        editor.putBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, false);
+        editor.apply();
     }
 
     private static void putNewValue(SharedPreferences preferences, String key, String value) {
@@ -186,11 +201,4 @@ public class WubiqActivity extends Activity {
         }
     }
 
-
-    private void setAndroidTestDeviceKey(Context context) {
-        SharedPreferences preferences = context.getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
-        SharedPreferences.Editor editor = preferences.edit();
-        editor.putString(WubiqActivity.ANDROID_TEST_DEVICE_KEY, MobileDevices.TEST_DEVICE_INFO_KEY);
-        editor.apply();
-    }
 }
