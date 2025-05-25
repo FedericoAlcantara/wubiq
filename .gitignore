@@ -71,4 +71,4 @@ wubiq-android-gradle/.DS_Store
 
 # Eclipse Servers
 /Servers/
-
+/.vscode

@@ -3,6 +3,7 @@
  */
 package net.sf.wubiq.android.utils;
 
+import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
@@ -38,38 +39,42 @@ public enum NotificationUtils {
 		manager.cancel(notificationId.ordinal());
 	}
 
+    /**
+     * Notifies to the status bar.
+     * @param ctx Context
+     * @param notificationId Notification type identification.
+     * @param number A number of notifications of the same type.
+     * @param message Message to show in the status bar.
+     */
+    public void notify(Context ctx, NotificationIds notificationId, int number, String message) {
+        notify(ctx, notificationId, number, message, false);
+    }
+
 	/**
 	 * Notifies to the status bar.
 	 * @param ctx Context
 	 * @param notificationId Notification type identification.
 	 * @param number A number of notifications of the same type.
-	 * @param errorMessage Message to show in the status bar.
+	 * @param message Message to show in the status bar.
+     * @param onGoing Indicates if the notification is non dismissible.
 	 */
-	public void notify(Context ctx, NotificationIds notificationId, int number, String errorMessage) {
-		SharedPreferences preferences = ctx.getSharedPreferences(WubiqActivity.PREFERENCES, Context.MODE_PRIVATE);
+	public void notify(Context ctx, NotificationIds notificationId, int number, String message, boolean onGoing) {
         try {
             createNotificationChannel(ctx);
             Intent notifyIntent = notificationId.getIntent(ctx);
             PendingIntent intent = PendingIntent.getActivity(ctx, 0,notifyIntent, PendingIntent.FLAG_IMMUTABLE);
 
-            NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(ctx, CHANNEL_ID)
-                    .setSmallIcon(R.drawable.ic_notification)
-                    .setContentTitle(notificationId.title())
-                    .setContentIntent(intent)
-                    .setContentText(errorMessage)
-                    .setDefaults(NotificationCompat.DEFAULT_ALL);
+            Notification notification = createNotification(ctx, notificationId, number, message, onGoing)
+                    .setContentIntent(intent).build();
 
-            if (number > 0) {
-                mBuilder.setNumber(number);
-            }
             NotificationManager manager = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.notify(notificationId.ordinal(), mBuilder.build());
+            manager.notify(notificationId.ordinal(), notification);
         } catch (Exception e) {
             Log.e(TAG, e.getMessage());
         }
 	}
 
-    private void createNotificationChannel(Context ctx) {
+    public void createNotificationChannel(Context ctx) {
         // Create the NotificationChannel, but only on API 26+ because
         // the NotificationChannel class is new and not in the support library
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -83,5 +88,19 @@ public enum NotificationUtils {
             NotificationManager notificationManager = (NotificationManager)ctx.getSystemService(Context.NOTIFICATION_SERVICE);
             notificationManager.createNotificationChannel(channel);
         }
+    }
+
+    public NotificationCompat.Builder createNotification(Context ctx, NotificationIds notificationId, int number, String message, boolean onGoing) {
+        NotificationCompat.Builder mBuilder = new NotificationCompat.Builder(ctx, CHANNEL_ID)
+                .setSmallIcon(R.drawable.ic_stat_name)
+                .setContentTitle(notificationId.title())
+                .setContentText(message)
+                .setDefaults(NotificationCompat.DEFAULT_ALL)
+                .setOngoing(onGoing);
+
+        if (number > 0) {
+            mBuilder.setNumber(number);
+        }
+        return mBuilder;
     }
 }

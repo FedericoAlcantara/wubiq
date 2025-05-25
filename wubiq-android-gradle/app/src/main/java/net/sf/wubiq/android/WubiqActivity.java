@@ -41,7 +41,9 @@ public class WubiqActivity extends Activity {
 	public static final String GROUPS_KEY="groups";
 	public static final String DEVICE_PREFIX = "wubiq-android-bt_";
     public static final String ANDROID_TEST_DEVICE_KEY = DEVICE_PREFIX + DeviceForTesting.TEST_DEVICE_ADDRESS;
-	public static final String ENABLE_DEVELOPMENT_MODE="enable_development_mode";
+	public static final String KEEP_SERVICE_ALIVE = "keep_service_alive";
+    public static final String SUPPRESS_NOTIFICATIONS = "suppress_notifications";
+    public static final String ENABLE_DEVELOPMENT_MODE="enable_development_mode";
 	public static final String STOP_SERVICE_STATUS="stop_wubiq_service";
 	public static final String PACKAGE_NAME="net.sf.wubiq.android";
 	private final ServiceConnection serviceConnection = new ServiceConnection() {
@@ -68,7 +70,7 @@ public class WubiqActivity extends Activity {
 		String versionTitle = getVersionTitle(this, resources);
 		version.setText(versionTitle);
 
-        setAndroidTestDeviceKey(this);
+        updatePreferences(WubiqActivity.this);
     }
     
     /**
@@ -99,12 +101,7 @@ public class WubiqActivity extends Activity {
      * @param view Calling view object.
      */
     public void startService(View view) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-            Intent printManagerIntent = new Intent(this, PrintManagerService.class);
-            PrintManagerService.enqueueWork(this, PrintManagerService.class, PrintManagerService.JOB_ID, printManagerIntent);
-        } else {
-            bindService(new Intent(this, PrintManagerServiceV7.class), serviceConnection, Context.BIND_AUTO_CREATE);
-        }
+        PrintManagerService.startService(WubiqActivity.this);
     }
     
     /**
@@ -151,11 +148,49 @@ public class WubiqActivity extends Activity {
         return "";
     }
 
+    public static void updatePreferences(Context context) {
+        SharedPreferences preferences = context.getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
+        Resources resources = context.getResources();
+        putNewValue(preferences, WubiqActivity.ANDROID_TEST_DEVICE_KEY, MobileDevices.TEST_DEVICE_INFO_KEY);
+        putNewValue(preferences, WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
+        putNewValue(preferences, WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
+        putNewValue(preferences, WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default));
+        putNewValue(preferences, WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
+        putNewValue(preferences, WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
+        putNewValue(preferences, WubiqActivity.KEEP_SERVICE_ALIVE, resources.getBoolean(R.bool.keep_service_alive_default_value));
+        putNewValue(preferences, WubiqActivity.SUPPRESS_NOTIFICATIONS, resources.getBoolean(R.bool.suppress_notifications_default_value));
+        putNewValue(preferences, WubiqActivity.ENABLE_DEVELOPMENT_MODE, resources.getBoolean(R.bool.enable_development_mode_default_value));
+    }
+
+    private static void putNewValue(SharedPreferences preferences, String key, String value) {
+        if (!preferences.contains(key)) {
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putString(key, value);
+            editor.apply();
+        }
+    }
+
+    private static void putNewValue(SharedPreferences preferences, String key, Integer value) {
+        if (!preferences.contains(key)) {
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putInt(key, value);
+            editor.apply();
+        }
+    }
+
+    private static void putNewValue(SharedPreferences preferences, String key, Boolean value) {
+        if (!preferences.contains(key)) {
+            SharedPreferences.Editor editor = preferences.edit();
+            editor.putBoolean(key, value);
+            editor.apply();
+        }
+    }
+
+
     private void setAndroidTestDeviceKey(Context context) {
         SharedPreferences preferences = context.getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
         SharedPreferences.Editor editor = preferences.edit();
         editor.putString(WubiqActivity.ANDROID_TEST_DEVICE_KEY, MobileDevices.TEST_DEVICE_INFO_KEY);
         editor.apply();
-
     }
 }

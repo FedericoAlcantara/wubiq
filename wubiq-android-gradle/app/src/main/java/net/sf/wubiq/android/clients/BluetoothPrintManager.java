@@ -13,7 +13,6 @@ import android.util.Log;
 
 import net.sf.wubiq.android.MobileDevices;
 import net.sf.wubiq.android.PrintClientUtils;
-import net.sf.wubiq.android.PrintManagerService;
 import net.sf.wubiq.android.R;
 import net.sf.wubiq.android.WubiqActivity;
 import net.sf.wubiq.android.devices.DeviceForTesting;
@@ -47,8 +46,6 @@ import java.util.UUID;
 public class BluetoothPrintManager extends AbstractLocalPrintManager {
 	private static final String TAG = BluetoothPrintManager.class.getSimpleName();
 
-	private static final String LOCAL_SERVICE = "LOCAL";
-
 	protected Resources resources;
 	protected SharedPreferences preferences;
 	protected Context context;
@@ -78,8 +75,8 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		setCheckPendingJobInterval(preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default)));
 		setPrintingJobInterval(preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default)));
 		setConnectionErrorRetries(preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default)));
-		String host = preferences.getString(WubiqActivity.HOST_KEY, resources.getString(R.string.server_host_default));
-		String port = preferences.getString(WubiqActivity.PORT_KEY, resources.getString(R.string.server_port_default));
+		String host = preferences.getString(WubiqActivity.HOST_KEY, "");
+		String port = preferences.getString(WubiqActivity.PORT_KEY, "");
 		String connectionsString = preferences.getString(WubiqActivity.CONNECTIONS_KEY, resources.getString(R.string.server_connection_default));
 		addConnectionsString(this, hostPortConnection(host, port));
 		addConnectionsString(this, connectionsString);
@@ -175,7 +172,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
             returnValue = currentPendingJobs.toArray(returnValue);
             NotificationUtils.INSTANCE.cancelNotification(context,
                     NotificationIds.CONNECTION_ERROR_ID);
-            PrintManagerService.connectionErrors = 0;
+
             if (returnValue != null && returnValue.length > 0) {
                 NotificationUtils.INSTANCE.notify(context, NotificationIds.PRINTING_INFO_ID,
                         returnValue.length,
@@ -252,7 +249,22 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 			}
 		}
 	}
-	
+
+	@Override
+	public void setConnectionErrorCount(int connectionErrorCount) {
+		if (!preferences.getBoolean(WubiqActivity.KEEP_SERVICE_ALIVE, false)) {
+			super.setConnectionErrorCount(connectionErrorCount);
+		}
+		if (!preferences.getBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS, false)) {
+			String message = context.getString(R.string.error_cant_connect_to);
+			Log.e(TAG, message);
+			NotificationUtils.INSTANCE.notify(context,
+					NotificationIds.CONNECTION_ERROR_ID,
+					connectionErrorCount,
+					message);
+		}
+	}
+
 	/**
 	 * Closes a print job.
 	 * @param jobId Job id of print job to be closed.

@@ -4,7 +4,7 @@ plugins {
 
 android {
     namespace = "net.sf.wubiq.android"
-    compileSdk = 34
+    compileSdk = 35
 
     defaultConfig {
         applicationId = "net.sf.wubiq.android"
@@ -30,6 +30,7 @@ android {
 }
 
 dependencies {
+
     implementation("androidx.appcompat:appcompat:1.7.0")
     implementation("com.google.android.material:material:1.12.0")
     implementation(files("libs/wubiq-client.jar"))
@@ -37,6 +38,15 @@ dependencies {
     implementation(files("libs/starioextension.jar"))
     implementation(files("libs/StarIOPort3.1.jar"))
     implementation(files("libs/ZSDK_API.jar"))
+
+    // Worker
+    val work_version = "2.10.1"
+    // (Java only)
+    implementation("androidx.work:work-runtime:$work_version")
+    // Kotlin + coroutines
+    implementation("androidx.work:work-runtime-ktx:$work_version")
+
+    // test dependencies
     testImplementation("junit:junit:4.13.2")
     androidTestImplementation("androidx.test.ext:junit:1.2.1")
     androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
