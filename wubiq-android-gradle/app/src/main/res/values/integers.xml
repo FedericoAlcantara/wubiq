@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Integer resources sorted alphabetically -->
+    <integer name="print_connection_errors_retries_default">3</integer>
+    <integer name="print_delay_default">500</integer>
+    <integer name="print_pause_between_jobs_default">1000</integer>
+    <integer name="print_pause_default">200</integer>
+    <integer name="print_poll_interval_default">5000</integer>
+</resources>

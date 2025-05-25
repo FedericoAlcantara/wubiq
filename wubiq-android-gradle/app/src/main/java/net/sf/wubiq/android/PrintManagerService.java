@@ -3,15 +3,18 @@
  */
 package net.sf.wubiq.android;
 
+import android.annotation.SuppressLint;
+import android.app.Notification;
 import android.app.Service;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.res.Resources;
+import android.os.Build;
 import android.os.Handler;
+import android.os.IBinder;
+import android.os.Looper;
 import android.util.Log;
-
-import androidx.annotation.NonNull;
-import androidx.core.app.JobIntentService;
 
 import net.sf.wubiq.android.clients.BluetoothPrintManager;
 import net.sf.wubiq.android.enums.NotificationIds;
@@ -25,25 +28,16 @@ import java.lang.Thread.State;
  * @author Federico Alcantara
  *
  */
-public class PrintManagerService extends JobIntentService {
-    public static int connectionErrors = 0;
-    public static final int JOB_ID = 19640229;
-
+public class PrintManagerService extends Service {
 	private static final String TAG = PrintManagerService.class.getSimpleName();
+    private static final int INTERVAL_MILLIS = 15000;
+	private static final int SERVICE_NOTIFICATION_ID = 829;
 	private Thread managerThread;
 	private Resources resources;
 	private SharedPreferences preferences;
 	private BluetoothPrintManager manager;
-	private Handler timerHandler = new Handler();
-	
-	private Runnable timerRunnable = new Runnable() {
-		public void run() {
-			if (checkPrintManagerStatus()) {
-				timerHandler.postDelayed(this, 15000);
-			}
-		}
-		
-	};
+	private Handler handler;
+	private Runnable runnable;
 
 	/**
 	 * Keep the service sticky.
@@ -51,64 +45,101 @@ public class PrintManagerService extends JobIntentService {
 	 */
 	@Override
 	public int onStartCommand(Intent intent, int flags, int startId) {
+		Log.d(TAG, getString(R.string.service_started));
+		handler.postDelayed(runnable, getResources().getInteger(R.integer.print_delay_default));
 		return Service.START_STICKY + Service.START_STICKY_COMPATIBILITY;
 	}
-	
+
+	/**
+	 * @see Service#onBind(Intent)
+	 */
 	@Override
+	public IBinder onBind(Intent intent) {
+		return null;
+	}
+
+	@SuppressLint("ForegroundServiceType")
+    @Override
 	public void onCreate() {
 		super.onCreate();
 		resources = getResources();
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
+
+		String message = getString(R.string.service_running);
+		Log.e(TAG, message);
+
+		NotificationUtils.INSTANCE.createNotificationChannel(this);
+		Notification notification = NotificationUtils.INSTANCE.createNotification(this, NotificationIds.PRINTING_INFO_ID, 0, getString(R.string.service_running), true).build();
+		startForeground(SERVICE_NOTIFICATION_ID, notification);
+		startPrintManager();
+
+		handler = new Handler(Looper.getMainLooper());
+
+		runnable = new Runnable() {
+			public void run() {
+				updateNotifyPrintServiceStatus();
+				if (!preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)) {
+					handler.postDelayed(this, INTERVAL_MILLIS);
+				}
+			}
+		};
 	}
-	
+
 	@Override
 	public void onDestroy() {
 		super.onDestroy();
+		removeHandler();
+		stopForeground(true);
 	}
-	
-    @Override
-    protected void onHandleWork(@NonNull Intent intent) {
-        manager = new BluetoothPrintManager(this, resources, preferences);
-        managerThread = new Thread(manager, "Wubiq-PrintManager thread");
-        managerThread.start();
-        startTimer();
-    }
 
-    private void startTimer() {
-    	timerHandler.removeCallbacks(timerRunnable);
-    	timerHandler.postDelayed(timerRunnable, 5000);
-    }
+	@Override
+	public boolean onUnbind(Intent intent) {
+		removeHandler();
+		return super.onUnbind(intent);
+	}
 
-    /**
-     * @return True if print manager is running
-     */
-    private boolean checkPrintManagerStatus() {
-    	boolean returnValue = false;
-    	if (managerThread.getState().equals(State.TERMINATED)) {
-			if (preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)) {
+	private void removeHandler() {
+		handler.removeCallbacks(runnable);
+		handler = null;
+		Log.d(TAG, getString(R.string.service_stopped));
+	}
+
+	private void startPrintManager() {
+		if (manager == null) {
+			manager = new BluetoothPrintManager(this, resources, preferences);
+			managerThread = new Thread(manager);
+			managerThread.start();
+		}
+	}
+
+	private void updateNotifyPrintServiceStatus() {
+		if (managerThread != null) {
+			if (preferences.getBoolean(WubiqActivity.STOP_SERVICE_STATUS, false)
+				|| managerThread.getState() == State.TERMINATED
+				|| !managerThread.isAlive()) {
+				manager.setCancelManager(true);
+				manager.setKillManager(true);
+				manager = null;
+				managerThread = null; // will be automatically terminated
+				stopSelf();
+
 				String message = getString(R.string.service_stopped);
-                SharedPreferences.Editor editor = preferences.edit();
-                editor.putBoolean(WubiqActivity.STOP_SERVICE_STATUS, false);
-                editor.apply();
-                Log.e(TAG, message);
-                NotificationUtils.INSTANCE.notify(getApplicationContext(),
-                        NotificationIds.PRINTING_INFO_ID,
-                        0,
-                        message);
-			} else {
-                String message = getString(R.string.error_cant_connect_to);
-                Log.e(TAG, message);
-                connectionErrors++;
-                NotificationUtils.INSTANCE.notify(getApplicationContext(),
-                        NotificationIds.CONNECTION_ERROR_ID,
-                        connectionErrors,
-                        message);
-            }
-    	} else {
-    	    connectionErrors = 0;
-			returnValue = true;
-    	}
-    	return returnValue;
-    }
-    
+				Log.e(TAG, message);
+				NotificationUtils.INSTANCE.notify(getApplicationContext(),
+						NotificationIds.PRINTING_INFO_ID,
+						0,
+						message);
+			}
+		}
+	}
+
+	public static void startService(Context context) {
+		Intent serviceIntent = new Intent(context, PrintManagerService.class);
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+			context.startForegroundService(serviceIntent);
+		} else {
+			context.startService(serviceIntent);
+		}
+	}
+
 }

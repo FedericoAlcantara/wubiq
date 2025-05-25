@@ -42,6 +42,8 @@ public class AdvancedConfigurationActivity extends Activity {
 		EditText printPollInterval = (EditText) findViewById(R.id.printPollIntervalField);
 		EditText printPauseBetweenJobs = (EditText) findViewById(R.id.printPauseBetweenJobsField);
 		EditText printConnectionErrorsRetry = (EditText) findViewById(R.id.printConnectionErrorRetries);
+		Switch keepServiceAlive = (Switch) findViewById(R.id.keepServiceAlive);
+		Switch suppressNotifications = (Switch) findViewById(R.id.suppressNotifications);
 		Switch enableDevelopmentMode = (Switch) findViewById(R.id.enableDevelopmentMode);
 
 		Resources resources = getResources();
@@ -51,6 +53,8 @@ public class AdvancedConfigurationActivity extends Activity {
 		Integer printPollIntervalValue = preferences.getInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default));
 		Integer printPauseBetweenJobsValue = preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
 		Integer printConnectionErrorsRetryValue = preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
+		Boolean keepServiceAliveValue = preferences.getBoolean(WubiqActivity.KEEP_SERVICE_ALIVE, false);
+		Boolean suppressNotificationsValue = preferences.getBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS, false);
 		Boolean enableDevelopmentModeValue = preferences.getBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false);
 
 		printDelay.setText(printDelayValue.toString());
@@ -58,6 +62,8 @@ public class AdvancedConfigurationActivity extends Activity {
 		printPollInterval.setText(printPollIntervalValue.toString());
 		printPauseBetweenJobs.setText(printPauseBetweenJobsValue.toString());
 		printConnectionErrorsRetry.setText(printConnectionErrorsRetryValue.toString());
+		keepServiceAlive.setChecked(keepServiceAliveValue);
+		suppressNotifications.setChecked(suppressNotificationsValue);
 		enableDevelopmentMode.setChecked(enableDevelopmentModeValue);
 		savePreferences();
 		refreshTestResults(null);
@@ -72,13 +78,15 @@ public class AdvancedConfigurationActivity extends Activity {
 	public void setDefaultValues(View view) {
 		Resources resources = getResources();
 		SharedPreferences.Editor editor = preferences.edit();
-		editor.putInt(WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
-		editor.putInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
-		editor.putInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default));
-		editor.putInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
-		editor.putInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
-		editor.putBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, false);
+		editor.remove(WubiqActivity.PRINT_DELAY_KEY);
+		editor.remove(WubiqActivity.PRINT_PAUSE_KEY);
+		editor.remove(WubiqActivity.PRINT_POLL_INTERVAL_KEY);
+		editor.remove(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY);
+		editor.remove(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY);
+		editor.remove(WubiqActivity.KEEP_SERVICE_ALIVE);
+		editor.remove(WubiqActivity.ENABLE_DEVELOPMENT_MODE);
 		editor.apply();
+		WubiqActivity.updatePreferences(getApplicationContext());
 		initialize();
 	}
 
@@ -114,13 +122,17 @@ public class AdvancedConfigurationActivity extends Activity {
 		EditText printPollInterval = (EditText) findViewById(R.id.printPollIntervalField);
 		EditText printPauseBetweenJobs = (EditText) findViewById(R.id.printPauseBetweenJobsField);
 		EditText printConnectionErrorsRetry = (EditText) findViewById(R.id.printConnectionErrorRetries);
+		Switch keepServiceAlive = (Switch) findViewById(R.id.keepServiceAlive);
 		Switch enableDevelopmentMode = (Switch) findViewById(R.id.enableDevelopmentMode);
+		Switch suppressNotifications = (Switch) findViewById(R.id.suppressNotifications);
 
 		editor.putInt(WubiqActivity.PRINT_DELAY_KEY, Integer.parseInt(printDelay.getText().toString()));
 		editor.putInt(WubiqActivity.PRINT_PAUSE_KEY, Integer.parseInt(printPause.getText().toString()));
 		editor.putInt(WubiqActivity.PRINT_POLL_INTERVAL_KEY, Integer.parseInt(printPollInterval.getText().toString()));
 		editor.putInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, Integer.parseInt(printPauseBetweenJobs.getText().toString()));
 		editor.putInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, Integer.parseInt(printConnectionErrorsRetry.getText().toString()));
+		editor.putBoolean(WubiqActivity.KEEP_SERVICE_ALIVE, keepServiceAlive.isChecked());
+		editor.putBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS, suppressNotifications.isChecked());
 		editor.putBoolean(WubiqActivity.ENABLE_DEVELOPMENT_MODE, enableDevelopmentMode.isChecked());
 
 		editor.apply();

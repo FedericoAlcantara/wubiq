@@ -119,6 +119,48 @@
         </TableRow>
 
         <TableRow
+            android:id="@+id/tableRowKeepServiceAlive"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" >
+
+            <TextView
+                android:id="@+id/textViewKeepServiceAlive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|end"
+                android:text="@string/keep_service_alive" />
+
+            <Switch
+                android:id="@+id/keepServiceAlive"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="100dp"
+                />
+        </TableRow>
+
+        <TableRow
+            android:id="@+id/tableRowSuppressNotifications"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" >
+
+            <TextView
+                android:id="@+id/textViewSuppressNotifications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_vertical|end"
+                android:text="@string/suppress_notifications" />
+
+            <Switch
+                android:id="@+id/suppressNotifications"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="100dp"
+                />
+
+        </TableRow>
+
+
+        <TableRow
             android:layout_width="match_parent"
             android:layout_height="match_parent" >
 
@@ -164,7 +206,7 @@
                 android:id="@+id/enableDevelopmentMode"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginRight="100dp"
+                android:layout_marginEnd="100dp"
                 />
 
         </TableRow>

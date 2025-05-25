@@ -22,9 +22,9 @@ public enum NotificationIds {
 	PRINTING_ERROR_ID(true, false, "Error"),
 	PRINTING_INFO_ID(false, false, "Info");
 	
-	private boolean alarmOnOne;
-	private boolean alarmOnGreaterThanOne;
-	private String title;
+	private final boolean alarmOnOne;
+	private final boolean alarmOnGreaterThanOne;
+	private final String title;
 	
 	private NotificationIds(boolean alarmOnOne, boolean alarmOnGreaterThanOne, String title) {
 		this.alarmOnOne = alarmOnOne;

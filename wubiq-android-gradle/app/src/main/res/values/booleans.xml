@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Boolean resources sorted alphabetically -->
+    <bool name="enable_development_mode_default_value">false</bool>
+    <bool name="keep_service_alive_default_value">false</bool>
+    <bool name="suppress_notifications_default_value">false</bool>
+</resources>
