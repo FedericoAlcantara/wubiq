@@ -121,7 +121,8 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 			</tr>
 			<tr>
 				<td>
-					<form action="wubiq-android.apk">
+					<form action="https://play.google.com/store/apps/details" method="GET">
+						<input type="hidden" name="id" value="net.sf.wubiq.android" />
 						<input type="Submit" value ='<%=ServerLabels.get("server.install_wubiq_android")%>'/>
 					</form>
 				</td>
