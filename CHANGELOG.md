@@ -17,7 +17,9 @@
 - Upgrade gradle.
 - Fix bluetooth discovery to work on devices below Api level 31 (Android 12 - Snow Cone)
 - Update all images to reflect the wubiq design
-- ***** Lifted a temporary security constraint that allows connection to http protocols.
+- Added property to AndroidManifest that allows connection to http protocols.
+- Added Advanced configuration parameter 'keep_service_alive'.
+- Added Advanced configuration parameter 'suppress_notifications'.
 
 ### Wubiq-common
 - build.xml added the manifest to the produced wubiq-common.jar
