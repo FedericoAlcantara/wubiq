@@ -97,21 +97,12 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 		<link rel="stylesheet" type="text/css" href="css/wubiq.css" />
 		<title>Wubiq</title>
 		<script src="js/jquery.js"></script>
-		<script src="js/deployJava.js"></script>
-		<script>
-			window.onload=function() {
-				var div = document.getElementById("wubiq-setup-hidden");
-				var a = div.getElementsByTagName("a")[0];
-				var setup = document.getElementById("wubiq-setup-action");
-				setup.action = a.href;
-			}
-		</script>
 	</head>
 	<body>
 	<div align="center" >
 		<table class="wubiq_header <%=ready%>">
 			<tr>
-				<td align="center" colspan="3" ><%=ServerLabels.get("server.version", Labels.VERSION)%>
+				<td align="center" colspan="4" ><%=ServerLabels.get("server.version", Labels.VERSION)%>
 				</td>
 				<td>
 					<form action="localeToggle.jsp">
@@ -127,13 +118,12 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 					</form>
 				</td>
 				<td>
-					<div id="wubiq-setup-hidden" style="display:none">
-						<script>
-						    var url = "/wubiq-server/wubiq-setup.jar";
-						    deployJava.createWebStartLaunchButton(url, '1.6.0');
-						</script>
-					</div>
-					<form id="wubiq-setup-action" action="">
+					<form action="wubiq-android.apk">
+						<input type="Submit" value ='<%=ServerLabels.get("server.download_wubiq_android")%>'/>
+					</form>
+				</td>
+				<td>
+					<form action="wubiq-setup.jar">
 						<input type="Submit" value ='<%=ServerLabels.get("server.download_setup")%>'/>
 					</form>
 				</td>
@@ -151,11 +141,13 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 				</td>
 				<td>
 				</td>
+				<td>
+				</td>
 			</tr>
 			<%if (!logged) {
 				if (!ServerProperties.INSTANCE.getUsers().isEmpty()) {%>
 			<tr>
-				<td colspan="3">
+				<td colspan="4">
 						<form action="loginCheck.jsp" method="post" style="font-size: smaller;">
 							<%=ServerLabels.get("server.user_id")%>:<input type="text" name="<%=WebKeys.SERVER_USER_ID%>" />
 							&nbsp;&nbsp;
@@ -168,7 +160,7 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 			<%	}
 			} else { %>
 			<tr>
-				<td colspan="3">
+				<td colspan="4">
 					<form action="logout.jsp" method="post">
 						<%=ServerLabels.get("server.logged_in_as", userId) %>&nbsp;<input type="submit" value="<%=ServerLabels.get("server.log_out") %>" />
 					</form>
@@ -176,7 +168,7 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 			</tr>
 			<%} %>
 			<tr>
-				<td colspan="3">
+				<td colspan="4">
 					<form action="filter.jsp" method="post" style="font-size: smaller;">
 						<%=ServerLabels.get("server.filter")%>:<input type="text" name="<%=WebKeys.SERVER_FILTER%>" value="<%=filter%>"/>
 						<input type="submit" value="<%=ServerLabels.get("server.filter.apply") %>" />
@@ -185,7 +177,7 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 			</tr>
 			<%if (logged && PersistenceManager.isPersistenceEnabled()) {%>
 			<tr>
-				<td colspan="3">
+				<td colspan="4">
 					<%=ServerLabels.get("server.info_running_on_persistence") %>
 				</td>
 			</tr>

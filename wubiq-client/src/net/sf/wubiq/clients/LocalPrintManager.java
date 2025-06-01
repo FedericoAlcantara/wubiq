@@ -58,16 +58,45 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	private long lastServerTimestamp = -1;
 	private Set<Long> registeredJobs;
 	private Set<String> registeredPrintServices;
+	private boolean keepAlive = false;
+	private boolean suppressLogs = false; 
 	
 	public LocalPrintManager() {
 		super();
+		keepAlive = Boolean.parseBoolean(System.getProperty(PropertyKeys.WUBIQ_CLIENT_KEEP_ALIVE, "false"));
+		suppressLogs = Boolean.parseBoolean(System.getProperty(PropertyKeys.WUBIQ_CLIENT_SUPPRESS_LOGS, "false"));
 	}
-	
-	
+
+
 	public LocalPrintManager(String applicationName, String connections) {
 		setApplicationName(applicationName);
 	}
 	
+	@Override
+	public void setConnectionErrorCount(int connectionErrorCount) {
+		if (!keepAlive) {
+			super.setConnectionErrorCount(connectionErrorCount);
+		}
+	}
+
+	@Override
+	public Object pollServer(String command, InputStream input, int length) throws ConnectException {
+		if (keepAlive) {
+			try {
+				return super.pollServer(command, input, length);
+			} catch (ConnectException e) {
+				doLog("Connection error: " + e.getMessage(), 0);
+				logConnectException(e);
+				return "";
+			} catch (IOException e) {
+				doLog("IO error: " + e.getMessage(), 0);
+				LOG.error(e.getMessage(), e);
+				return "";
+			}
+		} else {
+			return super.pollServer(command, input, length);
+		}
+	}
 
 	/**
 	 * Process a single pending job.
@@ -206,7 +235,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 		} catch (ConnectException e) {
 			closePrintJob = false;
 			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
-			LOG.error(e.getMessage(), e);
+			logConnectException(e);
 			throw e;
 		} catch (IOException e) {
 			doLog("Job(" + jobId + ") failed:" + e.getMessage(), 0);
@@ -230,6 +259,24 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 			} catch (Exception e) {
 				doLog(e.getMessage()); // this is not a desirable to show error
 			}
+		}
+	}
+
+	/**
+	 * Takes care of the logging.
+	 * @param message Message to be logged.
+	 * @param logLevel Level associated with the message.
+	 */
+	protected void doLog(Object message, int logLevel) {
+		if (!suppressLogs) {
+			super.doLog(message.toString(), logLevel);
+		}
+	}
+
+	@Override
+	protected void logConnectException(ConnectException e) {
+		if (!suppressLogs) {
+			super.logConnectException(e);
 		}
 	}
  	
@@ -570,6 +617,9 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						+ "\n"
 						+ "-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION") + ".\n"
+						+ "\n"
+						+ "-D" + PropertyKeys.WUBIQ_CLIENT_KEEP_ALIVE + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_KEEP_ALIVE") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_CLIENT_SUPPRESS_LOGS + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_SUPPRESS_LOGS") + ".\n"
 						+ "\n"
 						+ "", options, "\n For more information visit wubiq's site: http://sourceforge.net/projects/wubiq", true);
 			}

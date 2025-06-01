@@ -2,6 +2,7 @@ package net.sf.wubiq.clients;
 
 import java.awt.Color;
 import java.awt.EventQueue;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.SplashScreen;
 import java.awt.event.ActionEvent;
@@ -86,6 +87,10 @@ public class WubiqConfigurator {
 	private JPanel contentPane;
 	private JLabel lblUuid;
 	private JTextField fldUuid;
+	private JLabel lblKeepAlive;
+	private JCheckBox chkKeepAlive;
+	private JLabel lblSuppressLogs;
+	private JCheckBox chkSuppressLogs;
 	private JButton btnSave;
 	private JButton btnEsFlag;
 	private JButton btnEnFlag;
@@ -98,6 +103,7 @@ public class WubiqConfigurator {
 	private JSplitPane addressSplitPane;
 	private boolean changed;
 	private boolean changingId;
+	private JLabel lblChangedState;
 	private JCheckBox chkChangedState;
 	private final String[] TEST_PORTS = new String[]{"", ":8090", ":8080", ":8181"};
 	private final Pattern URI_PORT = Pattern.compile(".+\\:\\d{1,6}.*");
@@ -217,11 +223,19 @@ public class WubiqConfigurator {
 		});
 		contentPane.setBorder(new LineBorder(new Color(0, 0, 0)));
 		frame.setContentPane(contentPane);
-		contentPane.setLayout(new MigLayout("", "[grow][grow][]", "[][grow][grow][grow]"));
+		contentPane.setLayout(new MigLayout("", "[grow][grow][]", "[][grow][grow][grow][grow][grow]"));
 		
+		lblChangedState = new JLabel("Changed State");
+		lblChangedState.setName("lblChangedState");
+		lblChangedState.setFont(new Font("Tahoma", Font.ITALIC, 8));
+
+		contentPane.add(lblChangedState);
+
 		chkChangedState = new JCheckBox("");
 		chkChangedState.setName("chkChangedState");
 		chkChangedState.setEnabled(false);
+		lblChangedState.setLabelFor(chkChangedState);
+
 		contentPane.add(chkChangedState, "cell 0 0,alignx left,aligny center");
 		
 		flagsSplitPane = new JSplitPane();
@@ -237,14 +251,14 @@ public class WubiqConfigurator {
 		btnEnFlag.setName("btnEnFlag");
 		flagsSplitPane.setRightComponent(btnEnFlag);
 		btnEnFlag.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/net/sf/wubiq/i18n/en.png")));
-		
-				btnEnFlag.addActionListener(new ActionListener() {
-					public void actionPerformed(ActionEvent event) {
-						Locale.setDefault(Locale.ENGLISH);
-						localize();
-					}
-					
-				});
+	
+		btnEnFlag.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent event) {
+				Locale.setDefault(Locale.ENGLISH);
+				localize();
+			}
+			
+		});
 		
 		btnEsFlag.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent event) {
@@ -267,7 +281,7 @@ public class WubiqConfigurator {
 		});
 		fldUuid.setName("fldUuid");
 		lblUuid.setLabelFor(fldUuid);
-		contentPane.add(fldUuid, "cell 1 1,growx");
+		contentPane.add(fldUuid, "cell 1 1,growx,alignx,aligny center");
 		fldUuid.setColumns(10);
 		fldUuid.getDocument().addDocumentListener(new DocumentListener() {
 			@Override
@@ -285,27 +299,43 @@ public class WubiqConfigurator {
 				setChangedState(true);
 			}
 		});
-		
+
 		btnReset = new JButton("Reset");
 		btnReset.setName("btnReset");
-		contentPane.add(btnReset, "cell 2 1");
+		contentPane.add(btnReset, "cell 2 1,growx,aligny center");
 		btnReset.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent event) {
 				resetData(event);
 			}
 		});
 		
+        lblKeepAlive = new JLabel("Keep Alive");
+        lblKeepAlive.setName("lblKeepAlive");
+        contentPane.add(lblKeepAlive, "cell 0 2,alignx right,aligny center");
+
+        chkKeepAlive = new JCheckBox();
+        chkKeepAlive.setName("chkKeepAlive");
+        contentPane.add(chkKeepAlive, "cell 1 2,alignx left,aligny center");
+
+		lblSuppressLogs = new JLabel("Suppress Logs");
+        lblSuppressLogs.setName("lblSuppressLogs");
+        contentPane.add(lblSuppressLogs, "cell 0 3,alignx right,aligny center");
+
+        chkSuppressLogs = new JCheckBox();
+        chkSuppressLogs.setName("chkSuppressLogs");
+        contentPane.add(chkSuppressLogs, "cell 1 3,alignx left,aligny center");
+
 		tabbedPane = new JTabbedPane(JTabbedPane.TOP);
 		tabbedPane.setTabLayoutPolicy(JTabbedPane.SCROLL_TAB_LAYOUT);
 		tabbedPane.setName("tabbedPane");
-		contentPane.add(tabbedPane, "cell 0 2 3 1,growx");
+		contentPane.add(tabbedPane, "cell 0 4 3 1,growx");
 		
 		general = new JPanel();
 		general.setName("general");
 		tabbedPane.addTab("General", null, general, null);
 		
-				// Tab General
-				tabbedPane.setTitleAt(0, InstallerBundle.getLabel("tab.general.text"));
+		// Tab General
+		tabbedPane.setTitleAt(0, InstallerBundle.getLabel("tab.general.text"));
 		general.setLayout(new MigLayout("", "[454px][77px]", "[420px][420px][29px]"));
 		
 		scrollPaneGroups = new JScrollPane();
@@ -559,9 +589,9 @@ public class WubiqConfigurator {
 		lblDmDefaultFont.setName("lblDmDefaultFont");
 		printers.add(lblDmDefaultFont, "cell 0 3,alignx trailing");
 		
-		fldDmDefaultFont = new JComboBox();
+		fldDmDefaultFont = new JComboBox<String>();
 		fldDmDefaultFont.setName("fldDmDefaultFont");
-		fldDmDefaultFont.setModel(new DefaultComboBoxModel(new String[] {"Times New Roman", "Sans Serif", "Serif"}));
+		fldDmDefaultFont.setModel(new DefaultComboBoxModel<String>(new String[] {"Times New Roman", "Sans Serif", "Serif"}));
 		fldDmDefaultFont.setEditable(true);
 		printers.add(fldDmDefaultFont, "cell 1 3,growx");
 		
@@ -600,7 +630,7 @@ public class WubiqConfigurator {
 		fldAdditionalJvmParameters.setColumns(10);
 		
 		saveSplitPane = new JSplitPane();
-		contentPane.add(saveSplitPane, "cell 0 3 3 1,grow");
+		contentPane.add(saveSplitPane, "cell 0 5 3 1,grow");
 		
 		btnSave = new JButton("Save");
 		saveSplitPane.setLeftComponent(btnSave);
@@ -768,8 +798,12 @@ public class WubiqConfigurator {
 		InstallerProperties.INSTANCE(serviceName).resetProperties();
 		
 		// Un-tabbed
+
 		fldUuid.setText(InstallerProperties.INSTANCE(serviceName).getUuid());
 		
+		chkKeepAlive.setSelected(InstallerProperties.INSTANCE(serviceName).isKeepAlive());
+		chkSuppressLogs.setSelected(InstallerProperties.INSTANCE(serviceName).isSuppressLogs());
+
 		// Tab General
 		loadTableModel(fldGroups, InstallerProperties.INSTANCE(serviceName).getGroups());
 		loadTableModel(fldInternetAddresses, InstallerProperties.INSTANCE(serviceName).getConnections());
@@ -829,7 +863,10 @@ public class WubiqConfigurator {
 	private void localize() {
 		InstallerBundle.resetLocale();
 		// Untabbed
+		lblChangedState.setText(InstallerBundle.getLabel("lblChangedState.text"));
 		lblUuid.setText(InstallerBundle.getLabel("lblUuid.text"));
+		lblKeepAlive.setText(InstallerBundle.getLabel("lblKeepAlive.text"));
+		lblSuppressLogs.setText(InstallerBundle.getLabel("lblSuppressLogs.text"));
 		btnSave.setText(InstallerBundle.getLabel("btnSave.text"));
 		btnSaveAndExit.setText(InstallerBundle.getLabel("btnSaveAndExit.text"));
 		btnReset.setText(InstallerBundle.getLabel("btnReset.text"));
@@ -874,6 +911,8 @@ public class WubiqConfigurator {
 			save(properties, ConfigurationKeys.PROPERTY_UUID, fldUuid.getText(), "");
 			
 			// Tab General
+			save(properties, ConfigurationKeys.PROPERTY_KEEP_ALIVE, chkKeepAlive.isSelected());
+			save(properties, ConfigurationKeys.PROPERTY_SUPPRESS_LOGS, chkSuppressLogs.isSelected());
 			save(properties, ConfigurationKeys.PROPERTY_GROUPS, fldGroups);
 			save(properties, ConfigurationKeys.PROPERTY_CONNECTIONS, fldInternetAddresses);
 			
@@ -891,8 +930,8 @@ public class WubiqConfigurator {
 			save(properties, PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL, fldForceLogicalFonts.isSelected());
 			
 			// Tab Advanced
-			int pollInterval = fldPollInterval.getValue() != null ? new Integer(fldPollInterval.getValue().toString()) : ConfigurationKeys.DEFAULT_POLL_INTERVAL;
-			int printJobWait = fldPrintJobWait.getValue() != null ? new Integer(fldPrintJobWait.getValue().toString()) : ConfigurationKeys.DEFAULT_PRINT_JOB_WAIT;
+			int pollInterval = fldPollInterval.getValue() != null ? Integer.parseInt(fldPollInterval.getValue().toString()) : ConfigurationKeys.DEFAULT_POLL_INTERVAL;
+			int printJobWait = fldPrintJobWait.getValue() != null ? Integer.parseInt(fldPrintJobWait.getValue().toString()) : ConfigurationKeys.DEFAULT_PRINT_JOB_WAIT;
 			save(properties, ConfigurationKeys.PROPERTY_POLL_INTERVAL, pollInterval, ConfigurationKeys.DEFAULT_POLL_INTERVAL);
 			save(properties, ConfigurationKeys.PROPERTY_PRINT_JOB_WAIT, printJobWait, ConfigurationKeys.DEFAULT_PRINT_JOB_WAIT);
 			save(properties, ConfigurationKeys.PROPERTY_JVM_PARAMETERS, fldAdditionalJvmParameters.getText(), "");

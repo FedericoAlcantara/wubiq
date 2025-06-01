@@ -29,7 +29,7 @@ import net.sf.wubiq.utils.Is;
  * @author Federico Alcantara
  *
  */
-public class RunningClient extends AbstractLocalPrintManager implements Runnable {
+public class RunningClient extends AbstractLocalPrintManager {
 	private boolean stopClient;
 	private JavaRun javaRun;
 	private Process process;
@@ -109,7 +109,9 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 		String photoPrinters = InstallerProperties.INSTANCE(serviceName).getPhotoPrinters().trim();
 		String defaultDmFont = InstallerProperties.INSTANCE("serviceName").getDefaultDmFont().trim();
 		String forceLogicalFonts = InstallerProperties.INSTANCE("serviceName").getForceLogicalFontOnDm().trim();
-		
+		Boolean keepAlive = InstallerProperties.INSTANCE(serviceName).isKeepAlive();
+		Boolean suppressLogs = InstallerProperties.INSTANCE(serviceName).isSuppressLogs();
+
 		if (!Is.emptyString(dmPrinters)) {
 			jvmParameters
 				.add("-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + "=" + dmPrinters);
@@ -135,6 +137,11 @@ public class RunningClient extends AbstractLocalPrintManager implements Runnable
 				.add("-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + "=" + forceLogicalFonts );
 		}
 		
+		jvmParameters
+			.add("-D" + PropertyKeys.WUBIQ_CLIENT_KEEP_ALIVE + "=" + keepAlive.toString());
+		jvmParameters
+			.add("-D" + PropertyKeys.WUBIQ_CLIENT_SUPPRESS_LOGS + "=" + suppressLogs.toString());
+
 		javaRun.setJvmParameters(jvmParameters);
 		javaRun.setJarFile(wubiqClientJar.getPath());
 		boolean loadNewJar = true;

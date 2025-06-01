@@ -5,6 +5,12 @@
 - Improved changelog
 - New docker-compose.yml to run a wubiq-server
 - Prompt for documentation using AI
+- Added wubiq.client.keep_alive property: keeps client connected to server even without pending jobs
+- Added wubiq.client.suppress_logs property: reduces log verbosity by suppressing most log messages
+
+### Wubiq-installer
+- Added Keep Alive option: configures client to maintain persistent connection with server
+- Added Suppress Logs option: reduces client logging output for cleaner operation
 
 ### Wubiq-assets
 - New, to hold assets common to all other projects.

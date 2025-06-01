@@ -54,15 +54,14 @@ public final class InstallerBundle {
 	 * @return The found and translated string or the same key.
 	 */
 	public static String getLabel(String key) {
-		return "";
-		// String returnValue = null;
-		// try {
-		// 	returnValue = getLabelsBundle().getString(key);
-		// } catch (Exception e) {
-		// 	LOG.error(e.getMessage() + ":" + key);
-		// 	returnValue = key;
-		// }
-		// return returnValue;
+		String returnValue = null;
+		try {
+			returnValue = getLabelsBundle().getString(key);
+		} catch (Exception e) {
+			LOG.error(e.getMessage() + ":" + key);
+			returnValue = key;
+		}
+		return returnValue;
 	}
 	
 	/**

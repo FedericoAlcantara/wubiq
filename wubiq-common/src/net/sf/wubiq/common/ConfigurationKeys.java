@@ -69,7 +69,8 @@ public final class ConfigurationKeys {
 	public static final String PROPERTY_JDBC_PASSWORD = "jdbc.password";
 	
 	public static final String PROPERTY_PDF_TO_IMAGE_DOTS_PER_INCH = "pdf.to.image.dpi";
-
+	public static final String PROPERTY_KEEP_ALIVE = "keep.alive";
+	public static final String PROPERTY_SUPPRESS_LOGS = "suppress.logs";	
 	private static boolean persistenceActive = false;
 
 	/**

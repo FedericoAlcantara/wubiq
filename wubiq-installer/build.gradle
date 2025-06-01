@@ -1,0 +1,55 @@
+apply plugin: 'java'
+
+repositories {
+    mavenCentral()
+    flatDir {
+        dirs 'lib'
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir 'src'
+        }
+    }
+}
+
+java {
+    sourceCompatibility = '1.8'
+    targetCompatibility = '1.8'
+
+}
+
+jar.enabled = false
+
+dependencies {
+    implementation files('lib/commons-logging-1.1.1.jar')
+    implementation files('lib/miglayout15-swing.jar')
+    implementation files('lib/uispec4j.jar')
+    implementation files('../wubiq-client/dist/wubiq-client.jar')
+    implementation files('../wubiq-common/dist/wubiq-common.jar')
+}
+
+tasks.named('compileJava') {
+    destinationDirectory = file('bin')
+    dependsOn copyResources
+}
+
+tasks.named('clean') {
+    delete 'bin'
+}
+
+task copyResources(type: Copy) {
+    from('src') {
+        include '**/*.png'
+        include '**/*.properties'
+    }
+    into('bin')
+}
+
+task printJavaHome {
+    doLast {
+        println "Java Home: ${System.getProperty('java.home')}"
+    }
+}
