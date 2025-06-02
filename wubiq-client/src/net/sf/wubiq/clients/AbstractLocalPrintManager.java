@@ -529,8 +529,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 			doLog(e.getMessage(), 5);
 		} catch (IOException e) {
 			preferredURL = null;
-			LOG.error(e.getMessage(), e);
-			throw new ConnectException(e.getMessage());
+			ConnectException connectException = new ConnectException(e.getMessage());
+			logConnectException(connectException);
+			throw connectException;
 		} catch (Exception e) {
 			preferredURL = null;
 			LOG.error(e.getMessage() + "->" + webUrl);
@@ -546,7 +547,6 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		return returnValue;
 	}
 
-	
 	protected Set<URL> getUrls() {
 		if (urls == null) {
 			urls = new LinkedHashSet<URL>();
@@ -984,5 +984,9 @@ public abstract class AbstractLocalPrintManager implements Runnable {
 		String returnValue = this.lastSessionId;
 		this.lastSessionId = null;
 		return returnValue;
+	}
+
+	protected void logConnectException(ConnectException e) {
+		LOG.error(e.getMessage(), e);
 	}
 }

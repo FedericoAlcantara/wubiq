@@ -14,8 +14,40 @@
     <property name="resources" value="${install.dir}/resources" />
 	<property name="name.jar" value="wubiq-installer" />
 	<property file="wubiq-setup.properties" />
+
+
+	<path id="project.classpath">
+		<pathelement path="${lib}"/>
+		<fileset dir="${lib}"> 
+			<include name="**/*.jar"/> 
+		</fileset>
+	</path>
+
+	<path id="project.src">
+		<pathelement path="${basedir}/src"/>
+	</path>	
+
+	<target name="compile">
+		<delete dir="${bin}" failonerror="false" />
+		<mkdir dir="${bin}" />
+ 		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
+		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
+ 		<javac destdir="${bin}" failonerror="true" includeantruntime="false"
+				debug="true" target="1.6" source="1.6">
+			<src refid="project.src"/>
+			<classpath refid="project.classpath" />
+			<classpath location="${common.dir}/dist/wubiq-common.jar" />
+			<classpath location="${common.dir}/lib-nondeploy/cglib-nodep-3.1.jar" />
+			<classpath location="${client.dir}/dist/wubiq-client.jar" />
+		</javac>
+		<copy todir="${bin}">
+			<fileset dir="${basedir}/src">
+				<include name="**/*.png" />
+			</fileset>
+		</copy>
+	</target>
 	
-	<target name="clean">
+	<target name="clean" depends="compile">
 		<delete dir="${dist.dir}" failonerror="false" />
 		<delete dir="${install.dir}/build" />
 		<mkdir dir="${install.dir}/build" />

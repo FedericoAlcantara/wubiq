@@ -39,6 +39,14 @@ public abstract class BaseProperties {
 		return get(ConfigurationKeys.PROPERTY_UUID, UUID.randomUUID().toString()).trim();
 	}
 
+	public Boolean isKeepAlive() {
+		return Boolean.parseBoolean(get(ConfigurationKeys.PROPERTY_KEEP_ALIVE, "false").trim());
+	}
+
+	public Boolean isSuppressLogs() {
+		return Boolean.parseBoolean(get(ConfigurationKeys.PROPERTY_SUPPRESS_LOGS, "false").trim());
+	}
+
 	public String getGroups() {
 		return get(ConfigurationKeys.PROPERTY_GROUPS, "").trim();
 	}

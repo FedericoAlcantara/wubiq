@@ -94,8 +94,8 @@
 			validargs="y,n"
 		    addproperty="do.continue" />
 		<condition property="do.abort">
-		    <equals arg1="n" arg2="${do.continue}"/>
-		  </condition>
+			<equals arg1="n" arg2="${do.continue}"/>
+		</condition>
 		<fail if="do.abort">Build android.apk and generate the documentation to continue</fail>
 		<ant antfile="../wubiq-installer/build.xml" inheritall="false" />
 		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />		
@@ -106,7 +106,7 @@
 
 		<delete file="${basedir}/WebContent/WEB-INF/lib/wubiq-common.jar" />
 
-		<java classname="net.sf.wubiq.utils.VersionInfo" classpath="${bin}" outputproperty="build" />
+		<java classname="net.sf.wubiq.utils.VersionInfo" classpath="${war.classes}" outputproperty="build" />
 		<property name="version" value="wubiq-${build}"/>
 		
 		<zip basedir="../wubiq-common/doc" zipfile="${basedir}/dist/${version}/doc.zip" />
@@ -129,14 +129,13 @@
 				<include name="terms_and_conditions.md" />
 				<include name="privacy_policy.md" />
 			</fileset>
-			<fileset dir="../wubiq-android-gradle/app/release" includes="wubiq-android-release.apk"/>
+			<fileset dir="../wubiq-android-gradle/app/release" includes="app-release.apk"/>
 		</copy>
-		<move file="${basedir}/dist/${version}/wubiq-android-release.apk" tofile="${basedir}/dist/${version}/wubiq-android.apk"/>
+		<move file="${basedir}/dist/${version}/app-release.apk" tofile="${basedir}/dist/${version}/wubiq-android.apk"/>
 		<copy file="${basedir}/dist/${version}/wubiq-android.apk" todir="${basedir}/WebContent" />
 		
 		<antcall target="deploy" />
 		<zip basedir="${basedir}/dist/${version}" zipfile="${basedir}/dist/${version}.zip" />
 		
-		<delete file="${output.war}" />
 	</target>
 </project>
