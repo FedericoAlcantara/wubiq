@@ -1,0 +1,65 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Current File",
+            "request": "launch",
+            "mainClass": "${file}"
+        },
+        {
+            "type": "java",
+            "name": "LocalPrintManager",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.clients.LocalPrintManager",
+            "projectName": "wubiq-client",
+            "vmArgs": "-Dwubiq.client.connection.retries=1 -Dwubiq.client.keep_alive=true -Dwubiq.client.suppress_logs=true",
+            "args": ["-c", "http://192.168.68.103:8080", "-u", "mac-test"]
+        },
+        {
+            "type": "java",
+            "name": "VersionInformation",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.clients.VersionInformation",
+            "projectName": "wubiq-client"
+        },
+        {
+            "type": "java",
+            "name": "WubiqConfigurator",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.clients.WubiqConfigurator",
+            "projectName": "wubiq-installer"
+        },
+        {
+            "type": "java",
+            "name": "WubiqLauncher",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.clients.WubiqLauncher",
+            "projectName": "wubiq-installer"
+        },
+        {
+            "type": "java",
+            "name": "ATest",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.utils.ATest",
+            "projectName": "wubiq-installer"
+        },
+        {
+            "type": "java",
+            "name": "InstallerSetupUtils",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.utils.InstallerSetupUtils",
+            "projectName": "wubiq-installer"
+        },
+        {
+            "type": "java",
+            "name": "VersionInfo",
+            "request": "launch",
+            "mainClass": "net.sf.wubiq.utils.VersionInfo",
+            "projectName": "wubiq-server"
+        }
+    ]
+}
