@@ -71,4 +71,6 @@ wubiq-android-gradle/.DS_Store
 
 # Eclipse Servers
 /Servers/
-/.vscode
+/.vscode/*
+!/.vscode/launch-example.json
+

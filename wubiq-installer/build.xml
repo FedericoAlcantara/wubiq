@@ -40,9 +40,10 @@
 			<classpath location="${common.dir}/lib-nondeploy/cglib-nodep-3.1.jar" />
 			<classpath location="${client.dir}/dist/wubiq-client.jar" />
 		</javac>
-		<copy todir="${bin}">
+ 		<copy todir="${bin}">
 			<fileset dir="${basedir}/src">
 				<include name="**/*.png" />
+				<include name="**/*.properties" />
 			</fileset>
 		</copy>
 	</target>
@@ -105,6 +106,13 @@
 		<touch file="${install.dir}/wubiq-installer.properties"/>
 	</target>
 	
+	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
+		<echo message="Creating wubiq-installer javadoc" />
+		<javadoc destdir="${basedir}/javadoc" sourcepath="${basedir}/src" packagenames="net.sf.wubiq.*"
+				classpathref="project.classpath" failonerror="false" use="true" windowtitle="Wubiq Installer Javadoc"
+				doctitle="Wubiq Installer API Documentation" />
+	</target>
+
 	<target name="distribute" description="Distribute the application">
 		<delete dir="${build}" failonerror="false" />
 		<mkdir dir="${build}" />

@@ -13,13 +13,13 @@
     <info>
         <appname>Wubiq</appname>
         <authors>
-            <author name="Federico Alcantara" email="falcantara@users.sf.net"/>
+            <author name="Federico Alcantara" email="support@wadvanced.com"/>
         </authors>
-        <url>http://sourceforge.net/projects/wubiq/</url>
+        <url>https://github.com/FedericoAlcantara/wubiq</url>
         <writeinstallationinformation>yes</writeinstallationinformation>
         <run-privileged/>
-	    <appversion>2.0.0</appversion>
-	    <webdir>https://sourceforge.net/p/wubiq/wiki/Main_Page/</webdir>
+	    <appversion>2.6.2</appversion>
+	    <webdir>https://github.com/FedericoAlcantara/wubiq/wiki</webdir>
 	    <uninstaller write="yes"/>  
     </info>
 
@@ -90,15 +90,17 @@
         <pack name="Installation Base" id="base" required = "yes" loose = "false" 
             hidden="false">
             <description>.</description>
-            <file src="./build/net" override="true"
+            <fileset dir="./build/net" override="true"
                 targetdir="${INSTALL_PATH}/bin">
-            </file>
-            <file src="./build/org" override="true"
+                <include name="**/*"/>
+            </fileset>
+            <fileset dir="./build/org" override="true"
                 targetdir="${INSTALL_PATH}/bin">
-            </file>
-            <file src="./wubiq-installer.properties" override="true"
-                targetdir="${INSTALL_PATH}/bin">
-            </file>
+                <include name="**/*"/>
+            </fileset>
+            <singlefile src="./wubiq-installer.properties" override="true"
+                target="${INSTALL_PATH}/bin/wubiq-installer.properties">
+            </singlefile>
             <parsable targetfile="${INSTALL_PATH}/bin/wubiq-installer.properties">
             </parsable>
             <!-- Install windows service -->            

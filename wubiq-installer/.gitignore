@@ -1,6 +1,5 @@
 /bin/
 /.gradle/
-/gradle/
 /.vscode/
 /izpack-settings.properties
 /build/

@@ -1,0 +1,10 @@
+net.sf.wubiq.android
+net.sf.wubiq.dao
+net.sf.wubiq.data
+net.sf.wubiq.enums
+net.sf.wubiq.listeners
+net.sf.wubiq.persistence
+net.sf.wubiq.print.managers.impl
+net.sf.wubiq.remote
+net.sf.wubiq.servlets
+net.sf.wubiq.utils

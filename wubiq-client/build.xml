@@ -31,7 +31,9 @@
 	
 	<target name="create-client-jar" depends="clean">
 		<available file="${basedir.common}" property="wubiq-common-exists" />
+
 		<antcall target="create-common-jar" />
+		
 		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="builds.failed"
 				debug="true" target="1.6" source="1.6"> 
 			<src refid="project.src"/>
@@ -67,13 +69,21 @@
 		<copy todir="${jar.build}" >
 			<fileset dir="${i18n}" includes = "**/*" />
 		</copy>
-		<!-- <delete dir="${jar.build}/META-INF/maven" /> -->
 	</target>
-		
+
+	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
+		<echo message="Creating wubiq-client javadoc" />
+		<delete dir="${basedir}/javadoc" failonerror="false" />
+		<javadoc destdir="${basedir}/javadoc" sourcepath="${basedir}/src" packagenames="net.sf.wubiq.*"
+				classpathref="project.classpath" failonerror="false" use="true" windowtitle="Wubiq Client Javadoc"
+				doctitle="Wubiq Client API Documentation" />
+	</target>
+
 	<target name="clean">
 		<delete dir="${dist}" failonerror="false" />
 		<delete dir="${bin}" failonerror="false" />
 		<delete dir="${jar.build}" failonerror="false" />
+
 		<mkdir dir="${dist}"/>
 		<mkdir dir="${bin}"/>
 		<mkdir dir="${jar.build}"/>
