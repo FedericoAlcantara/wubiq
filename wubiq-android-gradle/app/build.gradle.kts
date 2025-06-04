@@ -40,11 +40,11 @@ dependencies {
     implementation(files("libs/ZSDK_API.jar"))
 
     // Worker
-    val work_version = "2.10.1"
+    val workVersion = "2.10.1"
     // (Java only)
-    implementation("androidx.work:work-runtime:$work_version")
+    implementation("androidx.work:work-runtime:$workVersion")
     // Kotlin + coroutines
-    implementation("androidx.work:work-runtime-ktx:$work_version")
+    implementation("androidx.work:work-runtime-ktx:$workVersion")
 
     // test dependencies
     testImplementation("junit:junit:4.13.2")

@@ -377,56 +377,56 @@ public class WubiqConfigurator {
 		btnDeleteGroup.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/net/sf/wubiq/i18n/minus.png")));
 		groupsSplitPane.setRightComponent(btnDeleteGroup);
 		
-				scrollPaneAddresses = new JScrollPane();
-				scrollPaneAddresses.setName("scrollPaneAddresses");
-				general.add(scrollPaneAddresses, "cell 0 1,growx,aligny top");
-				
-				fldInternetAddresses = new JTable(new AddressesTableModel("host"));
-				fldInternetAddresses.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-				fldInternetAddresses.setName("fldInternetAddresses");
-				fldInternetAddresses.getColumnModel().getColumn(0).setResizable(true);
-				fldInternetAddresses.getColumnModel().getColumn(0).setPreferredWidth(300);
-				fldInternetAddresses.getColumnModel().getColumn(0).setMaxWidth(12312312);
-				fldInternetAddresses.getColumnModel().getColumn(1).setMaxWidth(90);
-				fldInternetAddresses.setCellSelectionEnabled(true);
-				fldInternetAddresses.getModel().addTableModelListener(tableListener);
-				scrollPaneAddresses.setViewportView(fldInternetAddresses);
-				
-				addressSplitPane = new JSplitPane();
-				addressSplitPane.setName("addressSplitPane");
-				general.add(addressSplitPane, "cell 1 1,alignx left,aligny center");
-				
-						btnTestInternetAddresses = new JButton("Test");
-						btnTestInternetAddresses.setName("btnTestInternetAddresses");
-						btnTestInternetAddresses.addActionListener(new ActionListener() {
-							@Override
-							public void actionPerformed(ActionEvent e) {
-								testConnections();
-							}
-						});
-						general.add(btnTestInternetAddresses, "cell 0 2,alignx center,aligny top");
-						
-								btnAddAddress = new JButton("");
-								btnAddAddress.setName("btnAddAddress");
-								btnAddAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/net/sf/wubiq/i18n/plus.png")));
-								btnAddAddress.addActionListener(new ActionListener(){
-									@Override
-									public void actionPerformed(ActionEvent event) {
-										addConnection(event);
-									}
-								});
-								addressSplitPane.setLeftComponent(btnAddAddress);
-								
-										btnDeleteAddress = new JButton("");
-										btnDeleteAddress.setName("btnDeleteAddress");
-										btnDeleteAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/net/sf/wubiq/i18n/minus.png")));
-										btnDeleteAddress.addActionListener(new ActionListener(){
-											@Override
-											public void actionPerformed(ActionEvent event) {
-												deleteRow(fldInternetAddresses);
-											}
-										});
-										addressSplitPane.setRightComponent(btnDeleteAddress);
+		scrollPaneAddresses = new JScrollPane();
+		scrollPaneAddresses.setName("scrollPaneAddresses");
+		general.add(scrollPaneAddresses, "cell 0 1,growx,aligny top");
+
+		fldInternetAddresses = new JTable(new AddressesTableModel("host"));
+		fldInternetAddresses.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+		fldInternetAddresses.setName("fldInternetAddresses");
+		fldInternetAddresses.getColumnModel().getColumn(0).setResizable(true);
+		fldInternetAddresses.getColumnModel().getColumn(0).setPreferredWidth(300);
+		fldInternetAddresses.getColumnModel().getColumn(0).setMaxWidth(12312312);
+		fldInternetAddresses.getColumnModel().getColumn(1).setMaxWidth(90);
+		fldInternetAddresses.setCellSelectionEnabled(true);
+		fldInternetAddresses.getModel().addTableModelListener(tableListener);
+		scrollPaneAddresses.setViewportView(fldInternetAddresses);
+
+		addressSplitPane = new JSplitPane();
+		addressSplitPane.setName("addressSplitPane");
+		general.add(addressSplitPane, "cell 1 1,alignx left,aligny center");
+
+		btnTestInternetAddresses = new JButton("Test");
+		btnTestInternetAddresses.setName("btnTestInternetAddresses");
+		btnTestInternetAddresses.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				testConnections();
+			}
+		});
+		general.add(btnTestInternetAddresses, "cell 0 2,alignx center,aligny top");
+		
+		btnAddAddress = new JButton("");
+		btnAddAddress.setName("btnAddAddress");
+		btnAddAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/net/sf/wubiq/i18n/plus.png")));
+		btnAddAddress.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				addConnection(event);
+			}
+		});
+		addressSplitPane.setLeftComponent(btnAddAddress);
+		
+		btnDeleteAddress = new JButton("");
+		btnDeleteAddress.setName("btnDeleteAddress");
+		btnDeleteAddress.setIcon(new ImageIcon(WubiqConfigurator.class.getResource("/net/sf/wubiq/i18n/minus.png")));
+		btnDeleteAddress.addActionListener(new ActionListener(){
+			@Override
+			public void actionPerformed(ActionEvent event) {
+				deleteRow(fldInternetAddresses);
+			}
+		});
+		addressSplitPane.setRightComponent(btnDeleteAddress);
 		
 		clientParameters = new JPanel();
 		clientParameters.setName("clientParameters");

@@ -1,0 +1,28 @@
+<?xml version="1.0"?>
+
+<project name="wubiq-android-gradle" basedir="." default="create-javadoc-documentation">
+
+	<property name="project" value="wubiq-android-gradle" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="src" value="${basedir}/app/src/main/java" />
+	<property name="bin" value="${basedir}/bin" />
+	<property name="libs" value="${basedir}/app/libs" />
+	
+	<path id="project.classpath">
+		<pathelement path="${bin}"/>
+		<fileset dir="${libs}"> 
+			<include name="**/*.jar"/> 
+		</fileset> 
+	</path>
+	
+	<path id="project.src">
+		<pathelement path="${src}"/>
+	</path>	
+		
+	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
+		<echo message="Creating wubiq-android-gradle javadoc" />
+		<javadoc destdir="${basedir}/javadoc" sourcepath="${basedir}/app/src/main/java" packagenames="net.sf.wubiq.*"
+				classpathref="project.classpath" failonerror="false" use="true" windowtitle="Wubiq Android Javadoc"
+				doctitle="Wubiq Android API Documentation" />
+	</target>
+</project>

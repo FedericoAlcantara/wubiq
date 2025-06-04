@@ -1,20 +1,17 @@
 # Changelog
 
-## Wubiq 2.6.2CR
+## Wubiq 2.6.2
 ### Wubiq
 - Improved changelog
 - New docker-compose.yml to run a wubiq-server
 - Prompt for documentation using AI
 - Added wubiq.client.keep_alive property: keeps client connected to server even without pending jobs
 - Added wubiq.client.suppress_logs property: reduces log verbosity by suppressing most log messages
+- Added javadoc to all projects
 
 ### Wubiq-installer
 - Added Keep Alive option: configures client to maintain persistent connection with server
 - Added Suppress Logs option: reduces client logging output for cleaner operation
-
-### Wubiq-assets
-- New, to hold assets common to all other projects.
-- Created images for different resolution and compatible with android's vector drawables.
 
 ### Wubiq-android (old version)
 - Removed, was replaced by wubiq-android-gradle.
@@ -26,6 +23,10 @@
 - Added property to AndroidManifest that allows connection to http protocols.
 - Added Advanced configuration parameter 'keep_service_alive'.
 - Added Advanced configuration parameter 'suppress_notifications'.
+
+### Wubiq-assets
+- New, to hold assets common to all other projects.
+- Created images for different resolution and compatible with android's vector drawables.
 
 ### Wubiq-common
 - build.xml added the manifest to the produced wubiq-common.jar

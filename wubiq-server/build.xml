@@ -11,8 +11,10 @@
 	<property name="output.war" value="${dist}/${project}.war" />
 	<property name="war.build" value="${basedir}/build" />
 	<property name="war.classes" value="${war.build}/WEB-INF/classes"/>
+	<property name="workspace.dir" value="${basedir}/.." />
+	<property name="basedir.gradle" value="${workspace.dir}/wubiq-android-gradle" />
 	<property file="settings.properties" />
-	
+
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
 		<pathelement path="${bin}"/>
@@ -26,6 +28,11 @@
 		<pathelement path="${src}"/>
 	</path>
 		
+	<target name="create-version-properties" description="Creates build properties">
+		<java classname="net.sf.wubiq.utils.VersionInfo" classpath="${war.classes}" outputproperty="build" />
+		<property name="version" value="wubiq-${build}"/>
+	</target>
+
 	<target name="create-wubiq-server-output" description="creates war for wubiq-server">
 		<!-- WAR creation -->
 		<!-- clean and prepare the build directory for war creation --> 
@@ -86,31 +93,25 @@
 			<fileset dir="${basedir}/dist/${version}" includes="wubiq-installer.jar" />
 		</copy>
 	</target>
-	
-	<target name="distribute" description="creates the distribution">
-		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
-		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
-		<input message="Common and client has been built. You should have generated the project documentation for wubiq-client, wubiq-common, wubiq-installer, wubiq-printerjob and wubiq-server. Since the Wubiq-ANDROID is now on Android Studio, you must generate the signed android application and it's documentation from within the Android Studio right NOW. If you have set up everything as described, press Y to continue with the packaging process. (Y/N)?"
-			validargs="y,n"
-		    addproperty="do.continue" />
-		<condition property="do.abort">
-			<equals arg1="n" arg2="${do.continue}"/>
-		</condition>
-		<fail if="do.abort">Build android.apk and generate the documentation to continue</fail>
-		<ant antfile="../wubiq-installer/build.xml" inheritall="false" />
-		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />		
-		<copy file="../wubiq-client/dist/wubiq-client.jar" todir="${basedir}/WebContent" />
-		<copy file="../wubiq-installer/dist/wubiq-setup.jar" todir="${basedir}/WebContent" />
-		
-		<antcall target="create-wubiq-server-output" />
 
-		<delete file="${basedir}/WebContent/WEB-INF/lib/wubiq-common.jar" />
+	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
+		<echo message="Creating wubiq-server javadoc" />
+		<javadoc destdir="${basedir}/javadoc" sourcepath="${basedir}/src" packagenames="net.sf.wubiq.*"
+				classpathref="project.classpath" failonerror="false" use="true" windowtitle="Wubiq Server Javadoc"
+				doctitle="Wubiq Server API Documentation" />
+	</target>
 
-		<java classname="net.sf.wubiq.utils.VersionInfo" classpath="${war.classes}" outputproperty="build" />
-		<property name="version" value="wubiq-${build}"/>
-		
-		<zip basedir="../wubiq-common/doc" zipfile="${basedir}/dist/${version}/doc.zip" />
-		<zip basedir="../wubiq-android-gradle/doc" zipfile="${basedir}/dist/${version}/android-doc.zip" />
+	<target name="create-all-javadoc-documentation" description="Creates javadoc documentation for all projects">
+		<ant antfile="../wubiq-common/build.xml" inheritall="false" target="create-javadoc-documentation" />
+		<ant antfile="../wubiq-client/build.xml" inheritall="false" target="create-javadoc-documentation" />
+		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" target="create-javadoc-documentation" />
+		<ant antfile="../wubiq-installer/build.xml" inheritall="false" target="create-javadoc-documentation" />
+		<ant antfile="../wubiq-android-gradle/build.xml" inheritall="false" target="create-javadoc-documentation" />
+		<antcall target="create-javadoc-documentation" />
+	</target>
+
+	<target name="distribuite-binaries" description="Distributes the binaries">
+		<echo message="Distributing binaries" />
 		<copy todir="${basedir}/dist/${version}" >
 			<fileset dir="../wubiq-client/dist" includes="wubiq-client.jar" />
 			<fileset dir="../wubiq-common/dist" includes="wubiq-common.jar" />
@@ -131,11 +132,64 @@
 			</fileset>
 			<fileset dir="../wubiq-android-gradle/app/release" includes="app-release.apk"/>
 		</copy>
+	</target>
+
+	<target name="distribute-documentation" description="Distributes the javadoc documentation" depends="create-all-javadoc-documentation, create-version-properties">
+		<echo message="Distributing javadoc documentation" />
+		<delete dir="${basedir}/dist/${version}/javadoc" />
+		<mkdir dir="${basedir}/dist/${version}/javadoc" />
+		<copy todir="${basedir}/dist/${version}/javadoc/wubiq-common">
+			<fileset dir="${basedir}/javadoc" />
+		</copy>
+		<copy todir="${basedir}/dist/${version}/javadoc/wubiq-installer">
+			<fileset dir="${basedir}/javadoc" />
+		</copy>
+		<copy todir="${basedir}/dist/${version}/javadoc/wubiq-client">
+			<fileset dir="${basedir}/javadoc" />
+		</copy>
+		<copy todir="${basedir}/dist/${version}/javadoc/wubiq-printerjob">
+			<fileset dir="${basedir}/javadoc" />
+		</copy>
+		<copy todir="${basedir}/dist/${version}/javadoc/wubiq-server">
+			<fileset dir="${basedir}/javadoc" />
+		</copy>
+		<copy todir="${basedir}/dist/${version}/javadoc/wubiq-android-gradle">
+			<fileset dir="${workspace.dir}/wubiq-android-gradle/javadoc" />
+		</copy>
+	</target>
+
+	<target name="distribute" description="creates the distribution" depends="create-version-properties">	
+		<echo message="Starting distribution process for Wubiq" />
+
+		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
+		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
+		<antcall target="create-wubiq-server-output" />
+		
+		<!-- Ask for generate the signed android application -->
+		<input message="Common and client has been built and copied to ${basedir.gradle}/libs. Since the Wubiq-ANDROID is now on Android Studio, you MUST generate the signed android application and it's documentation from within the Android Studio NOW. Press Y to continue with the release process. (Y/N)?"
+			validargs="y,n"
+		    addproperty="do.continue" />
+		<condition property="do.abort">
+			<equals arg1="n" arg2="${do.continue}"/>
+		</condition>
+		<fail if="do.abort">Build android.apk to continue</fail>
+
+		<ant antfile="../wubiq-installer/build.xml" inheritall="false" />
+		<ant antfile="../wubiq-printerjob/build.xml" inheritall="false" />	
+			
+		<copy file="../wubiq-client/dist/wubiq-client.jar" todir="${basedir}/WebContent" />
+		<copy file="../wubiq-installer/dist/wubiq-setup.jar" todir="${basedir}/WebContent" />
+
+		<antcall target="distribuite-binaries" />
+
+		<antcall target="distribute-documentation" />
+
 		<move file="${basedir}/dist/${version}/app-release.apk" tofile="${basedir}/dist/${version}/wubiq-android.apk"/>
 		<copy file="${basedir}/dist/${version}/wubiq-android.apk" todir="${basedir}/WebContent" />
 		
-		<antcall target="deploy" />
 		<zip basedir="${basedir}/dist/${version}" zipfile="${basedir}/dist/${version}.zip" />
+
+		<antcall target="deploy" />
 		
 	</target>
 </project>

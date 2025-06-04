@@ -6,6 +6,8 @@
 	<property name="lib" value="${basedir}/lib" />
 	<property name="libNonDeploy" value="${basedir}/lib-nondeploy" />
 	<property name="outputjar" value="${dist}/${project}.jar" />
+	<property name="workspace.dir" value="${basedir}/.." />
+	<property name="basedir.gradle" value="${workspace.dir}/wubiq-android-gradle" />
 
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
@@ -36,8 +38,17 @@
 				<attribute name="Main-Class" value="net.sf.wubiq.utils.VersionInfo"/>	
 			</manifest>
 		</jar>
+		<copy todir="${basedir.gradle}/app/libs/" file="${outputjar}"/>
 	</target>
-		
+
+	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
+		<echo message="Creating wubiq-common javadoc" />
+		<delete dir="${basedir}/javadoc" failonerror="false" />
+		<javadoc destdir="${basedir}/javadoc" sourcepath="${basedir}/src" packagenames="net.sf.wubiq.*"
+				classpathref="project.classpath" failonerror="false" use="true" windowtitle="Wubiq Common Javadoc"
+				doctitle="Wubiq Common API Documentation" />
+	</target>
+
 	<target name="clean">
 		<delete dir="${dist}" failonerror="false" />
 		<delete dir="${bin}" failonerror="false" />
