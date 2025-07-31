@@ -2,7 +2,7 @@
 
 ## Wubiq 2.6.3
 ### Wubiq-android-gradle
-- Fix to bluetooth discoveries issues.
+- Fix bluetooth discoveries issues.
 
 ## Wubiq 2.6.2
 ### Wubiq

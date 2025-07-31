@@ -10,7 +10,7 @@ android {
         applicationId = "net.sf.wubiq.android"
         minSdk = 28
         targetSdk = 35
-        versionCode = 61
+        versionCode = 62
         versionName = "2.6.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
