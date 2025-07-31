@@ -1,5 +1,9 @@
 # Changelog
 
+## Wubiq 2.6.3
+### Wubiq-android-gradle
+- Fix to bluetooth discoveries issues.
+
 ## Wubiq 2.6.2
 ### Wubiq
 - Improved changelog

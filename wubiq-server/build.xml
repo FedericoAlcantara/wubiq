@@ -158,12 +158,18 @@
 		</copy>
 	</target>
 
-	<target name="distribute" description="creates the distribution" depends="create-version-properties">	
-		<echo message="Starting distribution process for Wubiq" />
-
+	<target name="wubiq-server" description="just build the wubiq-server along with its dependencies">
 		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
 		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
 		<antcall target="create-wubiq-server-output" />
+	</target>
+	
+	<target name="distribute" description="creates the distribution" depends="create-version-properties">	
+		<echo message="Starting distribution process for Wubiq" />
+
+		<!-- <ant antfile="../wubiq-common/build.xml" inheritall="false" />
+		<ant antfile="../wubiq-client/build.xml" inheritall="false" /> -->
+		<antcall target="wubiq-server" />
 		
 		<!-- Ask for generate the signed android application -->
 		<input message="Common and client has been built and copied to ${basedir.gradle}/libs. Since the Wubiq-ANDROID is now on Android Studio, you MUST generate the signed android application and it's documentation from within the Android Studio NOW. Press Y to continue with the release process. (Y/N)?"
