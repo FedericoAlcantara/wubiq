@@ -8,7 +8,6 @@ import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.os.Build;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -60,14 +59,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		}
 		BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (btAdapter != null) {
-			if (ActivityCompat.checkSelfPermission(this.context, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-				// TODO: Consider calling
-				//    ActivityCompat#requestPermissions
-				// here to request the missing permissions, and then overriding
-				//   public void onRequestPermissionsResult(int requestCode, String[] permissions,
-				//                                          int[] grantResults)
-				// to handle the case where the user grants the permission. See the documentation
-				// for ActivityCompat#requestPermissions for more details.
+			if (ActivityCompat.checkSelfPermission(this.context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
 				Set<BluetoothDevice> devices = btAdapter.getBondedDevices();
 				for (BluetoothDevice device : devices) {
 					String deviceKey = key(device.getAddress());
@@ -91,10 +83,9 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		TextView deviceName = new TextView(context);
 		deviceName.setText(context.getString(R.string.device_name_address, name, address));
 		deviceName.setHeight(minimumHeight);
-		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
-			deviceName.setTextAppearance(androidx.core.R.style.TextAppearance_Compat_Notification_Info);
-		}
-		texts.add(deviceName);
+		// androidx.core.R.style.TextAppearance_Compat_Notification_Info
+        deviceName.setTextAppearance(androidx.core.R.style.TextAppearance_Compat_Notification_Info);
+        texts.add(deviceName);
 
 		Spinner spinner = new Spinner(context);
 		ArrayAdapter<String> adapter = new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, MobileDevices.INSTANCE.getDeviceNames());
