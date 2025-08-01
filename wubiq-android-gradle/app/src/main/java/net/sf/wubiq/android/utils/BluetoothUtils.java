@@ -3,11 +3,17 @@
  */
 package net.sf.wubiq.android.utils;
 
+import android.Manifest;
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
+import android.content.pm.PackageManager;
+import android.os.Build;
 import android.os.Looper;
 import android.util.Log;
+
+import androidx.core.app.ActivityCompat;
 
 import net.sf.wubiq.android.R;
 import net.sf.wubiq.android.enums.NotificationIds;
@@ -19,7 +25,8 @@ import java.net.ConnectException;
  *
  */
 public class BluetoothUtils {
-	
+	public static final int REQUEST_CODE = 2;
+
 	public static int bluetoothErrors = 0;
 	private static final String TAG = BluetoothUtils.class.getSimpleName();
 
@@ -102,5 +109,20 @@ public class BluetoothUtils {
 	public static void cancelError(Context context) {
 		NotificationUtils.INSTANCE.cancelNotification(context, NotificationIds.BLUETOOTH_ERROR_ID);
 		bluetoothErrors = 0;
+	}
+
+	public static boolean bluetoothGranted(Object activity) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+			if (ActivityCompat.checkSelfPermission((Context)activity, android.Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
+				if (activity instanceof Activity) {
+					ActivityCompat.requestPermissions((Activity) activity, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_CODE);
+				}
+			} else {
+				return true;
+			}
+		} else {
+			return (ActivityCompat.checkSelfPermission((Context)activity, android.Manifest.permission.BLUETOOTH) == PackageManager.PERMISSION_GRANTED);
+		}
+		return false;
 	}
 }

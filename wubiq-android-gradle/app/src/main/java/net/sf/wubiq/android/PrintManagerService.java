@@ -3,7 +3,6 @@
  */
 package net.sf.wubiq.android;
 
-import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.Service;
 import android.content.Context;
@@ -58,7 +57,6 @@ public class PrintManagerService extends Service {
 		return null;
 	}
 
-	@SuppressLint("ForegroundServiceType")
     @Override
 	public void onCreate() {
 		super.onCreate();

@@ -10,8 +10,8 @@ android {
         applicationId = "net.sf.wubiq.android"
         minSdk = 28
         targetSdk = 35
-        versionCode = 62
-        versionName = "2.6.3"
+        versionCode = 63
+        versionName = "2.6.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -31,7 +31,7 @@ android {
 
 dependencies {
 
-    implementation("androidx.appcompat:appcompat:1.7.0")
+    implementation("androidx.appcompat:appcompat:1.7.1")
     implementation("com.google.android.material:material:1.12.0")
     implementation(files("libs/wubiq-client.jar"))
     implementation(files("libs/jsoup-1.9.1.jar"))
@@ -40,7 +40,7 @@ dependencies {
     implementation(files("libs/ZSDK_API.jar"))
 
     // Worker
-    val workVersion = "2.10.1"
+    val workVersion = "2.10.3"
     // (Java only)
     implementation("androidx.work:work-runtime:$workVersion")
     // Kotlin + coroutines
@@ -48,6 +48,6 @@ dependencies {
 
     // test dependencies
     testImplementation("junit:junit:4.13.2")
-    androidTestImplementation("androidx.test.ext:junit:1.2.1")
-    androidTestImplementation("androidx.test.espresso:espresso-core:3.6.1")
+    androidTestImplementation("androidx.test.ext:junit:1.3.0")
+    androidTestImplementation("androidx.test.espresso:espresso-core:3.7.0")
 }

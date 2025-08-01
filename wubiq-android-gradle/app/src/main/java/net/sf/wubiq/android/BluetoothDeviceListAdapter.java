@@ -3,11 +3,13 @@
  */
 package net.sf.wubiq.android;
 
+import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothDevice;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.Manifest;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
@@ -18,6 +20,7 @@ import android.widget.TextView;
 import androidx.core.app.ActivityCompat;
 
 import net.sf.wubiq.android.devices.DeviceForTesting;
+import net.sf.wubiq.android.utils.BluetoothUtils;
 import net.sf.wubiq.common.PropertyKeys;
 
 import java.util.ArrayList;
@@ -59,7 +62,7 @@ public class BluetoothDeviceListAdapter extends BaseAdapter {
 		}
 		BluetoothAdapter btAdapter = BluetoothAdapter.getDefaultAdapter();
 		if (btAdapter != null) {
-			if (ActivityCompat.checkSelfPermission(this.context, android.Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED) {
+			if (BluetoothUtils.bluetoothGranted((Activity) context)) {
 				Set<BluetoothDevice> devices = btAdapter.getBondedDevices();
 				for (BluetoothDevice device : devices) {
 					String deviceKey = key(device.getAddress());

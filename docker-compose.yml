@@ -33,7 +33,7 @@ services:
       - ./wubiq-test/lib/xalan-2.7.1.jar:/usr/local/tomcat/lib/xalan-2.7.1.jar
       - ./wubiq-test/lib/xercesImpl-2.9.1.jar:/usr/local/tomcat/lib/xercesImpl-2.9.1.jar
       - ./wubiq-test/lib/xml-apis-1.3.04.jar:/usr/local/tomcat/lib/xml-apis-1.3.04.jar
-      - ./wubiq-test/properties-src/wubiq-server.properties:/usr/local/tomcat/conf/wubiq-server.properties
       - ./wubiq-server/dist/wubiq-server.war:/usr/local/tomcat/webapps/wubiq-server.war
+      - ./wubiq-test/properties-src/wubiq-server.properties:/usr/local/tomcat/conf/wubiq-server.properties
 
 

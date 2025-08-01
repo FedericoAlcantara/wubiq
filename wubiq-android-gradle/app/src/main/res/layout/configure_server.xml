@@ -1,56 +1,93 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:gravity="center_horizontal|fill_horizontal"
-    android:orientation="vertical" >
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:paddingHorizontal="24dp" >
+
     <TextView
         android:id="@+id/textView1"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/configure_server"
         android:textAppearance="?android:attr/textAppearanceLarge" />
 
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="24dp" />
+
     <TextView
         android:id="@+id/textView4"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:labelFor="@id/clientUUIDField"
         android:text="@string/client_uuid"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-	<EditText
-		android:id="@+id/clientUUIDField"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:ems="10"
-		android:inputType="text" />
-    
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <EditText
+        android:id="@+id/clientUUIDField"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:minHeight="48dp"
+        tools:ignore="TextFieldTooWide" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="24dp" />
+
     <TextView
         android:id="@+id/textView7"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:labelFor="@id/groupsField"
         android:text="@string/groups"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-	<EditText
-		android:id="@+id/groupsField"
-		android:layout_width="fill_parent"
-		android:layout_height="wrap_content"
-		android:ems="10"
-		android:inputType="textMultiLine" />
-    
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <EditText
+        android:id="@+id/groupsField"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:importantForAutofill="no"
+        android:inputType="textMultiLine"
+        android:minHeight="48dp"
+        tools:ignore="TextFieldTooWide" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="24dp" />
+
     <TextView
         android:id="@+id/textView6"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:labelFor="@id/connectionsField"
         android:text="@string/connections"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
-	<EditText
-	    android:id="@+id/connectionsField"
-	    android:layout_width="fill_parent"
-	    android:layout_height="wrap_content"
-	    android:ems="10"
-	    android:inputType="textMultiLine|textUri" />
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
+
+    <EditText
+        android:id="@+id/connectionsField"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:importantForAutofill="no"
+        android:inputType="textMultiLine|textUri"
+        android:minHeight="48dp"
+        android:singleLine="false"
+        tools:ignore="TextFieldTooWide" />
 
 </LinearLayout>

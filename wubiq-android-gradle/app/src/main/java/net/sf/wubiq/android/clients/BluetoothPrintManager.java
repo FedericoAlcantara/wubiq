@@ -108,7 +108,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 				registerPrintService(deviceName, address, true);
 			}
 		}
-		if (adapter != null) {
+		if (adapter != null && BluetoothUtils.bluetoothGranted(context)) {
 			for (BluetoothDevice device : adapter.getBondedDevices()) {
 				registerPrintService(device.getName(), device.getAddress(), false);
 			}
@@ -239,6 +239,13 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 					doLog("Job(" + jobId + ") stream:" + stream);
 					doLog("Job(" + jobId + ") print pdf");
 					closePrintJob = PrintClientUtils.INSTANCE.print(context, printServicesName.get(printServiceName), stream, resources, preferences);
+				} else {
+					String message = context.getString(R.string.error_printing_job);
+					Log.e(TAG, message);
+					NotificationUtils.INSTANCE.notify(context,
+							NotificationIds.CONNECTION_ERROR_ID,
+							99,
+							message);
 				}
 			} else {
 			    closePrintJob = true;
@@ -274,7 +281,7 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 		if (!preferences.getBoolean(WubiqActivity.KEEP_SERVICE_ALIVE, false)) {
 			super.setConnectionErrorCount(connectionErrorCount);
 		}
-		if (!preferences.getBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS, false)) {
+		if (connectionErrorCount > 0 && !preferences.getBoolean(WubiqActivity.SUPPRESS_NOTIFICATIONS, false)) {
 			String message = context.getString(R.string.error_cant_connect_to);
 			Log.e(TAG, message);
 			NotificationUtils.INSTANCE.notify(context,

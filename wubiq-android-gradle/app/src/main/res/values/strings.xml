@@ -2,6 +2,8 @@
 <resources>
     <!-- String resources sorted alphabetically -->
     <string name="advanced_configuration">Advanced Configuration</string>
+    <string name="advanced_configuration_image_view_content_description">Result as an image</string>
+    <string name="advanced_configuration_text_result_content_description">Last text printed</string>
     <string name="app_name">Wubiq Print Manager Configurator</string>
     <string name="channel_description">The Wubiq\'s android channel</string>
     <string name="channel_name">Wubiq Android Channel</string>
@@ -9,11 +11,13 @@
     <string name="client_uuid" translatable="false">UUID</string>
     <string name="configure_bluetooth">Configure Bluetooth devices</string>
     <string name="configure_server">Configure Server Connection</string>
+    <string name="configure_server_uuid_description">Unique ID for client</string>
     <string name="connections">Connections</string>
     <string name="device_name_address" translatable="false">%s %s</string>
     <string name="enable_development_mode">Enable Development Mode</string>
     <string name="error_bluetooth">Bluetooth: Check your printer</string>
     <string name="error_cant_connect_to">Connection: Couldn´t connect</string>
+    <string name="error_printing_job">Print job Couldn´t be processed</string>
     <string name="groups">Groups</string>
     <string name="info_printing">Printing&#8230;</string>
     <string name="keep_service_alive">Keep service alive</string>
