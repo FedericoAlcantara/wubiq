@@ -1,5 +1,10 @@
 # Changelog
 
+## Wubiq 2.6.4
+### Wubiq-android-gradle
+- Added permission: android.permission.FOREGROUND_SERVICE_DATA_SYNC.
+- Layouts updated to comply with standards.
+
 ## Wubiq 2.6.3
 ### Wubiq-android-gradle
 - Fix bluetooth discoveries issues.

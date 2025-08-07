@@ -19,6 +19,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import net.sf.wubiq.android.devices.DeviceForTesting;
+import net.sf.wubiq.android.utils.BluetoothUtils;
 
 /**
  * Main activity.
@@ -108,8 +109,9 @@ public class WubiqActivity extends Activity {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, true);
         editor.apply();
-
-        PrintManagerService.startService(WubiqActivity.this);
+        if (BluetoothUtils.bluetoothGranted(this)) {
+            PrintManagerService.startService(WubiqActivity.this);
+        }
     }
     
     /**

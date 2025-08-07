@@ -2,16 +2,20 @@
 <resources>
     <!-- String resources sorted alphabetically -->
     <string name="advanced_configuration">Configuración Avanzada</string>
+    <string name="advanced_configuration_image_view_content_description">Imagen del resultado</string>
+    <string name="advanced_configuration_text_result_content_description">Último texto impreso</string>
     <string name="app_name">Wubiq Configurador de Adm. Impresión</string>
     <string name="channel_description">El canal de Wubiq para android</string>
     <string name="channel_name">Canal Wubiq Android</string>
     <string name="clear_test_results">Limpiar resultados</string>
     <string name="configure_bluetooth">Configurar Dispositivos Bluetooth</string>
     <string name="configure_server">Configurar Conexión a Servidor</string>
+    <string name="configure_server_uuid_description">Identificador único para la app</string>
     <string name="connections">Conexiones</string>
     <string name="enable_development_mode">Habilitar Modo Desarrollo</string>
     <string name="error_bluetooth">Bluetooth: verifique impresora</string>
     <string name="error_cant_connect_to">Conexion: No se ha podido conectar</string>
+    <string name="error_printing_job">No se pudo procesar el trabajo de impresión</string>
     <string name="groups">Grupos</string>
     <string name="info_printing">Imprimiendo&#8230;</string>
     <string name="keep_service_alive">Mantener servicio activo</string>

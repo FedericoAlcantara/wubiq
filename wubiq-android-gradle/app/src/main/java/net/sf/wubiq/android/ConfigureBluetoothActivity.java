@@ -14,14 +14,14 @@ import android.widget.GridView;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
+import net.sf.wubiq.android.utils.BluetoothUtils;
+
 /**
  * Allows configuration of bluetooth devices.
  * @author Federico Alcantara
  *
  */
 public class ConfigureBluetoothActivity extends Activity {
-	private static final int REQUEST_CODE = 2;
-
 	private SharedPreferences preferences = null;
 
 	/**
@@ -50,7 +50,7 @@ public class ConfigureBluetoothActivity extends Activity {
 
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
-		if (requestCode == REQUEST_CODE) {
+		if (requestCode == BluetoothUtils.REQUEST_CODE) {
 			if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
 				initialize();
 			}
@@ -69,15 +69,7 @@ public class ConfigureBluetoothActivity extends Activity {
 		boolean hasBluetooth = getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
 		boolean initialize = false;
 		if (hasBluetooth) {
-			if (ContextCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) != PackageManager.PERMISSION_GRANTED) {
-				if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-					ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.BLUETOOTH_CONNECT}, REQUEST_CODE);
-				} else {
-					initialize = true;
-				}
-			} else {
-				initialize = true;
-			}
+			initialize = BluetoothUtils.bluetoothGranted(this);
 		}
 		if (initialize) {
 			initialize();

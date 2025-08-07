@@ -1,64 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
     android:layout_height="fill_parent"
+    android:layout_centerHorizontal="true"
     android:layout_gravity="center_horizontal"
-    android:orientation="vertical" >
-   <LinearLayout
-        android:id="@+id/versionLayout"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content" 
-        android:gravity="center_horizontal">
-    
-		<TextView android:id="@+id/version"
-	        android:layout_width="wrap_content"
-	        android:layout_height="wrap_content"
-	        android:text=""
-	        android:gravity="center_horizontal"
-	        android:textAppearance="?android:attr/textAppearanceMedium" />
-	</LinearLayout>
-	
-    <Button
-        android:id="@+id/configureServer"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:onClick="configureServer"
-        android:text="@string/configure_server" />
-
-    <Button
-        android:id="@+id/configureBluetooth"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:onClick="configureBluetooth"
-        android:text="@string/configure_bluetooth" />
-
-    <Button
-        android:id="@+id/advancedConfiguration"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:onClick="advancedConfiguration"
-        android:text="@string/advanced_configuration" />
+    android:orientation="vertical">
 
     <LinearLayout
-        android:id="@+id/linearLayout1"
+        android:id="@+id/versionLayout"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" 
+        android:layout_height="wrap_content"
         android:gravity="center_horizontal">
+
+        <TextView
+            android:id="@+id/version"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:gravity="center_horizontal"
+            android:text=""
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_gravity="center_horizontal"
+        android:orientation="vertical">
+
+        <Button
+            android:id="@+id/configureServer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:onClick="configureServer"
+            android:text="@string/configure_server" />
+
+        <Button
+            android:id="@+id/configureBluetooth"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:onClick="configureBluetooth"
+            android:text="@string/configure_bluetooth" />
+
+        <Button
+            android:id="@+id/advancedConfiguration"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:onClick="advancedConfiguration"
+            android:text="@string/advanced_configuration" />
+
+        <Space
+            android:layout_width="match_parent"
+            android:layout_height="24dp" />
 
         <Button
             android:id="@+id/startServiceButton"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:backgroundTint="#437649"
             android:onClick="startService"
             android:text="@string/start_service" />
 
         <Button
             android:id="@+id/stopServiceButton"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:layout_gravity="center_horizontal"
+            android:backgroundTint="#845792"
             android:onClick="stopService"
             android:text="@string/stop_service" />
-
     </LinearLayout>
 
 </LinearLayout>

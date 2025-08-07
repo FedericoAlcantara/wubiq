@@ -21,6 +21,14 @@ Open a terminal and follow these steps while in the wubiq-server directory:
 ```
 
 You can access the wubiq server in http://localhost:8080/wubiq-server
+> [!NOTE] 
+> You can open a chrome instance from the command line, useful for capturing screenshots
+> MAC: /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --app=http://localhost:8080/wubiq-server --force-device-scale-factor=1 --user-data-dir="/tmp/chrome-temp-profile" --window-size=940,480
+> WINDOWS: chrome.exe --app=http://localhost:8080/wubiq-server --force-device-scale-factor=1 --user-data-dir="/tmp/chrome-temp-profile" --window-size=940,480
+
+> [!IMPORTANT]
+> The user-data-dir should point to an empty dir for scale-factor to work as expected. Chrome may ask for initial configuration preferences.
+
 
 If you want to login, user: test, password: 12345
 
@@ -36,10 +44,12 @@ All the printers will be exposed in the server.
 ### Distributing the application
 The whole application building and distribution is handled by the build.xml (apache ant).
 
-In the wubiq-server directory run the following:
+In the wubiq-server directory run the following command:
 
 ```shell
 ant
 ```
+
+That will create all the distribution files in **wubiq-server/dist**.
 
 

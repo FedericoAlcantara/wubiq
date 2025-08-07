@@ -14,6 +14,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.Switch;
+import androidx.appcompat.widget.SwitchCompat;
 
 import net.sf.wubiq.android.devices.DeviceForTesting;
 
@@ -42,9 +43,9 @@ public class AdvancedConfigurationActivity extends Activity {
 		EditText printPollInterval = (EditText) findViewById(R.id.printPollIntervalField);
 		EditText printPauseBetweenJobs = (EditText) findViewById(R.id.printPauseBetweenJobsField);
 		EditText printConnectionErrorsRetry = (EditText) findViewById(R.id.printConnectionErrorRetries);
-		Switch keepServiceAlive = (Switch) findViewById(R.id.keepServiceAlive);
-		Switch suppressNotifications = (Switch) findViewById(R.id.suppressNotifications);
-		Switch enableDevelopmentMode = (Switch) findViewById(R.id.enableDevelopmentMode);
+		SwitchCompat keepServiceAlive = (SwitchCompat) findViewById(R.id.keepServiceAlive);
+		SwitchCompat suppressNotifications = (SwitchCompat) findViewById(R.id.suppressNotifications);
+		SwitchCompat enableDevelopmentMode = (SwitchCompat) findViewById(R.id.enableDevelopmentMode);
 
 		Resources resources = getResources();
 		
@@ -114,7 +115,6 @@ public class AdvancedConfigurationActivity extends Activity {
         refreshTestResults(null);
     }
 
-
     private void savePreferences() {
 		SharedPreferences.Editor editor = preferences.edit();
 		EditText printDelay = (EditText) findViewById(R.id.printDelayField);
@@ -122,9 +122,9 @@ public class AdvancedConfigurationActivity extends Activity {
 		EditText printPollInterval = (EditText) findViewById(R.id.printPollIntervalField);
 		EditText printPauseBetweenJobs = (EditText) findViewById(R.id.printPauseBetweenJobsField);
 		EditText printConnectionErrorsRetry = (EditText) findViewById(R.id.printConnectionErrorRetries);
-		Switch keepServiceAlive = (Switch) findViewById(R.id.keepServiceAlive);
-		Switch enableDevelopmentMode = (Switch) findViewById(R.id.enableDevelopmentMode);
-		Switch suppressNotifications = (Switch) findViewById(R.id.suppressNotifications);
+		SwitchCompat keepServiceAlive = (SwitchCompat) findViewById(R.id.keepServiceAlive);
+		SwitchCompat enableDevelopmentMode = (SwitchCompat) findViewById(R.id.enableDevelopmentMode);
+		SwitchCompat suppressNotifications = (SwitchCompat) findViewById(R.id.suppressNotifications);
 
 		editor.putInt(WubiqActivity.PRINT_DELAY_KEY, Integer.parseInt(printDelay.getText().toString()));
 		editor.putInt(WubiqActivity.PRINT_PAUSE_KEY, Integer.parseInt(printPause.getText().toString()));
