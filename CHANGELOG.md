@@ -1,5 +1,17 @@
 # Changelog
 
+## Wubiq 2.7.1
+### Wubiq-android-gradle
+- Compatible from android 4 (api 14) to android 16 (api 36)
+
+## Wubiq 2.7.0
+### Wubiq-android-gradle
+- Upgraded library jsoup from 1.9.1 to 1.21.1
+- Upgraded library starioextension to 5.20.0
+- Removed library StarIOPort3.1
+- Added library stario
+- Added library StarIODeviceSetting
+
 ## Wubiq 2.6.4
 ### Wubiq-android-gradle
 - Added permission: android.permission.FOREGROUND_SERVICE_DATA_SYNC.
