@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     package="net.sf.wubiq.android"
     android:networkSecurityConfig="@xml/network_security_config"
-    android:versionCode="70"
-    android:versionName="2.7.0">
+    android:versionCode="71"
+    android:versionName="2.7.1">
 
     <uses-permission android:name="android.permission.BLUETOOTH" android:maxSdkVersion="30"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" android:maxSdkVersion="30"/>
@@ -28,7 +28,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Wubiq"
         android:usesCleartextTraffic="true"
-        tools:targetApi="34">
+        tools:targetApi="36">
 
         <activity
             android:name=".WubiqActivity"

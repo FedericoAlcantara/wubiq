@@ -4,14 +4,14 @@ plugins {
 
 android {
     namespace = "net.sf.wubiq.android"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "net.sf.wubiq.android"
         minSdk = 28
-        targetSdk = 35
-        versionCode = 70
-        versionName = "2.7.0"
+        targetSdk = 36
+        versionCode = 71
+        versionName = "2.7.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
