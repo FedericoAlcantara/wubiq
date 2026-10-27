@@ -1,272 +1,205 @@
 <?xml version="1.0" encoding="utf-8"?>
-    <TableLayout xmlns:android="http://schemas.android.com/apk/res/android"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content" >
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Wubiq.Screen"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
-        <TableRow
-            android:id="@+id/tableRow1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
-            <TextView
-                android:id="@+id/textView1"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
-                android:labelFor="@id/printDelayField"
-                android:text="@string/print_delay" />
+        <TextView
+            android:id="@+id/advancedTitle"
+            style="@style/Wubiq.Title"
+            android:layout_marginBottom="0dp"
+            android:text="@string/advanced_configuration" />
 
-            <EditText
-                android:id="@+id/printDelayField"
-                android:layout_width="5dp"
-                android:layout_height="wrap_content"
-                android:ems="10"
-                android:inputType="number"
-                android:autofillHints="500">
-                <requestFocus />
-            </EditText>
+        <TextView
+            android:id="@+id/textView1"
+            style="@style/Wubiq.Label"
+            android:labelFor="@id/printDelayField"
+            android:text="@string/print_delay" />
 
-        </TableRow>
+        <EditText
+            android:id="@+id/printDelayField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="500"
+            android:inputType="number"
+            android:minHeight="48dp" />
 
-        <TableRow
-            android:id="@+id/tableRow2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+        <TextView
+            android:id="@+id/textView2"
+            style="@style/Wubiq.Label"
+            android:labelFor="@id/printPauseField"
+            android:text="@string/print_pause" />
 
-            <TextView
-                android:id="@+id/textView2"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
-                android:labelFor="@id/printPauseField"
-                android:text="@string/print_pause" />
+        <EditText
+            android:id="@+id/printPauseField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="200"
+            android:inputType="number"
+            android:minHeight="48dp" />
 
-            <EditText
-                android:id="@+id/printPauseField"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:autofillHints="200"
-                android:inputType="number"
-                android:minHeight="48dp" />
+        <TextView
+            android:id="@+id/textView3"
+            style="@style/Wubiq.Label"
+            android:labelFor="@id/printPollIntervalField"
+            android:text="@string/print_poll_interval" />
 
-        </TableRow>
+        <EditText
+            android:id="@+id/printPollIntervalField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="5000"
+            android:inputType="number"
+            android:minHeight="48dp" />
 
-        <TableRow
-            android:id="@+id/tableRow3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
+        <TextView
+            android:id="@+id/textView4"
+            style="@style/Wubiq.Label"
+            android:labelFor="@id/printPauseBetweenJobsField"
+            android:text="@string/pause_between_jobs" />
 
-            <TextView
-                android:id="@+id/textView3"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
-                android:labelFor="@id/printPollIntervalField"
-                android:text="@string/print_poll_interval" />
+        <EditText
+            android:id="@+id/printPauseBetweenJobsField"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="1000"
+            android:inputType="number"
+            android:minHeight="48dp" />
 
-            <EditText
-                android:id="@+id/printPollIntervalField"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:autofillHints="5000"
-                android:inputType="number"
-                android:minHeight="48dp" />
+        <TextView
+            android:id="@+id/textView7"
+            style="@style/Wubiq.Label"
+            android:labelFor="@id/printConnectionErrorRetries"
+            android:text="@string/print_connection_errors_retries" />
 
-        </TableRow>
+        <EditText
+            android:id="@+id/printConnectionErrorRetries"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="10"
+            android:inputType="number"
+            android:minHeight="48dp" />
 
-        <TableRow
-            android:id="@+id/tableRow4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" >
-
-            <TextView
-                android:id="@+id/textView4"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
-                android:labelFor="@id/printPauseBetweenJobsField"
-                android:text="@string/pause_between_jobs" />
-
-            <EditText
-                android:id="@+id/printPauseBetweenJobsField"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:autofillHints="1000"
-                android:ems="10"
-                android:inputType="number"
-                android:minHeight="48dp" />
-
-        </TableRow>
-
-        <TableRow
-	        android:id="@+id/tableRow7"
-	        android:layout_width="fill_parent"
-	        android:layout_height="wrap_content" >
-
-            <TextView
-                android:id="@+id/textView7"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
-                android:labelFor="@id/printConnectionErrorRetries"
-                android:text="@string/print_connection_errors_retries" />
-
-            <EditText
-                android:id="@+id/printConnectionErrorRetries"
-                android:layout_width="fill_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="10"
-                android:ems="10"
-                android:inputType="number"
-                android:minHeight="48dp" />
-
-        </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRowKeepServiceAlive"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" >
+        <LinearLayout style="@style/Wubiq.SwitchRow">
 
             <TextView
                 android:id="@+id/textViewKeepServiceAlive"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
+                android:layout_weight="1"
                 android:labelFor="@id/keepServiceAlive"
-                android:text="@string/keep_service_alive" />
+                android:text="@string/keep_service_alive"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/keepServiceAlive"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="100dp"
-                />
-        </TableRow>
+                android:layout_height="wrap_content" />
 
-        <TableRow
-            android:id="@+id/tableRowSuppressNotifications"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content" >
+        </LinearLayout>
+
+        <LinearLayout style="@style/Wubiq.SwitchRow">
 
             <TextView
                 android:id="@+id/textViewSuppressNotifications"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_vertical|end"
+                android:layout_weight="1"
                 android:labelFor="@id/suppressNotifications"
-                android:text="@string/suppress_notifications" />
+                android:text="@string/suppress_notifications"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/suppressNotifications"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="100dp"
-                />
+                android:layout_height="wrap_content" />
 
-        </TableRow>
+        </LinearLayout>
 
+        <Button
+            android:id="@+id/ConfigureNotifications"
+            style="@style/Wubiq.Button"
+            android:layout_marginTop="24dp"
+            android:onClick="setDefaultValues"
+            android:text="@string/print_reset_default_values" />
 
-        <TableRow
+        <View
+            android:id="@+id/divider3"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="1dp"
+            android:layout_marginTop="24dp"
+            android:background="?android:attr/listDivider" />
 
-            <View
-                android:id="@+id/divider3"
-                android:layout_width="match_parent"
-                android:layout_height="8dp"
-                android:layout_gravity="center_vertical|end"
-                android:layout_span="2"
-                android:background="?android:attr/listDivider" />
-        </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRow9"
-            android:layout_width="fill_parent"
-            android:layout_height="wrap_content">
-
-            <Button
-                android:id="@+id/ConfigureNotifications"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_span="2"
-                android:onClick="setDefaultValues"
-                android:text="@string/print_reset_default_values" />
-
-        </TableRow>
-
-        <TableRow
-            android:id="@+id/tableRow7b"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        <LinearLayout style="@style/Wubiq.SwitchRow">
 
             <TextView
                 android:id="@+id/textView8"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_gravity="start"
-                android:gravity="end"
+                android:layout_weight="1"
                 android:labelFor="@id/enableDevelopmentMode"
-                android:text="@string/enable_development_mode" />
+                android:text="@string/enable_development_mode"
+                android:textAppearance="?android:attr/textAppearanceMedium" />
 
             <androidx.appcompat.widget.SwitchCompat
                 android:id="@+id/enableDevelopmentMode"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="100dp"
-                />
+                android:layout_height="wrap_content" />
 
-        </TableRow>
+        </LinearLayout>
 
-        <TableRow
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="wrap_content"
+            android:baselineAligned="false"
+            android:orientation="horizontal">
 
             <Button
                 android:id="@+id/refreshTestResults"
-                style="@style/Widget.AppCompat.Button.Colored"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/Wubiq.Button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginEnd="4dp"
                 android:onClick="refreshTestResults"
                 android:text="@string/refresh_test_results" />
 
             <Button
                 android:id="@+id/clearTestResults"
-                style="@style/Widget.AppCompat.Button.Colored"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                style="@style/Wubiq.Button"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:layout_marginStart="4dp"
                 android:onClick="clearTestResults"
                 android:text="@string/clear_test_results" />
-        </TableRow>
 
-        <TableRow
+        </LinearLayout>
+
+        <EditText
+            android:id="@+id/testResult"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:autofillHints="-"
+            android:enabled="false"
+            android:hint="@string/advanced_configuration_text_result_content_description"
+            android:inputType="textMultiLine"
+            android:minHeight="48dp" />
 
-            <EditText
-                android:id="@+id/testResult"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_span="2"
-                android:autofillHints="-"
-                android:enabled="false"
-                android:hint="@string/advanced_configuration_text_result_content_description"
-                android:inputType="textMultiLine"
-                android:minHeight="48dp" />
-
-        </TableRow>
-
-        <TableRow
+        <ImageView
+            android:id="@+id/testImageView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" >
+            android:layout_height="wrap_content"
+            android:adjustViewBounds="true"
+            android:clickable="false"
+            android:contentDescription="@string/advanced_configuration_image_view_content_description" />
 
-            <ImageView
-                android:id="@+id/testImageView"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_span="2"
-                android:clickable="false"
-                android:contentDescription="@string/advanced_configuration_image_view_content_description" />
-        </TableRow>
+    </LinearLayout>
 
-    </TableLayout>
+</ScrollView>

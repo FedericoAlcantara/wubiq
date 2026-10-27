@@ -17,6 +17,7 @@ import android.widget.Switch;
 import androidx.appcompat.widget.SwitchCompat;
 
 import net.sf.wubiq.android.devices.DeviceForTesting;
+import net.sf.wubiq.android.utils.WindowUtils;
 
 /**
  * Advanced configuration activity.
@@ -30,6 +31,7 @@ public class AdvancedConfigurationActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.advanced_configuration);
+		WindowUtils.applySystemBarsInsets(this);
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 		initialize();
 	}

@@ -5,14 +5,14 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:paddingHorizontal="24dp" >
+    style="@style/Wubiq.Screen" >
 
     <TextView
         android:id="@+id/textView1"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/configure_server"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        style="@style/Wubiq.Title"
+        android:text="@string/configure_server" />
 
     <Space
         android:layout_width="match_parent"

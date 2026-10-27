@@ -9,12 +9,14 @@ import android.content.pm.PackageManager;
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
-import android.widget.GridView;
+import android.widget.ListView;
 
+import androidx.appcompat.widget.SwitchCompat;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
 
 import net.sf.wubiq.android.utils.BluetoothUtils;
+import net.sf.wubiq.android.utils.WindowUtils;
 
 /**
  * Allows configuration of bluetooth devices.
@@ -31,6 +33,7 @@ public class ConfigureBluetoothActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.configure_bluetooth);
+		WindowUtils.applySystemBarsInsets(this);
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 
 		SharedPreferences.Editor editor = preferences.edit();
@@ -51,7 +54,7 @@ public class ConfigureBluetoothActivity extends Activity {
 	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 		if (requestCode == BluetoothUtils.REQUEST_CODE) {
-			if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+			if (BluetoothUtils.allGranted(grantResults)) {
 				initialize();
 			}
 		}
@@ -61,8 +64,15 @@ public class ConfigureBluetoothActivity extends Activity {
 	 * Loads view with new or previously stored preferences.
 	 */
 	private void initialize() {
-		GridView grid = (GridView) findViewById(R.id.devices);
-		grid.setAdapter(new BluetoothDeviceListAdapter(this, preferences));
+		SwitchCompat showAll = (SwitchCompat) findViewById(R.id.showAllDevices);
+		showAll.setOnCheckedChangeListener(null);
+		showAll.setChecked(preferences.getBoolean(WubiqActivity.SHOW_ALL_BLUETOOTH_DEVICES, false));
+		showAll.setOnCheckedChangeListener((button, checked) -> {
+			preferences.edit().putBoolean(WubiqActivity.SHOW_ALL_BLUETOOTH_DEVICES, checked).apply();
+			initialize();
+		});
+		ListView list = (ListView) findViewById(R.id.devices);
+		list.setAdapter(new BluetoothDeviceListAdapter(this, preferences, showAll.isChecked()));
 	}
 
 	private void requestBluetooth() {

@@ -3,6 +3,13 @@
 ## Wubiq 2.7.1
 ### Wubiq-android-gradle
 - Compatible from android 4 (api 14) to android 16 (api 36)
+- Fix: nothing printed on Android 12+ because BLUETOOTH_SCAN was never requested at runtime (#22).
+- Request BLUETOOTH_CONNECT and BLUETOOTH_SCAN together; BLUETOOTH_SCAN is declared with neverForLocation.
+- Notify the user when the print service is running without Bluetooth permissions.
+- Start the print service right after the permissions are granted.
+- Fix: screens overlapped the status bar on Android 15+ (edge-to-edge enforcement).
+- Refreshed screens: titles, consistent margins, full width buttons, scrolling, single column Bluetooth device list.
+- Bluetooth devices that are clearly not printers are hidden; a "Show all devices" switch lists every paired device.
 
 ## Wubiq 2.7.0
 ### Wubiq-android-gradle
