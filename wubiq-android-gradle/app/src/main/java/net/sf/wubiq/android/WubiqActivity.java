@@ -20,6 +20,7 @@ import android.widget.Toast;
 
 import net.sf.wubiq.android.devices.DeviceForTesting;
 import net.sf.wubiq.android.utils.BluetoothUtils;
+import net.sf.wubiq.android.utils.WindowUtils;
 
 /**
  * Main activity.
@@ -49,6 +50,7 @@ public class WubiqActivity extends Activity {
 	public static final String PACKAGE_NAME="net.sf.wubiq.android";
     public static final String FORCE_DEVICES_REFRESH="force_devices_refresh";
     public static final String PAUSE_PRINTING_TO_DEVICES="pause_printing_to_devices";
+    public static final String SHOW_ALL_BLUETOOTH_DEVICES="show_all_bluetooth_devices";
 
     private final ServiceConnection serviceConnection = new ServiceConnection() {
 
@@ -68,6 +70,7 @@ public class WubiqActivity extends Activity {
         super.onCreate(savedInstanceState);		
 
         setContentView(R.layout.main);
+        WindowUtils.applySystemBarsInsets(this);
         LinearLayout versionLayout = findViewById(R.id.versionLayout);
 		TextView version = versionLayout.findViewById(R.id.version);
         Resources resources = getResources();
@@ -110,6 +113,14 @@ public class WubiqActivity extends Activity {
         editor.putBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, true);
         editor.apply();
         if (BluetoothUtils.bluetoothGranted(this)) {
+            PrintManagerService.startService(WubiqActivity.this);
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+        if (requestCode == BluetoothUtils.REQUEST_CODE && BluetoothUtils.allGranted(grantResults)) {
             PrintManagerService.startService(WubiqActivity.this);
         }
     }

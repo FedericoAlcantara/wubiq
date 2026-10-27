@@ -10,6 +10,8 @@ import android.os.Build;
 import android.os.Bundle;
 import android.widget.EditText;
 
+import net.sf.wubiq.android.utils.WindowUtils;
+
 import java.util.Date;
 
 /**
@@ -27,6 +29,7 @@ public class ConfigureServerActivity extends Activity {
 	protected void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.configure_server);
+		WindowUtils.applySystemBarsInsets(this);
 		preferences = getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
 		initialize();
 	}

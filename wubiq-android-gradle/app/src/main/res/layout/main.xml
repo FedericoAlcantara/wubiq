@@ -1,55 +1,51 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    style="@style/Wubiq.Screen"
     android:layout_width="match_parent"
-    android:layout_height="fill_parent"
-    android:layout_centerHorizontal="true"
-    android:layout_gravity="center_horizontal"
-    android:orientation="vertical">
+    android:layout_height="match_parent">
 
     <LinearLayout
-        android:id="@+id/versionLayout"
-        android:layout_width="fill_parent"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center_horizontal">
-
-        <TextView
-            android:id="@+id/version"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:gravity="center_horizontal"
-            android:text=""
-            android:textAppearance="?android:attr/textAppearanceMedium" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="wrap_content"
-        android:layout_height="match_parent"
-        android:layout_gravity="center_horizontal"
         android:orientation="vertical">
+
+        <LinearLayout
+            android:id="@+id/versionLayout"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/title"
+                style="@style/Wubiq.Title"
+                android:layout_marginBottom="4dp"
+                android:text="@string/app_name" />
+
+            <TextView
+                android:id="@+id/version"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text=""
+                android:textAppearance="?android:attr/textAppearanceSmall" />
+
+        </LinearLayout>
 
         <Button
             android:id="@+id/configureServer"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            style="@style/Wubiq.Button"
             android:onClick="configureServer"
             android:text="@string/configure_server" />
 
         <Button
             android:id="@+id/configureBluetooth"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            style="@style/Wubiq.Button"
             android:onClick="configureBluetooth"
             android:text="@string/configure_bluetooth" />
 
         <Button
             android:id="@+id/advancedConfiguration"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            style="@style/Wubiq.Button"
             android:onClick="advancedConfiguration"
             android:text="@string/advanced_configuration" />
 
@@ -59,21 +55,20 @@
 
         <Button
             android:id="@+id/startServiceButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            style="@style/Wubiq.Button"
             android:backgroundTint="#437649"
             android:onClick="startService"
-            android:text="@string/start_service" />
+            android:text="@string/start_service"
+            android:textColor="@color/white" />
 
         <Button
             android:id="@+id/stopServiceButton"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
+            style="@style/Wubiq.Button"
             android:backgroundTint="#845792"
             android:onClick="stopService"
-            android:text="@string/stop_service" />
+            android:text="@string/stop_service"
+            android:textColor="@color/white" />
+
     </LinearLayout>
 
-</LinearLayout>
+</ScrollView>

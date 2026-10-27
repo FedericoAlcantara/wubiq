@@ -1,21 +1,42 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="fill_parent"
-    android:layout_height="fill_parent"
-    android:orientation="vertical" >
+    style="@style/Wubiq.Screen"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <TextView
         android:id="@+id/textView1"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:text="@string/configure_bluetooth"
-        android:textAppearance="?android:attr/textAppearanceLarge" />
+        style="@style/Wubiq.Title"
+        android:text="@string/configure_bluetooth" />
 
-    <GridView
+    <LinearLayout
+        style="@style/Wubiq.SwitchRow"
+        android:layout_marginTop="0dp"
+        android:layout_marginBottom="8dp">
+
+        <TextView
+            android:id="@+id/showAllDevicesLabel"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:labelFor="@id/showAllDevices"
+            android:text="@string/show_all_devices"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <androidx.appcompat.widget.SwitchCompat
+            android:id="@+id/showAllDevices"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+
+    </LinearLayout>
+
+    <ListView
         android:id="@+id/devices"
-        android:layout_width="fill_parent"
-        android:layout_height="wrap_content"
-        android:numColumns="2" >
-    </GridView>
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:divider="?android:attr/listDivider"
+        android:dividerHeight="1dp" />
 
 </LinearLayout>
