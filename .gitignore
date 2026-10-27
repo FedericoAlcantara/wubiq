@@ -74,3 +74,6 @@ wubiq-android-gradle/.DS_Store
 /.vscode/*
 !/.vscode/launch-example.json
 
+
+# Generated javadoc (regenerate with: ant create-javadoc-documentation)
+/*/javadoc/
