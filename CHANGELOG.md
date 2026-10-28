@@ -10,6 +10,7 @@
 - Fix: screens overlapped the status bar on Android 15+ (edge-to-edge enforcement).
 - Refreshed screens: titles, consistent margins, full width buttons, scrolling, single column Bluetooth device list.
 - Bluetooth devices that are clearly not printers are hidden; a "Show all devices" switch lists every paired device.
+- Copies are now honored: the job is sent to the printer once per requested copy (the Copies print request attribute was previously ignored on Android).
 
 ## Wubiq 2.7.0
 ### Wubiq-android-gradle

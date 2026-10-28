@@ -238,7 +238,9 @@ public class BluetoothPrintManager extends AbstractLocalPrintManager {
 					stream = (InputStream)pollServer(CommandKeys.READ_PRINT_JOB, parameter);
 					doLog("Job(" + jobId + ") stream:" + stream);
 					doLog("Job(" + jobId + ") print pdf");
-					closePrintJob = PrintClientUtils.INSTANCE.print(context, printServicesName.get(printServiceName), stream, resources, preferences);
+					int copies = PrintClientUtils.INSTANCE.copies(attributesData);
+					doLog("Job(" + jobId + ") copies:" + copies);
+					closePrintJob = PrintClientUtils.INSTANCE.print(context, printServicesName.get(printServiceName), stream, resources, preferences, copies);
 				} else {
 					String message = context.getString(R.string.error_printing_job);
 					Log.e(TAG, message);

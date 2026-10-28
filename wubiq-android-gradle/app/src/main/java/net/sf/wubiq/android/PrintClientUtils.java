@@ -31,6 +31,10 @@ import java.net.ConnectException;
 public enum PrintClientUtils {
 	INSTANCE;
 	private final String TAG = PrintClientUtils.class.getSimpleName();
+	private static final String COPIES_ATTRIBUTE = "javax.print.attribute.standard.Copies"
+			+ ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR;
+	private static final String COPIES_ATTRIBUTE_COMPRESSED = "xCOPx"
+			+ ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR;
 
 	private int printDelay = 500;
 	private int printPause = 100; // Per each 1024 bytes
@@ -43,10 +47,11 @@ public enum PrintClientUtils {
 	 * @param input Input data as a stream.
 	 * @param resources Application resources.
 	 * @param preferences Shared preferences of the application.
+	 * @param copies Number of copies to print.
 	 * @return True if print job is processed.
 	 */
-	public boolean print(Context context, String deviceAddress, InputStream input, Resources resources, 
-			SharedPreferences preferences) throws ConnectException {
+	public boolean print(Context context, String deviceAddress, InputStream input, Resources resources,
+			SharedPreferences preferences, int copies) throws ConnectException {
 		boolean returnValue = false;
 		printDelay = preferences.getInt(WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
 		printPause = preferences.getInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
@@ -85,7 +90,7 @@ public enum PrintClientUtils {
 						returnValue = true;
 						IOUtils.INSTANCE.copy(input, output);
 						output.flush();
-						byte[] printData = output.toByteArray();
+						byte[] printData = repeat(output.toByteArray(), copies);
 						for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
 							currentDevice = !useDeviceTest 
 									? WubiqDeviceFactory.INSTANCE.getInstance(step)
@@ -118,7 +123,50 @@ public enum PrintClientUtils {
 		}
 		return returnValue;
 	}
-	
+
+	/**
+	 * Extracts the copies count from the serialized print request attributes
+	 * (e.g. javax.print.attribute.standard.Copies:I:2/javax.print.attribute.standard.JobName:J:Test).
+	 * @param attributesData Serialized print request attributes as sent by the server.
+	 * @return Number of copies, at least 1.
+	 */
+	public int copies(String attributesData) {
+		int returnValue = 1;
+		if (attributesData != null) {
+			for (String attribute : attributesData.split(ParameterKeys.ATTRIBUTES_SEPARATOR)) {
+				String trimmed = attribute.trim();
+				if (trimmed.startsWith(COPIES_ATTRIBUTE)
+						|| trimmed.startsWith(COPIES_ATTRIBUTE_COMPRESSED)) {
+					String[] parts = trimmed.split(ParameterKeys.ATTRIBUTE_VALUE_SEPARATOR);
+					try {
+						returnValue = Math.max(1, Integer.parseInt(parts[parts.length - 1].trim()));
+					} catch (NumberFormatException e) {
+						returnValue = 1;
+					}
+					break;
+				}
+			}
+		}
+		return returnValue;
+	}
+
+	/**
+	 * Repeats the print data once per copy, so all copies are sent through a single device connection.
+	 * @param printData Print data for one copy.
+	 * @param copies Number of copies.
+	 * @return Print data for all the copies.
+	 */
+	byte[] repeat(byte[] printData, int copies) {
+		if (copies <= 1 || printData.length == 0) {
+			return printData;
+		}
+		byte[] returnValue = new byte[printData.length * copies];
+		for (int copy = 0; copy < copies; copy++) {
+			System.arraycopy(printData, 0, returnValue, copy * printData.length, printData.length);
+		}
+		return returnValue;
+	}
+
 	/**
 	 * Serializes the service name for sending the information to the server.
 	 * @param name Name of the device.
