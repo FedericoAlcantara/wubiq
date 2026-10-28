@@ -1,5 +1,9 @@
 # Changelog
 
+## Wubiq 2.7.3
+### Wubiq-android-gradle
+- Release builds are minified, obfuscated and resource shrunk with R8 (Google Play DEX optimization requirement); the APK goes from 14.3 MB to 1.7 MB.
+
 ## Wubiq 2.7.2
 ### Wubiq-android-gradle
 - Fix: nothing printed on Android 12+ because BLUETOOTH_SCAN was never requested at runtime (#22).
