@@ -3,6 +3,7 @@
 ## Wubiq 2.7.3
 ### Wubiq-android-gradle
 - Release builds are minified, obfuscated and resource shrunk with R8 (Google Play DEX optimization requirement); the APK goes from 14.3 MB to 1.7 MB.
+- Removed the deprecated status bar color from the theme (Android 15+ draws edge-to-edge; screens already keep clear of the system bars).
 
 ## Wubiq 2.7.2
 ### Wubiq-android-gradle
