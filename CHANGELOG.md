@@ -9,7 +9,11 @@
 - Start the print service right after the permissions are granted.
 - Fix: screens overlapped the status bar on Android 15+ (edge-to-edge enforcement).
 - Refreshed screens: titles, consistent margins, full width buttons, scrolling, single column Bluetooth device list.
-- Bluetooth devices that are clearly not printers are hidden; a "Show all devices" switch lists every paired device.
+- Bluetooth devices that are clearly not printers are hidden (by Bluetooth class; devices named after a known printer brand are always shown); a "Show all devices" switch lists every paired device.
+- Copies are now honored: the job is sent to the printer once per requested copy (the Copies print request attribute was previously ignored on Android).
+- Fix: dropdown arrows were invisible on devices that force dark mode on apps (e.g. MIUI); the app theme already supports dark mode.
+### Wubiq-server
+- The test page can be printed with a number of copies (copies field next to each "Print Test Page" button, parameter TPC).
 
 ## Wubiq 2.7.0
 ### Wubiq-android-gradle

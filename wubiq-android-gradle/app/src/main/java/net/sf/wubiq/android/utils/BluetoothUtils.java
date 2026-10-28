@@ -22,6 +22,7 @@ import net.sf.wubiq.android.enums.NotificationIds;
 import java.net.ConnectException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * @author Federico Alcantara
@@ -37,6 +38,8 @@ public class BluetoothUtils {
 
 	public static int bluetoothErrors = 0;
 	private static final String TAG = BluetoothUtils.class.getSimpleName();
+	/** Name fragments (lower case) of printers supported by Wubiq, or of devices that are obviously printers. */
+	private static final String[] PRINTER_NAMES = {"star", "zebra", "datamax", "porti", "print"};
 
 	
 	/**
@@ -157,18 +160,22 @@ public class BluetoothUtils {
 	}
 
 	/**
-	 * Tells whether a bonded device could be a printer, based on its bluetooth class.
-	 * Only devices that are clearly something else (audio, phones, computers, wearables, toys,
-	 * health devices, keyboards and mice) are rejected, as many portable printers don't report
-	 * the printer class.
+	 * Tells whether a bonded device could be a printer, based on its name and bluetooth class.
+	 * Devices named after a known printer brand are always accepted, as the class stored by
+	 * Android can be wrong (e.g. a Star printer paired while in iAP mode is stored as audio/video).
+	 * Otherwise only devices that are clearly something else (audio, phones, computers, wearables,
+	 * toys, health devices, keyboards and mice) are rejected, as many portable printers don't
+	 * report the printer class.
 	 * Requires bluetooth permissions to be granted.
 	 * @param device Bonded bluetooth device.
 	 * @return False only if the device is clearly not a printer.
 	 */
 	public static boolean isPossiblePrinter(BluetoothDevice device) {
 		BluetoothClass bluetoothClass;
+		String name;
 		try {
 			bluetoothClass = device.getBluetoothClass();
+			name = device.getName();
 		} catch (SecurityException e) {
 			return true;
 		}
@@ -178,6 +185,9 @@ public class BluetoothUtils {
 		int majorClass = bluetoothClass.getMajorDeviceClass();
 		Log.i(TAG, "Device " + device.getAddress() + " class:0x" + Integer.toHexString(bluetoothClass.getDeviceClass())
 				+ " major:0x" + Integer.toHexString(majorClass));
+		if (isPrinterName(name)) {
+			return true;
+		}
 		switch (majorClass) {
 			case BluetoothClass.Device.Major.AUDIO_VIDEO:
 			case BluetoothClass.Device.Major.PHONE:
@@ -195,6 +205,24 @@ public class BluetoothUtils {
 			default:
 				return true;
 		}
+	}
+
+	/**
+	 * Tells whether the device name belongs to a known printer brand.
+	 * @param name Bluetooth device name, may be null.
+	 * @return True if the name contains a known printer name fragment.
+	 */
+	static boolean isPrinterName(String name) {
+		if (name == null) {
+			return false;
+		}
+		String lowerName = name.toLowerCase(Locale.ROOT);
+		for (String printerName : PRINTER_NAMES) {
+			if (lowerName.contains(printerName)) {
+				return true;
+			}
+		}
+		return false;
 	}
 
 	/**

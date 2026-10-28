@@ -362,10 +362,16 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 								<td class="wubiq_sd_table_td_name"><%=serviceData[0]%></td>
 								<td class="wubiq_sd_table_td_remote"><%=serviceData[1]%></td>
 								<td class="wubiq_sd_table_td_actions">
-									<a href="<%=printTestPage.toString()%>" style="<%=printTestButtonStyle%>">
-										<input style="width:100%; <%=printTestButtonStyle%>" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
-											id='wubiq_testpage_button_<%=serviceCount++%>' />
-									</a>
+									<div style="display:flex; gap:4px; align-items:center;">
+										<input style="width:3.5em; <%=printTestButtonStyle%>" type="number" min="1" max="99" value="1"
+											title='<%=ServerLabels.get("server.copies")%>'
+											class="wubiq_testpage_copies" />
+										<a href="<%=printTestPage.toString()%>" style="flex:1; <%=printTestButtonStyle%>"
+											onclick="this.href = this.href.split('&<%=ParameterKeys.PRINT_TEST_COPIES%>=')[0] + '&<%=ParameterKeys.PRINT_TEST_COPIES%>=' + encodeURIComponent(this.parentNode.querySelector('.wubiq_testpage_copies').value);">
+											<input style="width:100%; <%=printTestButtonStyle%>" type="button" value='<%=ServerLabels.get("server.print_test_page")%>'
+												id='wubiq_testpage_button_<%=serviceCount++%>' />
+										</a>
+									</div>
 								</td>
 								<%if (remote) { %>
 									<td class="wubiq_sd_table_td_printing" style="text-align:center">
