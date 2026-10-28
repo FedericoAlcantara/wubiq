@@ -17,6 +17,7 @@
 - Upgraded Android Gradle Plugin from 8.9.1 to 8.13.2 and Gradle from 8.11.1 to 8.14.6
 - Removed unused library jsoup
 - Upgraded Android Gradle Plugin from 8.13.2 to 9.5.0 and Gradle from 8.14.6 to 9.8.2
+- Compiles against and targets Android 17 (api 37); still runs from Android 9 (api 28)
 ### Wubiq-server
 - The test page can be printed with a number of copies (copies field next to each "Print Test Page" button, parameter TPC).
 
