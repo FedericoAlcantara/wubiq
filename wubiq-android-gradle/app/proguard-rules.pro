@@ -1,21 +1,22 @@
-# Add project specific ProGuard rules here.
-# You can control the set of applied configuration files using the
-# proguardFiles setting in build.gradle.
+# Project specific R8 rules. The default proguard-android-optimize.txt plus the
+# consumer rules shipped with the AndroidX / vendor libraries cover the rest.
 #
-# For more details, see
-#   http://developer.android.com/guide/developing/tools/proguard.html
+# Keep rules are deliberately narrow: Google Play requires most of the DEX to be
+# obfuscated, so do not add blanket -keep rules for whole libraries.
 
-# If your project uses WebView with JS, uncomment the following
-# and specify the fully qualified class name to the JavaScript interface
-# class:
-#-keepclassmembers class fqcn.of.javascript.interface.for.webview {
-#   public *;
-#}
+# Keep line numbers in crash stack traces; mapping.txt is uploaded with the bundle.
+-keepattributes SourceFile,LineNumberTable
+-renamesourcefileattribute SourceFile
 
-# Uncomment this to preserve the line number information for
-# debugging stack traces.
-#-keepattributes SourceFile,LineNumberTable
+# wubiq-client.jar bundles commons-logging 1.1.1, compiled for Java 1.1: its class literals
+# and its factory / log adapter discovery all use Class.forName, so it must not be renamed.
+# The adapters for log4j, Avalon, LogKit and servlets are never selected on Android.
+-keep class org.apache.commons.logging.** { *; }
+-dontwarn org.apache.log4j.**
+-dontwarn org.apache.avalon.framework.logger.**
+-dontwarn org.apache.log.**
+-dontwarn javax.servlet.**
 
-# If you keep the line number information, uncomment this to
-# hide the original source file name.
-#-renamesourcefileattribute SourceFile
+# wubiq-client.jar: IOUtils.resetInputStream only logs through commons-lang3, inside a
+# catch block that ByteArrayInputStream.reset() never reaches. commons-lang3 is not bundled.
+-dontwarn org.apache.commons.lang3.exception.ExceptionUtils

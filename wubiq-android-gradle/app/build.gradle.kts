@@ -10,15 +10,16 @@ android {
         applicationId = "net.sf.wubiq.android"
         minSdk = 28
         targetSdk = 37
-        versionCode = 72
-        versionName = "2.7.2"
+        versionCode = 73
+        versionName = "2.7.3"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            isMinifyEnabled = true
+            isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
     }
