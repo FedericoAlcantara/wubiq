@@ -3,14 +3,17 @@
  */
 package net.sf.wubiq.android.utils;
 
+import android.Manifest;
 import android.app.Notification;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.os.Build;
 
+import androidx.core.app.ActivityCompat;
 import androidx.core.app.NotificationCompat;
 import android.util.Log;
 
@@ -29,6 +32,20 @@ public enum NotificationUtils {
 	private final String TAG = NotificationUtils.class.getSimpleName();
 	private final static String CHANNEL_ID = "net.sf.wubiq.android";
 	
+	/**
+	 * Tells whether the app may post notifications. Apps targeting Android 13+ (API 33)
+	 * need the POST_NOTIFICATIONS runtime permission; on older versions it is always allowed.
+	 * @param ctx Context.
+	 * @return True if notifications can be posted.
+	 */
+	public boolean notificationsGranted(Context ctx) {
+		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+			return ActivityCompat.checkSelfPermission(ctx, Manifest.permission.POST_NOTIFICATIONS)
+					== PackageManager.PERMISSION_GRANTED;
+		}
+		return true;
+	}
+
 	/**
 	 * Cancels previous notifications.
 	 * @param ctx Context.
