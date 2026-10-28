@@ -1,8 +1,7 @@
 # Changelog
 
-## Wubiq 2.7.1
+## Wubiq 2.7.2
 ### Wubiq-android-gradle
-- Compatible from android 4 (api 14) to android 16 (api 36)
 - Fix: nothing printed on Android 12+ because BLUETOOTH_SCAN was never requested at runtime (#22).
 - Request BLUETOOTH_CONNECT and BLUETOOTH_SCAN together; BLUETOOTH_SCAN is declared with neverForLocation.
 - Notify the user when the print service is running without Bluetooth permissions.
@@ -14,6 +13,10 @@
 - Fix: dropdown arrows were invisible on devices that force dark mode on apps (e.g. MIUI); the app theme already supports dark mode.
 ### Wubiq-server
 - The test page can be printed with a number of copies (copies field next to each "Print Test Page" button, parameter TPC).
+
+## Wubiq 2.7.1
+### Wubiq-android-gradle
+- Compatible from android 4 (api 14) to android 16 (api 36)
 
 ## Wubiq 2.7.0
 ### Wubiq-android-gradle
