@@ -31,6 +31,29 @@
 
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/bluetoothPermissionPanel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/bluetoothPermissionMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/bluetooth_permission_needed"
+            android:textAppearance="?android:attr/textAppearanceMedium" />
+
+        <Button
+            android:id="@+id/bluetoothPermissionButton"
+            style="@style/Wubiq.Button"
+            android:layout_marginTop="16dp"
+            android:onClick="resolveBluetoothPermission"
+            android:text="@string/bluetooth_permission_allow" />
+
+    </LinearLayout>
+
     <ListView
         android:id="@+id/devices"
         android:layout_width="match_parent"

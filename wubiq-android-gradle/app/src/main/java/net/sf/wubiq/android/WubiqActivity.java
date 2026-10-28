@@ -131,6 +131,10 @@ public class WubiqActivity extends Activity {
      * without notifications and the server might not be on the local network.
      */
     private void startPrintService() {
+        if (BluetoothUtils.bluetoothPermissionBlocked(this)) {
+            BluetoothUtils.showBluetoothPermissionDialog(this);
+            return;
+        }
         if (!BluetoothUtils.bluetoothGranted(this)) {
             return; // Permissions requested, continues in onRequestPermissionsResult.
         }
@@ -151,8 +155,12 @@ public class WubiqActivity extends Activity {
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == BluetoothUtils.REQUEST_CODE && BluetoothUtils.allGranted(grantResults)) {
-            startPrintService();
+        if (requestCode == BluetoothUtils.REQUEST_CODE) {
+            if (BluetoothUtils.allGranted(grantResults)) {
+                startPrintService();
+            } else {
+                BluetoothUtils.showBluetoothPermissionDialog(this);
+            }
         } else if (requestCode == OPTIONAL_PERMISSIONS_REQUEST_CODE) {
             for (int index = 0; index < permissions.length && index < grantResults.length; index++) {
                 if (grantResults[index] != PackageManager.PERMISSION_GRANTED) {

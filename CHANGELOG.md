@@ -20,6 +20,7 @@
 - Compiles against and targets Android 17 (api 37); still runs from Android 9 (api 28)
 - Fix: could not connect to a Wubiq server on the local network on Android 17+; the local network permission is now requested when the service starts.
 - The notification permission is requested on Android 13+ (notifications were silently suppressed). Printing continues if either permission is denied.
+- When the Nearby devices permission is denied, Configure Bluetooth and Start explain why it is needed and offer to ask again, or to open the app settings once Android stops asking.
 ### Wubiq-server
 - The test page can be printed with a number of copies (copies field next to each "Print Test Page" button, parameter TPC).
 
