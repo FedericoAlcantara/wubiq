@@ -15,6 +15,7 @@
 - Upgraded library material from 1.12.0 to 1.14.0
 - Upgraded library androidx.work from 2.10.3 to 2.12.0
 - Upgraded Android Gradle Plugin from 8.9.1 to 8.13.2 and Gradle from 8.11.1 to 8.14.6
+- Removed unused library jsoup
 ### Wubiq-server
 - The test page can be printed with a number of copies (copies field next to each "Print Test Page" button, parameter TPC).
 

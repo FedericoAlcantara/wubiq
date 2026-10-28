@@ -34,7 +34,6 @@ dependencies {
     implementation("androidx.appcompat:appcompat:1.8.0")
     implementation("com.google.android.material:material:1.14.0")
     implementation(files("libs/wubiq-client.jar"))
-    implementation(files("libs/jsoup-1.21.1.jar"))
     implementation(files("libs/stario-5.20.0.aar"))
     implementation(files("libs/starioextension-5.20.0.aar"))
     implementation(files("libs/StarIODeviceSetting-5.20.0.aar"))
