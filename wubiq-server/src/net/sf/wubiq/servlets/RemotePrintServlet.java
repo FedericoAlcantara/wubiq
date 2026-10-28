@@ -815,7 +815,16 @@ public class RemotePrintServlet extends HttpServlet {
 		String printServiceName = getParameter(request, parameters, ParameterKeys.PRINT_SERVICE_NAME);
 		String printTestDirectPageable = getParameter(request, parameters, ParameterKeys.PRINT_TEST_DIRECT_PAGEABLE);
 		String printerUrl = getParameter(request, parameters, ParameterKeys.PRINT_TEST_STREAM_URL);
+		String printTestCopies = getParameter(request, parameters, ParameterKeys.PRINT_TEST_COPIES);
 		boolean printDirectPageable = "true".equalsIgnoreCase(printTestDirectPageable);
+		int copies = 1;
+		if (!Is.emptyString(printTestCopies)) {
+			try {
+				copies = Math.max(1, Integer.parseInt(printTestCopies.trim()));
+			} catch (NumberFormatException e) {
+				LOG.error("Invalid copies " + printTestCopies + ". " + e.getMessage());
+			}
+		}
 		InputStream input = this.getClass().getClassLoader().getResourceAsStream(testPage);
 		PrintService printService = PrintServiceUtils.findPrinter(printServiceName, uuid);
 		PrinterJobManager.initializePrinterJobManager();
@@ -824,7 +833,7 @@ public class RemotePrintServlet extends HttpServlet {
 			PrintRequestAttributeSet requestAttributes = new HashPrintRequestAttributeSet();
 			requestAttributes.add(new JobName("Test page", Locale.getDefault()));
 			requestAttributes.add(MediaSizeName.NA_LETTER);
-			requestAttributes.add(new Copies(1));
+			requestAttributes.add(new Copies(copies));
 			if (!Is.emptyString(printerUrl)) {
 				try {
 					if (!Is.emptyString(printerUrl)) {
