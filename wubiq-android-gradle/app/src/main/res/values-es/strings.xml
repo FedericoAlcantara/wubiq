@@ -15,6 +15,9 @@
     <string name="enable_development_mode">Habilitar Modo Desarrollo</string>
     <string name="error_bluetooth">Bluetooth: verifique impresora</string>
     <string name="error_bluetooth_permission">Bluetooth: abra Wubiq y permita Dispositivos cercanos</string>
+    <string name="bluetooth_permission_needed">Wubiq necesita el permiso Dispositivos cercanos para encontrar y usar impresoras Bluetooth.</string>
+    <string name="bluetooth_permission_allow">Permitir</string>
+    <string name="bluetooth_permission_settings">Abrir ajustes</string>
     <string name="error_cant_connect_to">Conexion: No se ha podido conectar</string>
     <string name="error_printing_job">No se pudo procesar el trabajo de impresión</string>
     <string name="groups">Grupos</string>

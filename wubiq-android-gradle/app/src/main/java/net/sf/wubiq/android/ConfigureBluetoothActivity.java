@@ -9,6 +9,8 @@ import android.content.pm.PackageManager;
 import android.Manifest;
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.widget.Button;
 import android.widget.ListView;
 
 import androidx.appcompat.widget.SwitchCompat;
@@ -52,11 +54,40 @@ public class ConfigureBluetoothActivity extends Activity {
 	}
 
 	@Override
+	protected void onResume() {
+		super.onResume();
+		// Also covers coming back from the app settings after granting the permissions.
+		refreshPermissionState();
+	}
+
+	@Override
 	public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
 		if (requestCode == BluetoothUtils.REQUEST_CODE) {
-			if (BluetoothUtils.allGranted(grantResults)) {
-				initialize();
-			}
+			refreshPermissionState();
+		}
+	}
+
+	/**
+	 * Asks again for the bluetooth permissions, or opens the app settings.
+	 * @param view Calling view object.
+	 */
+	public void resolveBluetoothPermission(View view) {
+		BluetoothUtils.resolveBluetoothPermission(this);
+	}
+
+	/**
+	 * Shows the device list if the bluetooth permissions are granted, otherwise explains
+	 * why the list is empty and how to grant them.
+	 */
+	private void refreshPermissionState() {
+		boolean missing = BluetoothUtils.bluetoothPermissionMissing(this);
+		findViewById(R.id.bluetoothPermissionPanel).setVisibility(missing ? View.VISIBLE : View.GONE);
+		findViewById(R.id.devices).setVisibility(missing ? View.GONE : View.VISIBLE);
+		if (missing) {
+			((Button) findViewById(R.id.bluetoothPermissionButton))
+					.setText(BluetoothUtils.bluetoothPermissionAction(this));
+		} else {
+			initialize();
 		}
 	}
 
@@ -75,14 +106,12 @@ public class ConfigureBluetoothActivity extends Activity {
 		list.setAdapter(new BluetoothDeviceListAdapter(this, preferences, showAll.isChecked()));
 	}
 
+	/**
+	 * Requests the bluetooth permissions if missing. The list is loaded by onResume.
+	 */
 	private void requestBluetooth() {
-		boolean hasBluetooth = getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH);
-		boolean initialize = false;
-		if (hasBluetooth) {
-			initialize = BluetoothUtils.bluetoothGranted(this);
-		}
-		if (initialize) {
-			initialize();
+		if (getPackageManager().hasSystemFeature(PackageManager.FEATURE_BLUETOOTH)) {
+			BluetoothUtils.bluetoothGranted(this);
 		}
 	}
 }

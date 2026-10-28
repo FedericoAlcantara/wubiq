@@ -4,12 +4,12 @@ plugins {
 
 android {
     namespace = "net.sf.wubiq.android"
-    compileSdk = 36
+    compileSdk = 37
 
     defaultConfig {
         applicationId = "net.sf.wubiq.android"
         minSdk = 28
-        targetSdk = 36
+        targetSdk = 37
         versionCode = 72
         versionName = "2.7.2"
 
@@ -26,7 +26,7 @@ android {
         sourceCompatibility = JavaVersion.VERSION_1_8
         targetCompatibility = JavaVersion.VERSION_1_8
     }
-    buildToolsVersion = "36.0.0"
+    buildToolsVersion = "37.0.0"
 }
 
 dependencies {

@@ -1,5 +1,6 @@
 package net.sf.wubiq.android;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.ComponentName;
 import android.content.Context;
@@ -18,9 +19,16 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import androidx.core.app.ActivityCompat;
+
 import net.sf.wubiq.android.devices.DeviceForTesting;
 import net.sf.wubiq.android.utils.BluetoothUtils;
+import net.sf.wubiq.android.utils.NetworkUtils;
+import net.sf.wubiq.android.utils.NotificationUtils;
 import net.sf.wubiq.android.utils.WindowUtils;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Main activity.
@@ -29,6 +37,7 @@ import net.sf.wubiq.android.utils.WindowUtils;
  */
 public class WubiqActivity extends Activity {
     private static final String TAG = WubiqActivity.class.getSimpleName();
+    private static final int OPTIONAL_PERMISSIONS_REQUEST_CODE = 3;
 
     public static final String PREFERENCES = "WUBIQ_ANDROID";
 	public static final String HOST_KEY="server_host";
@@ -112,15 +121,52 @@ public class WubiqActivity extends Activity {
         SharedPreferences.Editor editor = preferences.edit();
         editor.putBoolean(WubiqActivity.FORCE_DEVICES_REFRESH, true);
         editor.apply();
-        if (BluetoothUtils.bluetoothGranted(this)) {
-            PrintManagerService.startService(WubiqActivity.this);
+        startPrintService();
+    }
+
+    /**
+     * Starts the print service once the bluetooth permissions are granted. The optional
+     * permissions (notifications on Android 13+, local network on Android 17+) are then
+     * requested together; the service starts even if they are denied, as printing works
+     * without notifications and the server might not be on the local network.
+     */
+    private void startPrintService() {
+        if (BluetoothUtils.bluetoothPermissionBlocked(this)) {
+            BluetoothUtils.showBluetoothPermissionDialog(this);
+            return;
         }
+        if (!BluetoothUtils.bluetoothGranted(this)) {
+            return; // Permissions requested, continues in onRequestPermissionsResult.
+        }
+        List<String> missing = new ArrayList<>();
+        if (!NotificationUtils.INSTANCE.notificationsGranted(this)) {
+            missing.add(Manifest.permission.POST_NOTIFICATIONS);
+        }
+        if (!NetworkUtils.localNetworkGranted(this)) {
+            missing.add(Manifest.permission.ACCESS_LOCAL_NETWORK);
+        }
+        if (!missing.isEmpty()) {
+            ActivityCompat.requestPermissions(this, missing.toArray(new String[0]), OPTIONAL_PERMISSIONS_REQUEST_CODE);
+            return; // Continues in onRequestPermissionsResult.
+        }
+        PrintManagerService.startService(WubiqActivity.this);
     }
 
     @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == BluetoothUtils.REQUEST_CODE && BluetoothUtils.allGranted(grantResults)) {
+        if (requestCode == BluetoothUtils.REQUEST_CODE) {
+            if (BluetoothUtils.allGranted(grantResults)) {
+                startPrintService();
+            } else {
+                BluetoothUtils.showBluetoothPermissionDialog(this);
+            }
+        } else if (requestCode == OPTIONAL_PERMISSIONS_REQUEST_CODE) {
+            for (int index = 0; index < permissions.length && index < grantResults.length; index++) {
+                if (grantResults[index] != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(TAG, "Permission denied: " + permissions[index]);
+                }
+            }
             PrintManagerService.startService(WubiqActivity.this);
         }
     }
