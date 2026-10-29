@@ -6,8 +6,8 @@ It does not depend on any other Wubiq module. Any client that produces ESC/P byt
 
 ### What it does
 
-It follows the print head through the byte stream and records every character cell it prints, at its real position and pitch. It reports anything a real printer would do differently from what the stream seems to intend:
-- text past the right margin, which the printer wraps;
+It follows the print head through the byte stream and records every character cell it prints, at its real position and pitch, and every bit-image dot (`ESC K`, `L`, `Y`, `Z`, `ESC *` with 8, 24 or 48 dots, and 9-dot `ESC ^`). So it shows text jobs and jobs rendered as graphics by a printer driver. It reports anything a real printer would do differently from what the stream seems to intend:
+- text past the right margin, which the printer wraps, and graphics past it, which the printer drops;
 - a page length shorter than the paper, which makes form feeds advance only a few lines;
 - UTF-8 bytes sent to a single-byte character table;
 - a missing `ESC @` at the start or a missing form feed at the end;
@@ -19,16 +19,16 @@ Each job produces a report directory:
 |---|---|
 | `job.escp` | raw bytes received |
 | `dump.txt` | decoded command listing with byte offsets, plus warnings |
-| `grid.txt` | text picture of each sheet on a 10 cpi column grid; good for golden files |
-| `lines.json` | printed text runs (sheet, x, y, baseline, cpi, styles, text) for checks written in any language |
-| `sheet-N.png` | rendered sheet: dot-matrix text in blue, an optional reference rendering in red underneath, a 1/10 in column grid |
+| `grid.txt` | text picture of each sheet on a 10 cpi column grid, with a count of graphics dots; good for golden files |
+| `lines.json` | printed text runs (sheet, x, y, baseline, cpi, styles, text) and graphics totals per sheet, for checks written in any language |
+| `sheet-N.png` | rendered sheet: dot-matrix text in blue, graphics dots in black, an optional reference rendering in red underneath, a 1/10 in column grid |
 | `check.txt` | layout check result, when expectations were given (Java API) |
 | `index.html` | all of the above on one page |
 
 Positions are in inches. `x` is measured from the left edge of the paper. `y` is the print head position (top of the character cell), measured from the top of the sheet. The baseline is `y` plus about 7/72 in on 9-pin printers and 18/180 in on 24-pin.
 
 It does not model:
-- bit-image graphics (skipped, but they still move the head);
+- raster graphics (`ESC .`, used by ESC/P 2 inkjets);
 - proportional spacing;
 - double height;
 - international character sets other than USA and Latin America (`ESC R`);
@@ -75,7 +75,11 @@ These steps print through a real wubiq-server and wubiq-client into the witness,
 
 #### 1. Create the CUPS queue
 
-wubiq-client only sees printers installed in the operating system, so the witness needs a CUPS queue. A raw queue (one with no driver) passes the job bytes to the listener unchanged. CUPS itself listens on port 631 (`http://localhost:631` shows its web interface); the queue forwards each job to the witness on port 9100.
+wubiq-client only sees printers installed in the operating system, so the witness needs a CUPS queue. CUPS itself listens on port 631 (`http://localhost:631` shows its web interface); the queue forwards each job to the witness on port 9100.
+
+The witness comes with its own drivers, `cups/witness-9pin.ppd` and `cups/witness-24pin.ppd`. They are the CUPS Epson 9-pin and 24-pin drivers with the manufacturer and model names changed to "Wubiq Witness", and they print through the stock `rastertoepson` filter. With one of them the queue behaves like an installed Epson dot-matrix printer:
+- jobs sent with `-o raw` reach the witness unchanged;
+- any other job (PDF, PostScript, an application's print) is rendered by the driver into ESC/P bit images, which the witness draws dot by dot.
 
 1. Build the witness and start the listener. Keep it running while you test.
 
@@ -89,19 +93,16 @@ wubiq-client only sees printers installed in the operating system, so the witnes
 2. Create the queue. Your user must be an administrator (in the `lpadmin` group on macOS); otherwise use `sudo`.
 
    ```
-   lpadmin -p Witness_9-pin -E -v socket://127.0.0.1:9100 -D "Wubiq witness 9-pin" -L "virtual ESC/P printer"
+   lpadmin -p Witness_9-pin -E -v socket://127.0.0.1:9100 -P wubiq-dotmatrix-witness/cups/witness-9pin.ppd -D "Wubiq witness 9-pin" -L "virtual ESC/P printer"
    lpadmin -p Witness_9-pin -o printer-is-shared=false
    ```
+
+   - `-P`: the witness driver. Use `witness-24pin.ppd` (and `--pins 24` on the listener) for a 24-pin printer. `lpadmin` warns that printer drivers are deprecated; CUPS on macOS still uses them.
 
    - `-D`: on macOS, Java names the print service after this description, not after the queue name (`-p`). Wubiq picks the printer type from that name, so the description must contain `9-pin` for a dot-matrix printer, or `24-pin` for a 24-pin (high-quality) one. Avoid `jet`, `laser` and `photo`, which Wubiq checks first.
    - `printer-is-shared=false`: CUPS shares new queues on the network by default, and this one should stay local.
 
-   Apple's Java 6 doesn't list raw queues. To test with Java 6, add a second queue that uses the Generic PostScript driver. CUPS then converts regular jobs to PostScript, but `-o raw` jobs still pass through unchanged:
-
-   ```
-   lpadmin -p Witness_PS_9-pin -E -v socket://127.0.0.1:9100 -m drv:///sample.drv/generic.ppd -D "Wubiq witness PS 9-pin"
-   lpadmin -p Witness_PS_9-pin -o printer-is-shared=false
-   ```
+   Apple's Java 6 on macOS takes its printer list from the macOS printing framework (`PMServerCreatePrinterList` in `libawt.jnilib`), not from CUPS, and that list leaves out raw queues (queues created without `-P`). Java 8 and later ask CUPS directly and see both kinds.
 
 3. Check it. The job should appear in `wubiq-dotmatrix-witness/witness-jobs/` within a few seconds.
 
@@ -110,7 +111,7 @@ wubiq-client only sees printers installed in the operating system, so the witnes
    lp -d Witness_9-pin -o raw some-job.escp  # any ESC/P file
    ```
 
-Remove the queues when you are done: `lpadmin -x Witness_9-pin` and `lpadmin -x Witness_PS_9-pin`.
+Remove the queue when you are done: `lpadmin -x Witness_9-pin`.
 
 #### 2. Start wubiq-server
 
@@ -146,7 +147,7 @@ The console is at `http://localhost:8080/wubiq-server` (user `test`, password `1
    /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
    ```
 
-   When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX` (Java 6 shows `Wubiq_witness_PS_9_pin -> DOT_MATRIX`). If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
+   When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX`. If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
 
 3. In the server console, `client-test` now lists `Wubiq witness 9-pin`.
 
@@ -156,7 +157,15 @@ The test page can be printed in two ways, and they exercise different client cod
 
 **Regular printing**
 
-Press the printer's test page button in the console. The server sends the test page PDF, and the client hands it to the CUPS queue. The witness receives what the operating system produced (probably the PDF itself, starting with `%PDF`), not ESC/P, and reports it as unknown commands. This checks the queue and the client, not the dot-matrix encoder.
+Press the printer's test page button in the console. The server sends the test page PDF, and the client hands it to the CUPS queue. The witness driver renders it into ESC/P bit images, and the sheet image shows the page the way an Epson dot-matrix printer would print it. This checks the queue, the client and the driver, not Wubiq's text-mode encoder.
+
+You can produce the same output without the client, which is handy to compare:
+
+```
+cupsfilter -p wubiq-dotmatrix-witness/cups/witness-9pin.ppd -m application/vnd.cups-raster page.pdf > page.ras
+PPD=wubiq-dotmatrix-witness/cups/witness-9pin.ppd /usr/libexec/cups/filter/rastertoepson 1 user title 1 "" page.ras > page.escp
+java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar render --out page-report page.escp
+```
 
 **ESC/P stream path**
 
@@ -180,8 +189,8 @@ The client may also send the page to the queue through the JDK print pipeline. T
 
 Open `wubiq-dotmatrix-witness/witness-jobs/index.html`. It lists every job the listener received, with links to each one. Each job, and each directory written by `render`, holds:
 - `index.html`: everything below on one page;
-- `sheet-N.png`: each sheet as the printer would print it;
-- `grid.txt`: the text on a 10 cpi column grid, with the vertical position and pitch of each line;
+- `sheet-N.png`: each sheet as the printer would print it, text in blue and graphics dots in black;
+- `grid.txt`: the text on a 10 cpi column grid, with the vertical position and pitch of each line (driver-rendered jobs have no text, only a graphics count);
 - `dump.txt`: every command with its byte offset, and the warnings at the end (text past the margin, a short page length, UTF-8 bytes, a missing reset or form feed, unknown commands);
 - `lines.json`: the printed text runs, for checks in other tools;
 - `job.escp`: the raw bytes.
