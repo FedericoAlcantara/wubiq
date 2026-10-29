@@ -69,18 +69,22 @@ java -jar dist/wubiq-dotmatrix-witness.jar listen [options]
 - **Phones and other machines on the LAN:** start with `--bind 0.0.0.0` and add a raw/9100 network printer at this machine's IP address.
 - **macOS or Linux print queue:** see the next section.
 
-### Installing it as a CUPS printer
+### Testing wubiq-client end to end
 
-Programs that only print to installed printers, such as wubiq-client, need a CUPS queue. A raw queue (one with no driver) passes the job bytes to the listener unchanged.
+These steps print through a real wubiq-server and wubiq-client into the witness, on one machine. Commands run from the repository root.
 
-1. Build the jar and start the listener. Keep it running while you print; each job lands in `witness-jobs/job-DATE-TIME-N/`, and `witness-jobs/index.html` lists them all.
+#### 1. Create the CUPS queue
+
+wubiq-client only sees printers installed in the operating system, so the witness needs a CUPS queue. A raw queue (one with no driver) passes the job bytes to the listener unchanged. CUPS itself listens on port 631 (`http://localhost:631` shows its web interface); the queue forwards each job to the witness on port 9100.
+
+1. Build the witness and start the listener. Keep it running while you test.
 
    ```
-   ant create-witness-jar
-   java -jar dist/wubiq-dotmatrix-witness.jar listen --out witness-jobs
+   (cd wubiq-dotmatrix-witness && ant create-witness-jar)
+   java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar listen --out wubiq-dotmatrix-witness/witness-jobs
    ```
 
-   Add `--pins 24` for a 24-pin printer. Don't run `ant create-witness-jar` or `ant clean` while `wubiq-client/test-dotmatrix-jdks.sh` is running, because they delete the classes it uses.
+   Add `--pins 24` for a 24-pin printer. Don't run `ant create-witness-jar` or `ant clean` here while `wubiq-client/test-dotmatrix-jdks.sh` is running, because they delete the classes it uses.
 
 2. Create the queue. Your user must be an administrator (in the `lpadmin` group on macOS); otherwise use `sudo`.
 
@@ -89,25 +93,87 @@ Programs that only print to installed printers, such as wubiq-client, need a CUP
    lpadmin -p Witness_9-pin -o printer-is-shared=false
    ```
 
-   - `-D`: on macOS, Java names the print service after this description, not after the queue name (`-p`). Wubiq picks the printer type from that name, so `9-pin` must be in the description for Wubiq to treat the printer as dot-matrix. Use `24-pin` for the 24-pin (high-quality) type. Avoid `jet`, `laser` and `photo`, which Wubiq checks first.
+   - `-D`: on macOS, Java names the print service after this description, not after the queue name (`-p`). Wubiq picks the printer type from that name, so the description must contain `9-pin` for a dot-matrix printer, or `24-pin` for a 24-pin (high-quality) one. Avoid `jet`, `laser` and `photo`, which Wubiq checks first.
    - `printer-is-shared=false`: CUPS shares new queues on the network by default, and this one should stay local.
 
-3. Check it:
+3. Check it. The job should appear in `wubiq-dotmatrix-witness/witness-jobs/` within a few seconds.
 
    ```
-   lpstat -v Witness_9-pin               # device for Witness_9-pin: socket://127.0.0.1:9100
-   lp -d Witness_9-pin -o raw job.escp   # any ESC/P file; it should appear in witness-jobs/
+   lpstat -v Witness_9-pin                   # device for Witness_9-pin: socket://127.0.0.1:9100
+   lp -d Witness_9-pin -o raw some-job.escp  # any ESC/P file
    ```
 
-   The wubiq-client log shows `Wubiq witness 9-pin -> DOT_MATRIX` when it registers its printers.
+Remove the queue when you are done: `lpadmin -x Witness_9-pin`.
 
-4. Remove it when you are done: `lpadmin -x Witness_9-pin`.
+#### 2. Start wubiq-server
 
-What arrives depends on how the client prints:
-- **ESC/P stream path:** used when the print request carries a `Destination` attribute. The client writes ESC/P bytes straight to that destination with a `FileOutputStream`. These bytes don't go through the CUPS queue at all.
-- **Regular printing:** without a `Destination`, the JDK print pipeline renders the job. The witness then receives whatever the platform produces (PostScript, PDF or raster), not ESC/P, and reports it as unknown commands.
+The server runs in Tomcat under Docker (see `wubiq-server/README.md`). It needs Ant, Docker and a JDK 8.
 
-On macOS, a plain `PrinterJob.print()` aimed at this queue was observed to go to the default printer instead. Make sure your default printer can't print anything unwanted while you test.
+```
+(cd wubiq-server && ant wubiq-server)
+docker compose up -d
+```
+
+`ant wubiq-server` also builds wubiq-common and wubiq-client. Both of those builds copy their jars into `wubiq-android-gradle/app/libs/`; don't commit those copies by accident.
+
+The console is at `http://localhost:8080/wubiq-server` (user `test`, password `12345`).
+
+#### 3. Configure wubiq-client
+
+1. Make sure nothing real prints by mistake. On macOS, a Java print job was once seen going to the default printer instead of the printer it asked for. While you test, make the witness the default printer, or pause your real printers.
+
+   ```
+   lpstat -d                      # note the current default
+   lpoptions -d Witness_9-pin     # restore later with lpoptions -d <previous default>
+   ```
+
+2. Start the client with the JDK you want to test. Issue #23 is about Java 11, 17 and 21; Java 6 and 8 are the baseline.
+
+   ```
+   java -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
+   ```
+
+   When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX`. If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
+
+3. In the server console, `client-test` now lists `Wubiq witness 9-pin`.
+
+#### 4. Print and inspect the output
+
+The test page can be printed in two ways, and they exercise different client code.
+
+**Regular printing**
+
+Press the printer's test page button in the console. The server sends the test page PDF, and the client hands it to the CUPS queue. The witness receives what the operating system produced (probably the PDF itself, starting with `%PDF`), not ESC/P, and reports it as unknown commands. This checks the queue and the client, not the dot-matrix encoder.
+
+**ESC/P stream path**
+
+This is the code issue #23 is about. Copy the test page button's link and add two parameters:
+- `TP=true` makes the server send the page as a Pageable;
+- `TPT` is the `Destination` the client writes ESC/P bytes to. Use an absolute file path on the client machine, URL-encoded. A `file:` URI doesn't work, because the client opens the string with `FileOutputStream`.
+
+```
+http://localhost:8080/wubiq-server/wubiq-print-test.do?command=t1&printServiceName=...&uuid=client-test&TP=true&TPT=%2FUsers%2Fme%2Fwitness.escp
+```
+
+The ESC/P bytes go to that file, not through the queue, so render them yourself:
+
+```
+java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar render --out wubiq-dotmatrix-witness/witness-jobs/test-page /Users/me/witness.escp
+```
+
+The client may also send the page to the queue through the JDK print pipeline. Those bytes show up as a separate job.
+
+**Reading the output**
+
+Open `wubiq-dotmatrix-witness/witness-jobs/index.html`. It lists every job the listener received, with links to each one. Each job, and each directory written by `render`, holds:
+- `index.html`: everything below on one page;
+- `sheet-N.png`: each sheet as the printer would print it;
+- `grid.txt`: the text on a 10 cpi column grid, with the vertical position and pitch of each line;
+- `dump.txt`: every command with its byte offset, and the warnings at the end (text past the margin, a short page length, UTF-8 bytes, a missing reset or form feed, unknown commands);
+- `lines.json`: the printed text runs, for checks in other tools;
+- `job.escp`: the raw bytes.
+
+Compare the sheets with the test page PDF to see where the text should be. Running the same steps with each JDK, and comparing `job.escp` (for example with `cmp`), shows whether the output changes between Java versions.
 
 ### Java API
 
