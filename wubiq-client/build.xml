@@ -126,6 +126,33 @@
 		</javac>
 	</target>
 
+	<path id="launcher.classpath">
+		<pathelement path="${bin}"/>
+		<pathelement path="${i18n}"/>
+		<pathelement path="${basedir.common}/bin"/>
+		<pathelement path="${basedir.common}/i18n"/>
+		<fileset dir="${lib}">
+			<include name="**/*.jar"/>
+			<exclude name="wubiq-common.jar"/>
+		</fileset>
+		<path refid="common.classpath" />
+	</path>
+
+	<target name="create-launcher-jar" depends="compile"
+			description="Writes build-tests/wubiq-client-launcher.jar: runs the compiled client with -jar and the manifest of the client jar">
+		<mkdir dir="${basedir}/build-tests"/>
+		<manifestclasspath property="launcher.manifest.classpath" jarfile="${basedir}/build-tests/wubiq-client-launcher.jar">
+			<classpath refid="launcher.classpath" />
+		</manifestclasspath>
+		<jar jarfile="${basedir}/build-tests/wubiq-client-launcher.jar">
+			<manifest>
+				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>
+				<attribute name="Add-Opens" value="${client.add.opens}"/>
+				<attribute name="Class-Path" value="${launcher.manifest.classpath}"/>
+			</manifest>
+		</jar>
+	</target>
+
 	<target name="test-dotmatrix" depends="compile-tests"
 			description="Prints the dot-matrix fixtures into the virtual printer and writes build-tests/dotmatrix-report">
 		<java classname="org.junit.runner.JUnitCore" fork="true" failonerror="true" dir="${basedir}">

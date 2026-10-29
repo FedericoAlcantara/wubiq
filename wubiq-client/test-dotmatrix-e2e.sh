@@ -19,7 +19,6 @@
 set -u
 cd "$(dirname "$0")"
 BASE="$(pwd)"
-COMMON="$BASE/../wubiq-common"
 WITNESS="$BASE/../wubiq-dotmatrix-witness"
 SERVER="${WUBIQ_SERVER:-http://localhost:8080}"
 QUEUE="${WUBIQ_E2E_QUEUE:-Witness_9-pin}"
@@ -51,12 +50,9 @@ if ! $UPDATE && [ ! -f "$GOLDEN" ]; then
 fi
 
 echo "Compiling with $COMPILE_HOME"
-JAVA_HOME="$COMPILE_HOME" ant -q -f "$BASE/build.xml" compile-tests > /dev/null || exit 2
-CP="$BASE/bin:$BASE/i18n:$COMMON/bin:$COMMON/i18n"
-for jar in "$BASE"/lib/*.jar "$COMMON"/lib/*.jar "$COMMON"/lib-nondeploy/*.jar; do
-	case "$jar" in */wubiq-common.jar) continue ;; esac
-	CP="$CP:$jar"
-done
+JAVA_HOME="$COMPILE_HOME" ant -q -f "$BASE/build.xml" compile-tests create-launcher-jar > /dev/null || exit 2
+# Same manifest (Main-Class, Add-Opens) as wubiq-client.jar, over the compiled classes.
+LAUNCHER="$BASE/build-tests/wubiq-client-launcher.jar"
 WITNESS_JAVA="$COMPILE_HOME/bin/java -Djava.awt.headless=true -cp $WITNESS/bin net.sf.wubiq.dotmatrix.witness.Main"
 
 LISTENER=""
@@ -125,7 +121,7 @@ print_with() {
 	$WITNESS_JAVA listen --out "$OUT/jobs" > "$OUT/witness.log" 2>&1 &
 	LISTENER=$!
 	wait_for 15 listening || { echo "  the witness listener didn't start"; return 1; }
-	( cd "$OUT" && exec "$home/bin/java" $extra -cp "$CP" net.sf.wubiq.clients.LocalPrintManager -h "$SERVER" -u "$uuid" -v ) \
+	( cd "$OUT" && exec "$home/bin/java" $extra -jar "$LAUNCHER" -h "$SERVER" -u "$uuid" -v ) \
 		> "$OUT/client.log" 2>&1 &
 	CLIENT=$!
 	local status=0

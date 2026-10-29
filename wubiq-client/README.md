@@ -99,7 +99,7 @@ It needs:
 - port 9100 free: the script starts and stops its own witness listener.
 
 For each JDK build (every distinct version, so 1.8.0_112 and 1.8.0_362 both run), it:
-1. starts the witness listener and a client on that JDK, with the uuid `witness-java-VERSION`.;
+1. starts the witness listener and a client on that JDK, with the uuid `witness-java-VERSION`. The client runs from `build-tests/wubiq-client-launcher.jar` (`ant create-launcher-jar`): the compiled classes with the manifest of `wubiq-client.jar`;
 2. sends the test page from the server console link of that client's witness printer;
 3. waits for the job, stops the client and the listener;
 4. compares the job with the golden file (`compare` in the witness).
