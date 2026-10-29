@@ -24,7 +24,7 @@ Each fixture runs through four drivers:
 - `direct`: the wrappers on an image graphics.
 - `direct-300dpi`: the same, with a printer-like device scale.
 - `jdk-print`: the JDK print pipeline through the PostScript stream service. Its `job.ps` (and `job.pdf`, when Ghostscript is installed) shows what a laser printer would print.
-- `reference`: a correct encoder that is not Wubiq code. It must always pass; this keeps the fixtures and tolerances honest.
+- `reference`: a correct encoder that is not Wubiq code. It always passes.
 
 #### Current JDK
 
@@ -32,7 +32,7 @@ Each fixture runs through four drivers:
 ant test-dotmatrix
 ```
 
-This compiles wubiq-common, the client, the witness and the tests into `bin` and `build-tests/classes`, without building jars. Use a JDK 8: JDK 12 and later can't target Java 6, and Ant 1.10 itself needs Java 8. The report goes to `build-tests/dotmatrix-report/java-VERSION/index.html`, with one page per case: the sheet images, text grid, decoded commands and check results.
+This compiles wubiq-common, the client, the witness and the tests into `bin` and `build-tests/classes`, without building jars. Run it with a JDK 8. The report goes to `build-tests/dotmatrix-report/java-VERSION/index.html`, with one page per case: the sheet images, text grid, decoded commands and check results.
 
 System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dotmatrix.strict=true`):
 
@@ -51,7 +51,7 @@ System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dot
 ./test-dotmatrix-jdks.sh [--strict]
 ```
 
-The 2.x client must print the same bytes on every Java it runs on, from 6 to the latest. The script checks that in one go.
+It runs the tests on every installed JDK and compares the bytes each one produces.
 
 1. **Finds the JDKs**, one per major version:
    - the ones `/usr/libexec/java_home -V` lists;
@@ -75,6 +75,4 @@ Exit codes:
 - `1`: with `--strict`, a Wubiq case failed, or its bytes differ from the baseline.
 - `2`: no JDK 8 was found, or the compilation failed.
 
-On macOS, Apple's Java 6 (1.6.0_65) runs under Rosetta and crashes at random in AWT. The script runs it without the JIT (`-Xint`), one JVM per case, retrying each case up to five times, and then rebuilds that JDK's index. Java 6 takes most of the run time (about 80 seconds for the full matrix). A case with no result after five attempts shows as `missing`.
-
-Java 6 isn't registered with `java_home`, but the script finds it in `/Library/Java/JavaVirtualMachines/1.6.0.jdk`.
+Java 6 runs without the JIT (`-Xint`) and with one JVM per case, retrying each case up to five times; a case with no result after five attempts shows as `missing`. The script finds Java 6 in `/Library/Java/JavaVirtualMachines/1.6.0.jdk`.

@@ -2,7 +2,7 @@
 
 A virtual Epson ESC/P (9-pin) and ESC/P 2 (24-pin) dot-matrix printer, so dot-matrix output can be checked without a printer. It has no dependencies, compiles for Java 6, and runs on any later JDK.
 
-It does not depend on any other Wubiq module. Any client that produces ESC/P bytes can be tested with it: the 2.x Java client, Android, or a Wubiq 3 agent written in another language.
+It does not depend on any other Wubiq module, so it can test any program that produces ESC/P bytes, in any language.
 
 ### What it does
 
@@ -43,7 +43,7 @@ ant create-witness-jar     # dist/wubiq-dotmatrix-witness.jar
 ant test                   # witness unit tests
 ```
 
-Compile with JDK 8, since javac 12 and later can't target Java 6. The jar runs on Java 6 and later.
+Compile with JDK 8. The jar runs on Java 6 and later.
 
 ### Command line
 
@@ -88,7 +88,7 @@ The witness comes with its own drivers, `cups/witness-9pin.ppd` and `cups/witnes
    java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar listen --out wubiq-dotmatrix-witness/witness-jobs
    ```
 
-   Add `--pins 24` for a 24-pin printer. Don't run `ant create-witness-jar` or `ant clean` here while `wubiq-client/test-dotmatrix-jdks.sh` is running, because they delete the classes it uses.
+   Add `--pins 24` for a 24-pin printer. Don't run `ant create-witness-jar` or `ant clean` here while `wubiq-client/test-dotmatrix-jdks.sh` is running.
 
 2. Create the queue. Your user must be an administrator (in the `lpadmin` group on macOS); otherwise use `sudo`.
 
@@ -97,12 +97,9 @@ The witness comes with its own drivers, `cups/witness-9pin.ppd` and `cups/witnes
    lpadmin -p Witness_9-pin -o printer-is-shared=false
    ```
 
-   - `-P`: the witness driver. Use `witness-24pin.ppd` (and `--pins 24` on the listener) for a 24-pin printer. `lpadmin` warns that printer drivers are deprecated; CUPS on macOS still uses them.
-
+   - `-P`: the witness driver. Use `witness-24pin.ppd` (and `--pins 24` on the listener) for a 24-pin printer. Apple's Java 6 lists the queue only when it has a driver.
    - `-D`: on macOS, Java names the print service after this description, not after the queue name (`-p`). Wubiq picks the printer type from that name, so the description must contain `9-pin` for a dot-matrix printer, or `24-pin` for a 24-pin (high-quality) one. Avoid `jet`, `laser` and `photo`, which Wubiq checks first.
    - `printer-is-shared=false`: CUPS shares new queues on the network by default, and this one should stay local.
-
-   Apple's Java 6 on macOS takes its printer list from the macOS printing framework (`PMServerCreatePrinterList` in `libawt.jnilib`), not from CUPS, and that list leaves out raw queues (queues created without `-P`). Java 8 and later ask CUPS directly and see both kinds.
 
 3. Check it. The job should appear in `wubiq-dotmatrix-witness/witness-jobs/` within a few seconds.
 
@@ -128,20 +125,20 @@ The console is at `http://localhost:8080/wubiq-server` (user `test`, password `1
 
 #### 3. Configure wubiq-client
 
-1. Make sure nothing real prints by mistake. On macOS, a Java print job was once seen going to the default printer instead of the printer it asked for. While you test, make the witness the default printer, or pause your real printers.
+1. Make the witness the default printer while you test, or pause your real printers, so nothing prints on paper by mistake.
 
    ```
    lpstat -d                      # note the current default
    lpoptions -d Witness_9-pin     # restore later with lpoptions -d <previous default>
    ```
 
-2. Start the client with the JDK you want to test. Issue #23 is about Java 11, 17 and 21; Java 6 and 8 are the baseline.
+2. Start the client with the JDK you want to test.
 
    ```
    java -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
    ```
 
-   On Apple Silicon, Apple's Java 6 runs under Rosetta and the JVM crashes within seconds. Start it with `-Xint -XX:+UseMembar -Djava.awt.headless=true` (no JIT, no memory serialize page, no AWT window). With these options it stays up:
+   On Apple Silicon, start Apple's Java 6 with `-Xint -XX:+UseMembar -Djava.awt.headless=true`:
 
    ```
    /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
@@ -169,9 +166,9 @@ java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar render --out 
 
 **ESC/P stream path**
 
-This is the code issue #23 is about. Copy the test page button's link and add two parameters:
+Copy the test page button's link and add two parameters:
 - `TP=true` makes the server send the page as a Pageable;
-- `TPT` is the `Destination` the client writes ESC/P bytes to. Use an absolute file path on the client machine, URL-encoded. A `file:` URI doesn't work, because the client opens the string with `FileOutputStream`.
+- `TPT` is the `Destination` the client writes ESC/P bytes to. Use an absolute file path on the client machine, URL-encoded, not a `file:` URI.
 
 ```
 http://localhost:8080/wubiq-server/wubiq-print-test.do?command=t1&printServiceName=...&uuid=client-test&TP=true&TPT=%2FUsers%2Fme%2Fwitness.escp
