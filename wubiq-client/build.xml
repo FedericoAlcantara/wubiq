@@ -71,6 +71,71 @@
 		</copy>
 	</target>
 
+	<property name="witness.dir" value="${workspace.dir}/wubiq-dotmatrix-witness" />
+	<property name="testBin" value="${basedir}/build-tests/classes" />
+
+	<path id="common.classpath">
+		<fileset dir="${basedir.common}/lib">
+			<include name="**/*.jar"/>
+		</fileset>
+		<fileset dir="${basedir.common}/lib-nondeploy">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<path id="test.classpath">
+		<pathelement path="${bin}"/>
+		<pathelement path="${i18n}"/>
+		<pathelement path="${basedir.common}/bin"/>
+		<pathelement path="${basedir.common}/i18n"/>
+		<fileset dir="${lib}">
+			<include name="**/*.jar"/>
+			<exclude name="wubiq-common.jar"/>
+		</fileset>
+		<path refid="common.classpath" />
+		<pathelement path="${witness.dir}/bin"/>
+		<pathelement path="${testBin}"/>
+		<fileset dir="${witness.dir}/lib-test">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="compile" description="Compiles wubiq-common and the client sources without packaging">
+		<mkdir dir="${basedir.common}/bin"/>
+		<javac srcdir="${basedir.common}/src" destdir="${basedir.common}/bin" nowarn="true" failonerror="true"
+				includeantruntime="false" debug="true" target="1.6" source="1.6">
+			<classpath refid="common.classpath" />
+		</javac>
+		<mkdir dir="${bin}"/>
+		<javac destdir="${bin}" nowarn="true" failonerror="true" includeantruntime="false"
+				debug="true" target="1.6" source="1.6">
+			<src refid="project.src"/>
+			<classpath refid="test.classpath" />
+		</javac>
+	</target>
+
+	<target name="compile-tests" depends="compile">
+		<ant dir="${witness.dir}" target="compile" inheritAll="false" />
+		<mkdir dir="${testBin}"/>
+		<javac srcdir="${basedir}/tests-src" destdir="${testBin}" nowarn="true" failonerror="true"
+				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8">
+			<classpath refid="test.classpath" />
+		</javac>
+	</target>
+
+	<target name="test-dotmatrix" depends="compile-tests"
+			description="Prints the dot-matrix fixtures into the virtual printer and writes build-tests/dotmatrix-report">
+		<java classname="org.junit.runner.JUnitCore" fork="true" failonerror="true" dir="${basedir}">
+			<classpath refid="test.classpath" />
+			<sysproperty key="java.awt.headless" value="true" />
+			<syspropertyset>
+				<propertyref prefix="wubiq.dotmatrix."/>
+			</syspropertyset>
+			<arg value="net.sf.wubiq.dotmatrix.ReferenceEncoderTest" />
+			<arg value="net.sf.wubiq.dotmatrix.DotMatrixWitnessTest" />
+		</java>
+	</target>
+
 	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
 		<echo message="Creating wubiq-client javadoc" />
 		<delete dir="${basedir}/javadoc" failonerror="false" />

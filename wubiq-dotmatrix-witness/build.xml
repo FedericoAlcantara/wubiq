@@ -1,0 +1,56 @@
+<project name="wubiq-dotmatrix-witness" basedir="." default="create-witness-jar">
+
+	<property name="project" value="wubiq-dotmatrix-witness" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="bin" value="${basedir}/bin" />
+	<property name="testBin" value="${basedir}/build-tests/classes" />
+	<property name="libTest" value="${basedir}/lib-test" />
+	<property name="outputjar" value="${dist}/${project}.jar" />
+
+	<path id="test.classpath">
+		<pathelement path="${bin}"/>
+		<pathelement path="${testBin}"/>
+		<fileset dir="${libTest}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<target name="compile">
+		<mkdir dir="${bin}"/>
+		<javac srcdir="${basedir}/src" destdir="${bin}" nowarn="true" failonerror="true"
+				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8" />
+	</target>
+
+	<target name="create-witness-jar" depends="clean,compile" description="Builds the virtual dot-matrix printer jar">
+		<jar jarfile="${outputjar}">
+			<fileset dir="${bin}" />
+			<manifest>
+				<attribute name="Main-Class" value="net.sf.wubiq.dotmatrix.witness.Main"/>
+			</manifest>
+		</jar>
+	</target>
+
+	<target name="compile-tests" depends="compile">
+		<mkdir dir="${testBin}"/>
+		<javac srcdir="${basedir}/tests-src" destdir="${testBin}" nowarn="true" failonerror="true"
+				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8">
+			<classpath refid="test.classpath" />
+		</javac>
+	</target>
+
+	<target name="test" depends="compile-tests" description="Runs the witness unit tests">
+		<java classname="org.junit.runner.JUnitCore" fork="true" failonerror="true">
+			<classpath refid="test.classpath" />
+			<sysproperty key="java.awt.headless" value="true" />
+			<arg value="net.sf.wubiq.dotmatrix.witness.EscpInterpreterTest" />
+		</java>
+	</target>
+
+	<target name="clean">
+		<delete dir="${dist}" failonerror="false" />
+		<delete dir="${bin}" failonerror="false" />
+		<delete dir="${basedir}/build-tests" failonerror="false" />
+		<mkdir dir="${dist}"/>
+		<mkdir dir="${bin}"/>
+	</target>
+</project>
