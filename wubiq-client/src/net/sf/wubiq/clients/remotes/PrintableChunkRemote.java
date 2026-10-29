@@ -327,6 +327,15 @@ public class PrintableChunkRemote implements Printable, IProxyClient {
 	@SuppressWarnings({ "rawtypes", "unchecked" })
 	private Method findMethod(Class clazz, String name, Class[] parameterTypes) {
 		Method method = null;
+		// Graphics2D methods first: the JDK's own Graphics classes are not accessible on Java 16+.
+		try {
+			method = Graphics2D.class.getMethod(name, parameterTypes);
+		} catch (NoSuchMethodException e) {
+			method = null;
+		}
+		if (method != null) {
+			return method;
+		}
 		try {
 			method = clazz.getDeclaredMethod(name, parameterTypes);
 		} catch (SecurityException e) {
