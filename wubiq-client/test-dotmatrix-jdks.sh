@@ -22,52 +22,7 @@ REPORT="$BASE/build-tests/dotmatrix-report"
 STRICT=false
 [ "${1:-}" = "--strict" ] && STRICT=true
 
-major() {
-	# "1.6.0_65" -> 6, "11.0.18" -> 11, "25.0.2" -> 25
-	local version="$1"
-	case "$version" in
-		1.*) echo "$version" | cut -d. -f2 ;;
-		*) echo "$version" | cut -d. -f1 | cut -d- -f1 | cut -d+ -f1 ;;
-	esac
-}
-
-java_version() {
-	"$1/bin/java" -version 2>&1 | grep -i version | head -1 | sed -E 's/.*version "([^"]+)".*/\1/'
-}
-
-candidate_homes() {
-	if [ -n "${WUBIQ_JDKS:-}" ]; then
-		for home in $WUBIQ_JDKS; do echo "$home"; done
-		return
-	fi
-	/usr/libexec/java_home -V 2>&1 | grep -E '^\s+[0-9]' | grep -v 'Internet Plug-Ins' | awk '{print $NF}'
-	for home in /Library/Java/JavaVirtualMachines/*/Contents/Home "$HOME"/Library/Java/JavaVirtualMachines/*/Contents/Home \
-			/opt/homebrew/opt/openjdk*/libexec/openjdk.jdk/Contents/Home /usr/local/opt/openjdk*/libexec/openjdk.jdk/Contents/Home /usr/lib/jvm/*; do
-		[ -x "$home/bin/java" ] && echo "$home"
-	done
-}
-
-# One JDK per major version, in version order.
-SELECTED=""
-SEEN=" "
-for home in $(candidate_homes); do
-	[ -x "$home/bin/java" ] || continue
-	version="$(java_version "$home")"
-	[ -n "$version" ] || continue
-	m="$(major "$version")"
-	case "$SEEN" in *" $m "*) continue ;; esac
-	SEEN="$SEEN$m "
-	SELECTED="$SELECTED$m|$home|$version
-"
-done
-SELECTED="$(printf '%s' "$SELECTED" | sort -t'|' -k1,1n)"
-
-COMPILE_HOME=""
-while IFS='|' read -r m home version; do
-	if [ "$m" = "8" ] && [ -x "$home/bin/javac" ]; then COMPILE_HOME="$home"; fi
-done <<EOF
-$SELECTED
-EOF
+. "$BASE/jdk-homes.sh"
 if [ -z "$COMPILE_HOME" ]; then
 	echo "A JDK 8 (with javac) is needed to compile for Java 6." >&2
 	exit 2
