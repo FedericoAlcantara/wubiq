@@ -110,6 +110,17 @@ public class WitnessReport {
 				.append(", \"baselineOffset\": ").append(number(profile.getBaselineOffset())).append("},\n");
 		json.append("  \"sheets\": ").append(result.getPageCount()).append(",\n");
 		json.append("  \"formFeeds\": ").append(result.getFormFeeds()).append(",\n");
+		json.append("  \"graphics\": [");
+		for (int page = 0; page < result.getPageCount(); page++) {
+			List<BitImage> bitImages = result.getBitImages(page);
+			int dots = 0;
+			for (BitImage bitImage : bitImages) {
+				dots += bitImage.getDotCount();
+			}
+			json.append(page == 0 ? "\n    " : ",\n    ").append("{\"sheet\": ").append(page + 1)
+					.append(", \"bands\": ").append(bitImages.size()).append(", \"dots\": ").append(dots).append('}');
+		}
+		json.append(result.getPageCount() == 0 ? "],\n" : "\n  ],\n");
 		json.append("  \"warnings\": [");
 		for (int index = 0; index < result.getWarnings().size(); index++) {
 			json.append(index == 0 ? "\n    " : ",\n    ").append(quote(result.getWarnings().get(index)));
@@ -205,7 +216,7 @@ public class WitnessReport {
 			html.append("</ul>\n");
 		}
 		html.append("<h2>Text grid</h2>\n<pre>").append(escape(grid)).append("</pre>\n");
-		html.append("<h2>Sheets</h2>\n<p class=\"legend\">Blue: dot-matrix output. Red: reference rendering, when given. "
+		html.append("<h2>Sheets</h2>\n<p class=\"legend\">Blue: dot-matrix text. Black: bit-image graphics, dot by dot. Red: reference rendering, when given. "
 				+ "Grid: 1/10 in columns, 1 in squares. Orange: end of carriage.</p>\n");
 		for (int index = 1; index <= sheets; index++) {
 			html.append("<figure><img src=\"sheet-").append(index).append(".png\" alt=\"sheet ").append(index)

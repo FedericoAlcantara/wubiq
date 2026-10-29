@@ -16,8 +16,8 @@ import java.util.Map;
  * </p>
  * <p>
  * Positions are tracked in inches from the left edge of the paper and from the
- * top of form of the first sheet. Bit-image graphics are skipped (their width
- * still moves the head). Proportional spacing is not modelled.
+ * top of form of the first sheet. Bit-image graphics (ESC K, L, Y, Z, ESC * and ESC ^)
+ * are recorded dot by dot as {@link BitImage} bands. Proportional spacing is not modelled.
  * </p>
  * @author Federico Alcantara
  *
@@ -78,6 +78,7 @@ public class EscpInterpreter {
 	private double[] tabStops;
 	private boolean warnedShortPage;
 	private boolean warnedProportional;
+	private boolean warnedImageMargin;
 	private int formFeeds;
 	private int lastSheet;
 
@@ -107,6 +108,7 @@ public class EscpInterpreter {
 		lastSheet = 0;
 		warnedShortPage = false;
 		warnedProportional = false;
+		warnedImageMargin = false;
 		rawText = new StringBuilder();
 		decodedText = new StringBuilder();
 		reset();
@@ -136,12 +138,18 @@ public class EscpInterpreter {
 	}
 
 	private boolean endsWithFormFeed() {
-		for (int index = data.length - 1; index >= 0; index--) {
+		int index = data.length - 1;
+		while (index >= 0) {
 			int value = data[index] & 0xFF;
 			if (value == 0x0C) {
 				return true;
 			}
-			if (value != 0x0D && value != 0x00) {
+			if (value == '@' && index > 0 && (data[index - 1] & 0xFF) == ESC) {
+				// a reset after the last form feed leaves the paper where it is
+				index -= 2;
+			} else if (value == 0x0D || value == 0x00) {
+				index--;
+			} else {
 				return false;
 			}
 		}
@@ -640,21 +648,27 @@ public class EscpInterpreter {
 			break;
 		case '*':
 			n = next(start);
-			bitImage(start, "ESC * " + n, bitImageDpi(n), n >= 32 ? (n >= 64 ? 6 : 3) : 1);
+			if (n >= 0) {
+				bitImage(start, "ESC * " + n, n, n >= 64 ? 48 : n >= 32 ? 24 : 8);
+			}
 			break;
 		case 'K':
-			bitImage(start, "ESC K", 60, 1);
+			bitImage(start, "ESC K", 0, 8);
 			break;
 		case 'L':
+			bitImage(start, "ESC L", 1, 8);
+			break;
 		case 'Y':
-			bitImage(start, "ESC " + (char) command, 120, 1);
+			bitImage(start, "ESC Y", 2, 8);
 			break;
 		case 'Z':
-			bitImage(start, "ESC Z", 240, 1);
+			bitImage(start, "ESC Z", 3, 8);
 			break;
 		case '^':
-			next(start);
-			bitImage(start, "ESC ^", 60, 2);
+			n = next(start);
+			if (n >= 0) {
+				bitImage(start, "ESC ^ " + n, n, 9);
+			}
 			break;
 		default:
 			cmd(start, String.format(Locale.US, "ESC 0x%02X", command), "unknown command");
@@ -771,32 +785,77 @@ public class EscpInterpreter {
 		}
 	}
 
-	private void bitImage(int start, String name, int dpi, int bytesPerColumn) {
+	/**
+	 * Reads one bit-image band and lays its dots down at the head position.
+	 * @param mode Density mode (ESC * m, or ESC ^ m for 9-dot graphics).
+	 * @param dots 8, 9, 24 or 48 dots per column.
+	 */
+	private void bitImage(int start, String name, int mode, int dots) {
 		int columns = word(start);
 		if (columns < 0) {
 			return;
 		}
-		int skip = Math.min(columns * bytesPerColumn, data.length - pos);
-		pos += skip;
-		x += columns / (double) dpi;
-		cmd(start, name, columns + " graphics columns at " + dpi + " dpi (skipped)");
-		warn(start, "bit image graphics are not rendered by the witness");
+		int dpi = dots == 9 ? (mode == 1 ? 120 : 60) : bitImageDpi(mode, dots);
+		if (dpi <= 0) {
+			warn(start, name + ": unknown graphics density mode " + mode + "; assumed 60 dpi");
+			dpi = 60;
+		}
+		int bytesPerColumn = dots == 9 ? 2 : dots / 8;
+		double dotPitch = dots == 48 ? 1d / 360d : dots == 24 ? 1d / 180d : profile.isPin24() ? 1d / 60d : 1d / 72d;
+		long[] masks = new long[columns];
+		int available = Math.min(columns, (data.length - pos) / bytesPerColumn);
+		for (int column = 0; column < available; column++) {
+			long mask = 0;
+			for (int index = 0; index < bytesPerColumn; index++) {
+				mask = (mask << 8) | (data[pos++] & 0xFF);
+			}
+			// ESC ^: the 9th dot is the top bit of the second byte
+			masks[column] = dots == 9 ? mask >> 7 : mask;
+		}
+		if (available < columns) {
+			pos = data.length;
+			warn(start, name + ": stream ends inside the graphics data");
+		}
+		double columnWidth = 1d / dpi;
+		int fitting = (int) Math.max(0, Math.min(columns, Math.floor((rightMargin - x) / columnWidth + EPSILON)));
+		if (fitting < columns && !warnedImageMargin) {
+			warnedImageMargin = true;
+			warn(start, String.format(Locale.US, "graphics pass the right margin (%.3f in); the printer drops the columns beyond it", rightMargin));
+		}
+		long[] kept = new long[fitting];
+		System.arraycopy(masks, 0, kept, 0, fitting);
+		int sheet = sheet();
+		lastSheet = Math.max(lastSheet, sheet);
+		BitImage bitImage = new BitImage(sheet, x, formY - sheet * profile.getPaperHeight(), columnWidth, dotPitch, dots, kept);
+		result.getBitImages().add(bitImage);
+		cmd(start, name, String.format(Locale.US, "%d columns of %d dots at %d dpi, %d dots fired, x %.4f -> %.4f",
+				columns, dots, dpi, bitImage.getDotCount(), x, x + columns * columnWidth));
+		x += columns * columnWidth;
 	}
 
-	private int bitImageDpi(int mode) {
-		switch (mode) {
-		case 1: case 2: case 33: case 72:
-			return 120;
-		case 3: case 39:
-			return 180;
-		case 4:
-			return 80;
-		case 6: case 38:
-			return 90;
-		case 40: case 73:
-			return 360;
-		default:
-			return 60;
+	/**
+	 * @return Horizontal density of an ESC * mode, or 0 when the mode is unknown.
+	 */
+	private int bitImageDpi(int mode, int dots) {
+		if (dots == 8) {
+			switch (mode) {
+			case 0: return 60;
+			case 1: case 2: return 120;
+			case 3: return 240;
+			case 4: return 80;
+			case 5: return 72;
+			case 6: return 90;
+			case 7: return 144;
+			default: return 0;
+			}
+		}
+		switch (mode % 32) {
+		case 0: return 60;
+		case 1: return 120;
+		case 6: return 90;
+		case 7: return 180;
+		case 8: case 9: return 360;
+		default: return 0;
 		}
 	}
 

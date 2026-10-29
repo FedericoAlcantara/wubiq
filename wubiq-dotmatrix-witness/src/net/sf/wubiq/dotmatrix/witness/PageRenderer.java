@@ -7,6 +7,7 @@ import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.font.FontRenderContext;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.Ellipse2D;
 import java.awt.image.BufferedImage;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,8 @@ import java.util.List;
 /**
  * Draws the printed sheets as images: a light inch/column grid, an optional
  * reference rendering (what a laser printer would print) tinted red underneath,
- * and the dot-matrix characters in dark blue on top, at their real cell positions.
+ * bit-image graphics as ribbon-black dots, and the dot-matrix characters in dark
+ * blue on top, at their real cell positions.
  * @author Federico Alcantara
  *
  */
@@ -23,6 +25,7 @@ public class PageRenderer {
 	private static final Color GRID_INCH = new Color(205, 205, 225);
 	private static final Color REFERENCE = new Color(220, 40, 40);
 	private static final Color INK = new Color(10, 30, 120);
+	private static final Color RIBBON = new Color(30, 30, 30);
 	private final PrinterProfile profile;
 	private final int dpi;
 
@@ -59,6 +62,10 @@ public class PageRenderer {
 			}
 			graphics.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+			graphics.setColor(RIBBON);
+			for (BitImage bitImage : result.getBitImages(page)) {
+				drawBitImage(graphics, bitImage);
+			}
 			graphics.setColor(INK);
 			for (Glyph glyph : result.getGlyphs(page)) {
 				drawGlyph(graphics, glyph);
@@ -82,6 +89,27 @@ public class PageRenderer {
 		graphics.setColor(new Color(255, 200, 120));
 		int carriage = (int) Math.round(profile.getCarriageWidth() * dpi);
 		graphics.drawLine(carriage, 0, carriage, height);
+	}
+
+	private void drawBitImage(Graphics2D graphics, BitImage bitImage) {
+		// a 9-pin dot is about 1/72 in across; 24-pin dots are finer but overlap their pitch
+		double diameter = bitImage.getDotPitch() * (bitImage.getDots() >= 24 ? 1.4 : 1.15) * dpi;
+		Ellipse2D.Double dot = new Ellipse2D.Double(0, 0, diameter, diameter);
+		long[] columns = bitImage.getColumns();
+		for (int column = 0; column < columns.length; column++) {
+			if (columns[column] == 0) {
+				continue;
+			}
+			double centerX = (bitImage.getX() + (column + 0.5) * bitImage.getColumnWidth()) * dpi;
+			for (int index = 0; index < bitImage.getDots(); index++) {
+				if (bitImage.isSet(column, index)) {
+					double centerY = (bitImage.getY() + (index + 0.5) * bitImage.getDotPitch()) * dpi;
+					dot.x = centerX - diameter / 2;
+					dot.y = centerY - diameter / 2;
+					graphics.fill(dot);
+				}
+			}
+		}
 	}
 
 	private void drawGlyph(Graphics2D graphics, Glyph glyph) {

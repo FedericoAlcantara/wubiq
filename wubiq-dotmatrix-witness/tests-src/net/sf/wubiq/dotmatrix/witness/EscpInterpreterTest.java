@@ -8,6 +8,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Test;
@@ -169,6 +170,62 @@ public class EscpInterpreterTest {
 		directory.delete();
 		String grid = TextGrid.render(result, profile);
 		assertTrue(grid, grid.contains("  0.1667 |           Total   <10cpi bold>"));
+	}
+
+	@Test
+	public void bitImagesAreLaidDownDotByDot() {
+		// ESC $ 60 = 1 in; ESC * 0 = 60 dpi, 8 dots of 1/72 in; three columns: top dot, all dots, bottom dot
+		EscpResult result = interpret(ESC, '@', ESC, '$', 60, 0, ESC, '*', 0, 3, 0, 0x80, 0xFF, 0x01, "A", CR, FF, ESC, '@');
+		assertTrue(result.getWarnings().toString(), result.getWarnings().isEmpty());
+		assertEquals(1, result.getBitImages().size());
+		BitImage image = result.getBitImages().get(0);
+		assertEquals(1, image.getX(), DELTA);
+		assertEquals(0, image.getY(), DELTA);
+		assertEquals(1d / 60d, image.getColumnWidth(), DELTA);
+		assertEquals(1d / 72d, image.getDotPitch(), DELTA);
+		assertEquals(10, image.getDotCount());
+		assertTrue(image.isSet(0, 0));
+		assertFalse(image.isSet(0, 1));
+		assertTrue(image.isSet(2, 7));
+		assertEquals(1 + 3d / 60d, glyph(result, 'A').getX(), DELTA);
+	}
+
+	@Test
+	public void bitImageModes() {
+		EscpResult result = interpret(ESC, '@', ESC, '*', 3, 1, 0, 0xFF, CR, ESC, 'Z', 1, 0, 0xFF, CR,
+				ESC, '^', 1, 1, 0, 0xFF, 0x80, CR, FF);
+		assertEquals(1d / 240d, result.getBitImages().get(0).getColumnWidth(), DELTA);
+		assertEquals(1d / 240d, result.getBitImages().get(1).getColumnWidth(), DELTA);
+		BitImage nineDots = result.getBitImages().get(2);
+		assertEquals(9, nineDots.getDots());
+		assertEquals(1d / 120d, nineDots.getColumnWidth(), DELTA);
+		assertEquals(9, nineDots.getDotCount());
+		assertTrue(nineDots.isSet(0, 8));
+
+		EscpResult pin24 = new EscpInterpreter(PrinterProfile.twentyFourPin()).interpret(
+				bytes(ESC, '@', ESC, '*', 39, 1, 0, 0x80, 0x00, 0x01, ESC, 'K', 1, 0, 0x01, CR, FF));
+		BitImage dots24 = pin24.getBitImages().get(0);
+		assertEquals(24, dots24.getDots());
+		assertEquals(1d / 180d, dots24.getColumnWidth(), DELTA);
+		assertEquals(1d / 180d, dots24.getDotPitch(), DELTA);
+		assertTrue(dots24.isSet(0, 0));
+		assertTrue(dots24.isSet(0, 23));
+		assertEquals(1d / 60d, pin24.getBitImages().get(1).getDotPitch(), DELTA);
+	}
+
+	@Test
+	public void bitImagesPastTheMarginAreDropped() {
+		// 8.0 in carriage at 60 dpi holds 480 columns; start at 7.95 in, so only 3 of 10 fit
+		Object[] parts = new Object[] {ESC, '@', ESC, '$', 477 % 256, 477 / 256, ESC, 'K', 10, 0};
+		List<Object> stream = new ArrayList<Object>(Arrays.asList(parts));
+		for (int column = 0; column < 10; column++) {
+			stream.add(0xFF);
+		}
+		stream.add(CR);
+		stream.add(FF);
+		EscpResult result = interpret(stream.toArray());
+		assertEquals(3, result.getBitImages().get(0).getColumns().length);
+		assertTrue(contains(result.getWarnings(), "graphics pass the right margin"));
 	}
 
 	private EscpResult interpret(Object... parts) {

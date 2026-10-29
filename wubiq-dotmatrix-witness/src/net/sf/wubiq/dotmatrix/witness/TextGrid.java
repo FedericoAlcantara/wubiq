@@ -25,6 +25,15 @@ public final class TextGrid {
 		for (int page = 0; page < result.getPageCount(); page++) {
 			builder.append("Sheet ").append(page + 1).append(" of ").append(result.getPageCount())
 					.append(" (").append(profile).append(")\n");
+			List<BitImage> bitImages = result.getBitImages(page);
+			if (!bitImages.isEmpty()) {
+				int dots = 0;
+				for (BitImage bitImage : bitImages) {
+					dots += bitImage.getDotCount();
+				}
+				builder.append("Graphics: ").append(bitImages.size()).append(" bit-image bands, ").append(dots)
+						.append(" dots (see the sheet image)\n");
+			}
 			builder.append("    y in | ").append(tens).append('\n');
 			builder.append("         | ").append(units).append('\n');
 			for (TextLine line : lines) {

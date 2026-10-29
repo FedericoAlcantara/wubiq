@@ -10,6 +10,7 @@ import java.util.List;
  */
 public class EscpResult {
 	private final List<Glyph> glyphs = new ArrayList<Glyph>();
+	private final List<BitImage> bitImages = new ArrayList<BitImage>();
 	private final List<String> warnings = new ArrayList<String>();
 	private final List<String> dump = new ArrayList<String>();
 	private int pageCount;
@@ -30,6 +31,26 @@ public class EscpResult {
 		for (Glyph glyph : glyphs) {
 			if (glyph.getPage() == page) {
 				returnValue.add(glyph);
+			}
+		}
+		return returnValue;
+	}
+
+	/**
+	 * @return Every bit-image band, in emission order.
+	 */
+	public List<BitImage> getBitImages() {
+		return bitImages;
+	}
+
+	/**
+	 * @return Bit-image bands on the given sheet, in emission order.
+	 */
+	public List<BitImage> getBitImages(int page) {
+		List<BitImage> returnValue = new ArrayList<BitImage>();
+		for (BitImage bitImage : bitImages) {
+			if (bitImage.getPage() == page) {
+				returnValue.add(bitImage);
 			}
 		}
 		return returnValue;
