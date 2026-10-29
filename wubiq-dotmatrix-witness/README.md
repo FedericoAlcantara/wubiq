@@ -50,6 +50,7 @@ Compile with JDK 8. The jar runs on Java 6 and later.
 ```
 java -jar dist/wubiq-dotmatrix-witness.jar render [options] FILE|-
 java -jar dist/wubiq-dotmatrix-witness.jar listen [options]
+java -jar dist/wubiq-dotmatrix-witness.jar compare [options] BASE OTHER
 
   --pins 9|24       printer type (default 9)
   --paper WxH       sheet size in inches (default 8.5x11)
@@ -59,9 +60,24 @@ java -jar dist/wubiq-dotmatrix-witness.jar listen [options]
   --port N          listen port (default 9100)
   --bind ADDRESS    listen address (default 127.0.0.1; 0.0.0.0 to accept LAN clients)
   --strict          render: exit 1 when the printer reports warnings
+  --tolerance IN    compare: largest accepted shift or size change (default 1/60 in across, 1/72 in down)
 ```
 
 `listen` behaves like a raw (JetDirect, port 9100) network printer. Each connection is one job, and `index.html` in the output directory lists every job received.
+
+`compare` checks that OTHER prints like BASE, a known good job, and exits with 1 when it doesn't. For each sheet it reports:
+- the position and size of the printed area, measured on the graphics dots, or on the text when the sheet has no graphics, with the shift in inches;
+- the share of BASE's dots that OTHER prints in the same place once that shift is undone (at least 90% passes);
+- every text line that differs in content or position.
+
+```
+$ java -jar dist/wubiq-dotmatrix-witness.jar compare java6/job.escp java8/job.escp
+DIFFERENT: java8/job.escp against java6/job.escp
+  PASS  sheets: 1 sheet(s)
+  FAIL  sheet 1 position: shifted -0.117 in horizontally, +0.000 in vertically; printed area at (0.417, 0.542) in, 6.000 x 7.431 in, expected (0.533, 0.542) in
+  PASS  sheet 1 size: 6.000 x 7.431 in
+  PASS  sheet 1 dots: 99.1% of 32884 dots in place once the shift is undone (32955 dots printed)
+```
 
 ### Using it as a printer
 
@@ -192,7 +208,7 @@ Open `wubiq-dotmatrix-witness/witness-jobs/index.html`. It lists every job the l
 - `lines.json`: the printed text runs, for checks in other tools;
 - `job.escp`: the raw bytes.
 
-Compare the sheets with the test page PDF to see where the text should be. Running the same steps with each JDK, and comparing `job.escp` (for example with `cmp`), shows whether the output changes between Java versions.
+Compare the sheets with the test page PDF to see where the text should be. To check another JDK against a known good job, use `compare` on the two `job.escp` files. `wubiq-client/test-dotmatrix-e2e.sh` runs these steps on every installed JDK and compares each job with the Java 6 one.
 
 ### Java API
 

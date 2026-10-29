@@ -19,6 +19,7 @@ import java.util.List;
  * <pre>
  *   render [options] FILE|-   interpret one ESC/P stream and write a report
  *   listen [options]          act as a raw (port 9100) network printer; one report per job
+ *   compare [options] BASE OTHER   check that OTHER prints like BASE; exit 1 when it doesn't
  * </pre>
  * @author Federico Alcantara
  *
@@ -31,6 +32,8 @@ public class Main {
 	private int dpi = 100;
 	private boolean strict;
 	private String input;
+	private final List<String> inputs = new ArrayList<String>();
+	private Double tolerance;
 	private final List<String[]> jobs = new ArrayList<String[]>();
 	private int jobCount;
 
@@ -72,10 +75,13 @@ public class Main {
 				dpi = Integer.parseInt(value(args, ++index, arg));
 			} else if ("--strict".equals(arg)) {
 				strict = true;
+			} else if ("--tolerance".equals(arg)) {
+				tolerance = Double.valueOf(value(args, ++index, arg));
 			} else if (arg.startsWith("--")) {
 				throw new IllegalArgumentException("Unknown option " + arg);
 			} else {
 				input = arg;
+				inputs.add(arg);
 			}
 		}
 		if ("render".equals(command)) {
@@ -83,6 +89,8 @@ public class Main {
 		} else if ("listen".equals(command)) {
 			listen();
 			return 0;
+		} else if ("compare".equals(command)) {
+			return compare();
 		}
 		throw new IllegalArgumentException("Unknown command " + command);
 	}
@@ -95,6 +103,24 @@ public class Main {
 		File directory = out != null ? out : new File("witness-report");
 		EscpResult result = report(directory, "-".equals(input) ? "stdin" : new File(input).getName(), data);
 		return strict && !result.getWarnings().isEmpty() ? 1 : 0;
+	}
+
+	private int compare() throws IOException {
+		if (inputs.size() != 2) {
+			throw new IllegalArgumentException("compare needs two files: the known good job and the job to check.");
+		}
+		EscpResult base = new EscpInterpreter(profile).interpret(read(new File(inputs.get(0))));
+		EscpResult other = new EscpInterpreter(profile).interpret(read(new File(inputs.get(1))));
+		SheetComparison comparison = new SheetComparison();
+		if (tolerance != null) {
+			comparison.setHorizontalTolerance(tolerance).setVerticalTolerance(tolerance);
+		}
+		CheckResult check = comparison.compare(base, other);
+		System.out.println((check.isPassed() ? "SAME" : "DIFFERENT") + ": " + inputs.get(1) + " against " + inputs.get(0));
+		for (CheckResult.Item item : check.getItems()) {
+			System.out.println("  " + item);
+		}
+		return check.isPassed() ? 0 : 1;
 	}
 
 	private void listen() throws IOException {
@@ -186,6 +212,7 @@ public class Main {
 		System.err.println("Usage:\n"
 				+ "  java -jar wubiq-dotmatrix-witness.jar render [options] FILE|-\n"
 				+ "  java -jar wubiq-dotmatrix-witness.jar listen [options]\n"
+				+ "  java -jar wubiq-dotmatrix-witness.jar compare [options] BASE OTHER\n"
 				+ "Options:\n"
 				+ "  --pins 9|24       printer type (default 9)\n"
 				+ "  --paper WxH       sheet size in inches (default 8.5x11)\n"
@@ -194,6 +221,7 @@ public class Main {
 				+ "  --out DIR         report directory (render: witness-report, listen: witness-jobs)\n"
 				+ "  --port N          listen port (default 9100)\n"
 				+ "  --bind ADDRESS    listen address (default 127.0.0.1, 0.0.0.0 for the LAN)\n"
-				+ "  --strict          render: exit 1 when the printer reports warnings");
+				+ "  --strict          render: exit 1 when the printer reports warnings\n"
+				+ "  --tolerance IN    compare: largest accepted shift or size change (default 1/60 in across, 1/72 in down)");
 	}
 }

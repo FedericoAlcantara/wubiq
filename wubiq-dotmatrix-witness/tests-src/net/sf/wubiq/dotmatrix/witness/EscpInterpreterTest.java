@@ -228,6 +228,25 @@ public class EscpInterpreterTest {
 		assertTrue(contains(result.getWarnings(), "graphics pass the right margin"));
 	}
 
+	@Test
+	public void comparisonFindsShiftsAndTextChanges() {
+		// the same 3 columns of graphics at 1 in, then at 1 in + 7/60 in
+		EscpResult base = interpret(ESC, '@', ESC, '$', 60, 0, ESC, 'K', 3, 0, 0x80, 0xFF, 0x01, CR, LF, "Total", CR, FF);
+		EscpResult shifted = interpret(ESC, '@', ESC, '$', 67, 0, ESC, 'K', 3, 0, 0x80, 0xFF, 0x01, CR, LF, "Total", CR, FF);
+		EscpResult retyped = interpret(ESC, '@', ESC, '$', 60, 0, ESC, 'K', 3, 0, 0x80, 0xFF, 0x01, CR, LF, "Tota1", CR, FF);
+		SheetComparison comparison = new SheetComparison();
+
+		assertTrue(comparison.compare(base, base).toString(), comparison.compare(base, base).isPassed());
+
+		CheckResult moved = comparison.compare(base, shifted);
+		assertFalse(moved.isPassed());
+		assertTrue(moved.toString(), moved.toString().contains("shifted +0.117 in horizontally"));
+
+		CheckResult changed = comparison.compare(base, retyped);
+		assertFalse(changed.isPassed());
+		assertTrue(changed.toString(), changed.toString().contains("\"Tota1\""));
+	}
+
 	private EscpResult interpret(Object... parts) {
 		return new EscpInterpreter(PrinterProfile.ninePin()).interpret(bytes(parts));
 	}
