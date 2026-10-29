@@ -26,6 +26,7 @@ import javax.print.attribute.HashDocAttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintJobAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.standard.Copies;
 import javax.print.attribute.standard.Destination;
 import javax.print.attribute.standard.JobName;
 import javax.print.attribute.standard.Media;
@@ -153,7 +154,20 @@ public final class ClientPrintDirectUtils {
 		printerJob.setPageable(enablePageableStream(pageable, printRequestAttributeSet));
 		try {
 			printerJob.setPrintService(printService);
-			printerJob.print(filteredRequestAttributeSet);
+			if (isMacOs() && carriedByPageFormat(filteredRequestAttributeSet)) {
+				// macOS Java 8 builds before 8u201 move the page whenever print() receives attributes (JDK-8201818).
+				JobName jobName = (JobName) filteredRequestAttributeSet.get(JobName.class);
+				if (jobName != null) {
+					printerJob.setJobName(jobName.getValue());
+				}
+				Copies copies = (Copies) filteredRequestAttributeSet.get(Copies.class);
+				if (copies != null) {
+					printerJob.setCopies(copies.getValue());
+				}
+				printerJob.print();
+			} else {
+				printerJob.print(filteredRequestAttributeSet);
+			}
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
@@ -367,6 +381,29 @@ public final class ClientPrintDirectUtils {
 		printRequestAttributeSet.add(new JobName(newJobName.toString(), Locale.getDefault()));
 	}
 	
+	private static boolean isMacOs() {
+		return System.getProperty("os.name").toLowerCase().startsWith("mac");
+	}
+
+	/**
+	 * @param printRequestAttributeSet Print request attribute set.
+	 * @return True if every attribute is either in the page format (media, printable area, orientation)
+	 * or settable on the printer job (job name, copies).
+	 */
+	private static boolean carriedByPageFormat(PrintRequestAttributeSet printRequestAttributeSet) {
+		for (Attribute attribute : printRequestAttributeSet.toArray()) {
+			if (!(attribute instanceof Media
+					|| attribute instanceof MediaPrintableArea
+					|| attribute instanceof OrientationRequested
+					|| attribute instanceof OriginalOrientationRequested
+					|| attribute instanceof JobName
+					|| attribute instanceof Copies)) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	private static PrintRequestAttributeSet filterPrintRequestAttributeSet(PrintRequestAttributeSet input) {
 		PrintRequestAttributeSet returnValue = new HashPrintRequestAttributeSet();
 		for (Attribute attribute : input.toArray()) {
