@@ -96,6 +96,13 @@ wubiq-client only sees printers installed in the operating system, so the witnes
    - `-D`: on macOS, Java names the print service after this description, not after the queue name (`-p`). Wubiq picks the printer type from that name, so the description must contain `9-pin` for a dot-matrix printer, or `24-pin` for a 24-pin (high-quality) one. Avoid `jet`, `laser` and `photo`, which Wubiq checks first.
    - `printer-is-shared=false`: CUPS shares new queues on the network by default, and this one should stay local.
 
+   Apple's Java 6 doesn't list raw queues. To test with Java 6, add a second queue that uses the Generic PostScript driver. CUPS then converts regular jobs to PostScript, but `-o raw` jobs still pass through unchanged:
+
+   ```
+   lpadmin -p Witness_PS_9-pin -E -v socket://127.0.0.1:9100 -m drv:///sample.drv/generic.ppd -D "Wubiq witness PS 9-pin"
+   lpadmin -p Witness_PS_9-pin -o printer-is-shared=false
+   ```
+
 3. Check it. The job should appear in `wubiq-dotmatrix-witness/witness-jobs/` within a few seconds.
 
    ```
@@ -103,7 +110,7 @@ wubiq-client only sees printers installed in the operating system, so the witnes
    lp -d Witness_9-pin -o raw some-job.escp  # any ESC/P file
    ```
 
-Remove the queue when you are done: `lpadmin -x Witness_9-pin`.
+Remove the queues when you are done: `lpadmin -x Witness_9-pin` and `lpadmin -x Witness_PS_9-pin`.
 
 #### 2. Start wubiq-server
 
@@ -133,7 +140,13 @@ The console is at `http://localhost:8080/wubiq-server` (user `test`, password `1
    java -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
    ```
 
-   When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX`. If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
+   On Apple Silicon, Apple's Java 6 runs under Rosetta and the JVM crashes within seconds. Start it with `-Xint -XX:+UseMembar -Djava.awt.headless=true` (no JIT, no memory serialize page, no AWT window). With these options it stays up:
+
+   ```
+   /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
+   ```
+
+   When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX` (Java 6 shows `Wubiq_witness_PS_9_pin -> DOT_MATRIX`). If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
 
 3. In the server console, `client-test` now lists `Wubiq witness 9-pin`.
 
