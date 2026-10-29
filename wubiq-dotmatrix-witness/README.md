@@ -67,14 +67,47 @@ java -jar dist/wubiq-dotmatrix-witness.jar listen [options]
 
 - **Any program that writes to a socket:** `nc 127.0.0.1 9100 < job.escp`.
 - **Phones and other machines on the LAN:** start with `--bind 0.0.0.0` and add a raw/9100 network printer at this machine's IP address.
-- **macOS or Linux print queue:** create a raw CUPS queue pointing at the listener. The OS print path and Java `PrintService` lookups then see it as a regular printer. Including `9-pin` in the name makes Wubiq treat it as a dot-matrix printer.
+- **macOS or Linux print queue:** see the next section.
 
-  ```
-  lpadmin -p Witness_9-pin -E -v socket://127.0.0.1:9100 -D "Wubiq dot-matrix witness"
-  lp -d Witness_9-pin -o raw job.escp
-  ```
+### Installing it as a CUPS printer
 
-  Remove it with `lpadmin -x Witness_9-pin`.
+Programs that only print to installed printers, such as wubiq-client, need a CUPS queue. A raw queue (one with no driver) passes the job bytes to the listener unchanged.
+
+1. Build the jar and start the listener. Keep it running while you print; each job lands in `witness-jobs/job-DATE-TIME-N/`, and `witness-jobs/index.html` lists them all.
+
+   ```
+   ant create-witness-jar
+   java -jar dist/wubiq-dotmatrix-witness.jar listen --out witness-jobs
+   ```
+
+   Add `--pins 24` for a 24-pin printer. Don't run `ant create-witness-jar` or `ant clean` while `wubiq-client/test-dotmatrix-jdks.sh` is running, because they delete the classes it uses.
+
+2. Create the queue. Your user must be an administrator (in the `lpadmin` group on macOS); otherwise use `sudo`.
+
+   ```
+   lpadmin -p Witness_9-pin -E -v socket://127.0.0.1:9100 -D "Wubiq witness 9-pin" -L "virtual ESC/P printer"
+   lpadmin -p Witness_9-pin -o printer-is-shared=false
+   ```
+
+   - `-D`: on macOS, Java names the print service after this description, not after the queue name (`-p`). Wubiq picks the printer type from that name, so `9-pin` must be in the description for Wubiq to treat the printer as dot-matrix. Use `24-pin` for the 24-pin (high-quality) type. Avoid `jet`, `laser` and `photo`, which Wubiq checks first.
+   - `printer-is-shared=false`: CUPS shares new queues on the network by default, and this one should stay local.
+
+3. Check it:
+
+   ```
+   lpstat -v Witness_9-pin               # device for Witness_9-pin: socket://127.0.0.1:9100
+   lp -d Witness_9-pin -o raw job.escp   # any ESC/P file; it should appear in witness-jobs/
+   ```
+
+   The wubiq-client log shows `Wubiq witness 9-pin -> DOT_MATRIX` when it registers its printers.
+
+4. Remove it when you are done: `lpadmin -x Witness_9-pin`.
+
+What arrives depends on how the client prints:
+- **ESC/P stream path:** used when the print request carries a `Destination` attribute. The client writes ESC/P bytes straight to that destination with a `FileOutputStream`. These bytes don't go through the CUPS queue at all.
+- **Regular printing:** without a `Destination`, the JDK print pipeline renders the job. The witness then receives whatever the platform produces (PostScript, PDF or raster), not ESC/P, and reports it as unknown commands.
+
+On macOS, a plain `PrinterJob.print()` aimed at this queue was observed to go to the default printer instead. Make sure your default printer can't print anything unwanted while you test.
 
 ### Java API
 
@@ -92,4 +125,4 @@ new WitnessReport(profile).write(directory, "my job", bytes, result, referenceIm
 
 A pitch mismatch is a note, unless strict pitch is enabled.
 
-`wubiq-common/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK (`wubiq-common/test-dotmatrix-jdks.sh`).
+`wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK (`wubiq-client/test-dotmatrix-jdks.sh`).
