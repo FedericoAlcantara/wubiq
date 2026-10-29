@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <classpath>
 	<classpathentry kind="src" path="src"/>
-	<classpathentry kind="src" path="tests-src" output="build-tests/classes"/>
 	<classpathentry kind="lib" path="lib/commons-logging-1.1.1.jar"/>
 	<classpathentry kind="lib" path="lib/commons-lang3-3.4.jar"/>
 	<classpathentry kind="lib" path="lib-nondeploy/fontbox-1.8.6.jar"/>
 	<classpathentry kind="lib" path="lib-nondeploy/pdfbox-1.8.6.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
 	<classpathentry kind="lib" path="lib-nondeploy/cglib-nodep-3.1.jar"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/wubiq-dotmatrix-witness"/>
-	<classpathentry kind="lib" path="/wubiq-dotmatrix-witness/lib-test/junit-4.12.jar"/>
-	<classpathentry kind="lib" path="/wubiq-dotmatrix-witness/lib-test/hamcrest-core-1.3.jar"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

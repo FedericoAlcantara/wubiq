@@ -1,3 +1,80 @@
 ## wubiq-client
 
 This module contains all the relevant code for connecting clients.
+
+### Dot-matrix tests
+
+When a print request carries a `Destination`, the client prints in ESC/P "fast" mode instead of through the JDK print pipeline. `ClientPrintDirectUtils` wraps the job in `PageableStreamWrapper` → `PrintableStreamWrapper` → `ESCPrinter` (in wubiq-common), and these write the ESC/P bytes to the destination.
+
+`tests-src/net/sf/wubiq/dotmatrix` checks that path without a printer:
+1. It prints a set of fixture jobs through the wrappers.
+2. It feeds the bytes to the virtual printer in `../wubiq-dotmatrix-witness`.
+3. It checks that every string lands where the fixture drew it.
+
+The fixtures are:
+- a ruler;
+- an invoice with right-aligned amounts;
+- every font size;
+- bold, italic and underline, with Spanish accented characters;
+- every Java2D text call;
+- translated and scaled graphics;
+- a three-page job.
+
+Each fixture runs through four drivers:
+- `direct`: the wrappers on an image graphics.
+- `direct-300dpi`: the same, with a printer-like device scale.
+- `jdk-print`: the JDK print pipeline through the PostScript stream service. Its `job.ps` (and `job.pdf`, when Ghostscript is installed) shows what a laser printer would print.
+- `reference`: a correct encoder that is not Wubiq code. It must always pass; this keeps the fixtures and tolerances honest.
+
+#### Current JDK
+
+```
+ant test-dotmatrix
+```
+
+This compiles wubiq-common, the client, the witness and the tests into `bin` and `build-tests/classes`, without building jars. Use a JDK 8: JDK 12 and later can't target Java 6, and Ant 1.10 itself needs Java 8. The report goes to `build-tests/dotmatrix-report/java-VERSION/index.html`, with one page per case: the sheet images, text grid, decoded commands and check results.
+
+System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dotmatrix.strict=true`):
+
+| Property | Effect |
+|---|---|
+| `wubiq.dotmatrix.strict=true` | layout and golden-file mismatches fail the build (default: report only) |
+| `wubiq.dotmatrix.updateGolden=true` | rewrites the golden files in `tests-src/net/sf/wubiq/dotmatrix/golden` from the `direct` driver |
+| `wubiq.dotmatrix.only=invoice-direct,ruler-jdk-print` | runs only these cases (fixture-driver) |
+| `wubiq.dotmatrix.images=false` | skips the PNG sheets |
+| `wubiq.dotmatrix.report=DIR` | report directory |
+| `wubiq.dotmatrix.golden=DIR` | golden files directory |
+
+#### Every installed JDK
+
+```
+./test-dotmatrix-jdks.sh [--strict]
+```
+
+The 2.x client must print the same bytes on every Java it runs on, from 6 to the latest. The script checks that in one go.
+
+1. **Finds the JDKs**, one per major version:
+   - the ones `/usr/libexec/java_home -V` lists;
+   - `/Library/Java/JavaVirtualMachines` and `~/Library/Java/JavaVirtualMachines`;
+   - Homebrew's `openjdk*`;
+   - `/usr/lib/jvm`.
+
+   To use your own list, set `WUBIQ_JDKS` to space-separated JDK homes. The script notes any of Java 6, 8, 11, 17 and 21 it doesn't find (for example `brew install --cask corretto@21`).
+2. **Compiles once with JDK 8** (`ant compile-tests`), at source and target 1.6. A JDK 8 with `javac` is required.
+3. **Runs the reference self-check and every case on each JDK**, headless. Each JDK writes to `build-tests/dotmatrix-report/java-MAJOR/`, and its console output goes to `java-MAJOR.log`.
+4. **Converts each `job.ps` to `job.pdf`** when `gs` (Ghostscript) is installed.
+5. **Prints a matrix** of each fixture-driver case against each JDK, and writes it to `build-tests/dotmatrix-report/index.html`, linking every cell to its report.
+
+Each cell reads `STATUS ok/failed same|DIFF`:
+- `STATUS`: `PASS` or `FAIL`, the layout check on that JDK;
+- `ok/failed`: the number of passed and failed check items;
+- `same`/`DIFF`: whether that JDK produced the same bytes as Java 8. When Java 8 isn't available, the first JDK run is the baseline.
+
+Exit codes:
+- `0`: done. Without `--strict` this is the result even when cases fail.
+- `1`: with `--strict`, a Wubiq case failed, or its bytes differ from the baseline.
+- `2`: no JDK 8 was found, or the compilation failed.
+
+On macOS, Apple's Java 6 (1.6.0_65) runs under Rosetta and crashes at random in AWT. The script runs it without the JIT (`-Xint`), one JVM per case, retrying each case up to five times, and then rebuilds that JDK's index. Java 6 takes most of the run time (about 80 seconds for the full matrix). A case with no result after five attempts shows as `missing`.
+
+Java 6 isn't registered with `java_home`, but the script finds it in `/Library/Java/JavaVirtualMachines/1.6.0.jdk`.

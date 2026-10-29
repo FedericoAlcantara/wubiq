@@ -16,6 +16,7 @@
 set -u
 cd "$(dirname "$0")"
 BASE="$(pwd)"
+COMMON="$BASE/../wubiq-common"
 WITNESS="$BASE/../wubiq-dotmatrix-witness"
 REPORT="$BASE/build-tests/dotmatrix-report"
 STRICT=false
@@ -79,8 +80,11 @@ done
 echo "Compiling with $COMPILE_HOME"
 JAVA_HOME="$COMPILE_HOME" ant -q -f "$BASE/build.xml" compile-tests || exit 2
 
-CP="$BASE/bin:$BASE/build-tests/classes:$WITNESS/bin"
-for jar in "$BASE"/lib/*.jar "$BASE"/lib-nondeploy/*.jar "$WITNESS"/lib-test/*.jar; do CP="$CP:$jar"; done
+CP="$BASE/bin:$BASE/i18n:$COMMON/bin:$COMMON/i18n:$BASE/build-tests/classes:$WITNESS/bin"
+for jar in "$BASE"/lib/*.jar "$COMMON"/lib/*.jar "$COMMON"/lib-nondeploy/*.jar "$WITNESS"/lib-test/*.jar; do
+	case "$jar" in */wubiq-common.jar) continue ;; esac
+	CP="$CP:$jar"
+done
 
 TEST=net.sf.wubiq.dotmatrix.DotMatrixWitnessTest
 SELF_CHECK=net.sf.wubiq.dotmatrix.ReferenceEncoderTest
