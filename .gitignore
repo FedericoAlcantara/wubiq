@@ -77,3 +77,6 @@ wubiq-android-gradle/.DS_Store
 
 # Generated javadoc (regenerate with: ant create-javadoc-documentation)
 /*/javadoc/
+
+# wubiq-installer build output
+/wubiq-installer/output.jar
