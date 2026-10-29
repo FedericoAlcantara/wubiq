@@ -2,6 +2,14 @@
 
 This module contains all the relevant code for connecting clients.
 
+### Running
+
+```
+java -jar wubiq-client.jar -h http://SERVER:8080 -u UUID
+```
+
+The client runs on Java 6 and later. Start it with `-jar`: its manifest opens the JDK packages it uses by reflection (`Add-Opens: java.base/java.lang java.desktop/javax.print java.desktop/sun.print`, kept in the `client.add.opens` property of `build.xml`). Java 9 and later apply it only to the jar given to `-jar`; with `-cp`, pass the same packages as `--add-opens PACKAGE=ALL-UNNAMED`.
+
 ### Dot-matrix tests
 
 When a print request carries a `Destination`, the client prints in ESC/P "fast" mode instead of through the JDK print pipeline. `ClientPrintDirectUtils` wraps the job in `PageableStreamWrapper` → `PrintableStreamWrapper` → `ESCPrinter` (in wubiq-common), and these write the ESC/P bytes to the destination.
@@ -91,7 +99,7 @@ It needs:
 - port 9100 free: the script starts and stops its own witness listener.
 
 For each JDK build (every distinct version, so 1.8.0_112 and 1.8.0_362 both run), it:
-1. starts the witness listener and a client on that JDK, with the uuid `witness-java-VERSION`;
+1. starts the witness listener and a client on that JDK, with the uuid `witness-java-VERSION`.;
 2. sends the test page from the server console link of that client's witness printer;
 3. waits for the job, stops the client and the listener;
 4. compares the job with the golden file (`compare` in the witness).

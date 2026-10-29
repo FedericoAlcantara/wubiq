@@ -12,6 +12,8 @@
 	<property name="workspace.dir" value="${basedir}/.." />
 	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
 	<property name="basedir.gradle" value="${workspace.dir}/wubiq-android-gradle" />
+	<!-- Packages the client reaches by reflection; Java 9+ opens them when the jar runs with -jar, older JDKs ignore it. -->
+	<property name="client.add.opens" value="java.base/java.lang java.desktop/javax.print java.desktop/sun.print" />
 	
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
@@ -48,6 +50,7 @@
 			<fileset dir="${jar.build}" />
 			<manifest>
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	
+				<attribute name="Add-Opens" value="${client.add.opens}"/>
 			</manifest>		
 		</jar>
 		<copy todir="${basedir.gradle}/app/libs/" file="${output.jar}.jar"/>

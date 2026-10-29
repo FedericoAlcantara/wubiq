@@ -151,13 +151,15 @@ The console is at `http://localhost:8080/wubiq-server` (user `test`, password `1
 2. Start the client with the JDK you want to test.
 
    ```
-   java -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
+   java -jar wubiq-client/dist/wubiq-client.jar -h http://localhost:8080 -u client-test -v
    ```
+
+   Start it with `-jar`: on Java 9 and later, the jar's manifest opens the JDK packages the client uses by reflection (`Add-Opens`), and `-cp` skips the manifest.
 
    On Apple Silicon, start Apple's Java 6 with `-Xint -XX:+UseMembar -Djava.awt.headless=true`:
 
    ```
-   /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -cp wubiq-client/dist/wubiq-client.jar net.sf.wubiq.clients.LocalPrintManager -h http://localhost:8080 -u client-test -v
+   /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -jar wubiq-client/dist/wubiq-client.jar -h http://localhost:8080 -u client-test -v
    ```
 
    When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX`. If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
