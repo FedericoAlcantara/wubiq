@@ -75,4 +75,4 @@ Exit codes:
 - `1`: with `--strict`, a Wubiq case failed, or its bytes differ from the baseline.
 - `2`: no JDK 8 was found, or the compilation failed.
 
-Java 6 runs without the JIT (`-Xint`) and with one JVM per case, retrying each case up to five times; a case with no result after five attempts shows as `missing`. The script finds Java 6 in `/Library/Java/JavaVirtualMachines/1.6.0.jdk`.
+Java 6 runs with `-Xint -XX:+UseMembar` and one JVM per case, retrying each case up to five times; a case with no result after five attempts shows as `missing`. The script finds Java 6 in `/Library/Java/JavaVirtualMachines/1.6.0.jdk`.

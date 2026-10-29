@@ -121,8 +121,8 @@ while IFS='|' read -r m home version; do
 	mkdir -p "$OUT"
 	echo "Java $version ($home)"
 	if [ "$m" = "6" ]; then
-		# Apple's Java 6 under Rosetta crashes at random: no JIT, and one JVM per case.
-		EXTRA="-Xint"
+		# Apple's Java 6 under Rosetta crashes at random: no JIT, no memory serialize page, and one JVM per case.
+		EXTRA="-Xint -XX:+UseMembar"
 		retry "$OUT/self-check.ok" self_check || echo "  reference self-check FAILED"
 		missing=0
 		for name in $("$COMPILE_HOME/bin/java" -Djava.awt.headless=true -cp "$CP" $TEST list 2>/dev/null); do
