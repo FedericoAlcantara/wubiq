@@ -201,7 +201,7 @@ if (-not (Get-Command ant -ErrorAction SilentlyContinue)) {
 try {
 	Invoke-WebRequest -UseBasicParsing -Uri "$Server/wubiq-server/" | Out-Null
 } catch {
-	Fail-Setup "wubiq-server doesn't answer at $Server/wubiq-server/."
+	Fail-Setup "wubiq-server doesn't answer at $Server/wubiq-server/: $($_.Exception.Message)"
 }
 $printerInfo = Get-Printer -Name $Printer -ErrorAction SilentlyContinue
 if (-not $printerInfo) {
