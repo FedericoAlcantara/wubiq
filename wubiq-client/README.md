@@ -2,6 +2,14 @@
 
 This module contains all the relevant code for connecting clients.
 
+### Running
+
+```
+java -jar wubiq-client.jar -h http://SERVER:8080 -u UUID
+```
+
+The client runs on Java 6 and later. Start it with `-jar`: its manifest opens the JDK packages it uses by reflection (`Add-Opens: java.base/java.lang java.desktop/javax.print java.desktop/sun.print`, kept in the `client.add.opens` property of `build.xml`). Java 9 and later apply it only to the jar given to `-jar`; with `-cp`, pass the same packages as `--add-opens PACKAGE=ALL-UNNAMED`.
+
 ### Dot-matrix tests
 
 When a print request carries a `Destination`, the client prints in ESC/P "fast" mode instead of through the JDK print pipeline. `ClientPrintDirectUtils` wraps the job in `PageableStreamWrapper` → `PrintableStreamWrapper` → `ESCPrinter` (in wubiq-common), and these write the ESC/P bytes to the destination.
@@ -91,7 +99,7 @@ It needs:
 - port 9100 free: the script starts and stops its own witness listener.
 
 For each JDK build (every distinct version, so 1.8.0_112 and 1.8.0_362 both run), it:
-1. starts the witness listener and a client on that JDK, with the uuid `witness-java-VERSION`;
+1. starts the witness listener and a client on that JDK, with the uuid `witness-java-VERSION`. The client runs from `build-tests/wubiq-client-launcher.jar` (`ant create-launcher-jar`): the compiled classes with the manifest of `wubiq-client.jar`;
 2. sends the test page from the server console link of that client's witness printer;
 3. waits for the job, stops the client and the listener;
 4. compares the job with the golden file (`compare` in the witness).
@@ -104,3 +112,27 @@ Exit codes:
 - `0`: every build prints like Java 6.
 - `1`: a build prints differently, or doesn't print.
 - `2`: setup error (no server, no queue, port 9100 in use, no JDK 8 to compile).
+
+#### End to end on Windows
+
+```
+.\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK8_HOME] [-Server URL] [-Printer NAME] [-Tolerance IN]
+```
+
+The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job.
+
+It needs:
+- wubiq-server running at `http://localhost:8080` (`-Server` to change it);
+- a printer named `Wubiq witness 9-pin` (`-Printer` to change it) with an ESC/P driver, on a Standard TCP/IP port to `127.0.0.1:9100` (see `../wubiq-dotmatrix-witness/README.md`);
+- port 9100 free;
+- `ant` on the `PATH`.
+
+`-Jdks` takes the JDK homes, or `WUBIQ_JDKS` with the homes separated by `;`, and must include a Java 6. `-CompileHome` defaults to the first Java 8 among them. `-Tolerance` is the largest accepted shift or size change in inches, 0.025 (3 dots at 120 dpi) by default: Java 8 and later print text at the font's width, and Java 6 and 7 at the width Wubiq narrows it to, so the widest lines end up to 3 dots apart. Each build writes to `build-tests/dotmatrix-e2e-windows/java-VERSION/`, and `build-tests/dotmatrix-e2e-windows/summary.txt` lists every build as `REFERENCE` (Java 6), `SAME`, `DIFFERENT` or `NOT PRINTED`. The exit codes are the same as the macOS script's.
+
+The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` runs it on a Windows runner, on pull requests that change the client, the server or the witness, and on demand:
+- Oracle Java 6u45, from the private S3 bucket `java-jdk-wadvanced` through the AWS role in the `AWS_ROLE_ARN` secret. It is the reference; runs without access to the role, such as pull requests from forks, use Zulu 6;
+- Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
+- wubiq-server on Tomcat 7, with the files `docker-compose.yml` mounts;
+- the Epson LX-350 ESC/P driver from Epson's site, on a printer port to the witness.
+
+The jobs and the Tomcat logs are uploaded as the `dotmatrix-e2e-windows` artifact, and the run's summary shows the result of every JDK.

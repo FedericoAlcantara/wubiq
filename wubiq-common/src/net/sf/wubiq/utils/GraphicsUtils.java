@@ -143,7 +143,7 @@ public enum GraphicsUtils {
 			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
 			font = Font.decode(decodeString);
 		}
-		if (System.getProperty("java.version").compareTo("1.7") >= 0) {
+		if (windowsWidensText()) {
 			float scale = 0.55f; // <------ Heuristical values
 			//										vvvv
 			BigDecimal multiplier = new BigDecimal("0.250").divide(new BigDecimal("12"), 50, RoundingMode.HALF_UP);
@@ -158,6 +158,20 @@ public enum GraphicsUtils {
 			font = font.deriveFont(attributes);
 		}
 		return font;
+	}
+
+	/**
+	 * Java 7, and the OpenJDK builds of Java 6 (made from early Java 7 code), print text on
+	 * Windows dot matrix drivers wider than its layout. Oracle's Java 6 and Java 8 and later don't.
+	 * @return true if the fonts must be narrowed.
+	 */
+	private boolean windowsWidensText() {
+		String version = System.getProperty("java.version", "");
+		if (version.startsWith("1.7")) {
+			return true;
+		}
+		String runtimeName = System.getProperty("java.runtime.name", "");
+		return version.startsWith("1.6") && runtimeName.contains("OpenJDK");
 	}
 
 	/**
