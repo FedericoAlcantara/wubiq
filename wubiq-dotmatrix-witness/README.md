@@ -242,18 +242,31 @@ Run each JDK by its full path, for example `"C:\Program Files\Java\jdk1.8.0_112\
 
 #### 3. Add the witness printer in Windows
 
-In PowerShell, as administrator:
+The printer is added on a port created beforehand, so Windows doesn't search for a device or need the witness running.
 
-```
-Add-PrinterPort -Name "witness-9100" -PrinterHostAddress "192.168.64.1" -PortNumber 9100
-Add-Printer -Name "Wubiq witness 9-pin" -DriverName "DRIVER" -PortName "witness-9100"
-```
+1. In PowerShell, as administrator, create the port:
 
-- `-PortNumber 9100`: a Standard TCP/IP port in raw mode; Windows sends the driver's bytes unchanged.
-- `-Name`: Java on Windows names the print service after the printer name, and Wubiq picks the printer type from it. Keep `9-pin` (or `24-pin`) in it.
-- `-DriverName`: the ESC/P driver to test, for example an Epson 9-pin model. `Get-PrinterDriver` lists the installed drivers. To see more, add a printer from **Settings** → **Bluetooth & devices** → **Printers & scanners** and press **Windows Update** in the driver list. `Generic / Text Only` sends only text, so graphics such as the server test page don't print through it.
+   ```
+   Add-PrinterPort -Name "witness-9100" -PrinterHostAddress "192.168.64.1" -PortNumber 9100
+   ```
 
-Make it the default printer while you test, so nothing goes to another printer by mistake.
+   This is a Standard TCP/IP port in raw mode: Windows sends the driver's bytes to the witness unchanged.
+
+2. Open the Add Printer wizard:
+
+   ```
+   rundll32 printui.dll,PrintUIEntry /il
+   ```
+
+   If it starts searching for printers, choose **The printer that I want isn't listed**.
+
+3. Choose **Add a local printer or network printer with manual settings**.
+4. Choose **Use an existing port** and pick `witness-9100 (Standard TCP/IP Port)`.
+5. In the driver list, press **Windows Update** and wait for the list to reload. Pick the ESC/P driver to test, for example **Epson** → an LX-350 or FX-890 9-pin model. `Generic / Text Only` sends only text, so graphics such as the server test page don't print through it.
+6. Name the printer `Wubiq witness 9-pin`. Java on Windows names the print service after the printer name, and Wubiq picks the printer type from it, so keep `9-pin` (or `24-pin`) in it.
+7. Don't share the printer and skip the test page.
+
+Make it the default printer while you test, so nothing goes to another printer by mistake. In **Settings** → **Bluetooth & devices** → **Printers & scanners**, turn off **Let Windows manage my default printer** first.
 
 #### 4. Start the witness and wubiq-server on the Mac
 
