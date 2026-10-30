@@ -79,7 +79,7 @@ jobs:
           ant -q -f wubiq-server\build.xml wubiq-server
           if ($LASTEXITCODE) { exit $LASTEXITCODE }
 
-      - name: Start wubiq-server
+      - name: Install wubiq-server on Tomcat
         run: |
           $zip = "$env:RUNNER_TEMP\apache-tomcat-7.0.109-windows-x64.zip"
           Invoke-WebRequest -UseBasicParsing "https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.109/bin/apache-tomcat-7.0.109-windows-x64.zip" -OutFile $zip
@@ -97,21 +97,6 @@ jobs:
               Copy-Item $Matches[1] $target
             }
           }
-          $env:JAVA_HOME = $env:COMPILE_HOME
-          $env:CATALINA_HOME = $tomcat
-          Start-Process "$tomcat\bin\catalina.bat" -ArgumentList "run" -RedirectStandardOutput "$tomcat\logs\stdout.log" -RedirectStandardError "$tomcat\logs\stderr.log"
-          $deadline = (Get-Date).AddMinutes(3)
-          while ((Get-Date) -lt $deadline) {
-            try {
-              Invoke-WebRequest -UseBasicParsing "http://localhost:8080/wubiq-server/" | Out-Null
-              Write-Host "wubiq-server is up"
-              exit 0
-            } catch {
-              Start-Sleep -Seconds 2
-            }
-          }
-          Get-Content "$tomcat\logs\stdout.log", "$tomcat\logs\stderr.log"
-          throw "wubiq-server didn't start"
 
       - name: Add the witness printer
         run: |
@@ -131,7 +116,31 @@ jobs:
           Get-Printer | Format-Table Name, DriverName, PortName -AutoSize
 
       - name: Print the test page with every JDK
-        run: .\wubiq-client\test-dotmatrix-e2e-windows.ps1 -CompileHome $env:COMPILE_HOME
+        run: |
+          # Tomcat starts in this step: the runner stops a step's processes when the step ends.
+          $tomcat = "$env:RUNNER_TEMP\apache-tomcat-7.0.109"
+          $env:JAVA_HOME = $env:COMPILE_HOME
+          $env:CATALINA_HOME = $tomcat
+          $server = Start-Process "$tomcat\bin\catalina.bat" -ArgumentList "run" -PassThru -RedirectStandardOutput "$tomcat\logs\stdout.log" -RedirectStandardError "$tomcat\logs\stderr.log"
+          $up = $false
+          $deadline = (Get-Date).AddMinutes(3)
+          while (-not $up -and (Get-Date) -lt $deadline) {
+            try {
+              Invoke-WebRequest -UseBasicParsing "http://localhost:8080/wubiq-server/" | Out-Null
+              $up = $true
+            } catch {
+              Start-Sleep -Seconds 2
+            }
+          }
+          if (-not $up) {
+            Get-Content "$tomcat\logs\stdout.log", "$tomcat\logs\stderr.log"
+            throw "wubiq-server didn't start"
+          }
+          .\wubiq-client\test-dotmatrix-e2e-windows.ps1 -CompileHome $env:COMPILE_HOME
+          $status = $LASTEXITCODE
+          & "$tomcat\bin\catalina.bat" stop
+          $server.WaitForExit(30000) | Out-Null
+          exit $status
 
       - name: Summary
         if: always()
