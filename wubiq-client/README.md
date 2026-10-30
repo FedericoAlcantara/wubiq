@@ -112,3 +112,26 @@ Exit codes:
 - `0`: every build prints like Java 6.
 - `1`: a build prints differently, or doesn't print.
 - `2`: setup error (no server, no queue, port 9100 in use, no JDK 8 to compile).
+
+#### End to end on Windows
+
+```
+.\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK8_HOME] [-Server URL] [-Printer NAME]
+```
+
+The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job.
+
+It needs:
+- wubiq-server running at `http://localhost:8080` (`-Server` to change it);
+- a printer named `Wubiq witness 9-pin` (`-Printer` to change it) with an ESC/P driver, on a Standard TCP/IP port to `127.0.0.1:9100` (see `../wubiq-dotmatrix-witness/README.md`);
+- port 9100 free;
+- `ant` on the `PATH`.
+
+`-Jdks` takes the JDK homes, or `WUBIQ_JDKS` with the homes separated by `;`, and must include a Java 6. `-CompileHome` defaults to the first Java 8 among them. Each build writes to `build-tests/dotmatrix-e2e-windows/java-VERSION/`, and `build-tests/dotmatrix-e2e-windows/summary.txt` lists every build as `REFERENCE` (Java 6), `SAME`, `DIFFERENT` or `NOT PRINTED`. The exit codes are the same as the macOS script's.
+
+The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` runs it on a Windows runner, on pull requests that change the client, the server or the witness, and on demand:
+- Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
+- wubiq-server on Tomcat 7, with the files `docker-compose.yml` mounts;
+- the Epson LX-350 ESC/P driver from Epson's site, on a printer port to the witness.
+
+The jobs and the Tomcat logs are uploaded as the `dotmatrix-e2e-windows` artifact, and the run's summary shows the result of every JDK.
