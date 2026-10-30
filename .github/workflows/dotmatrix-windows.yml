@@ -18,6 +18,9 @@ jobs:
   e2e:
     runs-on: windows-2022
     timeout-minutes: 60
+    permissions:
+      contents: read
+      id-token: write
     defaults:
       run:
         shell: pwsh
@@ -54,6 +57,32 @@ jobs:
           "WUBIQ_JDKS=$($homes -join ';')" >> $env:GITHUB_ENV
           "COMPILE_HOME=$($homes[3])" >> $env:GITHUB_ENV
           $homes
+
+      # Oracle's Java 6 isn't redistributable: it comes from a private bucket, so runs without
+      # access to the AWS role (pull requests from forks) test the Zulu builds only.
+      - name: Sign in to AWS
+        id: aws
+        if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+        continue-on-error: true
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: eu-west-3
+
+      - name: Install Oracle Java 6
+        if: steps.aws.outcome == 'success'
+        run: |
+          $installer = "$env:RUNNER_TEMP\jdk-6u45-windows-x64.exe"
+          aws s3 cp s3://java-jdk-wadvanced/jdk-6u45-windows-x64.exe $installer --only-show-errors
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $jdk = "$env:RUNNER_TEMP\jdks\oracle-jdk1.6.0_45"
+          Start-Process $installer -ArgumentList "/s", "INSTALLDIR=$jdk" -Wait
+          if (-not (Test-Path "$jdk\bin\java.exe")) {
+            throw "Oracle Java 6 didn't install into $jdk"
+          }
+          & "$jdk\bin\java.exe" -version
+          # First in the list: the first Java 6 is the reference.
+          "WUBIQ_JDKS=$jdk;$env:WUBIQ_JDKS" >> $env:GITHUB_ENV
 
       - name: Install ant
         run: |
