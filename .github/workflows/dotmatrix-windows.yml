@@ -1,0 +1,153 @@
+# Prints wubiq-server's test page through wubiq-client on Java 6 to 25 into the dot-matrix
+# witness, through the Epson LX-350 Windows driver, and checks every JDK prints like Java 6.
+name: Dot-matrix printing on Windows
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'wubiq-common/**'
+      - 'wubiq-client/**'
+      - 'wubiq-dotmatrix-witness/**'
+      - 'wubiq-printerjob/**'
+      - 'wubiq-server/**'
+      - 'docker-compose.yml'
+      - '.github/workflows/dotmatrix-windows.yml'
+
+jobs:
+  e2e:
+    runs-on: windows-2022
+    timeout-minutes: 60
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download the JDKs
+        run: |
+          # Zulu builds from cdn.azul.com, with the SHA-256 published by Azul.
+          $jdks = @(
+            @{ Name = "zulu6.22.0.3-ca-jdk6.0.119-win_x64"; Sha256 = "24059e8915d675074a80047c75cd6e0672b5c2cadf5b398fb6a6c51d035c54ca" },
+            @{ Name = "zulu7.56.0.11-ca-jdk7.0.352-win_x64"; Sha256 = "a0255d1e29d4ab9d685b698217d9adca6a29b2e493608d4e73feda84e7759085" },
+            @{ Name = "zulu8.19.0.1-jdk8.0.112-win_x64"; Sha256 = "442c04f55eeac7b47cddaaf7fb12dda9573a751b1e7af0abadd13d780de73b08" },
+            @{ Name = "zulu8.98.0.107-ca-jdk8.0.512-win_x64"; Sha256 = "9284148d71bff3b34d678a5159bb5688a062f5084ef14abb3daea0a173bb0bf2" },
+            @{ Name = "zulu11.92.109-ca-jdk11.0.33-win_x64"; Sha256 = "fdc77ff97cca003a15b680d0782f0de9063199bbb37b6a645e20bc3ccfcda323" },
+            @{ Name = "zulu17.70.113-ca-jdk17.0.21.0.3-win_x64"; Sha256 = "612efab667042036ad2e4da138cf690680e3cb99b5731c3b27ca00ffb0128230" },
+            @{ Name = "zulu21.54.109-ca-jdk21.0.13.0.3-win_x64"; Sha256 = "7428890c66267aac516514085745dbedc6b8e7703eb0f7d73fb65cf9cd2cf306" },
+            @{ Name = "zulu25.38.109-ca-jdk25.0.5.0.3-win_x64"; Sha256 = "792e1454a4abdd8379bb335f3f284652487cbb4113c92962312080b5bc661f72" }
+          )
+          $root = "$env:RUNNER_TEMP\jdks"
+          New-Item -ItemType Directory -Force $root | Out-Null
+          $homes = @()
+          foreach ($jdk in $jdks) {
+            $zip = "$root\$($jdk.Name).zip"
+            Invoke-WebRequest -UseBasicParsing "https://cdn.azul.com/zulu/bin/$($jdk.Name).zip" -OutFile $zip
+            if ((Get-FileHash -Algorithm SHA256 $zip).Hash -ne $jdk.Sha256) {
+              throw "Checksum mismatch: $($jdk.Name).zip"
+            }
+            7z x $zip "-o$root\$($jdk.Name)" -y | Out-Null
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+            $java = Get-ChildItem "$root\$($jdk.Name)" -Recurse -Filter java.exe | Where-Object { $_.Directory.Name -eq "bin" -and $_.Directory.Parent.Name -ne "jre" } | Select-Object -First 1
+            $homes += $java.Directory.Parent.FullName
+          }
+          "WUBIQ_JDKS=$($homes -join ';')" >> $env:GITHUB_ENV
+          "COMPILE_HOME=$($homes[3])" >> $env:GITHUB_ENV
+          $homes
+
+      - name: Install ant
+        run: |
+          if (-not (Get-Command ant -ErrorAction SilentlyContinue)) {
+            choco install ant -y --no-progress
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+
+      - name: Build wubiq-server
+        run: |
+          $env:JAVA_HOME = $env:COMPILE_HOME
+          # The war takes the server resources from the IDE's output folder.
+          foreach ($folder in "src", "persistence", "logging") {
+            $source = (Resolve-Path "wubiq-server\$folder").Path
+            Get-ChildItem $source -Recurse -File | Where-Object { $_.Extension -ne ".java" } | ForEach-Object {
+              $target = Join-Path "wubiq-server\bin" $_.FullName.Substring($source.Length + 1)
+              New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+              Copy-Item $_.FullName $target
+            }
+          }
+          ant -q -f wubiq-printerjob\build.xml create-printerjob-jar
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          ant -q -f wubiq-server\build.xml wubiq-server
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Start wubiq-server
+        run: |
+          $zip = "$env:RUNNER_TEMP\apache-tomcat-7.0.109-windows-x64.zip"
+          Invoke-WebRequest -UseBasicParsing "https://archive.apache.org/dist/tomcat/tomcat-7/v7.0.109/bin/apache-tomcat-7.0.109-windows-x64.zip" -OutFile $zip
+          if ((Get-FileHash -Algorithm SHA512 $zip).Hash -ne "444b384fd6eff3210842e74b1470e31674dd43723903ebf65a037c9bcd2d6d0bc94d5fad97e840dea892b991ff37b12a35342593bbddc92f0aa36c9b1bbd2025") {
+            throw "Checksum mismatch: $zip"
+          }
+          7z x $zip "-o$env:RUNNER_TEMP" -y | Out-Null
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          $tomcat = "$env:RUNNER_TEMP\apache-tomcat-7.0.109"
+          # The same files docker-compose.yml mounts into the Tomcat container.
+          foreach ($line in Get-Content docker-compose.yml) {
+            if ($line -match '^\s*-\s*\./([^:]+):/usr/local/tomcat/(.+)$') {
+              $target = Join-Path $tomcat $Matches[2]
+              New-Item -ItemType Directory -Force (Split-Path $target) | Out-Null
+              Copy-Item $Matches[1] $target
+            }
+          }
+          $env:JAVA_HOME = $env:COMPILE_HOME
+          $env:CATALINA_HOME = $tomcat
+          Start-Process "$tomcat\bin\catalina.bat" -ArgumentList "run" -RedirectStandardOutput "$tomcat\logs\stdout.log" -RedirectStandardError "$tomcat\logs\stderr.log"
+          $deadline = (Get-Date).AddMinutes(3)
+          while ((Get-Date) -lt $deadline) {
+            try {
+              Invoke-WebRequest -UseBasicParsing "http://localhost:8080/wubiq-server/" | Out-Null
+              Write-Host "wubiq-server is up"
+              exit 0
+            } catch {
+              Start-Sleep -Seconds 2
+            }
+          }
+          Get-Content "$tomcat\logs\stdout.log", "$tomcat\logs\stderr.log"
+          throw "wubiq-server didn't start"
+
+      - name: Add the witness printer
+        run: |
+          Set-Service Spooler -StartupType Automatic
+          Start-Service Spooler
+          $exe = "$env:RUNNER_TEMP\epson15229.exe"
+          Invoke-WebRequest -UseBasicParsing "https://ftp.epson.com/drivers/epson15229.exe" -OutFile $exe
+          if ((Get-FileHash -Algorithm SHA256 $exe).Hash -ne "87bc4b16115a98c957b24dabb1aa1ca661e97c4f1fed9c3594336c2bfe7b5225") {
+            throw "Checksum mismatch: $exe"
+          }
+          7z x $exe "-o$env:RUNNER_TEMP\epson-lx350" -y | Out-Null
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          pnputil /add-driver "$env:RUNNER_TEMP\epson-lx350\WINX64\EBSD052M.INF" /install
+          Add-PrinterDriver -Name "EPSON LX-350 ESC/P"
+          Add-PrinterPort -Name "witness-9100" -PrinterHostAddress "127.0.0.1" -PortNumber 9100
+          Add-Printer -Name "Wubiq witness 9-pin" -DriverName "EPSON LX-350 ESC/P" -PortName "witness-9100"
+          Get-Printer | Format-Table Name, DriverName, PortName -AutoSize
+
+      - name: Print the test page with every JDK
+        run: .\wubiq-client\test-dotmatrix-e2e-windows.ps1 -CompileHome $env:COMPILE_HOME
+
+      - name: Summary
+        if: always()
+        run: |
+          $summary = "wubiq-client\build-tests\dotmatrix-e2e-windows\summary.txt"
+          if (Test-Path $summary) {
+            "| JDK | Result | Details |" >> $env:GITHUB_STEP_SUMMARY
+            "|---|---|---|" >> $env:GITHUB_STEP_SUMMARY
+            Get-Content $summary | ForEach-Object { "| " + ($_ -replace "`t", " | ") + " |" } >> $env:GITHUB_STEP_SUMMARY
+          }
+
+      - name: Upload the jobs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: dotmatrix-e2e-windows
+          path: |
+            wubiq-client/build-tests/dotmatrix-e2e-windows
+            ${{ runner.temp }}/apache-tomcat-7.0.109/logs
