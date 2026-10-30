@@ -212,100 +212,41 @@ Open `wubiq-dotmatrix-witness/witness-jobs/index.html`. It lists every job the l
 
 Compare the sheets with the test page PDF to see where the text should be. To check another JDK against a known good job, use `compare` on the two `job.escp` files. `wubiq-client/test-dotmatrix-e2e.sh` runs these steps on every installed JDK and compares each job with the Java 6 one.
 
-### Testing a Windows client in a UTM virtual machine
+### Testing a Windows client
 
-On a Mac, a Windows virtual machine runs the Windows client and the Windows printer driver. The witness and wubiq-server stay on the Mac. The Windows printer sends its ESC/P bytes over the virtual network to the witness, so each job is what a real dot-matrix printer would receive from Windows.
+The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` tests wubiq-client on Windows, through a real Windows printer driver. It runs on a Windows Server 2022 runner, on pull requests that change the client, the server, the witness or the workflow, and on demand: in the repository's **Actions** tab, choose **Dot-matrix printing on Windows** → **Run workflow**.
 
-The Windows driver renders pages differently from the CUPS driver. Compare Windows jobs with a Windows Java 6 job, not with the macOS golden file.
+On the runner, it:
+1. installs Oracle Java 6u45 and the Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
+2. builds wubiq-server and runs it on Tomcat 7, with the files `docker-compose.yml` mounts;
+3. installs the Epson LX-350 ESC/P driver and adds the printer `Wubiq witness 9-pin` on a Standard TCP/IP port to the witness at `127.0.0.1:9100`;
+4. runs `wubiq-client/test-dotmatrix-e2e-windows.ps1`, which prints wubiq-server's test page with every JDK and compares each job with the Oracle Java 6 job.
 
-#### 1. Create the virtual machine
+The run's summary lists every JDK as `REFERENCE`, `SAME`, `DIFFERENT` or `NOT PRINTED`. The `dotmatrix-e2e-windows` artifact holds every job's report (`jobs/job-*/index.html`), the client and witness logs, and the Tomcat logs.
 
-1. Install UTM from `https://mac.getutm.app` (free; the Mac App Store version is the same app, paid).
-2. Download the Windows 11 Arm64 ISO from `https://www.microsoft.com/software-download/windows11arm64`.
-3. In UTM, choose **Create a New Virtual Machine** → **Virtualize** → **Windows**, check **Install drivers and SPICE tools**, and select the ISO. Give it at least 4 GB of memory and 64 GB of disk.
-4. Install Windows following UTM's guide, `https://docs.getutm.app/guides/windows/`. It covers setup without a network connection and the guest tools. Windows works unactivated for testing.
-5. Keep the network mode at **Shared Network**. The Mac is the virtual machine's default gateway; `ipconfig` in the virtual machine shows its address, usually `192.168.64.1`. The steps below use that address.
+Oracle Java 6 comes from the private S3 bucket `java-jdk-wadvanced`, through the AWS role in the repository secret `AWS_ROLE_ARN`. Runs without access to the role, such as pull requests from forks, use the Zulu 6 job as the reference.
 
-#### 2. Download the JDKs in the virtual machine
+The Windows driver renders pages differently from the CUPS driver, so Windows jobs are compared with each other, not with the macOS golden file.
 
-Windows 11 on Arm runs x64 and x86 programs under emulation, so the regular Windows installers work. Install every version you want to test; each one goes to its own folder.
+#### On a Windows computer
 
-| Java | Download | File |
-|---|---|---|
-| 6 | `https://www.oracle.com/java/technologies/javase-java-archive-javase6-downloads.html` (Oracle account) | `jdk-6u45-windows-x64.exe` |
-| 7 | `https://www.oracle.com/java/technologies/javase/javase7-archive-downloads.html` (Oracle account) | `jdk-7u80-windows-x64.exe` |
-| 8 (Oracle builds) | `https://www.oracle.com/java/technologies/javase/javase8-archive-downloads.html` (Oracle account) | `jdk-8u112-windows-x64.exe`, or the build your users run |
-| 8, 11, 17, 21, 25 | `https://aws.amazon.com/corretto/` | Windows x64 `.msi` |
-| 11, 17, 21, 25 (native Arm64) | `https://learn.microsoft.com/java/openjdk/download` | Windows AArch64 `.msi` |
-
-Run each JDK by its full path, for example `"C:\Program Files\Java\jdk1.8.0_112\bin\java.exe"`. That way the version under test doesn't depend on `PATH` or `JAVA_HOME`. `java -version` confirms the build.
-
-#### 3. Add the witness printer in Windows
-
-The printer is added on a port created beforehand, so Windows doesn't search for a device or need the witness running.
-
-1. In PowerShell, as administrator, create the port:
+The same test runs on any Windows x64 computer:
+1. Install the Epson LX-350 driver from Epson's support page (Windows 64-bit), or extract its package and install the driver in PowerShell, as administrator:
 
    ```
-   Add-PrinterPort -Name "witness-9100" -PrinterHostAddress "192.168.64.1" -PortNumber 9100
+   pnputil /add-driver WINX64\EBSD052M.INF /install
+   Add-PrinterDriver -Name "EPSON LX-350 ESC/P"
    ```
 
-   This is a Standard TCP/IP port in raw mode: Windows sends the driver's bytes to the witness unchanged.
-
-2. Open the Add Printer wizard:
+2. Add the printer on a port to the witness:
 
    ```
-   rundll32 printui.dll,PrintUIEntry /il
+   Add-PrinterPort -Name "witness-9100" -PrinterHostAddress "127.0.0.1" -PortNumber 9100
+   Add-Printer -Name "Wubiq witness 9-pin" -DriverName "EPSON LX-350 ESC/P" -PortName "witness-9100"
    ```
 
-   If it starts searching for printers, choose **The printer that I want isn't listed**.
-
-3. Choose **Add a local printer or network printer with manual settings**.
-4. Choose **Use an existing port** and pick `witness-9100 (Standard TCP/IP Port)`.
-5. In the driver list, press **Windows Update** and wait for the list to reload. Pick the ESC/P driver to test, for example **Epson** → an LX-350 or FX-890 9-pin model. `Generic / Text Only` sends only text, so graphics such as the server test page don't print through it.
-6. Name the printer `Wubiq witness 9-pin`. Java on Windows names the print service after the printer name, and Wubiq picks the printer type from it, so keep `9-pin` (or `24-pin`) in it.
-7. Don't share the printer and skip the test page.
-
-Make it the default printer while you test, so nothing goes to another printer by mistake. In **Settings** → **Bluetooth & devices** → **Printers & scanners**, turn off **Let Windows manage my default printer** first.
-
-#### 4. Start the witness and wubiq-server on the Mac
-
-1. Start the virtual machine first: the `192.168.64.1` address exists only while it runs. Then start the listener on that address. Keep the jobs of each JDK in their own folder.
-
-   ```
-   java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar listen --bind 192.168.64.1 --out wubiq-dotmatrix-witness/witness-jobs-windows/java-6
-   ```
-
-   If the macOS firewall asks, allow `java` to accept incoming connections.
-
-2. Build and start wubiq-server as in [2. Start wubiq-server](#2-start-wubiq-server). `ant wubiq-server` packages the current wubiq-client into the server, which serves it at `http://192.168.64.1:8080/wubiq-server/wubiq-client.jar`. After a rebuild, restart the container with `docker compose restart` so the server serves the new jar.
-
-#### 5. Print with each JDK
-
-1. In the virtual machine, download `http://192.168.64.1:8080/wubiq-server/wubiq-client.jar` into a folder, for example `C:\wubiq`.
-2. Start the client with the JDK under test, with a uuid that names it:
-
-   ```
-   cd C:\wubiq
-   "C:\Program Files\Java\jdk1.6.0_45\bin\java.exe" -jar wubiq-client.jar -h http://192.168.64.1:8080 -u windows-java-6 -v
-   ```
-
-   Start it with `-jar` on every version: on Java 9 and later, the jar's manifest opens the JDK packages the client uses by reflection.
-
-3. On the Mac, open the server console, find `windows-java-6` and press the test page button of `Wubiq witness 9-pin`. The job appears in `wubiq-dotmatrix-witness/witness-jobs-windows/java-6/`.
-4. Stop the client (Ctrl+C) and the listener.
-
-For each other JDK, start the listener with a new `--out` folder (`java-8`, `java-17`...) and repeat steps 2 to 4 with that JDK's `java.exe` path and uuid.
-
-#### 6. Compare the jobs
-
-Compare each JDK's job with the Java 6 one:
-
-```
-java -jar wubiq-dotmatrix-witness/dist/wubiq-dotmatrix-witness.jar compare wubiq-dotmatrix-witness/witness-jobs-windows/java-6/job-*/job.escp wubiq-dotmatrix-witness/witness-jobs-windows/java-8/job-*/job.escp
-```
-
-`SAME` means that JDK prints like Java 6 through that driver. `DIFFERENT` lists the shift, size, dots and text that changed. Each job's `index.html` shows its sheets.
+   Java on Windows names the print service after the printer name, and Wubiq picks the printer type from it, so keep `9-pin` (or `24-pin`) in it.
+3. Start wubiq-server and run `test-dotmatrix-e2e-windows.ps1` as described in `../wubiq-client/README.md`.
 
 ### Java API
 
