@@ -2,7 +2,7 @@
 # dot-matrix witness, through a Windows printer driver, and compares each job with the job
 # printed by Java 6 in the same run.
 #
-#   .\test-dotmatrix-e2e-windows.ps1 -Jdks HOME1,HOME2,... [-CompileHome JDK8] [-Server URL] [-Printer NAME]
+#   .\test-dotmatrix-e2e-windows.ps1 -Jdks HOME1,HOME2,... [-CompileHome JDK8] [-Server URL] [-Printer NAME] [-Tolerance IN]
 #
 # Needs:
 # - wubiq-server running (default http://localhost:8080);
@@ -13,6 +13,8 @@
 #
 # -Jdks must include a Java 6 home; it prints first and its job is the reference.
 # -CompileHome defaults to the first Java 8 in -Jdks.
+# -Tolerance is the largest accepted shift or size change, in inches (default 0.025, 3 dots at
+# 120 dpi): Java 8 and later print text at its real width, Java 6 and 7 at Wubiq's narrowed width.
 # Exit codes: 0 every JDK prints like Java 6, 1 a JDK prints differently or not at all, 2 setup error.
 #
 # Compatible with Windows PowerShell 5.1.
@@ -21,7 +23,8 @@ param(
 	[string[]]$Jdks = @(),
 	[string]$CompileHome = "",
 	[string]$Server = "http://localhost:8080",
-	[string]$Printer = "Wubiq witness 9-pin"
+	[string]$Printer = "Wubiq witness 9-pin",
+	[string]$Tolerance = "0.025"
 )
 
 $ErrorActionPreference = "Stop"
@@ -267,7 +270,7 @@ foreach ($run in $Ordered) {
 		continue
 	}
 	$compare = Join-Path $out "compare.txt"
-	cmd /c "`"$WitnessJava`" -Djava.awt.headless=true -cp `"$Witness\bin`" net.sf.wubiq.dotmatrix.witness.Main compare `"$ReferenceJob`" `"$escp`" > `"$compare`" 2>&1"
+	cmd /c "`"$WitnessJava`" -Djava.awt.headless=true -cp `"$Witness\bin`" net.sf.wubiq.dotmatrix.witness.Main compare --tolerance $Tolerance `"$ReferenceJob`" `"$escp`" > `"$compare`" 2>&1"
 	if ($LASTEXITCODE -eq 0) {
 		Add-Content $Summary "$($run.Name)`tSAME`t$($job.FullName)\index.html"
 	} else {

@@ -116,7 +116,7 @@ Exit codes:
 #### End to end on Windows
 
 ```
-.\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK8_HOME] [-Server URL] [-Printer NAME]
+.\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK8_HOME] [-Server URL] [-Printer NAME] [-Tolerance IN]
 ```
 
 The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job.
@@ -127,7 +127,7 @@ It needs:
 - port 9100 free;
 - `ant` on the `PATH`.
 
-`-Jdks` takes the JDK homes, or `WUBIQ_JDKS` with the homes separated by `;`, and must include a Java 6. `-CompileHome` defaults to the first Java 8 among them. Each build writes to `build-tests/dotmatrix-e2e-windows/java-VERSION/`, and `build-tests/dotmatrix-e2e-windows/summary.txt` lists every build as `REFERENCE` (Java 6), `SAME`, `DIFFERENT` or `NOT PRINTED`. The exit codes are the same as the macOS script's.
+`-Jdks` takes the JDK homes, or `WUBIQ_JDKS` with the homes separated by `;`, and must include a Java 6. `-CompileHome` defaults to the first Java 8 among them. `-Tolerance` is the largest accepted shift or size change in inches, 0.025 (3 dots at 120 dpi) by default: Java 8 and later print text at the font's width, and Java 6 and 7 at the width Wubiq narrows it to, so the widest lines end up to 3 dots apart. Each build writes to `build-tests/dotmatrix-e2e-windows/java-VERSION/`, and `build-tests/dotmatrix-e2e-windows/summary.txt` lists every build as `REFERENCE` (Java 6), `SAME`, `DIFFERENT` or `NOT PRINTED`. The exit codes are the same as the macOS script's.
 
 The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` runs it on a Windows runner, on pull requests that change the client, the server or the witness, and on demand:
 - Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
