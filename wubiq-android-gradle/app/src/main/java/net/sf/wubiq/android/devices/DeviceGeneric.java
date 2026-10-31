@@ -40,20 +40,15 @@ public class DeviceGeneric extends BaseWubiqDevice {
 		            // until it succeeds or throws an exception
 		            mmSocket.connect();
 		            mmOutStream = mmSocket.getOutputStream();
-		        	int start = 0;
-		        	int chunk = 4096;
-		        	while (start < getPrintData().length) {
-		        		int count = (start + chunk) < getPrintData().length ? chunk : getPrintData().length - start;
-		        		mmOutStream.write(getPrintData(), start, count);
-		        		start += count;
-		    			try
-		    			{
-		    				Thread.sleep(getPrintDelay());
-		    			}
-		    			catch(InterruptedException e) {
-		    				Log.e(TAG, e.getMessage());
-		    				e.printStackTrace();
-		    			}
+		        	// Copies are sent back to back through the same connection, without a pause between them.
+		        	// NOTE: a pause between copies (waitBetweenCopies(), as DeviceStarMicronics does) is not possible
+		        	// here. Generic ESC/POS printers have no standard command that tells when printing has finished,
+		        	// and the write returns as soon as Bluetooth has the data (about 0 s for a full page), so a pause
+		        	// counted from the write would not match what is printed. The Pause Between Copies option is only
+		        	// shown when a Star Micronics printer is configured. If a way is found (a printer specific status
+		        	// query), time it with a log line like the one in DeviceStarMicronics before enabling it.
+		        	for (int copy = 0; copy < getCopies(); copy++) {
+		        		writeCopy(mmOutStream);
 		        	}
     				int sleepTime = (int) (getPrintData().length / 1024.0 * getPrintPause());
 					Thread.sleep(sleepTime);
@@ -87,5 +82,25 @@ public class DeviceGeneric extends BaseWubiqDevice {
 			}
 		}
 		return returnValue;
+	}
+
+	/**
+	 * Writes one copy of the print data in chunks.
+	 * @param mmOutStream Output stream of the open connection.
+	 */
+	private void writeCopy(OutputStream mmOutStream) throws IOException {
+		int start = 0;
+		int chunk = 4096;
+		while (start < getPrintData().length) {
+			int count = (start + chunk) < getPrintData().length ? chunk : getPrintData().length - start;
+			mmOutStream.write(getPrintData(), start, count);
+			start += count;
+			try {
+				Thread.sleep(getPrintDelay());
+			} catch (InterruptedException e) {
+				Log.e(TAG, e.getMessage());
+				e.printStackTrace();
+			}
+		}
 	}
 }

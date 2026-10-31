@@ -2,6 +2,9 @@ package net.sf.wubiq.android;
 
 import org.junit.Test;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import static org.junit.Assert.*;
 
 /**
@@ -39,10 +42,24 @@ public class PrintClientUtilsTest {
     }
 
     @Test
-    public void repeat_concatenatesOnePerCopy() {
-        byte[] data = {1, 2, 3};
-        assertArrayEquals(data, PrintClientUtils.INSTANCE.repeat(data, 1));
-        assertArrayEquals(new byte[]{1, 2, 3, 1, 2, 3, 1, 2, 3}, PrintClientUtils.INSTANCE.repeat(data, 3));
-        assertArrayEquals(new byte[0], PrintClientUtils.INSTANCE.repeat(new byte[0], 5));
+    public void usesStarMicronics_looksAtTheConfiguredDrivers() {
+        Map<String, Object> preferences = new HashMap<String, Object>();
+        assertFalse(PrintClientUtils.INSTANCE.usesStarMicronics(preferences));
+
+        preferences.put("wubiq-android-bt_00:11:22:33:44:55", "Zebra MZ320 3 in");
+        preferences.put("wubiq-android-bt_00:11:22:33:44:66", "Generic 3 in");
+        preferences.put("wubiq-android-bt_00:11:22:33:44:77", "--");
+        preferences.put("print_pause_between_copies", 2000);
+        assertFalse(PrintClientUtils.INSTANCE.usesStarMicronics(preferences));
+
+        preferences.put("wubiq-android-bt_00:15:0E:E4:26:C8", "Star Micronics 3 in");
+        assertTrue(PrintClientUtils.INSTANCE.usesStarMicronics(preferences));
+    }
+
+    @Test
+    public void usesStarMicronics_ignoresTheTestDevice() {
+        Map<String, Object> preferences = new HashMap<String, Object>();
+        preferences.put("wubiq-android-bt_test_address", "test device");
+        assertFalse(PrintClientUtils.INSTANCE.usesStarMicronics(preferences));
     }
 }

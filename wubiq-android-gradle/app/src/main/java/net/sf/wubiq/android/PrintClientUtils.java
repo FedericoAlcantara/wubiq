@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.ConnectException;
+import java.util.Map;
 
 /**
  * Handles the necessary steps for printing on the client.
@@ -56,6 +57,8 @@ public enum PrintClientUtils {
 		printDelay = preferences.getInt(WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
 		printPause = preferences.getInt(WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
 		long pauseBetweenPrints = preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_JOBS_KEY, resources.getInteger(R.integer.print_pause_between_jobs_default));
+		int pauseBetweenCopies = Math.max(0, Math.min(resources.getInteger(R.integer.print_pause_between_copies_max),
+				preferences.getInt(WubiqActivity.PRINT_PAUSE_BETWEEN_COPIES_KEY, resources.getInteger(R.integer.print_pause_between_copies_default))));
 		int errorRetries = preferences.getInt(WubiqActivity.PRINT_CONNECTION_ERRORS_RETRY_KEY, resources.getInteger(R.integer.print_connection_errors_retries_default));
 		while (!returnValue) {
 			ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -90,13 +93,13 @@ public enum PrintClientUtils {
 						returnValue = true;
 						IOUtils.INSTANCE.copy(input, output);
 						output.flush();
-						byte[] printData = repeat(output.toByteArray(), copies);
+						byte[] printData = output.toByteArray();
 						for (MobileClientConversionStep step : deviceInfo.getClientSteps()) {
 							currentDevice = !useDeviceTest 
 									? WubiqDeviceFactory.INSTANCE.getInstance(step)
 									: new DeviceForTesting(preferences);
 							if (currentDevice != null) {
-								currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause);
+								currentDevice.initialize(deviceInfo, deviceAddress, printData, printDelay, printPause, copies, pauseBetweenCopies);
 								currentDevice.start();
 							}
 						}
@@ -125,6 +128,27 @@ public enum PrintClientUtils {
 	}
 
 	/**
+	 * Tells if any configured printer uses a Star Micronics driver, the only one that reports when a copy has
+	 * been printed and so the only one that honors the pause between copies. The virtual test device does not count.
+	 * @param preferences All the stored preferences; each printer driver is stored under DEVICE_PREFIX + address.
+	 * @return True if at least one printer uses a Star Micronics driver.
+	 */
+	boolean usesStarMicronics(Map<String, ?> preferences) {
+		for (Map.Entry<String, ?> entry : preferences.entrySet()) {
+			String key = entry.getKey();
+			if (key.startsWith(WubiqActivity.DEVICE_PREFIX)
+					&& !key.startsWith(WubiqActivity.ANDROID_TEST_DEVICE_KEY)
+					&& entry.getValue() instanceof String) {
+				MobileDeviceInfo info = MobileDevices.INSTANCE.getDevices().get(entry.getValue());
+				if (info != null && info.getClientSteps().contains(MobileClientConversionStep.OUTPUT_SM_BYTES)) {
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
+	/**
 	 * Extracts the copies count from the serialized print request attributes
 	 * (e.g. javax.print.attribute.standard.Copies:I:2/javax.print.attribute.standard.JobName:J:Test).
 	 * @param attributesData Serialized print request attributes as sent by the server.
@@ -146,23 +170,6 @@ public enum PrintClientUtils {
 					break;
 				}
 			}
-		}
-		return returnValue;
-	}
-
-	/**
-	 * Repeats the print data once per copy, so all copies are sent through a single device connection.
-	 * @param printData Print data for one copy.
-	 * @param copies Number of copies.
-	 * @return Print data for all the copies.
-	 */
-	byte[] repeat(byte[] printData, int copies) {
-		if (copies <= 1 || printData.length == 0) {
-			return printData;
-		}
-		byte[] returnValue = new byte[printData.length * copies];
-		for (int copy = 0; copy < copies; copy++) {
-			System.arraycopy(printData, 0, returnValue, copy * printData.length, printData.length);
 		}
 		return returnValue;
 	}

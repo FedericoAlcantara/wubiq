@@ -47,6 +47,7 @@ public class WubiqActivity extends Activity {
 	public static final String PRINT_PAUSE_KEY="print_pause";
 	public static final String PRINT_POLL_INTERVAL_KEY="print_poll_interval";
 	public static final String PRINT_PAUSE_BETWEEN_JOBS_KEY="print_pause_between_jobs";
+	public static final String PRINT_PAUSE_BETWEEN_COPIES_KEY="print_pause_between_copies";
 	public static final String PRINT_CONNECTION_ERRORS_RETRY_KEY="print_error_retry";
 	public static final String UUID_KEY="client_uuid";
 	public static final String GROUPS_KEY="groups";
@@ -220,6 +221,7 @@ public class WubiqActivity extends Activity {
         SharedPreferences preferences = context.getSharedPreferences(WubiqActivity.PREFERENCES, MODE_PRIVATE);
         Resources resources = context.getResources();
         putNewValue(preferences, WubiqActivity.ANDROID_TEST_DEVICE_KEY, MobileDevices.TEST_DEVICE_INFO_KEY);
+        putNewValue(preferences, WubiqActivity.PRINT_PAUSE_BETWEEN_COPIES_KEY, resources.getInteger(R.integer.print_pause_between_copies_default));
         putNewValue(preferences, WubiqActivity.PRINT_DELAY_KEY, resources.getInteger(R.integer.print_delay_default));
         putNewValue(preferences, WubiqActivity.PRINT_PAUSE_KEY, resources.getInteger(R.integer.print_pause_default));
         putNewValue(preferences, WubiqActivity.PRINT_POLL_INTERVAL_KEY, resources.getInteger(R.integer.print_poll_interval_default));

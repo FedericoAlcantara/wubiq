@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Milliseconds offered by the Pause Between Copies list; the Custom entry is added after them. -->
+    <integer-array name="print_pause_between_copies_presets">
+        <item>0</item>
+        <item>2000</item>
+        <item>5000</item>
+        <item>7500</item>
+        <item>10000</item>
+    </integer-array>
+</resources>
