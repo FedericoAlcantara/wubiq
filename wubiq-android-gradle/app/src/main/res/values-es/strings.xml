@@ -23,6 +23,10 @@
     <string name="groups">Grupos</string>
     <string name="info_printing">Imprimiendo&#8230;</string>
     <string name="keep_service_alive">Mantener servicio activo</string>
+    <string name="pause_minimal">Mínimo (~1 s)</string>
+    <string name="pause_custom">Personalizado&#8230;</string>
+    <string name="pause_seconds">%1$s s</string>
+    <string name="pause_between_copies">Pausa entre Copias(0-10 s)</string>
     <string name="pause_between_jobs">Pausa entre Impresiones(ms)</string>
     <string name="print_connection_errors_retries"># Intentos Errores</string>
     <string name="print_delay">Retraso Impresión(ms)</string>

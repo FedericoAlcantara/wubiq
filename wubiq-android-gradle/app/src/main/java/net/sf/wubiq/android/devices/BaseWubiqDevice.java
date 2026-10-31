@@ -14,6 +14,8 @@ public abstract class BaseWubiqDevice extends Thread {
 	private byte[] printData;
 	private int printDelay;
 	private int printPause;
+	private int copies = 1;
+	private int pauseBetweenCopies;
 	private PrintingStatus printingStatus;
 	
 	/**
@@ -33,6 +35,23 @@ public abstract class BaseWubiqDevice extends Thread {
 		this.printPause = printPause;
 		this.printingStatus = PrintingStatus.PRINTING;
 	}
+
+	/**
+	 * Prepares the device to print the data once per copy.
+	 * @param mobileDeviceInfo Device information
+	 * @param deviceAddress Device address (mac address)
+	 * @param printData Data to print (one copy)
+	 * @param printDelay Delays to apply between data chunks
+	 * @param printPause Pause after print job is finished.
+	 * @param copies Number of copies to print, at least 1.
+	 * @param pauseBetweenCopies Milliseconds to wait, with the connection open, between one copy and the next; only used by devices that call waitBetweenCopies().
+	 */
+	public void initialize(MobileDeviceInfo mobileDeviceInfo, String deviceAddress,
+			byte[] printData, int printDelay, int printPause, int copies, int pauseBetweenCopies) {
+		initialize(mobileDeviceInfo, deviceAddress, printData, printDelay, printPause);
+		this.copies = Math.max(1, copies);
+		this.pauseBetweenCopies = Math.max(0, pauseBetweenCopies);
+	}
 	
 	@Override
 	public void run() {
@@ -40,7 +59,24 @@ public abstract class BaseWubiqDevice extends Thread {
 	}
 
 	/**
-	 * Process the printing.
+	 * Waits the pause between copies. Call it between sending one copy and the next, on the same connection.
+	 * @throws InterruptedException If the thread is interrupted while waiting.
+	 */
+	protected void waitBetweenCopies() throws InterruptedException {
+		if (pauseBetweenCopies > 0) {
+			Thread.sleep(pauseBetweenCopies);
+		}
+	}
+
+	/**
+	 * @return Number of copies to print, at least 1.
+	 */
+	public int getCopies() {
+		return copies;
+	}
+
+	/**
+	 * Process the printing: opens the connection once and sends every copy through it.
 	 * @return True if printing was okey, false otherwise.
 	 */
 	protected abstract boolean print();

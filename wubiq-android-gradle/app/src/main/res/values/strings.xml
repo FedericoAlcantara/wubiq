@@ -24,6 +24,10 @@
     <string name="groups">Groups</string>
     <string name="info_printing">Printing&#8230;</string>
     <string name="keep_service_alive">Keep service alive</string>
+    <string name="pause_minimal">Minimal (~1 s)</string>
+    <string name="pause_custom">Custom&#8230;</string>
+    <string name="pause_seconds">%1$s s</string>
+    <string name="pause_between_copies">Pause Between Copies(0-10 s)</string>
     <string name="pause_between_jobs">Pause Between Jobs(ms)</string>
     <string name="print_connection_errors_retries">Connection Errors Retries</string>
     <string name="print_delay">Print Delay(ms)</string>

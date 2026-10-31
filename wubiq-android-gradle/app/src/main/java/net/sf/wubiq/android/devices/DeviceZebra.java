@@ -34,24 +34,18 @@ public class DeviceZebra extends BaseWubiqDevice {
 		try {
 			connection = new BluetoothPrinterConnection(getDeviceAddress());
 			connection.open();
-			ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
-			int index = 0;
-			for (index = 0; index < getPrintData().length; index++) {
-				byte byteVal = getPrintData()[index];
-				if (byteVal == 0x0D && (index + 1) < getPrintData().length  
-						&& getPrintData()[index + 1] == 0x0A) { // Line feed
-					index++;
-					lineOut.write(new byte[]{0x0D, 0x0A});
-					connection.write(lineOut.toByteArray());
-					lineOut = new ByteArrayOutputStream();
-					Thread.sleep(getPrintDelay());
-				} else {
-					lineOut.write(byteVal);
-				}
-			}
-			if (lineOut.size() > 0) {
-				connection.write(lineOut.toByteArray());
-				Thread.sleep(getPrintDelay());
+			// Copies are sent back to back through the same connection, without a pause between them.
+			// NOTE: this path is not tested, there was no Zebra printer to try it on. A pause between copies
+			// (waitBetweenCopies(), as DeviceStarMicronics does after endCheckedBlock()) needs a way to know the
+			// printer has finished. The Zebra library can report it: connection -> ZebraPrinterFactory.getInstance()
+			// -> printer.getCurrentStatus() gives PrinterStatus with isReadyToPrint, isPaused,
+			// numberOfFormatsInReceiveBuffer and isPartialFormatInProgress. A possible approach is to poll after
+			// each copy until the receive buffer is empty and the printer is ready, with a time limit. It is
+			// unknown whether the CPCL models (MZ220, MZ320) report those fields while printing. Time it with a
+			// log line like the one in DeviceStarMicronics before enabling it, and then show the Pause Between
+			// Copies option for Zebra drivers (see PrintClientUtils.usesStarMicronics()).
+			for (int copy = 0; copy < getCopies(); copy++) {
+				writeCopy(connection);
 			}
 			Thread.sleep(getPrintPause() * getPrintData().length / 1024);
 			returnValue = true;
@@ -75,6 +69,31 @@ public class DeviceZebra extends BaseWubiqDevice {
 		return returnValue;
 	}
 	
+	/**
+	 * Writes one copy of the print data, line by line.
+	 * @param connection Open connection to the printer.
+	 */
+	private void writeCopy(ZebraPrinterConnection connection) throws Exception {
+		ByteArrayOutputStream lineOut = new ByteArrayOutputStream();
+		for (int index = 0; index < getPrintData().length; index++) {
+			byte byteVal = getPrintData()[index];
+			if (byteVal == 0x0D && (index + 1) < getPrintData().length
+					&& getPrintData()[index + 1] == 0x0A) { // Line feed
+				index++;
+				lineOut.write(new byte[]{0x0D, 0x0A});
+				connection.write(lineOut.toByteArray());
+				lineOut = new ByteArrayOutputStream();
+				Thread.sleep(getPrintDelay());
+			} else {
+				lineOut.write(byteVal);
+			}
+		}
+		if (lineOut.size() > 0) {
+			connection.write(lineOut.toByteArray());
+			Thread.sleep(getPrintDelay());
+		}
+	}
+
 	/**
 	 * Returns the status of the device.
 	 * @param deviceAddress Device address.

@@ -1,5 +1,10 @@
 # Changelog
 
+## Wubiq 2.7.4
+### Wubiq-android-gradle
+- New advanced configuration parameter "Pause Between Copies" (top of the screen): pick Minimal (about 1 second, the least the printer needs between copies), 2, 5, 7.5 or 10 seconds, or Custom for any value from 0 to 10 seconds (rounded to 0.1); defaults to 2 seconds. Stored in milliseconds.
+- All copies of a job are sent through a single connection to the printer. On Star printers the pause starts when the printer reports it has finished printing the previous copy; other printers cannot report it, so the option is only shown when a Star Micronics printer is configured and the other printers send their copies back to back, waiting for the printer once after the last copy.
+
 ## Wubiq 2.7.3
 ### Wubiq-android-gradle
 - Release builds are minified, obfuscated and resource shrunk with R8 (Google Play DEX optimization requirement); the APK goes from 14.3 MB to 1.7 MB.

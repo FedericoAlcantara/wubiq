@@ -15,6 +15,42 @@
             android:layout_marginBottom="0dp"
             android:text="@string/advanced_configuration" />
 
+        <LinearLayout
+            android:id="@+id/pauseBetweenCopiesGroup"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/textViewPauseBetweenCopies"
+                style="@style/Wubiq.Label"
+                android:labelFor="@id/printPauseBetweenCopiesSpinner"
+                android:text="@string/pause_between_copies" />
+
+            <Spinner
+                android:id="@+id/printPauseBetweenCopiesSpinner"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp" />
+
+            <EditText
+                android:id="@+id/printPauseBetweenCopiesField"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:autofillHints="2"
+                android:inputType="numberDecimal"
+                android:minHeight="48dp"
+                android:visibility="gone" />
+
+            <View
+                android:id="@+id/dividerPauseBetweenCopies"
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginTop="24dp"
+                android:background="?android:attr/listDivider" />
+
+        </LinearLayout>
+
         <TextView
             android:id="@+id/textView1"
             style="@style/Wubiq.Label"
