@@ -39,10 +39,9 @@ import net.sf.wubiq.clients.remotes.PageablePrintableHolder;
 import net.sf.wubiq.clients.remotes.PageableRemote;
 import net.sf.wubiq.print.attribute.CustomMediaSizeName;
 import net.sf.wubiq.print.attribute.OriginalOrientationRequested;
+import net.sf.wubiq.wrappers.EscpStreamJob;
 import net.sf.wubiq.wrappers.PageFormatWrapper;
-import net.sf.wubiq.wrappers.PageableStreamWrapper;
 import net.sf.wubiq.wrappers.PageableWrapper;
-import net.sf.wubiq.wrappers.PrintableStreamWrapper;
 import net.sf.wubiq.wrappers.PrintableWrapper;
 
 import org.apache.commons.logging.Log;
@@ -106,10 +105,20 @@ public final class ClientPrintDirectUtils {
 							formattedPageable.addPrintable(printable);
 						}
 						formattedPageable.setNumberOfPages(pageable.getNumberOfPages());
-						doc = new SimpleDoc(enablePageableStream(formattedPageable, printService, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+						if (printToStream(formattedPageable, printRequestAttributeSet, printService)) {
+							return;
+						}
+						doc = new SimpleDoc(formattedPageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
-						doc = new SimpleDoc(enablePrintableStream(printable, printService, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
+						if (printerUrl(printRequestAttributeSet) != null) {
+							PageablePrintableHolder holder = new PageablePrintableHolder(printable);
+							holder.setPageFormat(getPageFormat(printService, filterPrintRequestAttributeSet(printRequestAttributeSet)));
+							if (printToStream(holder, printRequestAttributeSet, printService)) {
+								return;
+							}
+						}
+						doc = new SimpleDoc(printable, DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
 					}
 				} else {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
@@ -121,6 +130,8 @@ public final class ClientPrintDirectUtils {
 		} catch (PrintException e) {
 			LOG.error(e.getMessage(), e);
 		} catch (ClassNotFoundException e) {
+			LOG.error(e.getMessage(), e);
+		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
 	}
@@ -149,9 +160,12 @@ public final class ClientPrintDirectUtils {
 			remote.setPageFormat(pageFormat);
 		}
 	
+		if (printToStream(pageable, printRequestAttributeSet, printService)) {
+			return;
+		}
 
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
-		printerJob.setPageable(enablePageableStream(pageable, printService, printRequestAttributeSet));
+		printerJob.setPageable(pageable);
 		try {
 			printerJob.setPrintService(printService);
 			if (isMacOs() && carriedByPageFormat(filteredRequestAttributeSet)) {
@@ -184,37 +198,28 @@ public final class ClientPrintDirectUtils {
 	}
 	
 	/**
-	 * Enables the print to stream.
-	 * @param originalPageable Original pageable.
-	 * @param printRequestAttributeSet Print request attribute set.
-	 * @return A Pageable capable of streaming or not.
+	 * Writes the document as an ESC/P stream to the request's destination (the fast dot-matrix path),
+	 * instead of printing it through the printer driver.
+	 * @param pageable Document to write.
+	 * @param printRequestAttributeSet Attributes of the request: destination, copies and paper.
+	 * @param printService Print service of the printer.
+	 * @return True if the request has a destination and the document was written (or failed trying, which is logged); false if the request is for the printer driver.
 	 */
-	private static Pageable enablePageableStream(Pageable originalPageable, PrintService printService,
-			PrintRequestAttributeSet printRequestAttributeSet) {
-		Pageable toPrintPageable = originalPageable;
+	private static boolean printToStream(Pageable pageable, PrintRequestAttributeSet printRequestAttributeSet,
+			PrintService printService) {
 		String printerUrl = printerUrl(printRequestAttributeSet);
-		if (printerUrl != null) {
-			float[] printable = printableOrigin(printService, printRequestAttributeSet);
-			toPrintPageable = new PageableStreamWrapper(originalPageable, printerUrl, printable[0], printable[1]);
+		if (printerUrl == null) {
+			return false;
 		}
-		return toPrintPageable;
-	}
-	
-	/**
-	 * Enables the print to stream.
-	 * @param originalPrintable Original printable.
-	 * @param printRequestAttributeSet Print request attribute set.
-	 * @return A Printable capable of streaming or not.
-	 */
-	private static Printable enablePrintableStream(Printable originalPrintable, PrintService printService,
-			PrintRequestAttributeSet printRequestAttributeSet) {
-		Printable toPrintPrintable = originalPrintable;
-		String printerUrl = printerUrl(printRequestAttributeSet);
-		if (printerUrl != null) {
-			float[] printable = printableOrigin(printService, printRequestAttributeSet);
-			toPrintPrintable = new PrintableStreamWrapper(originalPrintable, printerUrl, printable[0], printable[1]);
+		float[] printable = printableOrigin(printService, printRequestAttributeSet);
+		Copies copies = (Copies) printRequestAttributeSet.get(Copies.class);
+		try {
+			new EscpStreamJob(printerUrl, pageable.getNumberOfPages(), printable[0], printable[1])
+					.printAll(pageable, copies == null ? 1 : copies.getValue());
+		} catch (PrinterException e) {
+			LOG.error(e.getMessage(), e);
 		}
-		return toPrintPrintable;
+		return true;
 	}
 	
 	/**
@@ -290,7 +295,10 @@ public final class ClientPrintDirectUtils {
 		}
 		*/
 		
-		Doc doc = new SimpleDoc(enablePageableStream(pageable, printService, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+		if (printToStream(pageable, printRequestAttributeSet, printService)) {
+			return;
+		}
+		Doc doc = new SimpleDoc(pageable, DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
 			printJob.print(doc, filteredRequestAttributeSet);

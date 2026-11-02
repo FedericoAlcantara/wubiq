@@ -2,6 +2,7 @@ package net.sf.wubiq.wrappers;
 
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.awt.print.PageFormat;
 import java.awt.print.Pageable;
 import java.awt.print.Printable;
@@ -75,6 +76,53 @@ public class EscpStreamJob {
 			}
 		}
 		return 0;
+	}
+
+	/**
+	 * Writes a whole document to the stream without a JDK print job. The JDK's print job would
+	 * send the printer driver a job of its own, blank, since nothing is drawn on the printer's graphics:
+	 * the printer would eject an empty page after the text. The pages are drawn on an image the size of
+	 * the paper instead, with the origin and clip of the page format's imageable area, as the printer's
+	 * graphics would have them.
+	 * @param pageable Document to write.
+	 * @param copies Number of times the document is written; less than one is one.
+	 * @throws PrinterException If the stream can't be written.
+	 */
+	public synchronized void printAll(Pageable pageable, int copies) throws PrinterException {
+		try {
+			for (int copy = 0; copy < Math.max(copies, 1); copy++) {
+				lastPage = -1;
+				int pageIndex = 0;
+				boolean more = true;
+				while (more && (pageable.getNumberOfPages() == Pageable.UNKNOWN_NUMBER_OF_PAGES
+						|| pageIndex < pageable.getNumberOfPages())) {
+					PageFormat pageFormat;
+					Printable printable;
+					try {
+						pageFormat = pageable.getPageFormat(pageIndex);
+						printable = pageable.getPrintable(pageIndex);
+					} catch (IndexOutOfBoundsException e) {
+						break; // The pageable has no more pages.
+					}
+					BufferedImage image = new BufferedImage(
+							Math.max((int) Math.ceil(pageFormat.getWidth()), 1),
+							Math.max((int) Math.ceil(pageFormat.getHeight()), 1),
+							BufferedImage.TYPE_BYTE_GRAY);
+					Graphics2D graphics = image.createGraphics();
+					try {
+						graphics.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+						graphics.setClip(0, 0, (int) Math.ceil(pageFormat.getImageableWidth()),
+								(int) Math.ceil(pageFormat.getImageableHeight()));
+						more = print(printable, graphics, pageFormat, pageIndex) == Printable.PAGE_EXISTS;
+					} finally {
+						graphics.dispose();
+					}
+					pageIndex++;
+				}
+			}
+		} finally {
+			close();
+		}
 	}
 
 	/**
