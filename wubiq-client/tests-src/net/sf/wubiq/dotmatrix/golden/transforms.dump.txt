@@ -1,0 +1,49 @@
+000000  1B 40                       ESC @            initialize printer (top of form here)
+000002  1B 78 30                    ESC x 48         draft
+000005  1B 28 74 03 00 01 03 00     ESC ( t          assign table 3/0 (PC850) to slot 1
+00000D  1B 74 01                    ESC t 1          select character table 1 = PC850
+000010  1B 70 30                    ESC p 48         proportional off
+000013  1B 33 06                    ESC 3 6          line spacing 0.0278 in
+000016  1B 43 00 0B                 ESC C 0 11       page length 11 in
+00001A  12                          DC2              condensed off
+00001B  1B 57 00                    ESC W 0          double width off
+00001E  1B 4D                       ESC M            12 cpi
+000020  1B 4A C3                    ESC J 195        advance paper -> y 0.9028
+000023  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000027  1B 46                       ESC F            bold off
+000029  1B 35                       ESC 5            italic off
+00002B  1B 2D 00                    ESC - 0          underline off
+00002E  TEXT "No transform"
+00003A  1B 2D 00                    ESC - 0          underline off
+00003D  12                          DC2              condensed off
+00003E  1B 57 00                    ESC W 0          double width off
+000041  1B 4D                       ESC M            12 cpi
+000043  1B 4A 48                    ESC J 72         advance paper -> y 1.2361
+000046  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+00004A  1B 46                       ESC F            bold off
+00004C  1B 35                       ESC 5            italic off
+00004E  1B 2D 00                    ESC - 0          underline off
+000051  TEXT "Translated band"
+000060  1B 2D 00                    ESC - 0          underline off
+000063  12                          DC2              condensed off
+000064  1B 57 00                    ESC W 0          double width off
+000067  1B 4D                       ESC M            12 cpi
+000069  1B 4A 48                    ESC J 72         advance paper -> y 1.5694
+00006C  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000070  1B 46                       ESC F            bold off
+000072  1B 35                       ESC 5            italic off
+000074  1B 2D 00                    ESC - 0          underline off
+000077  TEXT "Scaled 2x"
+000080  1B 2D 00                    ESC - 0          underline off
+000083  12                          DC2              condensed off
+000084  1B 57 00                    ESC W 0          double width off
+000087  1B 4D                       ESC M            12 cpi
+000089  1B 4A 90                    ESC J 144        advance paper -> y 2.2361
+00008C  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000090  1B 46                       ESC F            bold off
+000092  1B 35                       ESC 5            italic off
+000094  1B 2D 00                    ESC - 0          underline off
+000097  TEXT "Translated and scaled half"
+0000B1  1B 2D 00                    ESC - 0          underline off
+0000B4  0D                          CR               carriage return
+0000B5  0C                          FF               form feed -> y 11.0000 (sheet 2)

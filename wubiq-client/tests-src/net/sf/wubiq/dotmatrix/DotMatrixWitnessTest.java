@@ -39,12 +39,15 @@ import org.junit.runners.Parameterized.Parameters;
  * <p>System properties:</p>
  * <ul>
  * <li><code>wubiq.dotmatrix.report</code> report directory (default build-tests/dotmatrix-report/java-VERSION)</li>
- * <li><code>wubiq.dotmatrix.strict</code> true to fail the test on layout or golden mismatches (default false: report only)</li>
+ * <li><code>wubiq.dotmatrix.strict</code> false to only report layout and golden mismatches instead of failing the test (default true)</li>
  * <li><code>wubiq.dotmatrix.golden</code> golden files directory (default tests-src/net/sf/wubiq/dotmatrix/golden)</li>
  * <li><code>wubiq.dotmatrix.updateGolden</code> true to rewrite golden files from the "direct" driver</li>
  * <li><code>wubiq.dotmatrix.images</code> false to skip png rendering</li>
  * <li><code>wubiq.dotmatrix.only</code> comma separated case names (fixture-driver) to run</li>
  * </ul>
+ * <p>The printer is told to use PC850 (<code>wubiq.dotmatrix.table</code> 3) and the text is encoded with
+ * IBM850 (<code>wubiq.dotmatrix.charset</code>), unless the properties are set: PC437 lacks the accented
+ * capitals of Spanish.</p>
  * @author Federico Alcantara
  *
  */
@@ -52,6 +55,15 @@ import org.junit.runners.Parameterized.Parameters;
 public class DotMatrixWitnessTest {
 	private static final int DPI = 100;
 	private static final PrinterProfile PROFILE = PrinterProfile.ninePin();
+
+	static {
+		if (System.getProperty("wubiq.dotmatrix.charset") == null) {
+			System.setProperty("wubiq.dotmatrix.charset", "IBM850");
+		}
+		if (System.getProperty("wubiq.dotmatrix.table") == null) {
+			System.setProperty("wubiq.dotmatrix.table", "3");
+		}
+	}
 
 	private final WitnessFixture fixture;
 	private final PrintDriver driver;
@@ -142,7 +154,7 @@ public class DotMatrixWitnessTest {
 				+ check.count(CheckResult.Status.FAIL) + "\t" + data.length + "\t" + sha1(data) + "\t" + golden + "\n"
 				+ check.getSummary() + "\t" + golden + ", " + data.length + " bytes, " + result.getPageCount()
 				+ " sheet(s), " + firstFailure(check).replace('\t', ' ').replace('\n', ' ') + "\n");
-		if (Boolean.getBoolean("wubiq.dotmatrix.strict") || driver instanceof ReferenceDriver) {
+		if (!"false".equals(System.getProperty("wubiq.dotmatrix.strict")) || driver instanceof ReferenceDriver) {
 			assertTrue(name + ": " + check, check.isPassed());
 		}
 	}
