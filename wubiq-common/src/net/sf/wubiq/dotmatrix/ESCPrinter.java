@@ -89,16 +89,32 @@ public class ESCPrinter {
      * @param escp24pin True if the streamer is to print to a 24pin printer.
      */
     public ESCPrinter(String printer, int pageWidth, int pageHeight, boolean escp24pin) throws PrintException {
+    	this(printer, pageWidth, pageHeight, escp24pin, false);
+    }
+
+    /**
+     * Creates a new instance of printer streamer.
+     * @param printer Printer url.
+     * @param pageWidth Width of the page in twips (inch * 1440).
+     * @param pageHeight Height of the page in twips (inch * 1440).
+     * @param escp24pin True if the streamer is to print to a 24pin printer.
+     * @param append True to add to what the url already holds, false to start it again.
+     */
+    public ESCPrinter(String printer, int pageWidth, int pageHeight, boolean escp24pin, boolean append) throws PrintException {
         //pre: printer non null String indicating network path to printer
         this.printer = printer;
         this.escp24pin = escp24pin;
-        initialize();
+        initialize(append);
         setPageHeight(pageHeight);
         setPageWidth(pageWidth);
     }
 
     public ESCPrinter(String printer, Double pageWidth, Double pageHeight, boolean escp24pin) throws PrintException {
-    	this(printer, pageWidth.intValue(), pageHeight.intValue(), escp24pin);
+    	this(printer, pageWidth.intValue(), pageHeight.intValue(), escp24pin, false);
+    }
+
+    public ESCPrinter(String printer, Double pageWidth, Double pageHeight, boolean escp24pin, boolean append) throws PrintException {
+    	this(printer, pageWidth.intValue(), pageHeight.intValue(), escp24pin, append);
     }
     
     /**
@@ -113,12 +129,12 @@ public class ESCPrinter {
         catch (IOException e) { e.printStackTrace(); }
     }
     
-    private void initialize() throws PrintException {
+    private void initialize(boolean append) throws PrintException {
         //post: returns true if stream to network printer successfully opened, streams for writing to esc/p printer created
         try {
             //create stream objs
         	if (ostream == null) {
-        		ostream = new FileOutputStream(printer);
+        		ostream = new FileOutputStream(printer, append);
         	}
             pstream = new PrintStream(ostream);
             
@@ -153,13 +169,13 @@ public class ESCPrinter {
      */
     public void setPageHeight(int height){
     	this.pageHeight = (int)(toInches(height) * 180 / 5);
-    	char lines = ARGUMENT_1; // In case that we can't control the height, form feed must be set to just 1 (5/180)
-    	if (height <= 127) {
-    		lines = (char)height;
+    	int inches = Math.round(toInches(height));
+    	if (inches >= 1 && inches <= 22) { // ESC C 0 n: page length of n inches.
+    		pstream.write(ESC);
+    		pstream.write(C);
+    		pstream.write(0);
+    		pstream.write(inches);
     	}
-    	pstream.print(ESC);
-    	pstream.print(C);
-    	pstream.print(lines);
     	pstream.flush();
     }
     
@@ -416,6 +432,17 @@ public class ESCPrinter {
     }
         pstream.flush();
         lineCount = 0;
+    }
+    
+    /**
+     * Ends the page: the paper is ejected and the print head goes back to the left of the next page.
+     */
+    public void endPage() {
+    	pstream.write(CR);
+    	pstream.write(FF);
+    	pstream.flush();
+    	horPosition = 0;
+    	lineCount = 0;
     }
     
     public String getShare() {

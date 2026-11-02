@@ -14,11 +14,11 @@ import java.awt.print.Printable;
 public class PageableStreamWrapper implements Pageable {
 	
 	private Pageable pageable;
-	private String url;
+	private EscpStreamJob job;
 	
 	public PageableStreamWrapper(Pageable pageable, String url) {
 		this.pageable = pageable;
-		this.url = url;
+		this.job = new EscpStreamJob(url, pageable.getNumberOfPages());
 	}
 	
 	@Override
@@ -34,7 +34,7 @@ public class PageableStreamWrapper implements Pageable {
 	@Override
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		Printable printable = pageable.getPrintable(pageIndex);
-		return new PrintableStreamWrapper(printable, url);
+		return new PrintableStreamWrapper(printable, job);
 	}
 	
 }
