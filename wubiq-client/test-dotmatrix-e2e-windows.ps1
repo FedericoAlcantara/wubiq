@@ -171,9 +171,11 @@ function Invoke-Print($jdkHome, $name, $out) {
 		}
 		Start-Sleep -Seconds 2
 		# Fast path: the link of the test page with TP=true (send it as a Pageable) and TPT, the
-		# destination the client writes the ESC/P bytes to, a file path on this computer.
+		# destination the client writes the ESC/P bytes to, a file path on this computer. The server
+		# makes a URI of it, which can't have backslashes: the path goes with forward slashes.
 		$fast = Join-Path $out "fast.escp"
-		$fastLink = "$link&TP=true&TPT=$([System.Uri]::EscapeDataString($fast))"
+		$fastUri = $fast -replace "\\", "/"
+		$fastLink = "$link&TP=true&TPT=$([System.Uri]::EscapeDataString($fastUri))"
 		Invoke-WebRequest -UseBasicParsing -Uri "$Server/wubiq-server/$fastLink" -OutFile (Join-Path $out "server-response-fast.html")
 		if (Wait-For 120 { (Test-Path $fast) -and ((Get-Item $fast).Length -gt 0) }) {
 			Start-Sleep -Seconds 3

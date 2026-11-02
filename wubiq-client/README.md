@@ -121,7 +121,7 @@ Exit codes:
 .\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK8_HOME] [-Server URL] [-Printer NAME] [-Tolerance IN]
 ```
 
-The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job. With the same client, each JDK then prints the page through the fast path: the test page link gets `TP=true` and `TPT`, a file the client writes the ESC/P bytes to. The client runs with `-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3`. The witness must read each fast path file without warnings, and it must match Java 6's file.
+The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job. With the same client, each JDK then prints the page through the fast path: the test page link gets `TP=true` and `TPT`, a file the client writes the ESC/P bytes to (a Windows path with forward slashes, as it has to be a URI). The client runs with `-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3`. The witness must read each fast path file without warnings, and it must match Java 6's file.
 
 It needs:
 - wubiq-server running at `http://localhost:8080` (`-Server` to change it);
