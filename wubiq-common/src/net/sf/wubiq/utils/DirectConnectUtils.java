@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
+import javax.xml.bind.DatatypeConverter;
+
 import net.sf.wubiq.enums.NotificationType;
 import net.sf.wubiq.exceptions.TimeoutException;
 import net.sf.wubiq.interfaces.IAdapter;
@@ -35,7 +37,6 @@ public enum DirectConnectUtils {
 	private final int CONNECTION_RETRY_MILLISECONDS = 100;
 	
 	private static final Log LOG = LogFactory.getLog(DirectConnectUtils.class);
-	private static final char[] HEX_DIGITS = "0123456789ABCDEF".toCharArray();
 
 	/**
 	 * Validates if the connection is timed out.
@@ -207,11 +208,7 @@ public enum DirectConnectUtils {
 	 * @return Hex data in format 0xx.
 	 */
 	public String toHex(byte[] data) {
-		StringBuilder returnValue = new StringBuilder(data.length * 2);
-		for (byte value : data) {
-			returnValue.append(HEX_DIGITS[(value >> 4) & 0xF]).append(HEX_DIGITS[value & 0xF]);
-		}
-		return returnValue.toString();
+		return DatatypeConverter.printHexBinary(data);
 	}
 	
 	/**
@@ -220,18 +217,7 @@ public enum DirectConnectUtils {
 	 * @return Byte[] representing the data.
 	 */
 	public byte[] fromHex(String hexData) {
-		if (hexData.length() % 2 != 0) {
-			throw new IllegalArgumentException("hexBinary needs to be even-length: " + hexData);
-		}
-		byte[] returnValue = new byte[hexData.length() / 2];
-		for (int index = 0; index < returnValue.length; index++) {
-			int high = Character.digit(hexData.charAt(index * 2), 16);
-			int low = Character.digit(hexData.charAt(index * 2 + 1), 16);
-			if (high < 0 || low < 0) {
-				throw new IllegalArgumentException("contains illegal character for hexBinary: " + hexData);
-			}
-			returnValue[index] = (byte) ((high << 4) | low);
-		}
+		byte[] returnValue = DatatypeConverter.parseHexBinary(hexData);
 		return returnValue;
 	}
 
