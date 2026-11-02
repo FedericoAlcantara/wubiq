@@ -12,6 +12,7 @@ import java.util.Iterator;
 import javax.print.PrintException;
 
 import net.sf.wubiq.dotmatrix.ESCPrinter;
+import net.sf.wubiq.enums.PrinterType;
 
 /**
  * One print job written as a single ESC/P stream.
@@ -56,14 +57,14 @@ public class EscpStreamJob {
 		if (pageIndex < lastPage) {
 			lastPage = -1; // The job starts again (a new copy).
 		}
-		GraphicsStreamWrapper wrapper = new GraphicsStreamWrapper((Graphics2D) graph);
+		GraphicsStreamWrapper wrapper = new GraphicsStreamWrapper((Graphics2D) graph, pageFormat);
 		int returnValue;
 		try {
 			returnValue = printable.print(wrapper, pageFormat, pageIndex);
 			if (returnValue == Printable.NO_SUCH_PAGE) {
 				close();
 			} else {
-				ESCPrinter escPrinter = printer(pageFormat);
+				ESCPrinter escPrinter = printer(pageFormat, PrinterType.DOT_MATRIX_HQ.equals(wrapper.getPrinterType()));
 				Iterator<TextField> it = wrapper.getTexts().iterator();
 				while (it.hasNext()) {
 					TextField textField = it.next();
@@ -102,12 +103,12 @@ public class EscpStreamJob {
 		}
 	}
 
-	private ESCPrinter printer(PageFormat pageFormat) throws PrintException {
+	private ESCPrinter printer(PageFormat pageFormat, boolean pins24) throws PrintException {
 		if (printer == null) {
 			printer = new ESCPrinter(url,
 					pageFormat.getPaper().getWidth() / 72 * 1440,
 					pageFormat.getPaper().getHeight() / 72 * 1440,
-					false, written);
+					pins24, written);
 			written = true;
 		}
 		return printer;

@@ -16,7 +16,7 @@ import net.sf.wubiq.wrappers.TextField;
  * http://code.google.com/p/escprinter/source/browse/trunk/net/drayah/matrixprinter/ESCPrinter.java
  * It let printing directly to a Dot matrix.
  * 
- * Values are received in Twips (inch * 1440)
+ * Page sizes are received in Twips (inch * 1440). Text positions are in points (inch / 72).
  * @author Federico Alcantara
  *
  */
@@ -29,11 +29,14 @@ public class ESCPrinter {
     private int pageHeight = 396; // In number of minimum line feed. For 11 inch = 396
     private int pageWidth = 1020; // In 1/120 inches. for 8.5 = 1020.
     private float horPosition = 0;
+    private int verticalPosition = 0; // In fine line units (1/216 inch, 1/180 for 24 pin) from the top of the page.
     private int lineCount = 0;
     protected static int MAX_ADVANCE_9PIN = 216; //for 24/48 pin esc/p2 printers this should be 180
     protected static int MAX_ADVANCE_24PIN = 180;
     protected static int MAX_UNITS = 127; //for vertical positioning range is between 0 - 255 (0 <= n <= 255) according to epson ref. but 255 gives weird errors at 1.5f, 127 as max (0 - 128) seems to be working
     protected static final float CM_PER_INCH = 2.54f;
+    protected static final double BASELINE_9PIN = 7d / 72d; // Inches from the top of the character cell to the baseline.
+    protected static final double BASELINE_24PIN = 18d / 180d;
     
     /* decimal ascii values for epson ESC/P commands */
     protected static final char ESC = 27; //escape
@@ -334,23 +337,38 @@ public class ESCPrinter {
     }
 
 	/**
-	 * Just advance to the next print position.
+	 * Moves the print head to where the text goes: down with ESC J (paper only moves forward) so
+	 * that the characters' baseline lies on the text's baseline, across with ESC $ (absolute position).
 	 * @param textField Holder of the field information.
 	 * @throws IOException
 	 */
 	public void advanceTo(TextField textField) throws IOException {
-		float toPos = textField.getX() * 120 / 1440;
-		float fixValue = 120 / textField.getTextFontCPI();
-		float textWidth = textField.getWidth() * 120 / 1440;
 		selectCPI(textField.getTextFontCPI());
+		// Vertical: the head position is the top of the character cell, a few dots above the baseline.
+		double headInches = textField.getY() / 72d - (escp24pin ? BASELINE_24PIN : BASELINE_9PIN);
+		int target = (int) Math.round(headInches * (escp24pin ? 180d : 216d));
+		while (target > verticalPosition) {
+			int step = Math.min(255, target - verticalPosition);
+			pstream.write(ESC);
+			pstream.write(J);
+			pstream.write(step);
+			verticalPosition += step;
+		}
+		// Horizontal, in 1/120 inch.
+		float fixValue = 120 / textField.getTextFontCPI();
+		float toPos = textField.getX() * 120 / 72;
+		float textWidth = textField.getWidth() * 120 / 72;
 		if (TextAlignmentType.RIGHT.equals(textField.getTextAlignment())) {
 			toPos += textWidth - (textField.getText().length() * fixValue);
 		} else if (TextAlignmentType.CENTER.equals(textField.getTextAlignment())) {
 			toPos += ((textWidth - (textField.getText().length()) * fixValue)) / 2;
 		}
-		while (toPos > horPosition) {
-			print(' ', fixValue);
-		}
+		int position = Math.max(0, Math.round(toPos / 2)); // ESC $ counts in 1/60 inch.
+		pstream.write(ESC);
+		pstream.write(DOLLAR_SIGN);
+		pstream.write(position % 256);
+		pstream.write(position / 256);
+		horPosition = position * 2;
 	}
 	
 	/**
@@ -442,6 +460,7 @@ public class ESCPrinter {
     	pstream.write(FF);
     	pstream.flush();
     	horPosition = 0;
+    	verticalPosition = 0;
     	lineCount = 0;
     }
     

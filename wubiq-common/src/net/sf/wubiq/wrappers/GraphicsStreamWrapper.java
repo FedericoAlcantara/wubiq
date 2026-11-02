@@ -20,11 +20,15 @@ import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
+import java.awt.geom.NoninvertibleTransformException;
+import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
+import java.awt.font.TextAttribute;
+import java.awt.print.PageFormat;
 import java.text.AttributedCharacterIterator;
 import java.text.CharacterIterator;
 import java.util.Map;
@@ -44,9 +48,25 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	private Set<TextField> texts;
 	private PrinterType printerType;
 	private Font currentFont;
+	private AffineTransform entryTransform;
+	private float originX;
+	private float originY;
 	
 	public GraphicsStreamWrapper(Graphics2D graphics) {
+		this(graphics, null);
+	}
+	
+	/**
+	 * @param graphics Graphics to wrap.
+	 * @param pageFormat Page format of the page, whose imageable area is where the application's 0, 0 lies.
+	 */
+	public GraphicsStreamWrapper(Graphics2D graphics, PageFormat pageFormat) {
 		this.graphics = graphics;
+		this.entryTransform = graphics.getTransform();
+		if (pageFormat != null) {
+			originX = (float) pageFormat.getImageableX();
+			originY = (float) pageFormat.getImageableY();
+		}
 		texts = new TreeSet<TextField>();
 		printerType = PrintServiceUtils.printerType(graphics.getDeviceConfiguration().getDevice().getIDstring());
 		currentFont = graphics.getFont();
@@ -57,6 +77,33 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	public Set<TextField> getTexts() {
 		return texts;
+	}
+	
+	public PrinterType getPrinterType() {
+		return printerType;
+	}
+	
+	/**
+	 * Adds a text drawn at the given user space position. The position is converted to points on the
+	 * page: the transform the JDK gave the page (device scale, imageable area) is undone, what the
+	 * application added (translate, scale) is applied.
+	 */
+	private void addText(String str, double x, double y) {
+		AffineTransform relative = new AffineTransform();
+		try {
+			relative.concatenate(entryTransform.createInverse());
+		} catch (NoninvertibleTransformException e) {
+			// The page transform is used as is.
+		}
+		relative.concatenate(graphics.getTransform());
+		Point2D position = relative.transform(new Point2D.Double(x, y), null);
+		double scale = Math.sqrt(Math.abs(relative.getDeterminant()));
+		int size = (int) Math.round(currentFont.getSize2D() * scale);
+		TextField textField = new TextField(0, originX + (float) position.getX(), originY + (float) position.getY(), size, str);
+		textField.setBold(currentFont.isBold());
+		textField.setItalic(currentFont.isItalic());
+		textField.setUnderline(TextAttribute.UNDERLINE_ON.equals(currentFont.getAttributes().get(TextAttribute.UNDERLINE)));
+		texts.add(textField);
 	}
 	
 	@Override
@@ -145,9 +192,7 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void drawString(String str, int x, int y) {
-		TextField textField = new TextField(0, x, y, currentFont, str);
-		
-		texts.add(textField);
+		addText(str, x, y);
 	}
 
 	@Override
@@ -283,13 +328,19 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void drawString(String str, float x, float y) {
-		drawString(str, new Float(x).intValue(), new Float(y).intValue());
+		addText(str, x, y);
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, float x,
 			float y) {
-		drawString(iterator, new Float(x).intValue(), new Float(y).intValue());
+		StringBuffer str = new StringBuffer("");
+		for (char charAt = iterator.first(); charAt != CharacterIterator.DONE; charAt = iterator.next()) {
+			str.append(charAt);
+		}
+		if (str.length() > 0) {
+			addText(str.toString(), x, y);
+		}
 	}
 
 	@Override
