@@ -42,16 +42,18 @@ ant test-dotmatrix
 
 This compiles wubiq-common, the client, the witness and the tests into `bin` and `build-tests/classes`, without building jars. Run it with a JDK 8. The report goes to `build-tests/dotmatrix-report/java-VERSION/index.html`, with one page per case: the sheet images, text grid, decoded commands and check results.
 
-System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dotmatrix.strict=true`):
+System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dotmatrix.strict=false`):
 
 | Property | Effect |
 |---|---|
-| `wubiq.dotmatrix.strict=true` | layout and golden-file mismatches fail the build (default: report only) |
+| `wubiq.dotmatrix.strict=false` | layout and golden-file mismatches are only reported (default: they fail the build) |
 | `wubiq.dotmatrix.updateGolden=true` | rewrites the golden files in `tests-src/net/sf/wubiq/dotmatrix/golden` from the `direct` driver |
 | `wubiq.dotmatrix.only=invoice-direct,ruler-jdk-print` | runs only these cases (fixture-driver) |
 | `wubiq.dotmatrix.images=false` | skips the PNG sheets |
 | `wubiq.dotmatrix.report=DIR` | report directory |
 | `wubiq.dotmatrix.golden=DIR` | golden files directory |
+| `wubiq.dotmatrix.charset=NAME` | charset the text is encoded with (default in the tests: `IBM850`) |
+| `wubiq.dotmatrix.table=N` | registered character table the printer is told to use (default in the tests: `3`, PC850) |
 
 #### Every installed JDK
 
