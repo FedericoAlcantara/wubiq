@@ -129,6 +129,7 @@ function Stop-Started($process) {
 $script:Listener = $null
 $script:Client = $null
 $script:FastFailure = $null
+$script:FastStray = $null
 
 # The fast path takes the PC850 character table, as the dot-matrix witness tests do.
 $ClientProperties = "-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3"
@@ -138,6 +139,7 @@ $ClientProperties = "-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3"
 function Invoke-Print($jdkHome, $name, $out) {
 	$uuid = "witness-windows-$name"
 	$script:FastFailure = $null
+	$script:FastStray = $null
 	if (Test-Path $out) {
 		Remove-Item -Recurse -Force $out
 	}
@@ -176,9 +178,15 @@ function Invoke-Print($jdkHome, $name, $out) {
 		$fast = Join-Path $out "fast.escp"
 		$fastUri = $fast -replace "\\", "/"
 		$fastLink = "$link&TP=true&TPT=$([System.Uri]::EscapeDataString($fastUri))"
+		$jobsBefore = @(Get-ChildItem -Directory (Join-Path $out "jobs") -Filter "job-*").Count
 		Invoke-WebRequest -UseBasicParsing -Uri "$Server/wubiq-server/$fastLink" -OutFile (Join-Path $out "server-response-fast.html")
 		if (Wait-For 120 { (Test-Path $fast) -and ((Get-Item $fast).Length -gt 0) }) {
-			Start-Sleep -Seconds 3
+			Start-Sleep -Seconds 6
+			# The fast path doesn't use the printer driver: no job may reach the printer.
+			$strays = @(Get-ChildItem -Directory (Join-Path $out "jobs") -Filter "job-*").Count - $jobsBefore
+			if ($strays -gt 0) {
+				$script:FastStray = "the printer received $strays job(s) besides the file"
+			}
 		} else {
 			$script:FastFailure = "no file was written; $(Get-ClientFailure $out)"
 		}
@@ -198,6 +206,10 @@ function Test-FastPath($run, $out, $failure) {
 	$fast = Join-Path $out "fast.escp"
 	if ($failure) {
 		Add-Content $Summary "$name`tNOT PRINTED`t$failure"
+		return $false
+	}
+	if ($script:FastStray) {
+		Add-Content $Summary "$name`tDRIVER JOB`t$($script:FastStray)"
 		return $false
 	}
 	$render = Join-Path $out "fast-render.txt"
