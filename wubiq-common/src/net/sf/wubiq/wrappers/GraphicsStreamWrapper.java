@@ -31,9 +31,14 @@ import java.awt.font.TextAttribute;
 import java.awt.print.PageFormat;
 import java.text.AttributedCharacterIterator;
 import java.text.CharacterIterator;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
+import java.util.WeakHashMap;
 
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.GraphicsUtils;
@@ -44,8 +49,12 @@ import net.sf.wubiq.utils.PrintServiceUtils;
  *
  */
 public class GraphicsStreamWrapper extends Graphics2D {
+	/** Glyph code to character, per font. Glyph vectors don't carry the text they draw. */
+	private static final Map<Font, Map<Integer, Character>> GLYPH_CHARACTERS =
+			Collections.synchronizedMap(new WeakHashMap<Font, Map<Integer, Character>>());
+	
 	private Graphics2D graphics;
-	private Set<TextField> texts;
+	private Capture capture;
 	private PrinterType printerType;
 	private Font currentFont;
 	private AffineTransform entryTransform;
@@ -67,7 +76,7 @@ public class GraphicsStreamWrapper extends Graphics2D {
 			originX = (float) pageFormat.getImageableX();
 			originY = (float) pageFormat.getImageableY();
 		}
-		texts = new TreeSet<TextField>();
+		capture = new Capture();
 		printerType = PrintServiceUtils.printerType(graphics.getDeviceConfiguration().getDevice().getIDstring());
 		currentFont = graphics.getFont();
 		if (currentFont == null) {
@@ -75,8 +84,27 @@ public class GraphicsStreamWrapper extends Graphics2D {
 		}
 	}
 
-	public Set<TextField> getTexts() {
-		return texts;
+	/**
+	 * Wrapper for what a child graphics (create()) draws: its text goes to the same page.
+	 */
+	private GraphicsStreamWrapper(GraphicsStreamWrapper parent) {
+		this.graphics = (Graphics2D) parent.graphics.create();
+		this.capture = parent.capture;
+		this.entryTransform = parent.entryTransform;
+		this.originX = parent.originX;
+		this.originY = parent.originY;
+		this.printerType = parent.printerType;
+		this.currentFont = parent.currentFont;
+	}
+	
+	/**
+	 * @return The texts the application drew, in page, line and column order. Texts at the same
+	 * position stay in the order they were drawn.
+	 */
+	public List<TextField> getTexts() {
+		List<TextField> returnValue = new ArrayList<TextField>(capture.texts);
+		Collections.sort(returnValue); // Stable.
+		return returnValue;
 	}
 	
 	public PrinterType getPrinterType() {
@@ -89,6 +117,10 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	 * application added (translate, scale) is applied.
 	 */
 	private void addText(String str, double x, double y) {
+		addText(str, x, y, currentFont);
+	}
+	
+	private void addText(String str, double x, double y, Font font) {
 		AffineTransform relative = new AffineTransform();
 		try {
 			relative.concatenate(entryTransform.createInverse());
@@ -98,12 +130,62 @@ public class GraphicsStreamWrapper extends Graphics2D {
 		relative.concatenate(graphics.getTransform());
 		Point2D position = relative.transform(new Point2D.Double(x, y), null);
 		double scale = Math.sqrt(Math.abs(relative.getDeterminant()));
-		int size = (int) Math.round(currentFont.getSize2D() * scale);
+		int size = (int) Math.round(font.getSize2D() * scale);
 		TextField textField = new TextField(0, originX + (float) position.getX(), originY + (float) position.getY(), size, str);
-		textField.setBold(currentFont.isBold());
-		textField.setItalic(currentFont.isItalic());
-		textField.setUnderline(TextAttribute.UNDERLINE_ON.equals(currentFont.getAttributes().get(TextAttribute.UNDERLINE)));
-		texts.add(textField);
+		textField.setBold(font.isBold());
+		textField.setItalic(font.isItalic());
+		textField.setUnderline(TextAttribute.UNDERLINE_ON.equals(font.getAttributes().get(TextAttribute.UNDERLINE)));
+		capture.add(textField);
+	}
+	
+	/**
+	 * @return The characters a glyph vector draws, '?' for a glyph that no character of the font gives.
+	 */
+	private String glyphText(GlyphVector glyphVector) {
+		Font font = glyphVector.getFont();
+		Map<Integer, Character> characters = GLYPH_CHARACTERS.get(font);
+		if (characters == null) {
+			characters = new HashMap<Integer, Character>();
+			FontRenderContext context = glyphVector.getFontRenderContext();
+			int[][] ranges = {{0x20, 0x7E}, {0xA0, 0x17F}, {0x2013, 0x2014}, {0x2018, 0x201D}, {0x20AC, 0x20AC}};
+			for (int[] range : ranges) {
+				for (int character = range[0]; character <= range[1]; character++) {
+					int code = font.createGlyphVector(context, new char[] {(char) character}).getGlyphCode(0);
+					if (code != font.getMissingGlyphCode() && !characters.containsKey(code)) {
+						characters.put(code, (char) character);
+					}
+				}
+			}
+			GLYPH_CHARACTERS.put(font, characters);
+		}
+		StringBuilder returnValue = new StringBuilder();
+		for (int index = 0; index < glyphVector.getNumGlyphs(); index++) {
+			Character character = characters.get(glyphVector.getGlyphCode(index));
+			returnValue.append(character == null ? '?' : character.charValue());
+		}
+		return returnValue.toString();
+	}
+	
+	/**
+	 * What the page's graphics and their children (create()) have drawn.
+	 */
+	private static class Capture {
+		private List<TextField> texts = new ArrayList<TextField>();
+		private Set<String> drawn = new HashSet<String>();
+		
+		/**
+		 * Adds the text, unless the same text was already drawn at the same place in the same style
+		 * (applications draw a text twice to make it look bold; the printer would only overstrike it).
+		 * Different texts at the same place are all kept.
+		 */
+		void add(TextField textField) {
+			String key = textField.getX() + "|" + textField.getY() + "|" + textField.getFontSize() + "|"
+					+ textField.isBold() + "|" + textField.isItalic() + "|" + textField.isUnderline() + "|"
+					+ textField.getText();
+			if (drawn.add(key)) {
+				texts.add(textField);
+			}
+		}
 	}
 	
 	@Override
@@ -120,7 +202,7 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public Graphics create() {
-		return graphics.create();
+		return new GraphicsStreamWrapper(this);
 	}
 
 	@Override
@@ -305,6 +387,10 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void drawGlyphVector(GlyphVector g, float x, float y) {
+		String text = glyphText(g);
+		if (text.length() > 0) {
+			addText(text, x, y, g.getFont());
+		}
 	}
 
 	@Override
