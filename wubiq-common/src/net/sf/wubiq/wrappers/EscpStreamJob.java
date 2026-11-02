@@ -11,6 +11,7 @@ import java.util.Iterator;
 
 import javax.print.PrintException;
 
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.dotmatrix.ESCPrinter;
 import net.sf.wubiq.enums.PrinterType;
 
@@ -21,12 +22,22 @@ import net.sf.wubiq.enums.PrinterType;
  * be called again for every call. The job therefore keeps what has been written: a page is
  * printed on its first call, repeated calls for the same page do nothing, and the stream is
  * closed after the last page so that the printer receives the whole job.</p>
+ * <p>The printer counts positions from where it prints, not from the paper's edge: a printer that
+ * can't print on the first quarter inch of the paper counts from there. The application's
+ * coordinates start at the page format's imageable area, so the text goes to the imageable area's
+ * position, less the printable area's position (what the printer driver does), plus the offset of the
+ * {@link PropertyKeys#WUBIQ_DOTMATRIX_OFFSET_X} and {@link PropertyKeys#WUBIQ_DOTMATRIX_OFFSET_Y} properties.
+ * If the printer's printable area isn't known, the application's coordinates start where the printer does.</p>
  * @author Federico Alcantara
  *
  */
 public class EscpStreamJob {
 	private final String url;
 	private final int numberOfPages;
+	private final float printableX;
+	private final float printableY;
+	private final float offsetX;
+	private final float offsetY;
 	private ESCPrinter printer;
 	private int lastPage = -1;
 	private boolean written;
@@ -36,8 +47,34 @@ public class EscpStreamJob {
 	 * @param numberOfPages Number of pages of the job, or {@link Pageable#UNKNOWN_NUMBER_OF_PAGES}.
 	 */
 	public EscpStreamJob(String url, int numberOfPages) {
+		this(url, numberOfPages, Float.NaN, Float.NaN);
+	}
+
+	/**
+	 * @param url Destination of the ESC/P stream (file, port or share).
+	 * @param numberOfPages Number of pages of the job, or {@link Pageable#UNKNOWN_NUMBER_OF_PAGES}.
+	 * @param printableX Position of the printer's printable area, in points from the paper's left edge, or NaN if unknown.
+	 * @param printableY Position of the printer's printable area, in points from the paper's top edge, or NaN if unknown.
+	 */
+	public EscpStreamJob(String url, int numberOfPages, float printableX, float printableY) {
 		this.url = url;
 		this.numberOfPages = numberOfPages;
+		this.printableX = printableX;
+		this.printableY = printableY;
+		this.offsetX = inchesProperty(PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_X) * 72;
+		this.offsetY = inchesProperty(PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_Y) * 72;
+	}
+
+	private static float inchesProperty(String key) {
+		String value = System.getProperty(key);
+		if (value != null) {
+			try {
+				return Float.parseFloat(value.trim());
+			} catch (NumberFormatException e) {
+				// Not a number: no offset.
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -57,7 +94,13 @@ public class EscpStreamJob {
 		if (pageIndex < lastPage) {
 			lastPage = -1; // The job starts again (a new copy).
 		}
-		GraphicsStreamWrapper wrapper = new GraphicsStreamWrapper((Graphics2D) graph, pageFormat);
+		float originX = offsetX;
+		float originY = offsetY;
+		if (!Float.isNaN(printableX) && !Float.isNaN(printableY)) {
+			originX += (float) pageFormat.getImageableX() - printableX;
+			originY += (float) pageFormat.getImageableY() - printableY;
+		}
+		GraphicsStreamWrapper wrapper = new GraphicsStreamWrapper((Graphics2D) graph, originX, originY);
 		int returnValue;
 		try {
 			returnValue = printable.print(wrapper, pageFormat, pageIndex);

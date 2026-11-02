@@ -70,12 +70,20 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	 * @param pageFormat Page format of the page, whose imageable area is where the application's 0, 0 lies.
 	 */
 	public GraphicsStreamWrapper(Graphics2D graphics, PageFormat pageFormat) {
+		this(graphics, pageFormat == null ? 0 : (float) pageFormat.getImageableX(),
+				pageFormat == null ? 0 : (float) pageFormat.getImageableY());
+	}
+	
+	/**
+	 * @param graphics Graphics to wrap.
+	 * @param originX Position, in points from the left of what the printer prints on, of the application's 0, 0.
+	 * @param originY Position, in points from the top, of the application's 0, 0.
+	 */
+	public GraphicsStreamWrapper(Graphics2D graphics, float originX, float originY) {
 		this.graphics = graphics;
 		this.entryTransform = graphics.getTransform();
-		if (pageFormat != null) {
-			originX = (float) pageFormat.getImageableX();
-			originY = (float) pageFormat.getImageableY();
-		}
+		this.originX = originX;
+		this.originY = originY;
 		capture = new Capture();
 		printerType = PrintServiceUtils.printerType(graphics.getDeviceConfiguration().getDevice().getIDstring());
 		currentFont = graphics.getFont();

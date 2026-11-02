@@ -17,8 +17,18 @@ public class PageableStreamWrapper implements Pageable {
 	private EscpStreamJob job;
 	
 	public PageableStreamWrapper(Pageable pageable, String url) {
+		this(pageable, url, Float.NaN, Float.NaN);
+	}
+	
+	/**
+	 * @param pageable Pageable to wrap.
+	 * @param url Destination of the ESC/P stream.
+	 * @param printableX Position of the printer's printable area, in points from the paper's left edge, or NaN if unknown.
+	 * @param printableY Position of the printer's printable area, in points from the paper's top edge, or NaN if unknown.
+	 */
+	public PageableStreamWrapper(Pageable pageable, String url, float printableX, float printableY) {
 		this.pageable = pageable;
-		this.job = new EscpStreamJob(url, pageable.getNumberOfPages());
+		this.job = new EscpStreamJob(url, pageable.getNumberOfPages(), printableX, printableY);
 	}
 	
 	@Override

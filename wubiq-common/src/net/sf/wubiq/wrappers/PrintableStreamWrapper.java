@@ -24,7 +24,18 @@ public class PrintableStreamWrapper implements Printable {
 	 * @param url Destination of the ESC/P stream.
 	 */
 	public PrintableStreamWrapper(Printable printable, String url) {
-		this(printable, new EscpStreamJob(url, Pageable.UNKNOWN_NUMBER_OF_PAGES));
+		this(printable, url, Float.NaN, Float.NaN);
+	}
+	
+	/**
+	 * Wraps a printable that is the whole job.
+	 * @param printable Printable to wrap.
+	 * @param url Destination of the ESC/P stream.
+	 * @param printableX Position of the printer's printable area, in points from the paper's left edge, or NaN if unknown.
+	 * @param printableY Position of the printer's printable area, in points from the paper's top edge, or NaN if unknown.
+	 */
+	public PrintableStreamWrapper(Printable printable, String url, float printableX, float printableY) {
+		this(printable, new EscpStreamJob(url, Pageable.UNKNOWN_NUMBER_OF_PAGES, printableX, printableY));
 	}
 
 	/**

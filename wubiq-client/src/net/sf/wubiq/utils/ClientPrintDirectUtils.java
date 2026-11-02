@@ -106,10 +106,10 @@ public final class ClientPrintDirectUtils {
 							formattedPageable.addPrintable(printable);
 						}
 						formattedPageable.setNumberOfPages(pageable.getNumberOfPages());
-						doc = new SimpleDoc(enablePageableStream(formattedPageable, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+						doc = new SimpleDoc(enablePageableStream(formattedPageable, printService, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 					} else if (docFlavor.equals(DocFlavor.SERVICE_FORMATTED.PRINTABLE)) {
 						PrintableWrapper printable = (PrintableWrapper) input.readObject();
-						doc = new SimpleDoc(enablePrintableStream(printable, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
+						doc = new SimpleDoc(enablePrintableStream(printable, printService, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PRINTABLE, new HashDocAttributeSet());
 					}
 				} else {
 					doc = new SimpleDoc(printData, docFlavor, docAttributeSet);
@@ -151,7 +151,7 @@ public final class ClientPrintDirectUtils {
 	
 
 		PrinterJob printerJob = PrinterJob.getPrinterJob();
-		printerJob.setPageable(enablePageableStream(pageable, printRequestAttributeSet));
+		printerJob.setPageable(enablePageableStream(pageable, printService, printRequestAttributeSet));
 		try {
 			printerJob.setPrintService(printService);
 			if (isMacOs() && carriedByPageFormat(filteredRequestAttributeSet)) {
@@ -189,12 +189,13 @@ public final class ClientPrintDirectUtils {
 	 * @param printRequestAttributeSet Print request attribute set.
 	 * @return A Pageable capable of streaming or not.
 	 */
-	private static Pageable enablePageableStream(Pageable originalPageable,
+	private static Pageable enablePageableStream(Pageable originalPageable, PrintService printService,
 			PrintRequestAttributeSet printRequestAttributeSet) {
 		Pageable toPrintPageable = originalPageable;
 		String printerUrl = printerUrl(printRequestAttributeSet);
 		if (printerUrl != null) {
-			toPrintPageable = new PageableStreamWrapper(originalPageable, printerUrl);
+			float[] printable = printableOrigin(printService, printRequestAttributeSet);
+			toPrintPageable = new PageableStreamWrapper(originalPageable, printerUrl, printable[0], printable[1]);
 		}
 		return toPrintPageable;
 	}
@@ -205,14 +206,42 @@ public final class ClientPrintDirectUtils {
 	 * @param printRequestAttributeSet Print request attribute set.
 	 * @return A Printable capable of streaming or not.
 	 */
-	private static Printable enablePrintableStream(Printable originalPrintable,
+	private static Printable enablePrintableStream(Printable originalPrintable, PrintService printService,
 			PrintRequestAttributeSet printRequestAttributeSet) {
 		Printable toPrintPrintable = originalPrintable;
 		String printerUrl = printerUrl(printRequestAttributeSet);
 		if (printerUrl != null) {
-			toPrintPrintable = new PrintableStreamWrapper(originalPrintable, printerUrl);
+			float[] printable = printableOrigin(printService, printRequestAttributeSet);
+			toPrintPrintable = new PrintableStreamWrapper(originalPrintable, printerUrl, printable[0], printable[1]);
 		}
 		return toPrintPrintable;
+	}
+	
+	/**
+	 * Where the printer's printable area starts for the job's paper: the position its driver counts
+	 * from, and so what the ESC/P stream's positions have to be relative to to land where the driver puts them.
+	 * @param printService Print service of the printer.
+	 * @param printRequestAttributeSet Attributes of the request, with the paper (Media) of the job.
+	 * @return Left and top of the printable area, in points from the paper's edges; NaN, NaN if the service doesn't say.
+	 */
+	private static float[] printableOrigin(PrintService printService, PrintRequestAttributeSet printRequestAttributeSet) {
+		float[] returnValue = new float[] {Float.NaN, Float.NaN};
+		try {
+			PrintRequestAttributeSet paper = new HashPrintRequestAttributeSet();
+			Media media = (Media) printRequestAttributeSet.get(Media.class);
+			if (media != null) {
+				paper.add(media);
+			}
+			Object values = printService.getSupportedAttributeValues(MediaPrintableArea.class, DocFlavor.SERVICE_FORMATTED.PAGEABLE, paper);
+			if (values instanceof MediaPrintableArea[] && ((MediaPrintableArea[]) values).length > 0) {
+				MediaPrintableArea area = ((MediaPrintableArea[]) values)[0];
+				returnValue[0] = area.getX(MediaPrintableArea.INCH) * 72;
+				returnValue[1] = area.getY(MediaPrintableArea.INCH) * 72;
+			}
+		} catch (RuntimeException e) {
+			LOG.debug("The printable area of the printer isn't known: " + e.getMessage());
+		}
+		return returnValue;
 	}
 	
 	/**
@@ -261,7 +290,7 @@ public final class ClientPrintDirectUtils {
 		}
 		*/
 		
-		Doc doc = new SimpleDoc(enablePageableStream(pageable, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
+		Doc doc = new SimpleDoc(enablePageableStream(pageable, printService, printRequestAttributeSet), DocFlavor.SERVICE_FORMATTED.PAGEABLE, new HashDocAttributeSet());
 		DocPrintJob printJob = printService.createPrintJob();
 		try {
 			printJob.print(doc, filteredRequestAttributeSet);
