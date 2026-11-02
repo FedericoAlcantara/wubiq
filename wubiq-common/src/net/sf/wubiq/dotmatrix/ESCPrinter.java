@@ -5,9 +5,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 
 import javax.print.PrintException;
 
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.TextAlignmentType;
 import net.sf.wubiq.wrappers.TextField;
 
@@ -26,6 +28,7 @@ public class ESCPrinter {
     private boolean escp24pin; //boolean to indicate whether the printer is a 24 pin esc/p2 epson
     private OutputStream ostream;
     private PrintStream pstream;
+    private Charset charset;
     private int pageHeight = 396; // In number of minimum line feed. For 11 inch = 396
     private int pageWidth = 1020; // In 1/120 inches. for 8.5 = 1020.
     private float horPosition = 0;
@@ -51,6 +54,8 @@ public class ESCPrinter {
     protected static final char FF = 12; //form feed
     protected static final char ZERO = 48; // ZERO
     protected static final char THREE = 51; // 3
+    protected static final char FOUR = 52; // 4: italic on (ESC 4)
+    protected static final char FIVE = 53; // 5: italic off (ESC 5)
     protected static final char g = 103; //15cpi pitch
     protected static final char p = 112; //used for choosing proportional mode or fixed-pitch
     protected static final char t = 116; //used for character set assignment/selection
@@ -107,6 +112,7 @@ public class ESCPrinter {
         //pre: printer non null String indicating network path to printer
         this.printer = printer;
         this.escp24pin = escp24pin;
+        this.charset = textCharset();
         initialize(append);
         setPageHeight(pageHeight);
         setPageWidth(pageWidth);
@@ -148,7 +154,7 @@ public class ESCPrinter {
             //select draft quality printing
             selectDraftPrinting();
             
-            setCharacterSet(LATIN_AMERICA);
+            setCharacterSet(characterTable());
             
             proportionalMode(false);
             selectMinimumLineSpacing();
@@ -291,9 +297,9 @@ public class ESCPrinter {
     public void italic(boolean italic) {
         pstream.print(ESC);
         if (italic) {
-            pstream.print(ARGUMENT_4);
+            pstream.print(FOUR);
         } else {
-            pstream.print(ARGUMENT_5);
+            pstream.print(FIVE);
         }
     }
 
@@ -386,7 +392,7 @@ public class ESCPrinter {
 		float fixValue = 120 / cpi;
 		if (((((float)textField.getText().length()) * fixValue) + horPosition) <= pageWidth) {
 			horPosition += (((float)textField.getText().length()) * fixValue);
-			pstream.print(textField.getText());
+			writeText(textField.getText());
 		} else {
 			for (char charValue : textField.getText().toCharArray()) {
 				returnValue += fixValue;
@@ -405,7 +411,7 @@ public class ESCPrinter {
 	 */
 	private void print(char charValue, float charSize) {
 		if ((horPosition + charSize) <= pageWidth) {
-			pstream.print(charValue);
+			writeText(String.valueOf(charValue));
 		}
 		horPosition += charSize;
 	}
@@ -472,6 +478,59 @@ public class ESCPrinter {
     public PrintStream getPrintStream() {
         //post: returns printer share name (Windows network)
         return pstream;
+    }
+    
+    /**
+     * Writes the text as bytes of the printer's character table. Characters the charset has no
+     * byte for are written as a question mark.
+     */
+    private void writeText(String text) {
+    	byte[] bytes = text.getBytes(charset);
+    	pstream.write(bytes, 0, bytes.length);
+    }
+    
+    /**
+     * @return Charset to encode text with: the one of the {@link PropertyKeys#WUBIQ_DOTMATRIX_CHARSET}
+     * property; if none, the system's on Windows (what the application has always sent there) and
+     * Cp1252 elsewhere, where the system's would be UTF-8, which no printer table has.
+     */
+    private static Charset textCharset() {
+    	String name = System.getProperty(PropertyKeys.WUBIQ_DOTMATRIX_CHARSET);
+    	if (name != null && name.trim().length() > 0) {
+    		try {
+    			return Charset.forName(name.trim());
+    		} catch (IllegalArgumentException e) {
+    			// Unknown or illegal name: falls back to the default.
+    		}
+    	}
+    	if (System.getProperty("os.name", "").startsWith("Windows")) {
+    		return Charset.defaultCharset();
+    	}
+    	try {
+    		return Charset.forName("Cp1252");
+    	} catch (IllegalArgumentException e) {
+    		return Charset.defaultCharset();
+    	}
+    }
+    
+    /**
+     * @return Registered character table to ask the printer for: the number in the
+     * {@link PropertyKeys#WUBIQ_DOTMATRIX_TABLE} property (3 is PC850); if none, {@link #LATIN_AMERICA},
+     * as the application has always sent.
+     */
+    private static char characterTable() {
+    	String value = System.getProperty(PropertyKeys.WUBIQ_DOTMATRIX_TABLE);
+    	if (value != null) {
+    		try {
+    			int number = Integer.parseInt(value.trim());
+    			if (number >= 0 && number <= 255) {
+    				return (char) number;
+    			}
+    		} catch (NumberFormatException e) {
+    			// Not a number: falls back to the default.
+    		}
+    	}
+    	return LATIN_AMERICA;
     }
     
     private float toInches(double twipValue) {

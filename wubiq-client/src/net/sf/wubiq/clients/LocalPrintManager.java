@@ -614,6 +614,8 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + " " + ClientLabels.get("PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT + " " + ClientLabels.get("PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + " " + ClientLabels.get("PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_DOTMATRIX_CHARSET + " " + ClientLabels.get("PropertyKeys.WUBIQ_DOTMATRIX_CHARSET") + ".\n"
+						+ "-D" + PropertyKeys.WUBIQ_DOTMATRIX_TABLE + " " + ClientLabels.get("PropertyKeys.WUBIQ_DOTMATRIX_TABLE") + ".\n"
 						+ "\n"
 						+ "-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION") + ".\n"
