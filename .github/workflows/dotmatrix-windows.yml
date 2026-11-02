@@ -1,5 +1,6 @@
 # Prints wubiq-server's test page through wubiq-client on Java 6 to 25 into the dot-matrix
-# witness, through the Epson LX-350 Windows driver, and checks every JDK prints like Java 6.
+# witness, through the Epson LX-350 Windows driver and through the fast path (ESC/P written by
+# the client to a file), and checks every JDK prints like Java 6.
 name: Dot-matrix printing on Windows
 
 on:

@@ -220,9 +220,9 @@ On the runner, it:
 1. installs Oracle Java 6u45 and the Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
 2. builds wubiq-server and runs it on Tomcat 7, with the files `docker-compose.yml` mounts;
 3. installs the Epson LX-350 ESC/P driver and adds the printer `Wubiq witness 9-pin` on a Standard TCP/IP port to the witness at `127.0.0.1:9100`;
-4. runs `wubiq-client/test-dotmatrix-e2e-windows.ps1`, which prints wubiq-server's test page with every JDK and compares each job with the Oracle Java 6 job.
+4. runs `wubiq-client/test-dotmatrix-e2e-windows.ps1`, which prints wubiq-server's test page with every JDK, through the printer driver and through the fast path (the client writes ESC/P to a file), and compares each job with the Oracle Java 6 one.
 
-The run's summary lists every JDK as `REFERENCE`, `SAME`, `DIFFERENT` or `NOT PRINTED`. The `dotmatrix-e2e-windows` artifact holds every job's report (`jobs/job-*/index.html`), the client and witness logs, and the Tomcat logs.
+The run's summary lists every JDK as `REFERENCE`, `SAME`, `DIFFERENT` or `NOT PRINTED`, in one row for the driver job and one with `-fast` for the fast path file, which is `WARNINGS` when the witness reports a warning in it. The `dotmatrix-e2e-windows` artifact holds every job's report (`jobs/job-*/index.html`), the client and witness logs, and the Tomcat logs.
 
 Oracle Java 6 comes from the private S3 bucket `java-jdk-wadvanced`, through the AWS role in the repository secret `AWS_ROLE_ARN`. Runs without access to the role, such as pull requests from forks, use the Zulu 6 job as the reference.
 
