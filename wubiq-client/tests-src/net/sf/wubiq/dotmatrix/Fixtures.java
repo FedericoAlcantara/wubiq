@@ -1,6 +1,10 @@
 package net.sf.wubiq.dotmatrix;
 
+import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Font;
+import java.awt.Graphics2D;
+import java.awt.image.BufferedImage;
 import java.awt.font.TextAttribute;
 import java.awt.geom.AffineTransform;
 import java.util.ArrayList;
@@ -32,6 +36,7 @@ public final class Fixtures {
 		fixtures.add(drawPaths());
 		fixtures.add(transforms());
 		fixtures.add(multiPage());
+		fixtures.add(graphics());
 		return fixtures;
 	}
 
@@ -164,5 +169,76 @@ public final class Fixtures {
 			fixture.add(page, "Footer " + (page + 1), 36, 756, body);
 		}
 		return fixture;
+	}
+
+	/**
+	 * A chart, a framed legend, a thin rule and an image, with the text that labels them: what a
+	 * report with a logo and a graph sends. The text prints as text, the rest as bit images.
+	 */
+	static WitnessFixture graphics() {
+		WitnessFixture fixture = new WitnessFixture("graphics", 1);
+		Font title = new Font(SANS, Font.BOLD, 14);
+		Font label = new Font(SANS, Font.PLAIN, 10);
+		fixture.add(0, "Sales by quarter", 36, 60, title);
+		fixture.add(0, "Q1", 100, 276, label);
+		fixture.add(0, "Q2", 160, 276, label);
+		fixture.add(0, "Q3", 220, 276, label);
+		fixture.add(0, "Q4", 280, 276, label);
+		fixture.add(0, "Legend", 456, 190, label);
+		fixture.addGraphic(0, new GraphicItem() {
+			public void draw(Graphics2D graphics) {
+				graphics.setColor(Color.BLACK);
+				graphics.drawLine(72, 100, 72, 260); // Axes.
+				graphics.drawLine(72, 260, 340, 260);
+				graphics.fillRect(90, 180, 40, 80); // Bars: black, gray, black, outlined.
+				graphics.setColor(Color.GRAY);
+				graphics.fillRect(150, 140, 40, 120);
+				graphics.setColor(Color.BLACK);
+				graphics.fillRect(210, 200, 40, 60);
+				graphics.drawRect(270, 120, 40, 140);
+				graphics.setStroke(new BasicStroke(0.5f)); // A thin line must not vanish.
+				graphics.drawLine(72, 300, 540, 300);
+				graphics.setStroke(new BasicStroke(2f));
+				graphics.drawLine(110, 170, 170, 130); // A trend line, diagonal.
+				graphics.drawLine(170, 130, 230, 190);
+				graphics.drawLine(230, 190, 290, 110);
+			}
+		});
+		fixture.addGraphic(0, new GraphicItem() {
+			public void draw(Graphics2D graphics) {
+				graphics.setColor(Color.BLACK);
+				graphics.drawRect(450, 170, 100, 40); // Frame of the legend.
+				Graphics2D child = (Graphics2D) graphics.create();
+				try {
+					child.translate(450, 100); // Image through a child graphics.
+					child.drawImage(logo(), 0, 0, 96, 64, null);
+				} finally {
+					child.dispose();
+				}
+			}
+		});
+		return fixture;
+	}
+
+	/**
+	 * @return A 48 by 32 pixels image: a black frame, a diagonal and a gradient block.
+	 */
+	private static BufferedImage logo() {
+		BufferedImage image = new BufferedImage(48, 32, BufferedImage.TYPE_INT_RGB);
+		Graphics2D graphics = image.createGraphics();
+		try {
+			graphics.setColor(Color.WHITE);
+			graphics.fillRect(0, 0, 48, 32);
+			graphics.setColor(Color.BLACK);
+			graphics.drawRect(0, 0, 47, 31);
+			graphics.drawLine(0, 0, 47, 31);
+			for (int step = 0; step < 16; step++) {
+				graphics.setColor(new Color(step * 16, step * 16, step * 16));
+				graphics.fillRect(4 + step, 20, 1, 8);
+			}
+		} finally {
+			graphics.dispose();
+		}
+		return image;
 	}
 }

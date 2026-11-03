@@ -28,7 +28,8 @@ The fixtures are:
 - bold, italic and underline, with Spanish accented characters;
 - every Java2D text call;
 - translated and scaled graphics;
-- a three-page job.
+- a three-page job;
+- a chart, a framed legend, a hairline and an image, whose dots must lie where the fixture drew them.
 
 Each fixture runs through four drivers:
 - `direct`: the wrappers on an image graphics.

@@ -138,6 +138,11 @@ public class DotMatrixWitnessTest {
 		escp.delete();
 		EscpResult result = new EscpInterpreter(PROFILE).interpret(data);
 		CheckResult check = new LayoutCheck(PROFILE).check(result, fixture.getExpected(), fixture.getNumberOfPages());
+		if (fixture.hasGraphics() && !(driver instanceof ReferenceDriver)) {
+			new GraphicsCheck(PROFILE).check(result, fixture, check);
+		} else if (!fixture.hasGraphics() && !result.getBitImages().isEmpty()) {
+			check.fail("graphics", "a page without graphics wrote " + result.getBitImages().size() + " bit image band(s)");
+		}
 		if (data.length == 0) {
 			check.fail("job", "no bytes reached the printer");
 		}
