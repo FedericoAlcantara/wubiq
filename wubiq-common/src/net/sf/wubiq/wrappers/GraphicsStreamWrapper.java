@@ -35,6 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -49,6 +50,8 @@ import net.sf.wubiq.utils.PrintServiceUtils;
  *
  */
 public class GraphicsStreamWrapper extends Graphics2D {
+	/** Spaces that can separate two characters drawn one by one for them to be one text. */
+	private static final int MAXIMUM_JOINED_SPACES = 4;
 	/** Glyph code to character, per font. Glyph vectors don't carry the text they draw. */
 	private static final Map<Font, Map<Integer, Character>> GLYPH_CHARACTERS =
 			Collections.synchronizedMap(new WeakHashMap<Font, Map<Integer, Character>>());
@@ -110,8 +113,94 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	 * position stay in the order they were drawn.
 	 */
 	public List<TextField> getTexts() {
-		List<TextField> returnValue = new ArrayList<TextField>(capture.texts);
-		Collections.sort(returnValue); // Stable.
+		List<TextField> sorted = new ArrayList<TextField>(capture.texts);
+		Collections.sort(sorted); // Stable.
+		return joinGlyphs(sorted);
+	}
+	
+	/**
+	 * Some applications and renderers (a PDF page, for one) draw a text one character at a time, each at its
+	 * own proportional position. A printer can't print it so: its characters have a fixed width, and
+	 * characters at those positions overlap or leave holes. Characters drawn one by one on the same line
+	 * and in the same style are joined into one text that starts where the first does; a gap between two
+	 * of them (a space that wasn't drawn) becomes spaces. Texts drawn as a whole are left as they are.
+	 */
+	private List<TextField> joinGlyphs(List<TextField> sorted) {
+		List<TextField> returnValue = new ArrayList<TextField>();
+		List<TextField> chain = new ArrayList<TextField>();
+		for (TextField textField : sorted) {
+			boolean glyph = capture.glyphs.containsKey(textField);
+			if (!chain.isEmpty() && !(glyph && sameStyle(chain.get(0), textField))) {
+				joinChain(chain, returnValue);
+				chain.clear();
+			}
+			if (glyph) {
+				chain.add(textField);
+			} else {
+				returnValue.add(textField);
+			}
+		}
+		joinChain(chain, returnValue);
+		return returnValue;
+	}
+	
+	/**
+	 * Joins characters drawn one by one along a line. The renderer's font can differ from the one the JVM
+	 * has, so the width the JVM gives a character is corrected by the ratio most of the characters
+	 * of the line show between their distance and their width.
+	 */
+	private void joinChain(List<TextField> chain, List<TextField> returnValue) {
+		int size = chain.size();
+		if (size == 0) {
+			return;
+		}
+		List<Float> ratios = new ArrayList<Float>();
+		for (int index = 0; index < size - 1; index++) {
+			float width = capture.glyphs.get(chain.get(index))[0];
+			if (width > 0) {
+				ratios.add((chain.get(index + 1).getX() - chain.get(index).getX()) / width);
+			}
+		}
+		float scale = 1;
+		if (!ratios.isEmpty()) {
+			Collections.sort(ratios);
+			scale = ratios.get(ratios.size() / 2);
+		}
+		TextField first = chain.get(0);
+		StringBuilder text = new StringBuilder(first.getText());
+		for (int index = 1; index < size; index++) {
+			TextField previous = chain.get(index - 1);
+			TextField current = chain.get(index);
+			float[] glyph = capture.glyphs.get(previous);
+			float gap = current.getX() - previous.getX() - scale * glyph[0];
+			float space = scale * glyph[1];
+			// The renderer's font isn't the JVM's: a gap smaller than a space is not a space.
+			int spaces = space > 0 ? Math.max((int) Math.floor(gap / space + 0.1f), 0) : 0;
+			if (spaces > MAXIMUM_JOINED_SPACES) {
+				returnValue.add(joined(first, text));
+				first = current;
+				text = new StringBuilder(current.getText());
+			} else {
+				for (int count = 0; count < spaces; count++) {
+					text.append(' ');
+				}
+				text.append(current.getText());
+			}
+		}
+		returnValue.add(joined(first, text));
+	}
+	
+	private static boolean sameStyle(TextField one, TextField other) {
+		return Math.abs(one.getY() - other.getY()) < 0.5f && one.getFontSize() == other.getFontSize()
+				&& one.isBold() == other.isBold() && one.isItalic() == other.isItalic()
+				&& one.isUnderline() == other.isUnderline();
+	}
+	
+	private static TextField joined(TextField first, StringBuilder text) {
+		TextField returnValue = new TextField(first.getPage(), first.getX(), first.getY(), first.getFontSize(), text.toString());
+		returnValue.setBold(first.isBold());
+		returnValue.setItalic(first.isItalic());
+		returnValue.setUnderline(first.isUnderline());
 		return returnValue;
 	}
 	
@@ -143,7 +232,12 @@ public class GraphicsStreamWrapper extends Graphics2D {
 		textField.setBold(font.isBold());
 		textField.setItalic(font.isItalic());
 		textField.setUnderline(TextAttribute.UNDERLINE_ON.equals(font.getAttributes().get(TextAttribute.UNDERLINE)));
-		capture.add(textField);
+		if (capture.add(textField) && str.length() == 1) {
+			FontRenderContext context = new FontRenderContext(null, true, true);
+			capture.glyphs.put(textField, new float[] {
+					(float) (font.getStringBounds(str, context).getWidth() * scale),
+					(float) (font.getStringBounds(" ", context).getWidth() * scale)});
+		}
 	}
 	
 	/**
@@ -180,19 +274,23 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	private static class Capture {
 		private List<TextField> texts = new ArrayList<TextField>();
 		private Set<String> drawn = new HashSet<String>();
+		/** Width of the character and of a space, in points, of the texts drawn as one character. */
+		private Map<TextField, float[]> glyphs = new IdentityHashMap<TextField, float[]>();
 		
 		/**
 		 * Adds the text, unless the same text was already drawn at the same place in the same style
 		 * (applications draw a text twice to make it look bold; the printer would only overstrike it).
 		 * Different texts at the same place are all kept.
 		 */
-		void add(TextField textField) {
+		boolean add(TextField textField) {
 			String key = textField.getX() + "|" + textField.getY() + "|" + textField.getFontSize() + "|"
 					+ textField.isBold() + "|" + textField.isItalic() + "|" + textField.isUnderline() + "|"
 					+ textField.getText();
 			if (drawn.add(key)) {
 				texts.add(textField);
+				return true;
 			}
+			return false;
 		}
 	}
 	

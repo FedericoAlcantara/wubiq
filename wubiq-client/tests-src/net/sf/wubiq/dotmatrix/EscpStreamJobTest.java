@@ -57,6 +57,46 @@ public class EscpStreamJobTest {
 		assertEquals("baseline", 1.0, glyph.getY() + PROFILE.getBaselineOffset(), 0.02);
 	}
 
+	@Test
+	public void charactersDrawnOneByOneBecomeOneTextWithTheirSpaces() throws Exception {
+		File file = File.createTempFile("wubiq-glyphs", ".escp");
+		file.deleteOnExit();
+		final PageFormat format = new PageFormat();
+		Printable printable = new Printable() {
+			public int print(Graphics graphics, PageFormat pageFormat, int pageIndex) throws PrinterException {
+				if (pageIndex > 0) {
+					return NO_SUCH_PAGE;
+				}
+				Font font = new Font(Font.SANS_SERIF, Font.PLAIN, 10);
+				graphics.setFont(font);
+				java.awt.font.FontRenderContext context = new java.awt.font.FontRenderContext(null, true, true);
+				String text = "Hi there";
+				float x = 36;
+				for (int index = 0; index < text.length(); index++) {
+					String character = text.substring(index, index + 1);
+					if (!" ".equals(character)) { // Like a PDF page: spaces aren't drawn.
+						((java.awt.Graphics2D) graphics).drawString(character, x, 72f);
+					}
+					x += (float) font.getStringBounds(character, context).getWidth();
+				}
+				return PAGE_EXISTS;
+			}
+		};
+		EscpStreamJob job = new EscpStreamJob(file.getPath(), 1);
+		java.awt.image.BufferedImage image = new java.awt.image.BufferedImage(612, 792, java.awt.image.BufferedImage.TYPE_BYTE_GRAY);
+		java.awt.Graphics2D graphics = image.createGraphics();
+		try {
+			assertEquals(Printable.PAGE_EXISTS, job.print(printable, graphics, format, 0));
+		} finally {
+			graphics.dispose();
+		}
+		List<Glyph> glyphs = new EscpInterpreter(PROFILE).interpret(read(file)).getGlyphs();
+		assertEquals("characters printed, the space among them", 8, glyphs.size());
+		double cell = glyphs.get(1).getX() - glyphs.get(0).getX();
+		assertEquals("cell of a 10 point font (12 cpi)", 1.0 / 12, cell, 0.005);
+		assertEquals("t is three cells after H: 'i', a space", 3 * cell, glyphs.get(3).getX() - glyphs.get(0).getX(), 0.005);
+	}
+
 	/**
 	 * Writes a document whose pages hold an "A" at 36, 72 of the imageable area.
 	 * @param pages Number of pages, or {@link Pageable#UNKNOWN_NUMBER_OF_PAGES} for a document of two pages that doesn't say so.
