@@ -217,6 +217,25 @@ public class EscpGraphicsTest {
 		assertEquals("dots", full * (1 - 128 / 255d), dots(result), full * 0.1);
 	}
 
+	@Test
+	public void thinLightLinesPrintAsDottedLinesWhateverTheirPositionAndTheAntialiasingHint() throws Exception {
+		// What report engines and PDF pages draw: gridlines of light gray, a quarter of a point thick, with antialiasing asked for.
+		for (int phase = 0; phase < 4; phase++) {
+			final int y = 100 + phase;
+			EscpResult result = write(PrinterProfile.ninePin(), null, 0, 0, new Drawing() {
+				public void draw(Graphics2D graphics) {
+					graphics.setRenderingHint(java.awt.RenderingHints.KEY_ANTIALIASING, java.awt.RenderingHints.VALUE_ANTIALIAS_ON);
+					graphics.setColor(new Color(179, 179, 179));
+					graphics.setStroke(new java.awt.BasicStroke(0.25f));
+					graphics.draw(new java.awt.geom.Line2D.Float(72, y, 372, y)); // 5 in: 600 dot columns.
+					graphics.draw(new java.awt.geom.Line2D.Float(72, y + 40, 72, y + 140));
+				}
+			});
+			// 30% of the dots of a line one dot thick: 600 columns across, 100 / 72 * 72 dot lines down.
+			assertEquals("dots of the lines drawn at y " + y, 0.30 * (600 + 100 * 1.667), dots(result), 0.30 * (600 + 100 * 1.667) * 0.25);
+		}
+	}
+
 	// ------------------------------------------------------------------ helpers
 
 	private interface Drawing {

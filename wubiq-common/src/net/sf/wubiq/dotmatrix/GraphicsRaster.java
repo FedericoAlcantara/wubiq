@@ -13,16 +13,18 @@ import java.util.List;
  * The shapes and images of a page, drawn at the density of a dot-matrix printer and cut into the
  * bands of dots an ESC/P bit image prints in one pass of the head.
  * <p>9-pin printers print 8 dots high bands at 120 dots per inch across and 72 down; 24-pin printers
- * print 24 dots high bands at 180 by 180. A pixel is a dot: pixels darker than their place in a
- * 4 by 4 ordered dither pattern are printed, so black prints solid and grays print as a pattern of dots.</p>
+ * print 24 dots high bands at 180 by 180. A pixel is a dot: black prints solid, white prints nothing, and
+ * grays print as a dispersed pattern of dots whose density follows the gray, also along a line one dot
+ * thick: a light gray rule prints as a dotted line.</p>
  * <p>The page is drawn in points, from the paper's corner: the raster's graphics have the imageable
  * area of the page format as origin and clip.</p>
  * @author Federico Alcantara
  *
  */
 public class GraphicsRaster {
-	/** Dither thresholds: a pixel is a dot when its brightness is below 16 * threshold + 8. */
-	private static final int[][] DITHER = {{0, 8, 2, 10}, {12, 4, 14, 6}, {3, 11, 1, 9}, {15, 7, 13, 5}};
+	/** The R2 sequence's steps across and down, 0.7548776662 and 0.5698402910 of 65536. */
+	private static final int R2_ACROSS = 49471;
+	private static final int R2_DOWN = 37344;
 	/** Blank columns that end a band's run of dots: the head skips them instead of printing them. */
 	private static final int MAXIMUM_BLANK_COLUMNS = 16;
 
@@ -139,7 +141,7 @@ public class GraphicsRaster {
 		int unit = pins24 ? 3 : 2; // Columns per 1/60 inch, the unit the head is moved across in.
 		int offsetX = Math.round(shiftX * dotsPerInchAcross() / 72f); // Paper column + this = printer column
 		int offsetY = Math.round(shiftY * dotsPerInchDown() / 72f);
-		int[] line = new int[width];
+		boolean[] ink = dither();
 		byte[] columns = new byte[width * bytesPerColumn];
 		for (int headRow = 0; headRow - offsetY < height; headRow += dots) {
 			int firstRow = headRow - offsetY;
@@ -153,9 +155,8 @@ public class GraphicsRaster {
 				if (row < 0 || row >= height) {
 					continue;
 				}
-				image.getRGB(0, row, width, 1, line, 0, width);
 				for (int column = 0; column < width; column++) {
-					if (isDot(line[column], column, row)) {
+					if (ink[row * width + column]) {
 						columns[column * bytesPerColumn + dot / 8] |= (byte) (0x80 >> (dot % 8));
 						any = true;
 					}
@@ -215,9 +216,31 @@ public class GraphicsRaster {
 		return true;
 	}
 
-	private static boolean isDot(int rgb, int x, int y) {
-		int brightness = (((rgb >> 16) & 0xFF) * 299 + ((rgb >> 8) & 0xFF) * 587 + (rgb & 0xFF) * 114) / 1000;
-		return brightness < DITHER[y & 3][x & 3] * 16 + 8;
+	/**
+	 * Decides which pixels are dots. A pixel is a dot when its darkness is above its threshold, a number
+	 * between 0 and 1 that follows the R2 low-discrepancy sequence along the page: whatever the direction of a
+	 * run of pixels (a row, a column, a diagonal), the thresholds spread evenly, so a line one dot thick prints
+	 * as many dots as its gray asks for, and a filled area prints a dispersed pattern with no stripes.
+	 * Black always prints and white never does.
+	 * @return One flag per pixel, row after row.
+	 */
+	private boolean[] dither() {
+		int width = image.getWidth();
+		int height = image.getHeight();
+		boolean[] returnValue = new boolean[width * height];
+		int[] line = new int[width];
+		for (int y = 0; y < height; y++) {
+			image.getRGB(0, y, width, 1, line, 0, width);
+			for (int x = 0; x < width; x++) {
+				int rgb = line[x];
+				int darkness = 255 - (((rgb >> 16) & 0xFF) * 299 + ((rgb >> 8) & 0xFF) * 587 + (rgb & 0xFF) * 114) / 1000;
+				if (darkness > 0) {
+					int threshold = (x * R2_ACROSS + y * R2_DOWN) & 0xFFFF; // 16 bits: 0 to 1, in 1/65536.
+					returnValue[y * width + x] = (darkness + 1) * 256 > threshold;
+				}
+			}
+		}
+		return returnValue;
 	}
 
 	/**

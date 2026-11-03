@@ -94,9 +94,10 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	/**
 	 * Wrapper that keeps the page's text and draws its shapes and images on a raster.
 	 * <p>The wrapped graphics only holds the state the application reads (transform, clip, color, font metrics)
-	 * and is never drawn on. The state the application sets (transform, clip, color, paint, stroke, composite,
-	 * hints) is also set on the raster's graphics, so that the shapes and images land where the application
-	 * meant them.</p>
+	 * and is never drawn on. The state the application sets (transform, clip, color, paint, stroke, composite)
+	 * is also set on the raster's graphics, so that the shapes and images land where the application meant them.
+	 * Rendering hints are not: the raster is never antialiased, as a dot is printed or not, and a thin light
+	 * line antialiased is too faint to print.</p>
 	 * @param graphics Graphics to wrap.
 	 * @param originX Position, in points from the left of what the printer prints on, of the application's 0, 0.
 	 * @param originY Position, in points from the top, of the application's 0, 0.
@@ -619,9 +620,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void addRenderingHints(Map<?, ?> hints) {
 		graphics.addRenderingHints(hints);
-		if (rasterGraphics != null) {
-			rasterGraphics.addRenderingHints(hints);
-		}
 	}
 
 	@Override
@@ -806,17 +804,11 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void setRenderingHint(Key hintKey, Object hintValue) {
 		graphics.setRenderingHint(hintKey, hintValue);
-		if (rasterGraphics != null) {
-			rasterGraphics.setRenderingHint(hintKey, hintValue);
-		}
 	}
 
 	@Override
 	public void setRenderingHints(Map<?, ?> hints) {
 		graphics.setRenderingHints(hints);
-		if (rasterGraphics != null) {
-			rasterGraphics.setRenderingHints(hints);
-		}
 	}
 
 	@Override
