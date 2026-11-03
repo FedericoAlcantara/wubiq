@@ -14,11 +14,21 @@ import java.awt.print.Printable;
 public class PageableStreamWrapper implements Pageable {
 	
 	private Pageable pageable;
-	private String url;
+	private EscpStreamJob job;
 	
 	public PageableStreamWrapper(Pageable pageable, String url) {
+		this(pageable, url, Float.NaN, Float.NaN);
+	}
+	
+	/**
+	 * @param pageable Pageable to wrap.
+	 * @param url Destination of the ESC/P stream.
+	 * @param printableX Position of the printer's printable area, in points from the paper's left edge, or NaN if unknown.
+	 * @param printableY Position of the printer's printable area, in points from the paper's top edge, or NaN if unknown.
+	 */
+	public PageableStreamWrapper(Pageable pageable, String url, float printableX, float printableY) {
 		this.pageable = pageable;
-		this.url = url;
+		this.job = new EscpStreamJob(url, pageable.getNumberOfPages(), printableX, printableY);
 	}
 	
 	@Override
@@ -34,7 +44,7 @@ public class PageableStreamWrapper implements Pageable {
 	@Override
 	public Printable getPrintable(int pageIndex) throws IndexOutOfBoundsException {
 		Printable printable = pageable.getPrintable(pageIndex);
-		return new PrintableStreamWrapper(printable, url);
+		return new PrintableStreamWrapper(printable, job);
 	}
 	
 }

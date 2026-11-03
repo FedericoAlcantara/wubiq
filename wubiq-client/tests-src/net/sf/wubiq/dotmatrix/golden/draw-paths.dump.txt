@@ -1,0 +1,69 @@
+000000  1B 40                       ESC @            initialize printer (top of form here)
+000002  1B 78 30                    ESC x 48         draft
+000005  1B 28 74 03 00 01 03 00     ESC ( t          assign table 3/0 (PC850) to slot 1
+00000D  1B 74 01                    ESC t 1          select character table 1 = PC850
+000010  1B 70 30                    ESC p 48         proportional off
+000013  1B 33 06                    ESC 3 6          line spacing 0.0278 in
+000016  1B 43 00 0B                 ESC C 0 11       page length 11 in
+00001A  12                          DC2              condensed off
+00001B  1B 57 00                    ESC W 0          double width off
+00001E  1B 4D                       ESC M            12 cpi
+000020  1B 4A C3                    ESC J 195        advance paper -> y 0.9028
+000023  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000027  1B 46                       ESC F            bold off
+000029  1B 35                       ESC 5            italic off
+00002B  1B 2D 00                    ESC - 0          underline off
+00002E  TEXT "drawString(int) sample"
+000044  1B 2D 00                    ESC - 0          underline off
+000047  12                          DC2              condensed off
+000048  1B 57 00                    ESC W 0          double width off
+00004B  1B 4D                       ESC M            12 cpi
+00004D  1B 4A 48                    ESC J 72         advance paper -> y 1.2361
+000050  1B 24 1F 00                 ESC $ 31         absolute position x 0.5167
+000054  1B 46                       ESC F            bold off
+000056  1B 35                       ESC 5            italic off
+000058  1B 2D 00                    ESC - 0          underline off
+00005B  TEXT "drawString(float) sample"
+000073  1B 2D 00                    ESC - 0          underline off
+000076  12                          DC2              condensed off
+000077  1B 57 00                    ESC W 0          double width off
+00007A  1B 4D                       ESC M            12 cpi
+00007C  1B 4A 48                    ESC J 72         advance paper -> y 1.5694
+00007F  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000083  1B 46                       ESC F            bold off
+000085  1B 35                       ESC 5            italic off
+000087  1B 2D 00                    ESC - 0          underline off
+00008A  TEXT "drawString(iterator) sample"
+0000A5  1B 2D 00                    ESC - 0          underline off
+0000A8  12                          DC2              condensed off
+0000A9  1B 57 00                    ESC W 0          double width off
+0000AC  1B 4D                       ESC M            12 cpi
+0000AE  1B 4A 48                    ESC J 72         advance paper -> y 1.9028
+0000B1  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0000B5  1B 46                       ESC F            bold off
+0000B7  1B 35                       ESC 5            italic off
+0000B9  1B 2D 00                    ESC - 0          underline off
+0000BC  TEXT "drawGlyphVector sample"
+0000D2  1B 2D 00                    ESC - 0          underline off
+0000D5  12                          DC2              condensed off
+0000D6  1B 57 00                    ESC W 0          double width off
+0000D9  1B 4D                       ESC M            12 cpi
+0000DB  1B 4A 48                    ESC J 72         advance paper -> y 2.2361
+0000DE  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0000E2  1B 46                       ESC F            bold off
+0000E4  1B 35                       ESC 5            italic off
+0000E6  1B 2D 00                    ESC - 0          underline off
+0000E9  TEXT "drawChars sample"
+0000F9  1B 2D 00                    ESC - 0          underline off
+0000FC  12                          DC2              condensed off
+0000FD  1B 57 00                    ESC W 0          double width off
+000100  1B 4D                       ESC M            12 cpi
+000102  1B 4A 48                    ESC J 72         advance paper -> y 2.5694
+000105  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000109  1B 46                       ESC F            bold off
+00010B  1B 35                       ESC 5            italic off
+00010D  1B 2D 00                    ESC - 0          underline off
+000110  TEXT "create() child sample"
+000125  1B 2D 00                    ESC - 0          underline off
+000128  0D                          CR               carriage return
+000129  0C                          FF               form feed -> y 11.0000 (sheet 2)

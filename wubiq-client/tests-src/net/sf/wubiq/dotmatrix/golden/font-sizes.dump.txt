@@ -1,0 +1,115 @@
+000000  1B 40                       ESC @            initialize printer (top of form here)
+000002  1B 78 30                    ESC x 48         draft
+000005  1B 28 74 03 00 01 03 00     ESC ( t          assign table 3/0 (PC850) to slot 1
+00000D  1B 74 01                    ESC t 1          select character table 1 = PC850
+000010  1B 70 30                    ESC p 48         proportional off
+000013  1B 33 06                    ESC 3 6          line spacing 0.0278 in
+000016  1B 43 00 0B                 ESC C 0 11       page length 11 in
+00001A  12                          DC2              condensed off
+00001B  1B 57 00                    ESC W 0          double width off
+00001E  1B 4D                       ESC M            12 cpi
+000020  1B 0F                       ESC SI           condensed on
+000022  1B 4A C9                    ESC J 201        advance paper -> y 0.9306
+000025  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000029  1B 46                       ESC F            bold off
+00002B  1B 35                       ESC 5            italic off
+00002D  1B 2D 00                    ESC - 0          underline off
+000030  TEXT "Size 6 ABCDE 12345"
+000042  1B 2D 00                    ESC - 0          underline off
+000045  12                          DC2              condensed off
+000046  1B 57 00                    ESC W 0          double width off
+000049  1B 50                       ESC P            10 cpi
+00004B  1B 0F                       ESC SI           condensed on
+00004D  1B 4A 2D                    ESC J 45         advance paper -> y 1.1389
+000050  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000054  1B 46                       ESC F            bold off
+000056  1B 35                       ESC 5            italic off
+000058  1B 2D 00                    ESC - 0          underline off
+00005B  TEXT "Size 7 ABCDE 12345"
+00006D  1B 2D 00                    ESC - 0          underline off
+000070  12                          DC2              condensed off
+000071  1B 57 00                    ESC W 0          double width off
+000074  1B 67                       ESC g            15 cpi
+000076  1B 4A 30                    ESC J 48         advance paper -> y 1.3611
+000079  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+00007D  1B 46                       ESC F            bold off
+00007F  1B 35                       ESC 5            italic off
+000081  1B 2D 00                    ESC - 0          underline off
+000084  TEXT "Size 8 ABCDE 12345"
+000096  1B 2D 00                    ESC - 0          underline off
+000099  12                          DC2              condensed off
+00009A  1B 57 00                    ESC W 0          double width off
+00009D  1B 67                       ESC g            15 cpi
+00009F  1B 4A 33                    ESC J 51         advance paper -> y 1.5972
+0000A2  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0000A6  1B 46                       ESC F            bold off
+0000A8  1B 35                       ESC 5            italic off
+0000AA  1B 2D 00                    ESC - 0          underline off
+0000AD  TEXT "Size 9 ABCDE 12345"
+0000BF  1B 2D 00                    ESC - 0          underline off
+0000C2  12                          DC2              condensed off
+0000C3  1B 57 00                    ESC W 0          double width off
+0000C6  1B 4D                       ESC M            12 cpi
+0000C8  1B 4A 36                    ESC J 54         advance paper -> y 1.8472
+0000CB  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0000CF  1B 46                       ESC F            bold off
+0000D1  1B 35                       ESC 5            italic off
+0000D3  1B 2D 00                    ESC - 0          underline off
+0000D6  TEXT "Size 10 ABCDE 12345"
+0000E9  1B 2D 00                    ESC - 0          underline off
+0000EC  12                          DC2              condensed off
+0000ED  1B 57 00                    ESC W 0          double width off
+0000F0  1B 4D                       ESC M            12 cpi
+0000F2  1B 4A 3C                    ESC J 60         advance paper -> y 2.1250
+0000F5  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0000F9  1B 46                       ESC F            bold off
+0000FB  1B 35                       ESC 5            italic off
+0000FD  1B 2D 00                    ESC - 0          underline off
+000100  TEXT "Size 12 ABCDE 12345"
+000113  1B 2D 00                    ESC - 0          underline off
+000116  12                          DC2              condensed off
+000117  1B 57 00                    ESC W 0          double width off
+00011A  1B 50                       ESC P            10 cpi
+00011C  12                          DC2              condensed off
+00011D  1B 4A 42                    ESC J 66         advance paper -> y 2.4306
+000120  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000124  1B 46                       ESC F            bold off
+000126  1B 35                       ESC 5            italic off
+000128  1B 2D 00                    ESC - 0          underline off
+00012B  TEXT "Size 14 ABCDE 12345"
+00013E  1B 2D 00                    ESC - 0          underline off
+000141  12                          DC2              condensed off
+000142  1B 57 00                    ESC W 0          double width off
+000145  1B 50                       ESC P            10 cpi
+000147  12                          DC2              condensed off
+000148  1B 4A 4B                    ESC J 75         advance paper -> y 2.7778
+00014B  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+00014F  1B 46                       ESC F            bold off
+000151  1B 35                       ESC 5            italic off
+000153  1B 2D 00                    ESC - 0          underline off
+000156  TEXT "Size 17 ABCDE 12345"
+000169  1B 2D 00                    ESC - 0          underline off
+00016C  12                          DC2              condensed off
+00016D  1B 57 00                    ESC W 0          double width off
+000170  1B 4D                       ESC M            12 cpi
+000172  1B 57 01                    ESC W 1          double width on
+000175  1B 4A 54                    ESC J 84         advance paper -> y 3.1667
+000178  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+00017C  1B 46                       ESC F            bold off
+00017E  1B 35                       ESC 5            italic off
+000180  1B 2D 00                    ESC - 0          underline off
+000183  TEXT "Size 20 ABCDE 12345"
+000196  1B 2D 00                    ESC - 0          underline off
+000199  12                          DC2              condensed off
+00019A  1B 57 00                    ESC W 0          double width off
+00019D  1B 50                       ESC P            10 cpi
+00019F  1B 57 01                    ESC W 1          double width on
+0001A2  1B 4A 60                    ESC J 96         advance paper -> y 3.6111
+0001A5  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0001A9  1B 46                       ESC F            bold off
+0001AB  1B 35                       ESC 5            italic off
+0001AD  1B 2D 00                    ESC - 0          underline off
+0001B0  TEXT "Size 24 ABCDE 12345"
+0001C3  1B 2D 00                    ESC - 0          underline off
+0001C6  0D                          CR               carriage return
+0001C7  0C                          FF               form feed -> y 11.0000 (sheet 2)

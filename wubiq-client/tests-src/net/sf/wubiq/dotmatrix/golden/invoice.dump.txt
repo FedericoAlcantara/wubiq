@@ -1,0 +1,300 @@
+000000  1B 40                       ESC @            initialize printer (top of form here)
+000002  1B 78 30                    ESC x 48         draft
+000005  1B 28 74 03 00 01 03 00     ESC ( t          assign table 3/0 (PC850) to slot 1
+00000D  1B 74 01                    ESC t 1          select character table 1 = PC850
+000010  1B 70 30                    ESC p 48         proportional off
+000013  1B 33 06                    ESC 3 6          line spacing 0.0278 in
+000016  1B 43 00 0B                 ESC C 0 11       page length 11 in
+00001A  12                          DC2              condensed off
+00001B  1B 57 00                    ESC W 0          double width off
+00001E  1B 50                       ESC P            10 cpi
+000020  12                          DC2              condensed off
+000021  1B 4A 9F                    ESC J 159        advance paper -> y 0.7361
+000024  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000028  1B 45                       ESC E            bold on
+00002A  1B 35                       ESC 5            italic off
+00002C  1B 2D 00                    ESC - 0          underline off
+00002F  TEXT "WUBIQ SUPPLIES S.R.L."
+000044  1B 2D 00                    ESC - 0          underline off
+000047  12                          DC2              condensed off
+000048  1B 57 00                    ESC W 0          double width off
+00004B  1B 4D                       ESC M            12 cpi
+00004D  1B 24 7A 01                 ESC $ 378        absolute position x 6.3000
+000051  1B 45                       ESC E            bold on
+000053  1B 35                       ESC 5            italic off
+000055  1B 2D 00                    ESC - 0          underline off
+000058  TEXT "INVOICE 000123"
+000066  1B 2D 00                    ESC - 0          underline off
+000069  12                          DC2              condensed off
+00006A  1B 57 00                    ESC W 0          double width off
+00006D  1B 4D                       ESC M            12 cpi
+00006F  1B 4A 48                    ESC J 72         advance paper -> y 1.0694
+000072  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+000076  1B 46                       ESC F            bold off
+000078  1B 35                       ESC 5            italic off
+00007A  1B 2D 00                    ESC - 0          underline off
+00007D  TEXT "Date: 2026-10-29"
+00008D  1B 2D 00                    ESC - 0          underline off
+000090  12                          DC2              condensed off
+000091  1B 57 00                    ESC W 0          double width off
+000094  1B 4D                       ESC M            12 cpi
+000096  1B 4A 24                    ESC J 36         advance paper -> y 1.2361
+000099  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+00009D  1B 46                       ESC F            bold off
+00009F  1B 35                       ESC 5            italic off
+0000A1  1B 2D 00                    ESC - 0          underline off
+0000A4  TEXT "Customer: Acme Corp."
+0000B8  1B 2D 00                    ESC - 0          underline off
+0000BB  12                          DC2              condensed off
+0000BC  1B 57 00                    ESC W 0          double width off
+0000BF  1B 4D                       ESC M            12 cpi
+0000C1  1B 4A 54                    ESC J 84         advance paper -> y 1.6250
+0000C4  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+0000C8  1B 45                       ESC E            bold on
+0000CA  1B 35                       ESC 5            italic off
+0000CC  1B 2D 00                    ESC - 0          underline off
+0000CF  TEXT "Qty"
+0000D2  1B 2D 00                    ESC - 0          underline off
+0000D5  12                          DC2              condensed off
+0000D6  1B 57 00                    ESC W 0          double width off
+0000D9  1B 4D                       ESC M            12 cpi
+0000DB  1B 24 46 00                 ESC $ 70         absolute position x 1.1667
+0000DF  1B 45                       ESC E            bold on
+0000E1  1B 35                       ESC 5            italic off
+0000E3  1B 2D 00                    ESC - 0          underline off
+0000E6  TEXT "Description"
+0000F1  1B 2D 00                    ESC - 0          underline off
+0000F4  12                          DC2              condensed off
+0000F5  1B 57 00                    ESC W 0          double width off
+0000F8  1B 4D                       ESC M            12 cpi
+0000FA  1B 24 62 01                 ESC $ 354        absolute position x 5.9000
+0000FE  1B 45                       ESC E            bold on
+000100  1B 35                       ESC 5            italic off
+000102  1B 2D 00                    ESC - 0          underline off
+000105  TEXT "Price"
+00010A  1B 2D 00                    ESC - 0          underline off
+00010D  12                          DC2              condensed off
+00010E  1B 57 00                    ESC W 0          double width off
+000111  1B 4D                       ESC M            12 cpi
+000113  1B 24 A0 01                 ESC $ 416        absolute position x 6.9333
+000117  1B 45                       ESC E            bold on
+000119  1B 35                       ESC 5            italic off
+00011B  1B 2D 00                    ESC - 0          underline off
+00011E  TEXT "Amount"
+000124  1B 2D 00                    ESC - 0          underline off
+000127  12                          DC2              condensed off
+000128  1B 57 00                    ESC W 0          double width off
+00012B  1B 4D                       ESC M            12 cpi
+00012D  1B 4A 30                    ESC J 48         advance paper -> y 1.8472
+000130  1B 24 2D 00                 ESC $ 45         absolute position x 0.7500
+000134  1B 46                       ESC F            bold off
+000136  1B 35                       ESC 5            italic off
+000138  1B 2D 00                    ESC - 0          underline off
+00013B  TEXT "2"
+00013C  1B 2D 00                    ESC - 0          underline off
+00013F  12                          DC2              condensed off
+000140  1B 57 00                    ESC W 0          double width off
+000143  1B 4D                       ESC M            12 cpi
+000145  1B 24 46 00                 ESC $ 70         absolute position x 1.1667
+000149  1B 46                       ESC F            bold off
+00014B  1B 35                       ESC 5            italic off
+00014D  1B 2D 00                    ESC - 0          underline off
+000150  TEXT "Printer ribbon"
+00015E  1B 2D 00                    ESC - 0          underline off
+000161  12                          DC2              condensed off
+000162  1B 57 00                    ESC W 0          double width off
+000165  1B 4D                       ESC M            12 cpi
+000167  1B 24 61 01                 ESC $ 353        absolute position x 5.8833
+00016B  1B 46                       ESC F            bold off
+00016D  1B 35                       ESC 5            italic off
+00016F  1B 2D 00                    ESC - 0          underline off
+000172  TEXT "12.50"
+000177  1B 2D 00                    ESC - 0          underline off
+00017A  12                          DC2              condensed off
+00017B  1B 57 00                    ESC W 0          double width off
+00017E  1B 4D                       ESC M            12 cpi
+000180  1B 24 AC 01                 ESC $ 428        absolute position x 7.1333
+000184  1B 46                       ESC F            bold off
+000186  1B 35                       ESC 5            italic off
+000188  1B 2D 00                    ESC - 0          underline off
+00018B  TEXT "25.00"
+000190  1B 2D 00                    ESC - 0          underline off
+000193  12                          DC2              condensed off
+000194  1B 57 00                    ESC W 0          double width off
+000197  1B 4D                       ESC M            12 cpi
+000199  1B 4A 2A                    ESC J 42         advance paper -> y 2.0417
+00019C  1B 24 2D 00                 ESC $ 45         absolute position x 0.7500
+0001A0  1B 46                       ESC F            bold off
+0001A2  1B 35                       ESC 5            italic off
+0001A4  1B 2D 00                    ESC - 0          underline off
+0001A7  TEXT "1"
+0001A8  1B 2D 00                    ESC - 0          underline off
+0001AB  12                          DC2              condensed off
+0001AC  1B 57 00                    ESC W 0          double width off
+0001AF  1B 4D                       ESC M            12 cpi
+0001B1  1B 24 46 00                 ESC $ 70         absolute position x 1.1667
+0001B5  1B 46                       ESC F            bold off
+0001B7  1B 35                       ESC 5            italic off
+0001B9  1B 2D 00                    ESC - 0          underline off
+0001BC  TEXT "Continuous paper box"
+0001D0  1B 2D 00                    ESC - 0          underline off
+0001D3  12                          DC2              condensed off
+0001D4  1B 57 00                    ESC W 0          double width off
+0001D7  1B 4D                       ESC M            12 cpi
+0001D9  1B 24 61 01                 ESC $ 353        absolute position x 5.8833
+0001DD  1B 46                       ESC F            bold off
+0001DF  1B 35                       ESC 5            italic off
+0001E1  1B 2D 00                    ESC - 0          underline off
+0001E4  TEXT "38.00"
+0001E9  1B 2D 00                    ESC - 0          underline off
+0001EC  12                          DC2              condensed off
+0001ED  1B 57 00                    ESC W 0          double width off
+0001F0  1B 4D                       ESC M            12 cpi
+0001F2  1B 24 AC 01                 ESC $ 428        absolute position x 7.1333
+0001F6  1B 46                       ESC F            bold off
+0001F8  1B 35                       ESC 5            italic off
+0001FA  1B 2D 00                    ESC - 0          underline off
+0001FD  TEXT "38.00"
+000202  1B 2D 00                    ESC - 0          underline off
+000205  12                          DC2              condensed off
+000206  1B 57 00                    ESC W 0          double width off
+000209  1B 4D                       ESC M            12 cpi
+00020B  1B 4A 2A                    ESC J 42         advance paper -> y 2.2361
+00020E  1B 24 28 00                 ESC $ 40         absolute position x 0.6667
+000212  1B 46                       ESC F            bold off
+000214  1B 35                       ESC 5            italic off
+000216  1B 2D 00                    ESC - 0          underline off
+000219  TEXT "10"
+00021B  1B 2D 00                    ESC - 0          underline off
+00021E  12                          DC2              condensed off
+00021F  1B 57 00                    ESC W 0          double width off
+000222  1B 4D                       ESC M            12 cpi
+000224  1B 24 46 00                 ESC $ 70         absolute position x 1.1667
+000228  1B 46                       ESC F            bold off
+00022A  1B 35                       ESC 5            italic off
+00022C  1B 2D 00                    ESC - 0          underline off
+00022F  TEXT "Labels 4x6"
+000239  1B 2D 00                    ESC - 0          underline off
+00023C  12                          DC2              condensed off
+00023D  1B 57 00                    ESC W 0          double width off
+000240  1B 4D                       ESC M            12 cpi
+000242  1B 24 66 01                 ESC $ 358        absolute position x 5.9667
+000246  1B 46                       ESC F            bold off
+000248  1B 35                       ESC 5            italic off
+00024A  1B 2D 00                    ESC - 0          underline off
+00024D  TEXT "0.75"
+000251  1B 2D 00                    ESC - 0          underline off
+000254  12                          DC2              condensed off
+000255  1B 57 00                    ESC W 0          double width off
+000258  1B 4D                       ESC M            12 cpi
+00025A  1B 24 B1 01                 ESC $ 433        absolute position x 7.2167
+00025E  1B 46                       ESC F            bold off
+000260  1B 35                       ESC 5            italic off
+000262  1B 2D 00                    ESC - 0          underline off
+000265  TEXT "7.50"
+000269  1B 2D 00                    ESC - 0          underline off
+00026C  12                          DC2              condensed off
+00026D  1B 57 00                    ESC W 0          double width off
+000270  1B 4D                       ESC M            12 cpi
+000272  1B 4A 2A                    ESC J 42         advance paper -> y 2.4306
+000275  1B 24 2D 00                 ESC $ 45         absolute position x 0.7500
+000279  1B 46                       ESC F            bold off
+00027B  1B 35                       ESC 5            italic off
+00027D  1B 2D 00                    ESC - 0          underline off
+000280  TEXT "3"
+000281  1B 2D 00                    ESC - 0          underline off
+000284  12                          DC2              condensed off
+000285  1B 57 00                    ESC W 0          double width off
+000288  1B 4D                       ESC M            12 cpi
+00028A  1B 24 46 00                 ESC $ 70         absolute position x 1.1667
+00028E  1B 46                       ESC F            bold off
+000290  1B 35                       ESC 5            italic off
+000292  1B 2D 00                    ESC - 0          underline off
+000295  TEXT "USB cable"
+00029E  1B 2D 00                    ESC - 0          underline off
+0002A1  12                          DC2              condensed off
+0002A2  1B 57 00                    ESC W 0          double width off
+0002A5  1B 4D                       ESC M            12 cpi
+0002A7  1B 24 66 01                 ESC $ 358        absolute position x 5.9667
+0002AB  1B 46                       ESC F            bold off
+0002AD  1B 35                       ESC 5            italic off
+0002AF  1B 2D 00                    ESC - 0          underline off
+0002B2  TEXT "4.20"
+0002B6  1B 2D 00                    ESC - 0          underline off
+0002B9  12                          DC2              condensed off
+0002BA  1B 57 00                    ESC W 0          double width off
+0002BD  1B 4D                       ESC M            12 cpi
+0002BF  1B 24 AC 01                 ESC $ 428        absolute position x 7.1333
+0002C3  1B 46                       ESC F            bold off
+0002C5  1B 35                       ESC 5            italic off
+0002C7  1B 2D 00                    ESC - 0          underline off
+0002CA  TEXT "12.60"
+0002CF  1B 2D 00                    ESC - 0          underline off
+0002D2  12                          DC2              condensed off
+0002D3  1B 57 00                    ESC W 0          double width off
+0002D6  1B 4D                       ESC M            12 cpi
+0002D8  1B 4A 2A                    ESC J 42         advance paper -> y 2.6250
+0002DB  1B 24 2D 00                 ESC $ 45         absolute position x 0.7500
+0002DF  1B 46                       ESC F            bold off
+0002E1  1B 35                       ESC 5            italic off
+0002E3  1B 2D 00                    ESC - 0          underline off
+0002E6  TEXT "1"
+0002E7  1B 2D 00                    ESC - 0          underline off
+0002EA  12                          DC2              condensed off
+0002EB  1B 57 00                    ESC W 0          double width off
+0002EE  1B 4D                       ESC M            12 cpi
+0002F0  1B 24 46 00                 ESC $ 70         absolute position x 1.1667
+0002F4  1B 46                       ESC F            bold off
+0002F6  1B 35                       ESC 5            italic off
+0002F8  1B 2D 00                    ESC - 0          underline off
+0002FB  TEXT "Service"
+000302  1B 2D 00                    ESC - 0          underline off
+000305  12                          DC2              condensed off
+000306  1B 57 00                    ESC W 0          double width off
+000309  1B 4D                       ESC M            12 cpi
+00030B  1B 24 61 01                 ESC $ 353        absolute position x 5.8833
+00030F  1B 46                       ESC F            bold off
+000311  1B 35                       ESC 5            italic off
+000313  1B 2D 00                    ESC - 0          underline off
+000316  TEXT "60.00"
+00031B  1B 2D 00                    ESC - 0          underline off
+00031E  12                          DC2              condensed off
+00031F  1B 57 00                    ESC W 0          double width off
+000322  1B 4D                       ESC M            12 cpi
+000324  1B 24 AC 01                 ESC $ 428        absolute position x 7.1333
+000328  1B 46                       ESC F            bold off
+00032A  1B 35                       ESC 5            italic off
+00032C  1B 2D 00                    ESC - 0          underline off
+00032F  TEXT "60.00"
+000334  1B 2D 00                    ESC - 0          underline off
+000337  12                          DC2              condensed off
+000338  1B 57 00                    ESC W 0          double width off
+00033B  1B 4D                       ESC M            12 cpi
+00033D  1B 4A 4E                    ESC J 78         advance paper -> y 2.9861
+000340  1B 24 3D 01                 ESC $ 317        absolute position x 5.2833
+000344  1B 45                       ESC E            bold on
+000346  1B 35                       ESC 5            italic off
+000348  1B 2D 00                    ESC - 0          underline off
+00034B  TEXT "Total"
+000350  1B 2D 00                    ESC - 0          underline off
+000353  12                          DC2              condensed off
+000354  1B 57 00                    ESC W 0          double width off
+000357  1B 4D                       ESC M            12 cpi
+000359  1B 24 A3 01                 ESC $ 419        absolute position x 6.9833
+00035D  1B 45                       ESC E            bold on
+00035F  1B 35                       ESC 5            italic off
+000361  1B 2D 00                    ESC - 0          underline off
+000364  TEXT "143.10"
+00036A  1B 2D 00                    ESC - 0          underline off
+00036D  12                          DC2              condensed off
+00036E  1B 57 00                    ESC W 0          double width off
+000371  1B 67                       ESC g            15 cpi
+000373  1B 4A 54                    ESC J 84         advance paper -> y 3.3750
+000376  1B 24 1E 00                 ESC $ 30         absolute position x 0.5000
+00037A  1B 46                       ESC F            bold off
+00037C  1B 35                       ESC 5            italic off
+00037E  1B 2D 00                    ESC - 0          underline off
+000381  TEXT "Thank you for your business"
+00039C  1B 2D 00                    ESC - 0          underline off
+00039F  0D                          CR               carriage return
+0003A0  0C                          FF               form feed -> y 11.0000 (sheet 2)

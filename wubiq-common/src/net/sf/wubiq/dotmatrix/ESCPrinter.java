@@ -5,9 +5,11 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.Charset;
 
 import javax.print.PrintException;
 
+import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.TextAlignmentType;
 import net.sf.wubiq.wrappers.TextField;
 
@@ -16,7 +18,7 @@ import net.sf.wubiq.wrappers.TextField;
  * http://code.google.com/p/escprinter/source/browse/trunk/net/drayah/matrixprinter/ESCPrinter.java
  * It let printing directly to a Dot matrix.
  * 
- * Values are received in Twips (inch * 1440)
+ * Page sizes are received in Twips (inch * 1440). Text positions are in points (inch / 72).
  * @author Federico Alcantara
  *
  */
@@ -26,14 +28,18 @@ public class ESCPrinter {
     private boolean escp24pin; //boolean to indicate whether the printer is a 24 pin esc/p2 epson
     private OutputStream ostream;
     private PrintStream pstream;
+    private Charset charset;
     private int pageHeight = 396; // In number of minimum line feed. For 11 inch = 396
     private int pageWidth = 1020; // In 1/120 inches. for 8.5 = 1020.
     private float horPosition = 0;
+    private int verticalPosition = 0; // In fine line units (1/216 inch, 1/180 for 24 pin) from the top of the page.
     private int lineCount = 0;
     protected static int MAX_ADVANCE_9PIN = 216; //for 24/48 pin esc/p2 printers this should be 180
     protected static int MAX_ADVANCE_24PIN = 180;
     protected static int MAX_UNITS = 127; //for vertical positioning range is between 0 - 255 (0 <= n <= 255) according to epson ref. but 255 gives weird errors at 1.5f, 127 as max (0 - 128) seems to be working
     protected static final float CM_PER_INCH = 2.54f;
+    protected static final double BASELINE_9PIN = 7d / 72d; // Inches from the top of the character cell to the baseline.
+    protected static final double BASELINE_24PIN = 18d / 180d;
     
     /* decimal ascii values for epson ESC/P commands */
     protected static final char ESC = 27; //escape
@@ -48,6 +54,8 @@ public class ESCPrinter {
     protected static final char FF = 12; //form feed
     protected static final char ZERO = 48; // ZERO
     protected static final char THREE = 51; // 3
+    protected static final char FOUR = 52; // 4: italic on (ESC 4)
+    protected static final char FIVE = 53; // 5: italic off (ESC 5)
     protected static final char g = 103; //15cpi pitch
     protected static final char p = 112; //used for choosing proportional mode or fixed-pitch
     protected static final char t = 116; //used for character set assignment/selection
@@ -89,16 +97,33 @@ public class ESCPrinter {
      * @param escp24pin True if the streamer is to print to a 24pin printer.
      */
     public ESCPrinter(String printer, int pageWidth, int pageHeight, boolean escp24pin) throws PrintException {
+    	this(printer, pageWidth, pageHeight, escp24pin, false);
+    }
+
+    /**
+     * Creates a new instance of printer streamer.
+     * @param printer Printer url.
+     * @param pageWidth Width of the page in twips (inch * 1440).
+     * @param pageHeight Height of the page in twips (inch * 1440).
+     * @param escp24pin True if the streamer is to print to a 24pin printer.
+     * @param append True to add to what the url already holds, false to start it again.
+     */
+    public ESCPrinter(String printer, int pageWidth, int pageHeight, boolean escp24pin, boolean append) throws PrintException {
         //pre: printer non null String indicating network path to printer
         this.printer = printer;
         this.escp24pin = escp24pin;
-        initialize();
+        this.charset = textCharset();
+        initialize(append);
         setPageHeight(pageHeight);
         setPageWidth(pageWidth);
     }
 
     public ESCPrinter(String printer, Double pageWidth, Double pageHeight, boolean escp24pin) throws PrintException {
-    	this(printer, pageWidth.intValue(), pageHeight.intValue(), escp24pin);
+    	this(printer, pageWidth.intValue(), pageHeight.intValue(), escp24pin, false);
+    }
+
+    public ESCPrinter(String printer, Double pageWidth, Double pageHeight, boolean escp24pin, boolean append) throws PrintException {
+    	this(printer, pageWidth.intValue(), pageHeight.intValue(), escp24pin, append);
     }
     
     /**
@@ -113,12 +138,12 @@ public class ESCPrinter {
         catch (IOException e) { e.printStackTrace(); }
     }
     
-    private void initialize() throws PrintException {
+    private void initialize(boolean append) throws PrintException {
         //post: returns true if stream to network printer successfully opened, streams for writing to esc/p printer created
         try {
             //create stream objs
         	if (ostream == null) {
-        		ostream = new FileOutputStream(printer);
+        		ostream = new FileOutputStream(printer, append);
         	}
             pstream = new PrintStream(ostream);
             
@@ -129,7 +154,7 @@ public class ESCPrinter {
             //select draft quality printing
             selectDraftPrinting();
             
-            setCharacterSet(LATIN_AMERICA);
+            setCharacterSet(characterTable());
             
             proportionalMode(false);
             selectMinimumLineSpacing();
@@ -153,13 +178,13 @@ public class ESCPrinter {
      */
     public void setPageHeight(int height){
     	this.pageHeight = (int)(toInches(height) * 180 / 5);
-    	char lines = ARGUMENT_1; // In case that we can't control the height, form feed must be set to just 1 (5/180)
-    	if (height <= 127) {
-    		lines = (char)height;
+    	int inches = Math.round(toInches(height));
+    	if (inches >= 1 && inches <= 22) { // ESC C 0 n: page length of n inches.
+    		pstream.write(ESC);
+    		pstream.write(C);
+    		pstream.write(0);
+    		pstream.write(inches);
     	}
-    	pstream.print(ESC);
-    	pstream.print(C);
-    	pstream.print(lines);
     	pstream.flush();
     }
     
@@ -272,9 +297,9 @@ public class ESCPrinter {
     public void italic(boolean italic) {
         pstream.print(ESC);
         if (italic) {
-            pstream.print(ARGUMENT_4);
+            pstream.print(FOUR);
         } else {
-            pstream.print(ARGUMENT_5);
+            pstream.print(FIVE);
         }
     }
 
@@ -318,23 +343,38 @@ public class ESCPrinter {
     }
 
 	/**
-	 * Just advance to the next print position.
+	 * Moves the print head to where the text goes: down with ESC J (paper only moves forward) so
+	 * that the characters' baseline lies on the text's baseline, across with ESC $ (absolute position).
 	 * @param textField Holder of the field information.
 	 * @throws IOException
 	 */
 	public void advanceTo(TextField textField) throws IOException {
-		float toPos = textField.getX() * 120 / 1440;
-		float fixValue = 120 / textField.getTextFontCPI();
-		float textWidth = textField.getWidth() * 120 / 1440;
 		selectCPI(textField.getTextFontCPI());
+		// Vertical: the head position is the top of the character cell, a few dots above the baseline.
+		double headInches = textField.getY() / 72d - (escp24pin ? BASELINE_24PIN : BASELINE_9PIN);
+		int target = (int) Math.round(headInches * (escp24pin ? 180d : 216d));
+		while (target > verticalPosition) {
+			int step = Math.min(255, target - verticalPosition);
+			pstream.write(ESC);
+			pstream.write(J);
+			pstream.write(step);
+			verticalPosition += step;
+		}
+		// Horizontal, in 1/120 inch.
+		float fixValue = 120 / textField.getTextFontCPI();
+		float toPos = textField.getX() * 120 / 72;
+		float textWidth = textField.getWidth() * 120 / 72;
 		if (TextAlignmentType.RIGHT.equals(textField.getTextAlignment())) {
 			toPos += textWidth - (textField.getText().length() * fixValue);
 		} else if (TextAlignmentType.CENTER.equals(textField.getTextAlignment())) {
 			toPos += ((textWidth - (textField.getText().length()) * fixValue)) / 2;
 		}
-		while (toPos > horPosition) {
-			print(' ', fixValue);
-		}
+		int position = Math.max(0, Math.round(toPos / 2)); // ESC $ counts in 1/60 inch.
+		pstream.write(ESC);
+		pstream.write(DOLLAR_SIGN);
+		pstream.write(position % 256);
+		pstream.write(position / 256);
+		horPosition = position * 2;
 	}
 	
 	/**
@@ -352,7 +392,7 @@ public class ESCPrinter {
 		float fixValue = 120 / cpi;
 		if (((((float)textField.getText().length()) * fixValue) + horPosition) <= pageWidth) {
 			horPosition += (((float)textField.getText().length()) * fixValue);
-			pstream.print(textField.getText());
+			writeText(textField.getText());
 		} else {
 			for (char charValue : textField.getText().toCharArray()) {
 				returnValue += fixValue;
@@ -371,7 +411,7 @@ public class ESCPrinter {
 	 */
 	private void print(char charValue, float charSize) {
 		if ((horPosition + charSize) <= pageWidth) {
-			pstream.print(charValue);
+			writeText(String.valueOf(charValue));
 		}
 		horPosition += charSize;
 	}
@@ -418,6 +458,18 @@ public class ESCPrinter {
         lineCount = 0;
     }
     
+    /**
+     * Ends the page: the paper is ejected and the print head goes back to the left of the next page.
+     */
+    public void endPage() {
+    	pstream.write(CR);
+    	pstream.write(FF);
+    	pstream.flush();
+    	horPosition = 0;
+    	verticalPosition = 0;
+    	lineCount = 0;
+    }
+    
     public String getShare() {
         //post: returns printer share name (Windows network)
         return printer;
@@ -426,6 +478,59 @@ public class ESCPrinter {
     public PrintStream getPrintStream() {
         //post: returns printer share name (Windows network)
         return pstream;
+    }
+    
+    /**
+     * Writes the text as bytes of the printer's character table. Characters the charset has no
+     * byte for are written as a question mark.
+     */
+    private void writeText(String text) {
+    	byte[] bytes = text.getBytes(charset);
+    	pstream.write(bytes, 0, bytes.length);
+    }
+    
+    /**
+     * @return Charset to encode text with: the one of the {@link PropertyKeys#WUBIQ_DOTMATRIX_CHARSET}
+     * property; if none, the system's on Windows (what the application has always sent there) and
+     * Cp1252 elsewhere, where the system's would be UTF-8, which no printer table has.
+     */
+    private static Charset textCharset() {
+    	String name = System.getProperty(PropertyKeys.WUBIQ_DOTMATRIX_CHARSET);
+    	if (name != null && name.trim().length() > 0) {
+    		try {
+    			return Charset.forName(name.trim());
+    		} catch (IllegalArgumentException e) {
+    			// Unknown or illegal name: falls back to the default.
+    		}
+    	}
+    	if (System.getProperty("os.name", "").startsWith("Windows")) {
+    		return Charset.defaultCharset();
+    	}
+    	try {
+    		return Charset.forName("Cp1252");
+    	} catch (IllegalArgumentException e) {
+    		return Charset.defaultCharset();
+    	}
+    }
+    
+    /**
+     * @return Registered character table to ask the printer for: the number in the
+     * {@link PropertyKeys#WUBIQ_DOTMATRIX_TABLE} property (3 is PC850); if none, {@link #LATIN_AMERICA},
+     * as the application has always sent.
+     */
+    private static char characterTable() {
+    	String value = System.getProperty(PropertyKeys.WUBIQ_DOTMATRIX_TABLE);
+    	if (value != null) {
+    		try {
+    			int number = Integer.parseInt(value.trim());
+    			if (number >= 0 && number <= 255) {
+    				return (char) number;
+    			}
+    		} catch (NumberFormatException e) {
+    			// Not a number: falls back to the default.
+    		}
+    	}
+    	return LATIN_AMERICA;
     }
     
     private float toInches(double twipValue) {

@@ -42,16 +42,18 @@ ant test-dotmatrix
 
 This compiles wubiq-common, the client, the witness and the tests into `bin` and `build-tests/classes`, without building jars. Run it with a JDK 8. The report goes to `build-tests/dotmatrix-report/java-VERSION/index.html`, with one page per case: the sheet images, text grid, decoded commands and check results.
 
-System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dotmatrix.strict=true`):
+System properties, passed with `-D` (for example `ant test-dotmatrix -Dwubiq.dotmatrix.strict=false`):
 
 | Property | Effect |
 |---|---|
-| `wubiq.dotmatrix.strict=true` | layout and golden-file mismatches fail the build (default: report only) |
+| `wubiq.dotmatrix.strict=false` | layout and golden-file mismatches are only reported (default: they fail the build) |
 | `wubiq.dotmatrix.updateGolden=true` | rewrites the golden files in `tests-src/net/sf/wubiq/dotmatrix/golden` from the `direct` driver |
 | `wubiq.dotmatrix.only=invoice-direct,ruler-jdk-print` | runs only these cases (fixture-driver) |
 | `wubiq.dotmatrix.images=false` | skips the PNG sheets |
 | `wubiq.dotmatrix.report=DIR` | report directory |
 | `wubiq.dotmatrix.golden=DIR` | golden files directory |
+| `wubiq.dotmatrix.charset=NAME` | charset the text is encoded with (default in the tests: `IBM850`) |
+| `wubiq.dotmatrix.table=N` | registered character table the printer is told to use (default in the tests: `3`, PC850) |
 
 #### Every installed JDK
 
@@ -119,7 +121,7 @@ Exit codes:
 .\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK8_HOME] [-Server URL] [-Printer NAME] [-Tolerance IN]
 ```
 
-The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job.
+The same test through a Windows printer driver, in PowerShell. Java 6 prints first, and every other JDK's job is compared with its job. With the same client, each JDK then prints the page through the fast path: the test page link gets `TP=true` and `TPT`, a file the client writes the ESC/P bytes to (a Windows path with forward slashes, as it has to be a URI). The client runs with `-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3`. The witness must read each fast path file without warnings, and it must match Java 6's file.
 
 It needs:
 - wubiq-server running at `http://localhost:8080` (`-Server` to change it);
@@ -127,7 +129,7 @@ It needs:
 - port 9100 free;
 - `ant` on the `PATH`.
 
-`-Jdks` takes the JDK homes, or `WUBIQ_JDKS` with the homes separated by `;`, and must include a Java 6. `-CompileHome` defaults to the first Java 8 among them. `-Tolerance` is the largest accepted shift or size change in inches, 0.025 (3 dots at 120 dpi) by default: Java 8 and later print text at the font's width, and Java 6 and 7 at the width Wubiq narrows it to, so the widest lines end up to 3 dots apart. Each build writes to `build-tests/dotmatrix-e2e-windows/java-VERSION/`, and `build-tests/dotmatrix-e2e-windows/summary.txt` lists every build as `REFERENCE` (Java 6), `SAME`, `DIFFERENT` or `NOT PRINTED`. The exit codes are the same as the macOS script's.
+`-Jdks` takes the JDK homes, or `WUBIQ_JDKS` with the homes separated by `;`, and must include a Java 6. `-CompileHome` defaults to the first Java 8 among them. `-Tolerance` is the largest accepted shift or size change in inches, 0.025 (3 dots at 120 dpi) by default: Java 8 and later print text at the font's width, and Java 6 and 7 at the width Wubiq narrows it to, so the widest lines end up to 3 dots apart. Each build writes to `build-tests/dotmatrix-e2e-windows/java-VERSION/`, and `build-tests/dotmatrix-e2e-windows/summary.txt` lists every build as `REFERENCE` (Java 6), `SAME`, `DIFFERENT` or `NOT PRINTED`, in one row for the driver job and one, named `java-VERSION-fast`, for the fast path file (which can also be `WARNINGS`). The exit codes are the same as the macOS script's.
 
 The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` runs it on a Windows runner, on pull requests that change the client, the server or the witness, and on demand:
 - Oracle Java 6u45, from the private S3 bucket `java-jdk-wadvanced` through the AWS role in the `AWS_ROLE_ARN` secret. It is the reference; runs without access to the role, such as pull requests from forks, use Zulu 6;

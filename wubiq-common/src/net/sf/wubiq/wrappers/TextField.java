@@ -13,16 +13,16 @@ import net.sf.wubiq.enums.TextAlignmentType;
 
 /**
  * Represents a Text line in a report to be printed using stream. 
- * All units are in twips (inch * 1440)
- * treated in 1/120th inches for horizontal motion and (5/180 == 6/216) inch for vertical motion.
+ * Positions and width are in points (inch / 72) on the page: x is the left of the text and
+ * y is its baseline, measured from the top left corner of the paper.
  * @author Federico Alcantara
  *
  */
 public class TextField implements Comparable<TextField>, Comparator<TextField>, Serializable{
 	private static final long serialVersionUID = 1L;
 	private int page;
-	private int x;
-	private int y;
+	private float x;
+	private float y;
 	private int width;
 	private int fontSize;
 	private boolean bold;
@@ -38,7 +38,7 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	public static final float CPI_17 = 17.14f;
 	public static final float CPI_20 = 20f;
 	
-	public TextField(int page, int x, int y, int fontSize, String text) {
+	public TextField(int page, float x, float y, int fontSize, String text) {
 		this.page = page;
 		this.x = x;
 		this.y = y;
@@ -47,7 +47,7 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 		calculateWidth();
 	}
 	
-	public TextField(int page, int x, int y, Font font, String text) {
+	public TextField(int page, float x, float y, Font font, String text) {
 		this(page, x, y, font.getSize(), text);
 		this.setBold(font.isBold());
 		this.setItalic(font.isItalic());
@@ -73,25 +73,25 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 	/**
 	 * @return the x
 	 */
-	public int getX() {
+	public float getX() {
 		return x;
 	}
 	/**
 	 * @param x the x to set
 	 */
-	public void setX(int x) {
+	public void setX(float x) {
 		this.x = x;
 	}
 	/**
 	 * @return the y
 	 */
-	public int getY() {
+	public float getY() {
 		return y;
 	}
 	/**
 	 * @param y the y to set
 	 */
-	public void setY(int y) {
+	public void setY(float y) {
 		this.y = y;
 	}
 	/**
@@ -200,7 +200,7 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 		
 	private void calculateWidth() {
 		float cpi = getTextFontCPI();
-		width = new Float(cpi * getText().length()).intValue();
+		width = Math.round(72f / cpi * getText().length()); // Points the characters take on the paper.
 	}
 	/**
 	 * Orders it in line / position order.
@@ -219,16 +219,9 @@ public class TextField implements Comparable<TextField>, Comparator<TextField>, 
 			} else if (tl1.page < tl2.page) {
 				returnValue = -1;
 			} else {
-				if (tl1.y > tl2.y) {
-					returnValue = 1;
-				} else if (tl1.y == tl2.y) {
-					if (tl1.x > tl2.x) {
-						returnValue = 1;
-					} else if (tl1.x < tl2.x) {
-						returnValue = -1;
-					}
-				} else if (tl1.y < tl2.y) {
-					returnValue = -1;
+				returnValue = Float.compare(tl1.y, tl2.y);
+				if (returnValue == 0) {
+					returnValue = Float.compare(tl1.x, tl2.x);
 				}
 			}
 		}

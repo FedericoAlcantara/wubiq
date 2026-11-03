@@ -1,6 +1,8 @@
 # Prints wubiq-server's test page through a real wubiq-client on several JDK builds into the
 # dot-matrix witness, through a Windows printer driver, and compares each job with the job
-# printed by Java 6 in the same run.
+# printed by Java 6 in the same run. The same client then prints the page through the fast
+# path (the client writes ESC/P itself, to a file); those files are compared the same way, and
+# the witness checks that each one is a well formed ESC/P stream.
 #
 #   .\test-dotmatrix-e2e-windows.ps1 -Jdks HOME1,HOME2,... [-CompileHome JDK8] [-Server URL] [-Printer NAME] [-Tolerance IN]
 #
@@ -15,6 +17,7 @@
 # -CompileHome defaults to the first Java 8 in -Jdks.
 # -Tolerance is the largest accepted shift or size change, in inches (default 0.025, 3 dots at
 # 120 dpi): Java 8 and later print text at its real width, Java 6 and 7 at Wubiq's narrowed width.
+# The summary has a row per JDK for the driver job and a row "NAME-fast" for the fast path job.
 # Exit codes: 0 every JDK prints like Java 6, 1 a JDK prints differently or not at all, 2 setup error.
 #
 # Compatible with Windows PowerShell 5.1.
@@ -125,10 +128,18 @@ function Stop-Started($process) {
 
 $script:Listener = $null
 $script:Client = $null
+$script:FastFailure = $null
+$script:FastStray = $null
+
+# The fast path takes the PC850 character table, as the dot-matrix witness tests do.
+$ClientProperties = "-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3"
 
 # Prints the test page with one JDK. Leaves the job in $out\jobs; returns $false when none arrived.
+# Then prints it through the fast path into $out\fast.escp; $script:FastFailure says why it didn't.
 function Invoke-Print($jdkHome, $name, $out) {
 	$uuid = "witness-windows-$name"
+	$script:FastFailure = $null
+	$script:FastStray = $null
 	if (Test-Path $out) {
 		Remove-Item -Recurse -Force $out
 	}
@@ -143,7 +154,7 @@ function Invoke-Print($jdkHome, $name, $out) {
 			return $false
 		}
 		$script:Client = Start-Process -FilePath "$jdkHome\bin\java.exe" -PassThru -NoNewWindow -WorkingDirectory $out `
-			-ArgumentList "-jar $(Quote $Launcher) -h $Server -u $uuid -v" `
+			-ArgumentList "$ClientProperties -jar $(Quote $Launcher) -h $Server -u $uuid -v" `
 			-RedirectStandardOutput (Join-Path $out "client.log") -RedirectStandardError (Join-Path $out "client-err.log")
 		Wait-For 120 { (Get-TestPageLink $uuid) -or $script:Client.HasExited } | Out-Null
 		$link = Get-TestPageLink $uuid
@@ -161,6 +172,24 @@ function Invoke-Print($jdkHome, $name, $out) {
 			return $false
 		}
 		Start-Sleep -Seconds 2
+		# Fast path: the link of the test page with TP=true (send it as a Pageable) and TPT, the
+		# destination the client writes the ESC/P bytes to, a file path on this computer. The server
+		# makes a URI of it, which can't have backslashes: the path goes with forward slashes.
+		$fast = Join-Path $out "fast.escp"
+		$fastUri = $fast -replace "\\", "/"
+		$fastLink = "$link&TP=true&TPT=$([System.Uri]::EscapeDataString($fastUri))"
+		$jobsBefore = @(Get-ChildItem -Directory (Join-Path $out "jobs") -Filter "job-*").Count
+		Invoke-WebRequest -UseBasicParsing -Uri "$Server/wubiq-server/$fastLink" -OutFile (Join-Path $out "server-response-fast.html")
+		if (Wait-For 120 { (Test-Path $fast) -and ((Get-Item $fast).Length -gt 0) }) {
+			Start-Sleep -Seconds 6
+			# The fast path doesn't use the printer driver: no job may reach the printer.
+			$strays = @(Get-ChildItem -Directory (Join-Path $out "jobs") -Filter "job-*").Count - $jobsBefore
+			if ($strays -gt 0) {
+				$script:FastStray = "the printer received $strays job(s) besides the file"
+			}
+		} else {
+			$script:FastFailure = "no file was written; $(Get-ClientFailure $out)"
+		}
 		return $true
 	} finally {
 		Stop-Started $script:Client
@@ -168,6 +197,54 @@ function Invoke-Print($jdkHome, $name, $out) {
 		Stop-Started $script:Listener
 		$script:Listener = $null
 	}
+}
+
+# Checks the fast path file of one JDK and adds its row to the summary: the witness must read it
+# without warnings, and it must match the Java 6 one. Returns $true when it passed.
+function Test-FastPath($run, $out, $failure) {
+	$name = "$($run.Name)-fast"
+	$fast = Join-Path $out "fast.escp"
+	if ($failure) {
+		Add-Content $Summary "$name`tNOT PRINTED`t$failure"
+		return $false
+	}
+	if ($script:FastStray) {
+		Add-Content $Summary "$name`tDRIVER JOB`t$($script:FastStray)"
+		return $false
+	}
+	$render = Join-Path $out "fast-render.txt"
+	cmd /c "`"$WitnessJava`" -Djava.awt.headless=true -cp `"$Witness\bin`" net.sf.wubiq.dotmatrix.witness.Main render --strict --out `"$out\fast-report`" `"$fast`" > `"$render`" 2>&1"
+	if ($LASTEXITCODE -ne 0) {
+		$warning = Select-String -Path $render -Pattern "^\s+@" | Select-Object -First 1
+		$reason = "see $render"
+		if ($warning) {
+			$reason = $warning.Line.Trim()
+		}
+		Add-Content $Summary "$name`tWARNINGS`t$reason"
+		return $false
+	}
+	if ($run -eq $Reference) {
+		$script:ReferenceFast = $fast
+		Add-Content $Summary "$name`tREFERENCE`t$out\fast-report\index.html"
+		return $true
+	}
+	if (-not $script:ReferenceFast) {
+		Add-Content $Summary "$name`tNOT COMPARED`tJava 6 didn't print through the fast path"
+		return $false
+	}
+	$compare = Join-Path $out "fast-compare.txt"
+	cmd /c "`"$WitnessJava`" -Djava.awt.headless=true -cp `"$Witness\bin`" net.sf.wubiq.dotmatrix.witness.Main compare --tolerance $Tolerance `"$($script:ReferenceFast)`" `"$fast`" > `"$compare`" 2>&1"
+	if ($LASTEXITCODE -eq 0) {
+		Add-Content $Summary "$name`tSAME`t$out\fast-report\index.html"
+		return $true
+	}
+	$first = Select-String -Path $compare -Pattern "FAIL" | Select-Object -First 1
+	$reason = "see $compare"
+	if ($first) {
+		$reason = $first.Line -replace "^\s*FAIL\s+", ""
+	}
+	Add-Content $Summary "$name`tDIFFERENT`t$reason"
+	return $false
 }
 
 # Setup checks.
@@ -235,6 +312,7 @@ $Summary = Join-Path $Report "summary.txt"
 Set-Content $Summary "" -NoNewline
 $Failed = 0
 $ReferenceJob = $null
+$script:ReferenceFast = $null
 
 # Java 6 first: the other jobs are compared with its job.
 $Ordered = @($Reference) + @($Runs | Where-Object { $_ -ne $Reference })
@@ -253,8 +331,12 @@ foreach ($run in $Ordered) {
 		$reason = Get-Content (Join-Path $out "failure.txt") -ErrorAction SilentlyContinue
 		Write-Host "  $reason"
 		Add-Content $Summary "$($run.Name)`tNOT PRINTED`t$reason"
+		Add-Content $Summary "$($run.Name)-fast`tNOT RUN`tthe test page didn't print"
 		$Failed++
 		continue
+	}
+	if (-not (Test-FastPath $run $out $script:FastFailure)) {
+		$Failed++
 	}
 	$job = Get-ChildItem -Directory (Join-Path $out "jobs") -Filter "job-*" | Select-Object -First 1
 	$escp = Join-Path $job.FullName "job.escp"
