@@ -18,9 +18,6 @@
 # -Tolerance is the largest accepted shift or size change, in inches (default 0.025, 3 dots at
 # 120 dpi): Java 8 and later print text at its real width, Java 6 and 7 at Wubiq's narrowed width.
 # The summary has a row per JDK for the driver job and a row "NAME-fast" for the fast path job.
-# A row "NAME-fast-vs-driver" compares the fast path file with the driver job of the same JDK: the
-# test page's lines and boxes go to the file as bit images, and the text as text. It is reported
-# and doesn't count for the exit code.
 # Exit codes: 0 every JDK prints like Java 6, 1 a JDK prints differently or not at all, 2 setup error.
 #
 # Compatible with Windows PowerShell 5.1.
@@ -250,28 +247,6 @@ function Test-FastPath($run, $out, $failure) {
 	return $false
 }
 
-# Compares the fast path file of one JDK with the driver job of the same JDK and adds its row to the
-# summary. The row is a report: a difference doesn't fail the run.
-function Compare-FastWithDriver($run, $out, $driverJob) {
-	$fast = Join-Path $out "fast.escp"
-	if ($script:FastFailure -or $script:FastStray -or -not (Test-Path $fast)) {
-		return
-	}
-	$name = "$($run.Name)-fast-vs-driver"
-	$compare = Join-Path $out "fast-vs-driver.txt"
-	cmd /c "`"$WitnessJava`" -Djava.awt.headless=true -cp `"$Witness\bin`" net.sf.wubiq.dotmatrix.witness.Main compare --tolerance $Tolerance `"$driverJob`" `"$fast`" > `"$compare`" 2>&1"
-	if ($LASTEXITCODE -eq 0) {
-		Add-Content $Summary "$name`tSAME`t$compare"
-		return
-	}
-	$first = Select-String -Path $compare -Pattern "FAIL" | Select-Object -First 1
-	$reason = "see $compare"
-	if ($first) {
-		$reason = $first.Line -replace "^\s*FAIL\s+", ""
-	}
-	Add-Content $Summary "$name`tDIFFERENT`t$reason"
-}
-
 # Setup checks.
 $Runs = @()
 foreach ($jdkHome in $Jdks) {
@@ -365,7 +340,6 @@ foreach ($run in $Ordered) {
 	}
 	$job = Get-ChildItem -Directory (Join-Path $out "jobs") -Filter "job-*" | Select-Object -First 1
 	$escp = Join-Path $job.FullName "job.escp"
-	Compare-FastWithDriver $run $out $escp
 	if ($run -eq $Reference) {
 		$ReferenceJob = $escp
 		Write-Host "  reference job: $escp"
