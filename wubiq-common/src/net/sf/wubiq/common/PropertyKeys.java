@@ -22,6 +22,7 @@ public final class PropertyKeys {
 	public static final String WUBIQ_DOTMATRIX_TABLE = "wubiq.dotmatrix.table";
 	public static final String WUBIQ_DOTMATRIX_OFFSET_X = "wubiq.dotmatrix.offset.x";
 	public static final String WUBIQ_DOTMATRIX_OFFSET_Y = "wubiq.dotmatrix.offset.y";
+	public static final String WUBIQ_DOTMATRIX_GRAPHICS = "wubiq.dotmatrix.graphics";
 
 	public static final String WUBIQ_PRINTERS_PHOTO = "wubiq.printers.photo";
 	public static final String WUBIQ_PRINTERS_DOTMATRIX = "wubiq.printers.dotmatrix";
