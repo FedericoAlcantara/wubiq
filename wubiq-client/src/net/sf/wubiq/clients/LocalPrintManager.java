@@ -581,7 +581,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 */
 	public static void main (String[] args) throws Exception {
 		LocalPrintManager manager = new LocalPrintManager();
-		System.out.println(ClientLabels.get("client.version", Labels.VERSION));
+		System.out.println(ClientLabels.get("client.version", VersionInformation.describe()));
 		System.out.println("https://github.com/FedericoAlcantara/wubiq\n");
 		Options options = new Options();
 		options.addOption("?", "help", false, ClientLabels.get("client.command_line_help"));
