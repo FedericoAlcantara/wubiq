@@ -14,6 +14,8 @@ The client runs on Java 6 and later. Start it with `-jar`: its manifest opens th
 
 When a print request carries a `Destination`, the client prints in ESC/P "fast" mode instead of through the JDK print pipeline. `ClientPrintDirectUtils` wraps the job in `PageableStreamWrapper` → `PrintableStreamWrapper` → `ESCPrinter` (in wubiq-common), and these write the ESC/P bytes to the destination.
 
+Text is written as text. Lines, boxes, charts and images are drawn on a raster and written as bit-image bands: 8 dots high at 120 by 72 dots per inch on 9-pin printers, 24 dots high at 180 by 180 on 24-pin printers (`PrinterType.DOT_MATRIX_HQ`). Grays print as a pattern of dots. A page with only text writes no bands. `-Dwubiq.dotmatrix.graphics=false` writes the text only.
+
 `tests-src/net/sf/wubiq/dotmatrix` checks that path without a printer:
 1. It prints a set of fixture jobs through the wrappers.
 2. It feeds the bytes to the virtual printer in `../wubiq-dotmatrix-witness`.
@@ -26,7 +28,8 @@ The fixtures are:
 - bold, italic and underline, with Spanish accented characters;
 - every Java2D text call;
 - translated and scaled graphics;
-- a three-page job.
+- a three-page job;
+- a chart, a framed legend, a hairline and an image, whose dots must lie where the fixture drew them.
 
 Each fixture runs through four drivers:
 - `direct`: the wrappers on an image graphics.

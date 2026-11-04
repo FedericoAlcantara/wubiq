@@ -214,8 +214,9 @@ public final class ClientPrintDirectUtils {
 		float[] printable = printableOrigin(printService, printRequestAttributeSet);
 		Copies copies = (Copies) printRequestAttributeSet.get(Copies.class);
 		try {
-			new EscpStreamJob(printerUrl, pageable.getNumberOfPages(), printable[0], printable[1])
-					.printAll(pageable, copies == null ? 1 : copies.getValue());
+			EscpStreamJob job = new EscpStreamJob(printerUrl, pageable.getNumberOfPages(), printable[0], printable[1]);
+			job.setPrinterType(PrintServiceUtils.printerType(printService)); // The offscreen page doesn't say it.
+			job.printAll(pageable, copies == null ? 1 : copies.getValue());
 		} catch (PrinterException e) {
 			LOG.error(e.getMessage(), e);
 		}
