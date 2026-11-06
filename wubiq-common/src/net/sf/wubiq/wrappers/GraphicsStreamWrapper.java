@@ -20,26 +20,16 @@ import java.awt.Stroke;
 import java.awt.font.FontRenderContext;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
-import java.awt.geom.NoninvertibleTransformException;
-import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.awt.image.BufferedImageOp;
 import java.awt.image.ImageObserver;
 import java.awt.image.RenderedImage;
 import java.awt.image.renderable.RenderableImage;
-import java.awt.font.TextAttribute;
-import java.awt.print.PageFormat;
 import java.text.AttributedCharacterIterator;
 import java.text.CharacterIterator;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.IdentityHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.WeakHashMap;
+import java.util.TreeSet;
 
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.GraphicsUtils;
@@ -50,44 +40,14 @@ import net.sf.wubiq.utils.PrintServiceUtils;
  *
  */
 public class GraphicsStreamWrapper extends Graphics2D {
-	/** Spaces that can separate two characters drawn one by one for them to be one text. */
-	private static final int MAXIMUM_JOINED_SPACES = 4;
-	/** Glyph code to character, per font. Glyph vectors don't carry the text they draw. */
-	private static final Map<Font, Map<Integer, Character>> GLYPH_CHARACTERS =
-			Collections.synchronizedMap(new WeakHashMap<Font, Map<Integer, Character>>());
-	
 	private Graphics2D graphics;
-	private Capture capture;
+	private Set<TextField> texts;
 	private PrinterType printerType;
 	private Font currentFont;
-	private AffineTransform entryTransform;
-	private float originX;
-	private float originY;
 	
 	public GraphicsStreamWrapper(Graphics2D graphics) {
-		this(graphics, null);
-	}
-	
-	/**
-	 * @param graphics Graphics to wrap.
-	 * @param pageFormat Page format of the page, whose imageable area is where the application's 0, 0 lies.
-	 */
-	public GraphicsStreamWrapper(Graphics2D graphics, PageFormat pageFormat) {
-		this(graphics, pageFormat == null ? 0 : (float) pageFormat.getImageableX(),
-				pageFormat == null ? 0 : (float) pageFormat.getImageableY());
-	}
-	
-	/**
-	 * @param graphics Graphics to wrap.
-	 * @param originX Position, in points from the left of what the printer prints on, of the application's 0, 0.
-	 * @param originY Position, in points from the top, of the application's 0, 0.
-	 */
-	public GraphicsStreamWrapper(Graphics2D graphics, float originX, float originY) {
 		this.graphics = graphics;
-		this.entryTransform = graphics.getTransform();
-		this.originX = originX;
-		this.originY = originY;
-		capture = new Capture();
+		texts = new TreeSet<TextField>();
 		printerType = PrintServiceUtils.printerType(graphics.getDeviceConfiguration().getDevice().getIDstring());
 		currentFont = graphics.getFont();
 		if (currentFont == null) {
@@ -95,203 +55,8 @@ public class GraphicsStreamWrapper extends Graphics2D {
 		}
 	}
 
-	/**
-	 * Wrapper for what a child graphics (create()) draws: its text goes to the same page.
-	 */
-	private GraphicsStreamWrapper(GraphicsStreamWrapper parent) {
-		this.graphics = (Graphics2D) parent.graphics.create();
-		this.capture = parent.capture;
-		this.entryTransform = parent.entryTransform;
-		this.originX = parent.originX;
-		this.originY = parent.originY;
-		this.printerType = parent.printerType;
-		this.currentFont = parent.currentFont;
-	}
-	
-	/**
-	 * @return The texts the application drew, in page, line and column order. Texts at the same
-	 * position stay in the order they were drawn.
-	 */
-	public List<TextField> getTexts() {
-		List<TextField> sorted = new ArrayList<TextField>(capture.texts);
-		Collections.sort(sorted); // Stable.
-		return joinGlyphs(sorted);
-	}
-	
-	/**
-	 * Some applications and renderers (a PDF page, for one) draw a text one character at a time, each at its
-	 * own proportional position. A printer can't print it so: its characters have a fixed width, and
-	 * characters at those positions overlap or leave holes. Characters drawn one by one on the same line
-	 * and in the same style are joined into one text that starts where the first does; a gap between two
-	 * of them (a space that wasn't drawn) becomes spaces. Texts drawn as a whole are left as they are.
-	 */
-	private List<TextField> joinGlyphs(List<TextField> sorted) {
-		List<TextField> returnValue = new ArrayList<TextField>();
-		List<TextField> chain = new ArrayList<TextField>();
-		for (TextField textField : sorted) {
-			boolean glyph = capture.glyphs.containsKey(textField);
-			if (!chain.isEmpty() && !(glyph && sameStyle(chain.get(0), textField))) {
-				joinChain(chain, returnValue);
-				chain.clear();
-			}
-			if (glyph) {
-				chain.add(textField);
-			} else {
-				returnValue.add(textField);
-			}
-		}
-		joinChain(chain, returnValue);
-		return returnValue;
-	}
-	
-	/**
-	 * Joins characters drawn one by one along a line. The renderer's font can differ from the one the JVM
-	 * has, so the width the JVM gives a character is corrected by the ratio most of the characters
-	 * of the line show between their distance and their width.
-	 */
-	private void joinChain(List<TextField> chain, List<TextField> returnValue) {
-		int size = chain.size();
-		if (size == 0) {
-			return;
-		}
-		List<Float> ratios = new ArrayList<Float>();
-		for (int index = 0; index < size - 1; index++) {
-			float width = capture.glyphs.get(chain.get(index))[0];
-			if (width > 0) {
-				ratios.add((chain.get(index + 1).getX() - chain.get(index).getX()) / width);
-			}
-		}
-		float scale = 1;
-		if (!ratios.isEmpty()) {
-			Collections.sort(ratios);
-			scale = ratios.get(ratios.size() / 2);
-		}
-		TextField first = chain.get(0);
-		StringBuilder text = new StringBuilder(first.getText());
-		for (int index = 1; index < size; index++) {
-			TextField previous = chain.get(index - 1);
-			TextField current = chain.get(index);
-			float[] glyph = capture.glyphs.get(previous);
-			float gap = current.getX() - previous.getX() - scale * glyph[0];
-			float space = scale * glyph[1];
-			// The renderer's font isn't the JVM's: a gap smaller than a space is not a space.
-			int spaces = space > 0 ? Math.max((int) Math.floor(gap / space + 0.1f), 0) : 0;
-			if (spaces > MAXIMUM_JOINED_SPACES) {
-				returnValue.add(joined(first, text));
-				first = current;
-				text = new StringBuilder(current.getText());
-			} else {
-				for (int count = 0; count < spaces; count++) {
-					text.append(' ');
-				}
-				text.append(current.getText());
-			}
-		}
-		returnValue.add(joined(first, text));
-	}
-	
-	private static boolean sameStyle(TextField one, TextField other) {
-		return Math.abs(one.getY() - other.getY()) < 0.5f && one.getFontSize() == other.getFontSize()
-				&& one.isBold() == other.isBold() && one.isItalic() == other.isItalic()
-				&& one.isUnderline() == other.isUnderline();
-	}
-	
-	private static TextField joined(TextField first, StringBuilder text) {
-		TextField returnValue = new TextField(first.getPage(), first.getX(), first.getY(), first.getFontSize(), text.toString());
-		returnValue.setBold(first.isBold());
-		returnValue.setItalic(first.isItalic());
-		returnValue.setUnderline(first.isUnderline());
-		return returnValue;
-	}
-	
-	public PrinterType getPrinterType() {
-		return printerType;
-	}
-	
-	/**
-	 * Adds a text drawn at the given user space position. The position is converted to points on the
-	 * page: the transform the JDK gave the page (device scale, imageable area) is undone, what the
-	 * application added (translate, scale) is applied.
-	 */
-	private void addText(String str, double x, double y) {
-		addText(str, x, y, currentFont);
-	}
-	
-	private void addText(String str, double x, double y, Font font) {
-		AffineTransform relative = new AffineTransform();
-		try {
-			relative.concatenate(entryTransform.createInverse());
-		} catch (NoninvertibleTransformException e) {
-			// The page transform is used as is.
-		}
-		relative.concatenate(graphics.getTransform());
-		Point2D position = relative.transform(new Point2D.Double(x, y), null);
-		double scale = Math.sqrt(Math.abs(relative.getDeterminant()));
-		int size = (int) Math.round(font.getSize2D() * scale);
-		TextField textField = new TextField(0, originX + (float) position.getX(), originY + (float) position.getY(), size, str);
-		textField.setBold(font.isBold());
-		textField.setItalic(font.isItalic());
-		textField.setUnderline(TextAttribute.UNDERLINE_ON.equals(font.getAttributes().get(TextAttribute.UNDERLINE)));
-		if (capture.add(textField) && str.length() == 1) {
-			FontRenderContext context = new FontRenderContext(null, true, true);
-			capture.glyphs.put(textField, new float[] {
-					(float) (font.getStringBounds(str, context).getWidth() * scale),
-					(float) (font.getStringBounds(" ", context).getWidth() * scale)});
-		}
-	}
-	
-	/**
-	 * @return The characters a glyph vector draws, '?' for a glyph that no character of the font gives.
-	 */
-	private String glyphText(GlyphVector glyphVector) {
-		Font font = glyphVector.getFont();
-		Map<Integer, Character> characters = GLYPH_CHARACTERS.get(font);
-		if (characters == null) {
-			characters = new HashMap<Integer, Character>();
-			FontRenderContext context = glyphVector.getFontRenderContext();
-			int[][] ranges = {{0x20, 0x7E}, {0xA0, 0x17F}, {0x2013, 0x2014}, {0x2018, 0x201D}, {0x20AC, 0x20AC}};
-			for (int[] range : ranges) {
-				for (int character = range[0]; character <= range[1]; character++) {
-					int code = font.createGlyphVector(context, new char[] {(char) character}).getGlyphCode(0);
-					if (code != font.getMissingGlyphCode() && !characters.containsKey(code)) {
-						characters.put(code, (char) character);
-					}
-				}
-			}
-			GLYPH_CHARACTERS.put(font, characters);
-		}
-		StringBuilder returnValue = new StringBuilder();
-		for (int index = 0; index < glyphVector.getNumGlyphs(); index++) {
-			Character character = characters.get(glyphVector.getGlyphCode(index));
-			returnValue.append(character == null ? '?' : character.charValue());
-		}
-		return returnValue.toString();
-	}
-	
-	/**
-	 * What the page's graphics and their children (create()) have drawn.
-	 */
-	private static class Capture {
-		private List<TextField> texts = new ArrayList<TextField>();
-		private Set<String> drawn = new HashSet<String>();
-		/** Width of the character and of a space, in points, of the texts drawn as one character. */
-		private Map<TextField, float[]> glyphs = new IdentityHashMap<TextField, float[]>();
-		
-		/**
-		 * Adds the text, unless the same text was already drawn at the same place in the same style
-		 * (applications draw a text twice to make it look bold; the printer would only overstrike it).
-		 * Different texts at the same place are all kept.
-		 */
-		boolean add(TextField textField) {
-			String key = textField.getX() + "|" + textField.getY() + "|" + textField.getFontSize() + "|"
-					+ textField.isBold() + "|" + textField.isItalic() + "|" + textField.isUnderline() + "|"
-					+ textField.getText();
-			if (drawn.add(key)) {
-				texts.add(textField);
-				return true;
-			}
-			return false;
-		}
+	public Set<TextField> getTexts() {
+		return texts;
 	}
 	
 	@Override
@@ -308,7 +73,7 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public Graphics create() {
-		return new GraphicsStreamWrapper(this);
+		return graphics.create();
 	}
 
 	@Override
@@ -380,7 +145,9 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void drawString(String str, int x, int y) {
-		addText(str, x, y);
+		TextField textField = new TextField(0, x, y, currentFont, str);
+		
+		texts.add(textField);
 	}
 
 	@Override
@@ -493,10 +260,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void drawGlyphVector(GlyphVector g, float x, float y) {
-		String text = glyphText(g);
-		if (text.length() > 0) {
-			addText(text, x, y, g.getFont());
-		}
 	}
 
 	@Override
@@ -520,19 +283,13 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void drawString(String str, float x, float y) {
-		addText(str, x, y);
+		drawString(str, new Float(x).intValue(), new Float(y).intValue());
 	}
 
 	@Override
 	public void drawString(AttributedCharacterIterator iterator, float x,
 			float y) {
-		StringBuffer str = new StringBuffer("");
-		for (char charAt = iterator.first(); charAt != CharacterIterator.DONE; charAt = iterator.next()) {
-			str.append(charAt);
-		}
-		if (str.length() > 0) {
-			addText(str.toString(), x, y);
-		}
+		drawString(iterator, new Float(x).intValue(), new Float(y).intValue());
 	}
 
 	@Override
