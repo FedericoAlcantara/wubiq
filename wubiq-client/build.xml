@@ -15,14 +15,6 @@
 	<!-- Packages the client reaches by reflection; Java 9+ opens them when the jar runs with -jar, older JDKs ignore it. -->
 	<property name="client.add.opens" value="java.base/java.lang java.desktop/javax.print java.desktop/sun.print" />
 	
-	<!-- Identifies the exact build in the jar manifest: the latest tag, the commits since it and the commit, plus -dirty for uncommitted changes. -->
-	<exec executable="git" dir="${workspace.dir}" outputproperty="build.id" failonerror="false" failifexecutionfails="false" resultproperty="git.result">
-		<arg line="describe --tags --always --dirty" />
-	</exec>
-	<condition property="build.id" value="unknown">
-		<not><equals arg1="${git.result}" arg2="0" /></not>
-	</condition>
-
 	<path id="project.classpath">
 		<pathelement path="${lib}"/>
 		<pathelement path="${bin}"/>
@@ -59,7 +51,6 @@
 			<manifest>
 				<attribute name="Main-Class" value="net.sf.wubiq.clients.LocalPrintManager"/>	
 				<attribute name="Add-Opens" value="${client.add.opens}"/>
-				<attribute name="Implementation-Version" value="${build.id}"/>
 			</manifest>		
 		</jar>
 		<copy todir="${basedir.gradle}/app/libs/" file="${output.jar}.jar"/>
