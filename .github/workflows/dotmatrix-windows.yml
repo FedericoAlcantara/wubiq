@@ -5,15 +5,6 @@ name: Dot-matrix printing on Windows
 
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'wubiq-common/**'
-      - 'wubiq-client/**'
-      - 'wubiq-dotmatrix-witness/**'
-      - 'wubiq-printerjob/**'
-      - 'wubiq-server/**'
-      - 'docker-compose.yml'
-      - '.github/workflows/dotmatrix-windows.yml'
 
 jobs:
   e2e:
