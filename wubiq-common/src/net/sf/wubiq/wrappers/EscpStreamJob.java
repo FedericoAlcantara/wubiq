@@ -1,6 +1,5 @@
 package net.sf.wubiq.wrappers;
 
-import java.awt.Color;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.image.BufferedImage;
@@ -9,16 +8,13 @@ import java.awt.print.Pageable;
 import java.awt.print.Printable;
 import java.awt.print.PrinterException;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Iterator;
 
 import javax.print.PrintException;
 
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.dotmatrix.ESCPrinter;
-import net.sf.wubiq.dotmatrix.GraphicsRaster;
 import net.sf.wubiq.enums.PrinterType;
-import net.sf.wubiq.utils.PrintServiceUtils;
 
 /**
  * One print job written as a single ESC/P stream.
@@ -33,9 +29,6 @@ import net.sf.wubiq.utils.PrintServiceUtils;
  * position, less the printable area's position (what the printer driver does), plus the offset of the
  * {@link PropertyKeys#WUBIQ_DOTMATRIX_OFFSET_X} and {@link PropertyKeys#WUBIQ_DOTMATRIX_OFFSET_Y} properties.
  * If the printer's printable area isn't known, the application's coordinates start where the printer does.</p>
- * <p>Text is written as text. What else the application draws (lines, boxes, charts, images) is drawn on a raster
- * and written as bit-image bands (see {@link GraphicsRaster}), unless the {@link PropertyKeys#WUBIQ_DOTMATRIX_GRAPHICS}
- * property is <code>false</code>. A page the application draws only text on writes no bands.</p>
  * @author Federico Alcantara
  *
  */
@@ -49,8 +42,6 @@ public class EscpStreamJob {
 	private ESCPrinter printer;
 	private int lastPage = -1;
 	private boolean written;
-	private PrinterType printerType;
-	private boolean pins24;
 
 	/**
 	 * @param url Destination of the ESC/P stream (file, port or share).
@@ -73,15 +64,6 @@ public class EscpStreamJob {
 		this.printableY = printableY;
 		this.offsetX = inchesProperty(PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_X) * 72;
 		this.offsetY = inchesProperty(PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_Y) * 72;
-	}
-
-	/**
-	 * Tells the type of the printer, which the graphics offered to {@link #printAll(Pageable, int)} can't:
-	 * 24-pin printers get 24 dot bands and the line spacing of their finer pins.
-	 * @param printerType Type of the printer; null to take it from the graphics of each page.
-	 */
-	public void setPrinterType(PrinterType printerType) {
-		this.printerType = printerType;
 	}
 
 	private static float inchesProperty(String key) {
@@ -128,7 +110,6 @@ public class EscpStreamJob {
 							BufferedImage.TYPE_BYTE_GRAY);
 					Graphics2D graphics = image.createGraphics();
 					try {
-						graphics.setColor(Color.BLACK); // As the printer's graphics are.
 						graphics.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
 						graphics.setClip(0, 0, (int) Math.ceil(pageFormat.getImageableWidth()),
 								(int) Math.ceil(pageFormat.getImageableHeight()));
@@ -167,31 +148,19 @@ public class EscpStreamJob {
 			originX += (float) pageFormat.getImageableX() - printableX;
 			originY += (float) pageFormat.getImageableY() - printableY;
 		}
-		boolean pins24Page = written ? pins24 : PrinterType.DOT_MATRIX_HQ.equals(printerType(graph));
-		GraphicsRaster raster = graphics() ? new GraphicsRaster(pageFormat, pins24Page) : null;
-		GraphicsStreamWrapper wrapper = new GraphicsStreamWrapper((Graphics2D) graph, originX, originY, raster);
+		GraphicsStreamWrapper wrapper = new GraphicsStreamWrapper((Graphics2D) graph, originX, originY);
 		int returnValue;
 		try {
 			returnValue = printable.print(wrapper, pageFormat, pageIndex);
 			if (returnValue == Printable.NO_SUCH_PAGE) {
 				close();
 			} else {
-				ESCPrinter escPrinter = printer(pageFormat, pins24Page);
-				List<TextField> texts = wrapper.getTexts();
-				List<GraphicsRaster.Band> bands = raster == null ? new ArrayList<GraphicsRaster.Band>()
-						: raster.getBands(originX - (float) pageFormat.getImageableX(), originY - (float) pageFormat.getImageableY());
-				// The paper only moves forward: texts and bands go in the order of their place down the page.
-				int textIndex = 0;
-				int bandIndex = 0;
-				while (textIndex < texts.size() || bandIndex < bands.size()) {
-					if (bandIndex < bands.size() && (textIndex >= texts.size()
-							|| escPrinter.verticalTarget(bands.get(bandIndex)) <= escPrinter.verticalTarget(texts.get(textIndex)))) {
-						escPrinter.print(bands.get(bandIndex++));
-					} else {
-						TextField textField = texts.get(textIndex++);
-						escPrinter.advanceTo(textField);
-						escPrinter.print(textField);
-					}
+				ESCPrinter escPrinter = printer(pageFormat, PrinterType.DOT_MATRIX_HQ.equals(wrapper.getPrinterType()));
+				Iterator<TextField> it = wrapper.getTexts().iterator();
+				while (it.hasNext()) {
+					TextField textField = it.next();
+					escPrinter.advanceTo(textField);
+					escPrinter.print(textField);
 				}
 				escPrinter.endPage();
 				lastPage = pageIndex;
@@ -211,29 +180,8 @@ public class EscpStreamJob {
 		} catch (RuntimeException e) {
 			close();
 			throw e;
-		} finally {
-			if (raster != null) {
-				raster.dispose();
-			}
 		}
 		return returnValue;
-	}
-
-	/**
-	 * @return The type of the printer: the one set, or the one the graphics' device name tells.
-	 */
-	private PrinterType printerType(Graphics graph) {
-		if (printerType != null) {
-			return printerType;
-		}
-		return PrintServiceUtils.printerType(((Graphics2D) graph).getDeviceConfiguration().getDevice().getIDstring());
-	}
-
-	/**
-	 * @return False if the {@link PropertyKeys#WUBIQ_DOTMATRIX_GRAPHICS} property is <code>false</code>: only text is written.
-	 */
-	private static boolean graphics() {
-		return !"false".equalsIgnoreCase(System.getProperty(PropertyKeys.WUBIQ_DOTMATRIX_GRAPHICS, "").trim());
 	}
 
 	/**
@@ -248,7 +196,6 @@ public class EscpStreamJob {
 
 	private ESCPrinter printer(PageFormat pageFormat, boolean pins24) throws PrintException {
 		if (printer == null) {
-			this.pins24 = pins24;
 			printer = new ESCPrinter(url,
 					pageFormat.getPaper().getWidth() / 72 * 1440,
 					pageFormat.getPaper().getHeight() / 72 * 1440,

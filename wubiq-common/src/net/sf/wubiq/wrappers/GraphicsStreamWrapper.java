@@ -41,7 +41,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.WeakHashMap;
 
-import net.sf.wubiq.dotmatrix.GraphicsRaster;
 import net.sf.wubiq.enums.PrinterType;
 import net.sf.wubiq.utils.GraphicsUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -64,10 +63,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	private AffineTransform entryTransform;
 	private float originX;
 	private float originY;
-	/** Where shapes and images are drawn, or null when only the text of the page matters. */
-	private GraphicsRaster raster;
-	private Graphics2D rasterGraphics;
-	private AffineTransform rasterEntryTransform;
 	
 	public GraphicsStreamWrapper(Graphics2D graphics) {
 		this(graphics, null);
@@ -88,22 +83,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	 * @param originY Position, in points from the top, of the application's 0, 0.
 	 */
 	public GraphicsStreamWrapper(Graphics2D graphics, float originX, float originY) {
-		this(graphics, originX, originY, null);
-	}
-	
-	/**
-	 * Wrapper that keeps the page's text and draws its shapes and images on a raster.
-	 * <p>The wrapped graphics only holds the state the application reads (transform, clip, color, font metrics)
-	 * and is never drawn on. The state the application sets (transform, clip, color, paint, stroke, composite)
-	 * is also set on the raster's graphics, so that the shapes and images land where the application meant them.
-	 * Rendering hints are not: the raster is never antialiased, as a dot is printed or not, and a thin light
-	 * line antialiased is too faint to print.</p>
-	 * @param graphics Graphics to wrap.
-	 * @param originX Position, in points from the left of what the printer prints on, of the application's 0, 0.
-	 * @param originY Position, in points from the top, of the application's 0, 0.
-	 * @param raster Where shapes and images are drawn; null to leave them out.
-	 */
-	public GraphicsStreamWrapper(Graphics2D graphics, float originX, float originY, GraphicsRaster raster) {
 		this.graphics = graphics;
 		this.entryTransform = graphics.getTransform();
 		this.originX = originX;
@@ -113,11 +92,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 		currentFont = graphics.getFont();
 		if (currentFont == null) {
 			currentFont = Font.decode(Font.SERIF);
-		}
-		if (raster != null) {
-			this.raster = raster;
-			rasterGraphics = raster.createGraphics();
-			rasterEntryTransform = rasterGraphics.getTransform();
 		}
 	}
 
@@ -132,11 +106,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 		this.originY = parent.originY;
 		this.printerType = parent.printerType;
 		this.currentFont = parent.currentFont;
-		this.raster = parent.raster;
-		if (parent.rasterGraphics != null) {
-			this.rasterGraphics = (Graphics2D) parent.rasterGraphics.create();
-			this.rasterEntryTransform = parent.rasterEntryTransform;
-		}
 	}
 	
 	/**
@@ -240,33 +209,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	}
 	
 	/**
-	 * @param transform Device transform of the wrapped graphics.
-	 * @return The same transform for the raster's graphics: what the application added to the page's own
-	 * transform, on top of the raster's.
-	 */
-	private AffineTransform rasterTransform(AffineTransform transform) {
-		AffineTransform returnValue = new AffineTransform(rasterEntryTransform);
-		try {
-			returnValue.concatenate(entryTransform.createInverse());
-		} catch (NoninvertibleTransformException e) {
-			// The transform is used as is.
-		}
-		returnValue.concatenate(transform);
-		return returnValue;
-	}
-	
-	/**
-	 * Marks the raster as drawn on.
-	 * @return The raster's graphics, or null if shapes and images are left out.
-	 */
-	private Graphics2D drawing() {
-		if (rasterGraphics != null) {
-			raster.markDrawn();
-		}
-		return rasterGraphics;
-	}
-	
-	/**
 	 * Adds a text drawn at the given user space position. The position is converted to points on the
 	 * page: the transform the JDK gave the page (device scale, imageable area) is undone, what the
 	 * application added (translate, scale) is applied.
@@ -354,25 +296,14 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	
 	@Override
 	public void clearRect(int x, int y, int width, int height) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.clearRect(x, y, width, height);
-		}
 	}
 
 	@Override
 	public void clipRect(int x, int y, int width, int height) {
-		if (rasterGraphics != null) {
-			rasterGraphics.clipRect(x, y, width, height);
-		}
 	}
 
 	@Override
 	public void copyArea(int x, int y, int width, int height, int dx, int dy) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.copyArea(x, y, width, height, dx, dy);
-		}
 	}
 
 	@Override
@@ -383,101 +314,68 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void dispose() {
 		graphics.dispose();
-		if (rasterGraphics != null) {
-			rasterGraphics.dispose();
-		}
 	}
 
 	@Override
 	public void drawArc(int x, int y, int width, int height, int startAngle,
 			int arcAngle) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawArc(x, y, width, height, startAngle, arcAngle);
-		}
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, ImageObserver observer) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, x, y, observer);
+		return true;
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, Color bgcolor,
 			ImageObserver observer) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, x, y, bgcolor, observer);
+		return true;
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, int height,
 			ImageObserver observer) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, x, y, width, height, observer);
+		return true;
 	}
 
 	@Override
 	public boolean drawImage(Image img, int x, int y, int width, int height,
 			Color bgcolor, ImageObserver observer) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, x, y, width, height, bgcolor, observer);
+		return true;
 	}
 
 	@Override
 	public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2,
 			int sx1, int sy1, int sx2, int sy2, ImageObserver observer) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, observer);
+		return true;
 	}
 
 	@Override
 	public boolean drawImage(Image img, int dx1, int dy1, int dx2, int dy2,
 			int sx1, int sy1, int sx2, int sy2, Color bgcolor,
 			ImageObserver observer) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, dx1, dy1, dx2, dy2, sx1, sy1, sx2, sy2, bgcolor, observer);
+		return true;
 	}
 
 	@Override
 	public void drawLine(int x1, int y1, int x2, int y2) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawLine(x1, y1, x2, y2);
-		}
 	}
 
 	@Override
 	public void drawOval(int x, int y, int width, int height) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawOval(x, y, width, height);
-		}
 	}
 
 	@Override
 	public void drawPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawPolygon(xPoints, yPoints, nPoints);
-		}
 	}
 
 	@Override
 	public void drawPolyline(int[] xPoints, int[] yPoints, int nPoints) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawPolyline(xPoints, yPoints, nPoints);
-		}
 	}
 
 	@Override
 	public void drawRoundRect(int x, int y, int width, int height,
 			int arcWidth, int arcHeight) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawRoundRect(x, y, width, height, arcWidth, arcHeight);
-		}
 	}
 
 	@Override
@@ -499,43 +397,23 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void fillArc(int x, int y, int width, int height, int startAngle,
 			int arcAngle) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.fillArc(x, y, width, height, startAngle, arcAngle);
-		}
 	}
 
 	@Override
 	public void fillOval(int x, int y, int width, int height) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.fillOval(x, y, width, height);
-		}
 	}
 
 	@Override
 	public void fillPolygon(int[] xPoints, int[] yPoints, int nPoints) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.fillPolygon(xPoints, yPoints, nPoints);
-		}
 	}
 
 	@Override
 	public void fillRect(int x, int y, int width, int height) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.fillRect(x, y, width, height);
-		}
 	}
 
 	@Override
 	public void fillRoundRect(int x, int y, int width, int height,
 			int arcWidth, int arcHeight) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.fillRoundRect(x, y, width, height, arcWidth, arcHeight);
-		}
 	}
 
 	@Override
@@ -566,25 +444,16 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void setClip(Shape clip) {
 		graphics.setClip(clip);
-		if (rasterGraphics != null) {
-			rasterGraphics.setClip(clip);
-		}
 	}
 
 	@Override
 	public void setClip(int x, int y, int width, int height) {
 		graphics.setClip(x, y, width, height);
-		if (rasterGraphics != null) {
-			rasterGraphics.setClip(x, y, width, height);
-		}
 	}
 
 	@Override
 	public void setColor(Color c) {
 		graphics.setColor(c);
-		if (rasterGraphics != null) {
-			rasterGraphics.setColor(c);
-		}
 	}
 
 	@Override
@@ -596,25 +465,16 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void setPaintMode() {
 		graphics.setPaintMode();
-		if (rasterGraphics != null) {
-			rasterGraphics.setPaintMode();
-		}
 	}
 
 	@Override
 	public void setXORMode(Color c1) {
 		graphics.setXORMode(c1);
-		if (rasterGraphics != null) {
-			rasterGraphics.setXORMode(c1);
-		}
 	}
 
 	@Override
 	public void translate(int x, int y) {
 		graphics.translate(x, y);
-		if (rasterGraphics != null) {
-			rasterGraphics.translate(x, y);
-		}
 	}
 
 	@Override
@@ -625,17 +485,10 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void clip(Shape s) {
 		graphics.clip(s);
-		if (rasterGraphics != null) {
-			rasterGraphics.clip(s);
-		}
 	}
 
 	@Override
 	public void draw(Shape s) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.draw(s);
-		}
 	}
 
 	@Override
@@ -649,33 +502,20 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public boolean drawImage(Image img, AffineTransform xform,
 			ImageObserver obs) {
-		Graphics2D g = drawing();
-		return g == null || g.drawImage(img, xform, obs);
+		return true;
 	}
 
 	@Override
 	public void drawImage(BufferedImage img, BufferedImageOp op, int x,
 			int y) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawImage(img, op, x, y);
-		}
 	}
 
 	@Override
 	public void drawRenderableImage(RenderableImage img, AffineTransform xform) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawRenderableImage(img, xform);
-		}
 	}
 
 	@Override
 	public void drawRenderedImage(RenderedImage img, AffineTransform xform) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.drawRenderedImage(img, xform);
-		}
 	}
 
 	@Override
@@ -697,10 +537,6 @@ public class GraphicsStreamWrapper extends Graphics2D {
 
 	@Override
 	public void fill(Shape s) {
-		Graphics2D g = drawing();
-		if (g != null) {
-			g.fill(s);
-		}
 	}
 
 	@Override
@@ -756,49 +592,31 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void rotate(double theta) {
 		graphics.rotate(theta);
-		if (rasterGraphics != null) {
-			rasterGraphics.rotate(theta);
-		}
 	}
 
 	@Override
 	public void rotate(double theta, double x, double y) {
 		graphics.rotate(theta, x, y);
-		if (rasterGraphics != null) {
-			rasterGraphics.rotate(theta, x, y);
-		}
 	}
 
 	@Override
 	public void scale(double sx, double sy) {
 		graphics.scale(sx, sy);
-		if (rasterGraphics != null) {
-			rasterGraphics.scale(sx, sy);
-		}
 	}
 
 	@Override
 	public void setBackground(Color color) {
 		graphics.setBackground(color);
-		if (rasterGraphics != null) {
-			rasterGraphics.setBackground(color);
-		}
 	}
 
 	@Override
 	public void setComposite(Composite comp) {
 		graphics.setComposite(comp);
-		if (rasterGraphics != null) {
-			rasterGraphics.setComposite(comp);
-		}
 	}
 
 	@Override
 	public void setPaint(Paint paint) {
 		graphics.setPaint(paint);
-		if (rasterGraphics != null) {
-			rasterGraphics.setPaint(paint);
-		}
 	}
 
 	@Override
@@ -814,40 +632,25 @@ public class GraphicsStreamWrapper extends Graphics2D {
 	@Override
 	public void setStroke(Stroke s) {
 		graphics.setStroke(s);
-		if (rasterGraphics != null) {
-			rasterGraphics.setStroke(s);
-		}
 	}
 
 	@Override
 	public void setTransform(AffineTransform tx) {
 		graphics.setTransform(tx);
-		if (rasterGraphics != null) {
-			rasterGraphics.setTransform(rasterTransform(tx));
-		}
 	}
 
 	@Override
 	public void shear(double shx, double shy) {
 		graphics.shear(shx, shy);
-		if (rasterGraphics != null) {
-			rasterGraphics.shear(shx, shy);
-		}
 	}
 
 	@Override
 	public void transform(AffineTransform tx) {
 		graphics.transform(tx);
-		if (rasterGraphics != null) {
-			rasterGraphics.transform(tx);
-		}
 	}
 
 	@Override
 	public void translate(double tx, double ty) {
 		graphics.translate(tx, ty);
-		if (rasterGraphics != null) {
-			rasterGraphics.translate(tx, ty);
-		}
 	}	
 }

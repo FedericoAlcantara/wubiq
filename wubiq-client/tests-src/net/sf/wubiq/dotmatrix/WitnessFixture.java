@@ -27,8 +27,6 @@ public class WitnessFixture implements Pageable, Printable {
 	private final String name;
 	private final int pages;
 	private final List<DrawItem> items = new ArrayList<DrawItem>();
-	private final List<GraphicItem> graphics = new ArrayList<GraphicItem>();
-	private final List<Integer> graphicPages = new ArrayList<Integer>();
 	private final PageFormat pageFormat;
 
 	public WitnessFixture(String name, int pages) {
@@ -49,34 +47,6 @@ public class WitnessFixture implements Pageable, Printable {
 		DrawItem item = new DrawItem(page, text, x, y, font);
 		items.add(item);
 		return item;
-	}
-
-	/**
-	 * Adds a shape or an image.
-	 * @param page Zero based page.
-	 * @param item What to draw.
-	 */
-	public void addGraphic(int page, GraphicItem item) {
-		graphics.add(item);
-		graphicPages.add(page);
-	}
-
-	/**
-	 * @return True if the fixture draws shapes or images.
-	 */
-	public boolean hasGraphics() {
-		return !graphics.isEmpty();
-	}
-
-	/**
-	 * Draws the shapes and images of a page, with no text.
-	 */
-	public void drawGraphics(Graphics2D graphics2D, int pageIndex) {
-		for (int index = 0; index < graphics.size(); index++) {
-			if (graphicPages.get(index) == pageIndex) {
-				graphics.get(index).draw(graphics2D);
-			}
-		}
 	}
 
 	/**
@@ -115,7 +85,6 @@ public class WitnessFixture implements Pageable, Printable {
 				item.draw(graphics2D);
 			}
 		}
-		drawGraphics(graphics2D, pageIndex);
 		return PAGE_EXISTS;
 	}
 

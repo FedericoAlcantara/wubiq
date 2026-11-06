@@ -164,7 +164,6 @@
 			<arg value="net.sf.wubiq.dotmatrix.ReferenceEncoderTest" />
 			<arg value="net.sf.wubiq.dotmatrix.PrinterOriginTest" />
 			<arg value="net.sf.wubiq.dotmatrix.EscpStreamJobTest" />
-			<arg value="net.sf.wubiq.dotmatrix.EscpGraphicsTest" />
 			<arg value="net.sf.wubiq.dotmatrix.DotMatrixWitnessTest" />
 		</java>
 	</target>

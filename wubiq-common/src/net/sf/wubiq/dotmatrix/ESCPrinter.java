@@ -71,9 +71,6 @@ public class ESCPrinter {
     protected static final char V = 86; // used for absolute vertical positioning
     protected static final char W = 87; // used for double width
     protected static final char DOLLAR_SIGN = 36; //used for absolute horizontal positioning
-    protected static final char ASTERISK = 42; //used for bit images (ESC * m nL nH data)
-    protected static final int BIT_IMAGE_9PIN = 1; // ESC * 1: 8 dots high, 120 dots per inch
-    protected static final int BIT_IMAGE_24PIN = 39; // ESC * 39: 24 dots high, 180 dots per inch
     protected static final char ARGUMENT_0 = 0;
     protected static final char ARGUMENT_1 = 1;
     protected static final char ARGUMENT_2 = 2;
@@ -353,7 +350,16 @@ public class ESCPrinter {
 	 */
 	public void advanceTo(TextField textField) throws IOException {
 		selectCPI(textField.getTextFontCPI());
-		advanceTo(verticalTarget(textField));
+		// Vertical: the head position is the top of the character cell, a few dots above the baseline.
+		double headInches = textField.getY() / 72d - (escp24pin ? BASELINE_24PIN : BASELINE_9PIN);
+		int target = (int) Math.round(headInches * (escp24pin ? 180d : 216d));
+		while (target > verticalPosition) {
+			int step = Math.min(255, target - verticalPosition);
+			pstream.write(ESC);
+			pstream.write(J);
+			pstream.write(step);
+			verticalPosition += step;
+		}
 		// Horizontal, in 1/120 inch.
 		float fixValue = 120 / textField.getTextFontCPI();
 		float toPos = textField.getX() * 120 / 72;
@@ -371,62 +377,6 @@ public class ESCPrinter {
 		horPosition = position * 2;
 	}
 	
-	/**
-	 * @param textField Text to print.
-	 * @return Where the head has to be, down the page, to print the text: the head position is the top of the
-	 * character cell, a few dots above the baseline. In fine line units: 1/216 inch (1/180 for 24 pin).
-	 */
-	public int verticalTarget(TextField textField) {
-		double headInches = textField.getY() / 72d - (escp24pin ? BASELINE_24PIN : BASELINE_9PIN);
-		return (int) Math.round(headInches * (escp24pin ? 180d : 216d));
-	}
-
-	/**
-	 * @param band Band of dots to print.
-	 * @return Where the head has to be, down the page, to print the band, in the same units as {@link #verticalTarget(TextField)}.
-	 */
-	public int verticalTarget(GraphicsRaster.Band band) {
-		return band.getRow() * (escp24pin ? 1 : 3); // A dot line is 1/180 inch (24 pin) or 1/72 inch (9 pin).
-	}
-
-	/**
-	 * Moves the paper forward, with ESC J, until the head is at the target. The paper only moves forward:
-	 * a target above the head stays where it is.
-	 * @param target Position down the page, in fine line units.
-	 */
-	private void advanceTo(int target) {
-		while (target > verticalPosition) {
-			int step = Math.min(255, target - verticalPosition);
-			pstream.write(ESC);
-			pstream.write(J);
-			pstream.write(step);
-			verticalPosition += step;
-		}
-	}
-
-	/**
-	 * Prints a band of dots, a bit image of 8 dots (9 pin, 120 dots per inch) or 24 dots (24 pin, 180 dots per inch)
-	 * high: the paper moves down to it, the head across with ESC $, and the dots print in one pass. The head
-	 * stays on the band's line, so that text on the same line prints over it.
-	 * @param band Band to print.
-	 */
-	public void print(GraphicsRaster.Band band) {
-		advanceTo(verticalTarget(band));
-		int unit = escp24pin ? 3 : 2; // Dot columns in 1/60 inch.
-		int position = band.getColumn() / unit;
-		pstream.write(ESC);
-		pstream.write(DOLLAR_SIGN);
-		pstream.write(position % 256);
-		pstream.write(position / 256);
-		pstream.write(ESC);
-		pstream.write(ASTERISK);
-		pstream.write(escp24pin ? BIT_IMAGE_24PIN : BIT_IMAGE_9PIN);
-		pstream.write(band.getColumns() % 256);
-		pstream.write(band.getColumns() / 256);
-		pstream.write(band.getData(), 0, band.getData().length);
-		horPosition = (band.getColumn() + band.getColumns()) * 120f / (escp24pin ? 180 : 120);
-	}
-
 	/**
 	 * Prints the text to the given printer.
 	 * @param textField Text to print.
