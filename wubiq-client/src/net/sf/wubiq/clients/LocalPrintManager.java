@@ -581,7 +581,7 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 	 */
 	public static void main (String[] args) throws Exception {
 		LocalPrintManager manager = new LocalPrintManager();
-		System.out.println(ClientLabels.get("client.version", VersionInformation.describe()));
+		System.out.println(ClientLabels.get("client.version", Labels.VERSION));
 		System.out.println("https://github.com/FedericoAlcantara/wubiq\n");
 		Options options = new Options();
 		options.addOption("?", "help", false, ClientLabels.get("client.command_line_help"));
@@ -614,10 +614,6 @@ public class LocalPrintManager extends AbstractLocalPrintManager {
 						+ "-D" + PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX + " " + ClientLabels.get("PropertyKeys.WUBIQ_PRINTERS_DOTMATRIX") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT + " " + ClientLabels.get("PropertyKeys.WUBIQ_FONTS_DOTMATRIX_DEFAULT") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL + " " + ClientLabels.get("PropertyKeys.WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL") + ".\n"
-						+ "-D" + PropertyKeys.WUBIQ_DOTMATRIX_CHARSET + " " + ClientLabels.get("PropertyKeys.WUBIQ_DOTMATRIX_CHARSET") + ".\n"
-						+ "-D" + PropertyKeys.WUBIQ_DOTMATRIX_TABLE + " " + ClientLabels.get("PropertyKeys.WUBIQ_DOTMATRIX_TABLE") + ".\n"
-						+ "-D" + PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_X + " " + ClientLabels.get("PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_X") + ".\n"
-						+ "-D" + PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_Y + " " + ClientLabels.get("PropertyKeys.WUBIQ_DOTMATRIX_OFFSET_Y") + ".\n"
 						+ "\n"
 						+ "-D" + PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_CONNECTION_RETRIES") + ".\n"
 						+ "-D" + PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION + " " + ClientLabels.get("PropertyKeys.WUBIQ_CLIENT_FORCE_SERIALIZED_CONNECTION") + ".\n"

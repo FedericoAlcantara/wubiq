@@ -18,11 +18,6 @@ public final class PropertyKeys {
 
 	public static final String WUBIQ_FONTS_DOTMATRIX_DEFAULT = "wubiq.fonts.dotmatrix.default";
 	public static final String WUBIQ_FONTS_DOTMATRIX_FORCE_LOGICAL = "wubiq.fonts.dotmatrix.force.logical";
-	public static final String WUBIQ_DOTMATRIX_CHARSET = "wubiq.dotmatrix.charset";
-	public static final String WUBIQ_DOTMATRIX_TABLE = "wubiq.dotmatrix.table";
-	public static final String WUBIQ_DOTMATRIX_OFFSET_X = "wubiq.dotmatrix.offset.x";
-	public static final String WUBIQ_DOTMATRIX_OFFSET_Y = "wubiq.dotmatrix.offset.y";
-	public static final String WUBIQ_DOTMATRIX_GRAPHICS = "wubiq.dotmatrix.graphics";
 
 	public static final String WUBIQ_PRINTERS_PHOTO = "wubiq.printers.photo";
 	public static final String WUBIQ_PRINTERS_DOTMATRIX = "wubiq.printers.dotmatrix";
