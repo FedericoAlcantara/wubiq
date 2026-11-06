@@ -214,7 +214,7 @@ Compare the sheets with the test page PDF to see where the text should be. To ch
 
 ### Testing a Windows client
 
-The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` tests wubiq-client on Windows, through a real Windows printer driver. It runs on a Windows Server 2022 runner, on pull requests that change the client, the server, the witness or the workflow, and on demand: in the repository's **Actions** tab, choose **Dot-matrix printing on Windows** → **Run workflow**.
+The GitHub Actions workflow `.github/workflows/dotmatrix-windows.yml` tests wubiq-client on Windows, through a real Windows printer driver. It runs on a Windows Server 2022 runner, on demand: in the repository's **Actions** tab, choose **Dot-matrix printing on Windows** → **Run workflow**.
 
 On the runner, it:
 1. installs Oracle Java 6u45 and the Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
@@ -224,7 +224,7 @@ On the runner, it:
 
 The run's summary lists every JDK as `REFERENCE`, `SAME`, `DIFFERENT` or `NOT PRINTED`, in one row for the driver job and one with `-fast` for the fast path file, which is `WARNINGS` when the witness reports a warning in it. The `dotmatrix-e2e-windows` artifact holds every job's report (`jobs/job-*/index.html`), the client and witness logs, and the Tomcat logs.
 
-Oracle Java 6 comes from the private S3 bucket `java-jdk-wadvanced`, through the AWS role in the repository secret `AWS_ROLE_ARN`. Runs without access to the role, such as pull requests from forks, use the Zulu 6 job as the reference.
+Oracle Java 6 comes from the private S3 bucket `java-jdk-wadvanced`, through the AWS role in the repository secret `AWS_ROLE_ARN`. Runs without access to the role use the Zulu 6 job as the reference.
 
 The Windows driver renders pages differently from the CUPS driver, so Windows jobs are compared with each other, not with the macOS golden file.
 
