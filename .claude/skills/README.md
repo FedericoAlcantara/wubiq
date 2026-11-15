@@ -12,7 +12,7 @@ registry the pipeline reads — nothing else lists them:
 
 | Code | Directory | Toolchain | Commit and PR scope | Depends on | Headless tests |
 |---|---|---|---|---|---|
-| `COM` | `wubiq-common` | `java-ant` | `common` | — | none (tested from `wubiq-client/tests-src`) |
+| `COM` | `wubiq-common` | `java-ant` | `common` | — | `tests-src` |
 | `WIT` | `wubiq-dotmatrix-witness` | `java-ant` | `witness` | — | `tests-src` |
 | `CLI` | `wubiq-client` | `java-ant` | `client` | `COM`, `WIT` | `tests-src` |
 | `SRV` | `wubiq-server` | `java-ant` | `server` | `COM`, `CLI` | none |

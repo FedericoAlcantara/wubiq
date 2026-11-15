@@ -451,8 +451,9 @@ Always a question, never a judgement of this skill:
      | new file | the class under test has none | `new file`, with the search that found none |
 
   2. **Location.** JUnit 4, in the test sources of an application that has a suite:
-     `wubiq-dotmatrix-witness/tests-src` (`WIT`), `wubiq-client/tests-src` (`CLI`, and `COM` code
-     reachable from a client test), `wubiq-android-gradle/app/src/test/java` (`AND`). `SRV`,
+     `wubiq-common/tests-src` (`COM`), `wubiq-dotmatrix-witness/tests-src` (`WIT`),
+     `wubiq-client/tests-src` (`CLI`), `wubiq-android-gradle/app/src/test/java` (`AND`). A
+     section's tests are in its own application. `SRV`,
      `INS` and `PJB` have no suite.
   3. **Setup.** Every row states how the test reaches the port: the objects it builds, the
      fixture or golden file it reads, the stream it writes into. A test is headless, needs no

@@ -446,8 +446,7 @@ verdict — a fail on one row never skips the rows after it:
   change is present, verbatim, in the current doc, and the CHANGELOG headings it
   inserts under (`## Wubiq X.Y.Z`, `### Wubiq-<module>`) exist or are prescribed
   as new. Other sections prescribe none.
-- **File-path row:** the path is under the application's directory — or, for a
-  `COM-k` section's red-test row, under `wubiq-client/tests-src/`. One that is
+- **File-path row:** the path is under the application's directory. One that is
   not fails (slug `out-of-application`) and is always `design-gap`.
 - **Every row, additionally:** the instruction must be executable with zero
   inference — no "or", no "consider", no discovery, no missing param shape,
@@ -773,8 +772,8 @@ resolves as **gaps resume** (Step 0 row 8) and reads this comment as its work li
    Under `NON_INTERACTIVE: true` this run, and every re-run after a fix, goes
    through `section-test.sh` like Step 6's (§ Test budget) — a debugging loop
    that starts here is counted too, and `BUDGET: EXHAUSTED` means § Checkpoint.
-   A section whose application has no headless suite (`COM`, `SRV`, `INS`,
-   `PJB`) and whose tests live nowhere else has nothing to run here.
+   A section whose application has no headless suite (`SRV`, `INS`, `PJB`)
+   has nothing to run here.
    Do **not** run the full suite. The section's green-tests row for the full
    suite (`suite.sh`) is `review-issue`'s to run: it executes the suite
    immediately after this skill and may not trust any receipt from it, so a
@@ -955,12 +954,10 @@ subsection.
 | `WIT` wubiq-dotmatrix-witness | `tests-src` | `section-test.sh WIT net.sf.wubiq.dotmatrix.witness.EscpInterpreterTest` |
 | `CLI` wubiq-client | `tests-src` | `section-test.sh CLI net.sf.wubiq.dotmatrix.ReferenceEncoderTest` |
 | `AND` wubiq-android-gradle | `app/src/test/java` | `section-test.sh AND net.sf.wubiq.android.utils.SecondsUtilsTest` |
-| `COM`, `SRV`, `INS`, `PJB` | none | see below |
+| `COM` wubiq-common | `tests-src`, classes named `*Test` | `section-test.sh COM <fully.qualified.TestClass>` |
+| `SRV`, `INS`, `PJB` | none | see below |
 
-An application with no headless suite gets its tests where the code is
-reachable: `wubiq-common` code is tested from `wubiq-client/tests-src`, which
-compiles against it, and the spec's red-test row names that file. That test
-file sits in another application's directory only when the spec's row says so —
-it is the one case where rule 8 yields to the spec. Where nothing reaches the
-code headless (a servlet, a Swing screen, the installer), the AC is
-`mechanical`: verified by the gate or by the command the AC names.
+A section's tests are in its own application, like the rest of its files
+(rule 8). In an application with no headless suite (a servlet, a Swing screen,
+the installer) the AC is `mechanical`: verified by the gate or by the command
+the AC names.

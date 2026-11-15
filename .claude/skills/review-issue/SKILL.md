@@ -441,9 +441,7 @@ user-visible literal that is not a bundle lookup is a flag.
 printf '%s\n' $CHANGED | grep -vE '^<dir>/|^specs/issue-<n>-enriched-spec\.md$'
 ```
 
-returns nothing. One exception: a `COM-k` section may also change tests under
-`wubiq-client/tests-src/` when its spec's red-test rows place them there
-(`wubiq-common` has no suite of its own). On `DOC-1` the requirement is Step 2's
+returns nothing. On `DOC-1` the requirement is Step 2's
 documentation-scope table instead, already checked. A change another application needs belongs to that application's own section; a file
 outside every application directory that the section does not name is a flag.
 

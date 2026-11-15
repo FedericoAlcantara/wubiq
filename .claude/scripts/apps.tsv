@@ -5,7 +5,7 @@
 # a class compiled against an older signature would survive and fail at run time.
 #
 # code	dir	toolchain	jdk	deps	compile	test	single-test
-COM	wubiq-common	java-ant	8	-	"$WUBIQ_SCRIPTS/javac-check.sh" bin src "lib/*:lib-nondeploy/*" -source 1.6 -target 1.6 -g	-	-
+COM	wubiq-common	java-ant	8	-	rm -rf bin build-tests/classes && ant -q -f build.xml compile-tests	ant -f build.xml test	java -Djava.awt.headless=true -cp "bin:i18n:build-tests/classes:lib/*:lib-nondeploy/*:../wubiq-dotmatrix-witness/lib-test/*" org.junit.runner.JUnitCore {}
 WIT	wubiq-dotmatrix-witness	java-ant	8	-	rm -rf bin build-tests/classes && ant -q -f build.xml compile-tests	ant -f build.xml test	java -Djava.awt.headless=true -cp "bin:build-tests/classes:lib-test/*" org.junit.runner.JUnitCore {}
 CLI	wubiq-client	java-ant	8	COM,WIT	rm -rf bin build-tests/classes && ant -q -f build.xml compile-tests	ant -f build.xml test-dotmatrix	java -Djava.awt.headless=true -cp "bin:i18n:../wubiq-common/bin:../wubiq-common/i18n:lib/*:../wubiq-common/lib/*:../wubiq-common/lib-nondeploy/*:../wubiq-dotmatrix-witness/bin:build-tests/classes:../wubiq-dotmatrix-witness/lib-test/*" org.junit.runner.JUnitCore {}
 SRV	wubiq-server	java-ant	8	COM,CLI	"$WUBIQ_SCRIPTS/javac-check.sh" - src "WebContent/WEB-INF/lib/*:../wubiq-common/bin:../wubiq-common/lib-nondeploy/*:lib-nondeploy/*"	-	-

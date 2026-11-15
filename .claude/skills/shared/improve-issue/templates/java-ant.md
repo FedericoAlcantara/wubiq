@@ -33,14 +33,15 @@ built by that directory's `build.xml`.
 
    | Application | Test sources | Suite |
    |---|---|---|
+   | `COM` | `wubiq-common/tests-src` | yes |
    | `WIT` | `wubiq-dotmatrix-witness/tests-src` | yes |
    | `CLI` | `wubiq-client/tests-src` | yes |
-   | `COM` | `wubiq-client/tests-src`, when the changed code is reachable from a client test | none of its own |
    | `SRV`, `INS`, `PJB` | — | none |
 
    A test is headless (`java.awt.headless=true`), needs no printer, device, server or network,
-   never sleeps, and never asserts a version string. A test added to `wubiq-client/tests-src`
-   for a `COM-k` section is that section's one exception to rule 1.
+   never sleeps, and never asserts a version string. A section's tests sit in its own
+   application, like the rest of its files (rule 1). In `wubiq-common` a test class is named
+   `*Test`: `ant test` there runs every class with that suffix.
 10. **Dot-matrix output.** `ant test-dotmatrix` only reports layout and golden-file mismatches
     unless `-Dwubiq.dotmatrix.strict=true` is set. An AC about what is printed names the JUnit
     assertion that fails, never the report.
