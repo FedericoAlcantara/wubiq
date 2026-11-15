@@ -80,3 +80,9 @@ wubiq-android-gradle/.DS_Store
 
 # wubiq-installer build output
 /wubiq-installer/output.jar
+
+# Issue pipeline (.claude/skills/README.md): per-checkout state, never committed
+/.orchestrator-state.json
+/.test-receipt.json
+/.claude/worktrees/
+/.claude/settings.local.json
