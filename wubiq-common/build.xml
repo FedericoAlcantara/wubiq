@@ -41,58 +41,6 @@
 		<copy todir="${basedir.gradle}/app/libs/" file="${outputjar}"/>
 	</target>
 
-	<property name="testBin" value="${basedir}/build-tests/classes" />
-	<property name="libTest" value="${workspace.dir}/wubiq-dotmatrix-witness/lib-test" />
-
-	<path id="test.classpath">
-		<pathelement path="${bin}"/>
-		<pathelement path="${basedir}/i18n"/>
-		<pathelement path="${testBin}"/>
-		<fileset dir="${lib}">
-			<include name="**/*.jar"/>
-		</fileset>
-		<fileset dir="${libNonDeploy}">
-			<include name="**/*.jar"/>
-		</fileset>
-		<fileset dir="${libTest}">
-			<include name="**/*.jar"/>
-		</fileset>
-	</path>
-
-	<target name="compile" description="Compiles the sources without packaging">
-		<mkdir dir="${bin}"/>
-		<javac destdir="${bin}" nowarn="true" failonerror="true" includeantruntime="false"
-				debug="true" target="1.6" source="1.6">
-			<src refid="project.src"/>
-			<classpath refid="project.classpath" />
-		</javac>
-	</target>
-
-	<target name="compile-tests" depends="compile">
-		<mkdir dir="${basedir}/tests-src"/>
-		<mkdir dir="${testBin}"/>
-		<javac srcdir="${basedir}/tests-src" destdir="${testBin}" nowarn="true" failonerror="true"
-				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8">
-			<classpath refid="test.classpath" />
-		</javac>
-	</target>
-
-	<target name="find-tests" depends="compile-tests">
-		<pathconvert property="test.classes" pathsep=" " setonempty="false">
-			<fileset dir="${testBin}" includes="**/*Test.class" />
-			<packagemapper from="${testBin}${file.separator}*.class" to="*" />
-		</pathconvert>
-	</target>
-
-	<target name="test" depends="find-tests" if="test.classes"
-			description="Runs every *Test class under tests-src">
-		<java classname="org.junit.runner.JUnitCore" fork="true" failonerror="true">
-			<classpath refid="test.classpath" />
-			<sysproperty key="java.awt.headless" value="true" />
-			<arg line="${test.classes}" />
-		</java>
-	</target>
-
 	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
 		<echo message="Creating wubiq-common javadoc" />
 		<delete dir="${basedir}/javadoc" failonerror="false" />
