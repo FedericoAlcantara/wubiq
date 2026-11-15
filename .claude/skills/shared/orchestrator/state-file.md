@@ -18,13 +18,13 @@ Location: the root of the working tree the run occupies.
   "level": "normal",
   "state": "running",
   "sections": {
-    "DOC-1": { "state": "done", "pr": "https://github.com/FedericoAlcantara/wubiq/pull/361" },
-    "CLI-1":  { "state": "in_progress", "step": "review-issue", "task_id": null, "worktree": ".claude/worktrees/section-360-cli-1" },
-    "AND-1":  { "state": "waiting_on_deps" }
+    "CLI-DOC-1": { "state": "done", "pr": "https://github.com/FedericoAlcantara/wubiq/pull/361" },
+    "CLI-BE-1":  { "state": "in_progress", "step": "review-issue", "task_id": null, "worktree": ".claude/worktrees/section-360-cli-be-1" },
+    "AND-UI-1":  { "state": "waiting_on_deps" }
   },
-  "progress": { "loop_tally": { "CLI-1": 1 }, "fingerprint": "9f2c…" },
+  "progress": { "loop_tally": { "CLI-BE-1": 1 }, "fingerprint": "9f2c…" },
   "waves": 3,
-  "last_transition": "CLI-1: code-issue -> review-issue",
+  "last_transition": "CLI-BE-1: code-issue -> review-issue",
   "last_updated": "2026-09-03T14:31:02Z"
 }
 ```
@@ -38,7 +38,7 @@ Location: the root of the working tree the run occupies.
 | `sections` | one entry per Section Map row: `waiting_on_deps` \| `in_progress` (+ `step`, `worktree`) \| `blocked` \| `in_review` \| `done` (+ `pr`). `worktree` is written, never read |
 | `progress` | `loop_tally` (`STATUS: LOOP` verdicts and `STATUS: CHECKPOINT` results per section this run) and `fingerprint` (Guard's digest of the last settled pass). Absent on a fresh run; otherwise carried verbatim on every write |
 | `waves` | integer: `wave_done` states written under this `run_id`. `0` on a new `run_id`; carried on every write; Settle adds 1 when it writes `wave_done` |
-| `last_transition` | one line, e.g. `CLI-1: merged #362` |
+| `last_transition` | one line, e.g. `CLI-BE-1: merged #362` |
 | `last_updated` | UTC ISO 8601, refreshed on every write |
 
 Write — always whole-file, always atomic:

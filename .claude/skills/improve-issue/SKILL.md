@@ -2,8 +2,8 @@
 name: improve-issue
 description: >
   Partition and enrich a GitHub issue into an ordered set of self-contained,
-  atomic sections — one Documentation section and one or more per application
-  the issue changes — each deliverable as its own PR, for Wubiq (remote
+  atomic sections — per application the issue changes, a Documentation section
+  and its Build, Backend and UI sections — each deliverable as its own PR, for Wubiq (remote
   printing: several Java applications in one repository, built with Ant and
   Gradle). Use whenever the user says "work on issue", "improve
   issue", "enrich issue", "clarify requirements", or pastes an issue URL/number.
@@ -48,7 +48,7 @@ Each term has one meaning in this file. No synonym is used.
    This holds on every run, including a one-word re-enrichment.
 2. This skill edits no file in the repository — no documentation, no code. It writes only
    `/tmp/improve-issue-<n>-*` files; a sub-skill it invokes writes its own `/tmp` files, and the
-   spec reaches the repository only through `spec-store`'s spec PR. `DOC-1` describes
+   spec reaches the repository only through `spec-store`'s spec PR. A `DOC` section describes
    documentation edits; `code-issue` applies them.
 3. This skill never creates, splits or closes an issue.
 4. No question survives into the spec. A question is never answered by assumption. The spec has
@@ -127,7 +127,8 @@ Always a question, never a judgement of this skill:
 - a change that needs new `wubiq-common` or `wubiq-client` code inside the Android app, which
   ships them as tracked jars;
 - a raise of an application's language level, `minSdk`, or the JDK it builds with;
-- a new third-party jar or Gradle dependency the issue does not name;
+- a new third-party jar or Gradle dependency the issue does not name (when the user accepts
+  it, it becomes a `BLD` section);
 - a capability specced for one application when the issue's wording covers several and does
   not say which;
 - the CHANGELOG version heading, when the topmost version is already tagged;
@@ -267,46 +268,61 @@ Always a question, never a judgement of this skill:
   ### Types
 
   The applications are the rows of `.claude/scripts/apps.tsv`, read in Ground. This file never
-  lists them: a row added to the registry is a type this step can use.
+  lists them: a row added to the registry is an application this step can use. Every section
+  belongs to one application and has one of four types:
 
-  | Type | Id | One section per |
-  |---|---|---|
-  | Documentation | `DOC-1` | issue — exactly one, carrying every documentation edit the issue owes, and its CHANGELOG entry |
-  | an application — the Type cell is its directory name | `<APP>-k`, `<APP>` its registry code | unit of change inside that application that can merge alone |
+  | `<TYPE>` | Type cell | Holds | One section per |
+  |---|---|---|---|
+  | `DOC` | Documentation | the application's documentation: its `CHANGELOG.md` bullets under `### Wubiq-<module>`, and the Markdown files under its directory (its `README.md`) | application — at most one, `<APP>-DOC-1` |
+  | `BLD` | Build | build and packaging: `build.xml`, Gradle files, vendored jars (`lib/`, `libs/`), the installer definition, manifests, R8/ProGuard rules, launch scripts | unit of build change that can merge alone |
+  | `BE` | Backend | logic with no screen: protocol keys and wrappers, print managers, services, device drivers, servlet logic, persistence | unit of change that can merge alone |
+  | `UI` | UI | what the user sees: Swing screens, JSP and `WebContent`, Android activities, layouts and `res/`, and the i18n text shown | unit of change that can merge alone |
 
-  A section belongs to exactly one application and edits files only under that application's
-  directory. An issue may span applications: each one it changes gets one or more sections. An
-  application the issue does not change has none. `DOC-1` is absent only when the issue has no
-  user-visible change (`documentation.md` rule 16); the Overview then says so in one sentence.
+  A section edits files only under its application's directory; a `DOC` section additionally
+  edits `CHANGELOG.md`. An issue may span applications: each one it changes gets its own
+  sections. An application the issue does not change has none.
+
+  Every application the issue changes in a user-visible way has an `<APP>-DOC-1`. It is absent
+  for an application only when that application's change is not user-visible
+  (`documentation.md` rule 16); the Overview then says so in one sentence.
+
+  Adding or upgrading a dependency — a jar, a Gradle coordinate — is a `BLD` section. A `BE` or
+  `UI` section never adds one: it depends on the `BLD` section that does.
 
   ### Ids
 
-  Unique per application, numbered per application, appended in Section Map order. A gap left
-  by a removed section stays a gap.
+  `<APP>-<TYPE>-<k>`: `<APP>` the registry code, `<TYPE>` from the table above, `<k>` numbered
+  from 1 per application and type — `CLI-DOC-1`, `CLI-BLD-1`, `CLI-BE-2`, `AND-UI-1`. New ids
+  are appended; a gap left by a removed section stays a gap.
 
   ### Order and dependencies
 
-  1. Map order is Documentation, then the applications in registry order — the registry lists
-     an application after everything it depends on. Map order is execution order.
+  1. Map order is the applications in registry order — the registry lists an application after
+     everything it depends on — and, inside each application, `DOC`, `BLD`, `BE`, `UI`. Map
+     order is execution order.
   2. Every section carries `Depends on:` — sibling ids, or `none`.
-  3. A section depends on every section of this issue in an application its own application
-     depends on (registry column `deps`), when it uses what that section creates or changes. A
-     dependency points backward across registry order, or sideways inside an application. The
-     graph is a DAG.
-  4. `DOC-1` depends on nothing. Every other section's dependency chain reaches `DOC-1`: a
-     section with no other dependency carries `Depends on: DOC-1`. With no `DOC-1`, those
-     sections carry `none`.
-  5. A section starts only when every dependency's PR is merged. Independent sections may run in
+  3. Inside an application, dependencies follow the type order. Every `BLD`, `BE` and `UI`
+     section depends on its application's `<APP>-DOC-1` when there is one, and on this issue's
+     earlier-type sections of the same application whose changes it uses.
+  4. Across applications, a section depends on every section of this issue in an application
+     its own application depends on (registry column `deps`), when it uses what that section
+     creates or changes.
+  5. The `DOC` sections of different applications all edit the one `CHANGELOG.md`, so they are
+     chained in registry order: each `<APP>-DOC-1` depends on the previous application's `DOC`
+     section in the Map. The first depends on nothing.
+  6. A dependency points backward in Map order. The graph is a DAG.
+  7. A section starts only when every dependency's PR is merged. Independent sections may run in
      parallel.
-  6. A dependency on another issue's section is written `#<n>·<SEC-ID>`. Use it when this section
+  8. A dependency on another issue's section is written `#<n>·<SEC-ID>`. Use it when this section
      builds on code that section creates or changes; never duplicate that work.
-  7. `DOC-1` is the only section that prescribes a documentation edit.
-  8. Two sections that edit the same region of one code file declare a dependency: the later
-     depends on the earlier.
-  9. An application with no `deps` that ships another application's code as tracked jars
-     (`wubiq-android-gradle/app/libs/`) depends on no section: sections never rebuild those jars.
-     An issue that needs new common or client code inside that application is a question
-     (Question rule).
+  9. `DOC` sections are the only ones that prescribe a documentation edit, each for its own
+     application.
+  10. Two sections that edit the same region of one file declare a dependency: the later
+      depends on the earlier.
+  11. An application with no `deps` that ships another application's code as tracked jars
+      (`wubiq-android-gradle/app/libs/`) depends on no section of those applications: sections
+      never rebuild those jars. An issue that needs new common or client code inside that
+      application is a question (Question rule).
 
   ### Atomicity
 
@@ -332,15 +348,15 @@ Always a question, never a judgement of this skill:
 
   | Item | Form | Example |
   |---|---|---|
-  | Branch | `<type>/<n>-<sec>-<slug>`, `<type>` a conventional-commit type, `<sec>` lowercased | `docs/360-doc-1-changelog`, `feat/360-cli-2-paper-size` |
-  | PR title | `<type>(<scope>): … (#<n> · <SEC-ID>)`; `DOC-1` has no scope | `docs: … (#360 · DOC-1)`, `feat(client): … (#360 · CLI-2)` |
+  | Branch | `<type>/<n>-<sec>-<slug>`, `<type>` a conventional-commit type, `<sec>` lowercased | `docs/360-cli-doc-1-changelog`, `feat/360-cli-be-2-paper-size` |
+  | PR title | `<type>(<scope>): … (#<n> · <SEC-ID>)`, `DOC` sections included | `docs(client): … (#360 · CLI-DOC-1)`, `feat(client): … (#360 · CLI-BE-2)` |
 
   `<scope>` is the application's short name: its directory without the `wubiq-` prefix, with
   `dotmatrix-witness` shortened to `witness` and `android-gradle` to `android`.
 
   Every branch is unique within the issue.
   Why: `code-issue` and `review-issue` find a section's PR by an exact `gh pr list --head` probe.
-  The PR title is never used to detect state: GitHub's title search matches `CLI-10` for `CLI-1`.
+  The PR title is never used to detect state: GitHub's title search matches `CLI-BE-10` for `CLI-BE-1`.
 
 - **Writes:** `scope` (every row added or re-scoped).
 
@@ -348,8 +364,8 @@ Always a question, never a judgement of this skill:
 
 - **Pre-flight:** `scope` empty → skip.
 - **Loads:** `../shared/house-conventions.md`; `../shared/improve-issue/templates/documentation.md`
-  when `DOC-1` is in `scope`; `../shared/improve-issue/templates/<toolchain>.md` for each
-  registry toolchain that has a section in `scope` — and no other.
+  when a `DOC` section is in `scope`; `../shared/improve-issue/templates/<toolchain>.md` for
+  each registry toolchain that has a `BLD`, `BE` or `UI` section in `scope` — and no other.
 - **Do:** write the working text: the skeleton below, and every section in `scope` from its
   template under that template's rules. Sections outside `scope` are copied unchanged.
   Untick every AC whose text this run changed.
@@ -369,8 +385,8 @@ Always a question, never a judgement of this skill:
   ### Section Map
   | ID | Type | Scope | Depends on | Branch | PR title |
   |---|---|---|---|---|---|
-  | DOC-1 | Documentation | <file § section, …> | none | docs/<n>-doc-1-<slug> | docs: … (#<n> · DOC-1) |
-  | CLI-1 | wubiq-client | <capability> | DOC-1 | feat/<n>-cli-1-<slug> | feat(client): … (#<n> · CLI-1) |
+  | CLI-DOC-1 | Documentation | <file § section, …> | none | docs/<n>-cli-doc-1-<slug> | docs(client): … (#<n> · CLI-DOC-1) |
+  | CLI-BE-1 | Backend | <capability> | CLI-DOC-1 | feat/<n>-cli-be-1-<slug> | feat(client): … (#<n> · CLI-BE-1) |
 
   A section starts only when every dependency is **merged**. Independent
   sections may run in parallel. Status is derived from GitHub, never recorded
@@ -389,7 +405,7 @@ Always a question, never a judgement of this skill:
   Section Map row; no id is fenced twice; nothing sits between one section's `:end` line and the
   next section's `:start` line.
   Why: `spec-load` extracts a section by matching the two fence lines whole. A heading match
-  would take `CLI-10` for `CLI-1`.
+  would take `CLI-BE-10` for `CLI-BE-1`.
 
   ### Writing rules
 
@@ -424,12 +440,13 @@ Always a question, never a judgement of this skill:
   7. **Language level.** A section states the level its application's build file sets, and
      prescribes nothing above it (`java-ant.md` rule 4, `android-gradle.md` rule 4).
   8. **Standing project rules** are restated only where the section touches them:
-     - a section edits files under one application directory only;
+     - a section edits files under one application directory only (a `DOC` section also
+       edits `CHANGELOG.md`);
      - no Ant default target and no `create-*-jar` target; no `bin/`, `dist/`, `build/`,
        `build-tests/` or jar is committed;
      - the tracked jars in `wubiq-android-gradle/app/libs/` are never rebuilt or replaced;
      - names both ends of the wire use are constants in `wubiq-common`;
-     - no new third-party jar and no new Gradle dependency unless the section names it;
+     - a third-party jar or Gradle dependency is added or upgraded only by a `BLD` section;
      - `versionCode`, `versionName` and every other version string are never edited;
      - user-visible text goes through the i18n bundle or string resources, every locale.
   9. **House conventions.** `../shared/house-conventions.md` applies to every sentence of the
@@ -479,10 +496,10 @@ Always a question, never a judgement of this skill:
   | Check | Home of the rule |
   |---|---|
   | Atomicity | 6 · Partition § Atomicity |
-  | Map complete; ids unique per application; every `Depends on:` id exists; DAG; nothing points forward | § Ids, § Order and dependencies |
-  | One `DOC-1`, or the Overview's one-sentence absence; every chain reaches it | § Types, § Order and dependencies 4 |
-  | `DOC-1` is the only documentation writer; shared code regions declare a dependency | § Order and dependencies 7–8 |
-  | Every file a section edits sits under its application's directory | § Types |
+  | Map complete; ids `<APP>-<TYPE>-<k>`, unique; every `Depends on:` id exists; DAG; nothing points forward | § Ids, § Order and dependencies |
+  | Per application changed: one `<APP>-DOC-1`, or the Overview's one-sentence absence; its other sections depend on it; `DOC` sections chained in registry order; type order `DOC`, `BLD`, `BE`, `UI` | § Types, § Order and dependencies 1, 3, 5 |
+  | `DOC` sections are the only documentation writers; a dependency is added only by a `BLD` section; shared file regions declare a dependency | § Types, § Order and dependencies 9–10 |
+  | Every file a section edits sits under its application's directory (`CHANGELOG.md` too, for a `DOC` section); every section's content matches its type | § Types |
   | Branch unique; PR title form | § Branch and PR title |
   | Fences | 7 · Draft § Skeleton |
   | Register; no optionality | § Writing rules 1–2 |
@@ -495,7 +512,7 @@ Always a question, never a judgement of this skill:
   | Per-type rules | the loaded template's `## Rules` |
   | No guard removed without a recorded decision; zero questions remain | § Question rule, Invariant 4 |
   | No model name; `**Complexity:**` is the one level mention | Invariant 5 |
-  | CHANGELOG entry in `DOC-1`, with no issue link; H-1 (no `file.md:NNN`), H-3 (no AC that only observes a stub), and the rest of the list | `house-conventions.md` |
+  | CHANGELOG entry in the application's `DOC` section, with no issue link; H-1 (no `file.md:NNN`), H-3 (no AC that only observes a stub), and the rest of the list | `house-conventions.md` |
 
   **Hedge grep**, case-insensitive, over the sections in `scope`. `|` separates alternatives; the
   spaces around it are not part of a pattern:
@@ -528,7 +545,7 @@ Always a question, never a judgement of this skill:
   | a contract-change table | re-run the caller search now; every hit has a row, no row is missing |
   | a language or API level | open the build file now; the `source` / `target`, or `compileOptions` / `minSdk`, read what the section states |
   | a red-test row | `amend` — the named test exists; `add to` — the file exists; `new file` — it does not. The assertion sketch states nothing the cited source disproves. |
-  | a documentation edit in `DOC-1` | the file exists; the `§` anchor is in the current doc; the text to change is there verbatim; the CHANGELOG version heading exists and `git tag -l v<version>` prints nothing |
+  | a documentation edit in a `DOC` section | the file exists; the `§` anchor is in the current doc; the text to change is there verbatim; the CHANGELOG version heading exists and `git tag -l v<version>` prints nothing |
   | an instruction naming a method or call site to edit | open that site now; it contains what the instruction says it contains |
   | a rename or removal of a key, a string or a resource name | re-run the search for it across every application now; the section names every hit with its new handling |
   | the section as a whole | no two statements disagree; no instruction disagrees with the citation it leans on |
@@ -568,7 +585,7 @@ Always a question, never a judgement of this skill:
   2. `R.inputs` non-empty → write the resolution comment to
      `/tmp/improve-issue-<n>-resolution.md`. Empty → delete that path.
   3. When `obs.spec` is a path, build the **reading aids**: one change line per section
-     (`COM-1 unchanged · CLI-2 rewritten (defect 2481937461) · AND-1 new`), then the feedback item
+     (`COM-BE-1 unchanged · CLI-BE-2 rewritten (defect 2481937461) · AND-UI-1 new`), then the feedback item
      lines exactly as the resolution comment carries them. When any Section Map row has an open
      PR (`obs.prs`), add one line naming those sections: their branches' local ticks will conflict
      with this rewrite.
@@ -626,8 +643,8 @@ Always a question, never a judgement of this skill:
   | 8 | `stored` set | delete the draft file; output the summary below; end |
 
   ```
-  ✅ Sectioned spec stored for issue #<n> — <1|0> Documentation · <per application: count and code, e.g. 2 CLI · 1 AND> sections.
-  📄 Documentation edits prescribed in DOC-1: <the files it edits, or "none — the issue owes no doc edit">
+  ✅ Sectioned spec stored for issue #<n> — <the section ids, grouped by application, e.g. CLI-DOC-1, CLI-BE-1, CLI-BE-2 · AND-DOC-1, AND-UI-1>.
+  📄 Documentation edits prescribed: <per `DOC` section, the files it edits, or "none — the issue owes no doc edit">
   ❓ Questions resolved with the user: <R.answered, or "none">
   ⚠️ <sections with an open PR whose local ticks will conflict with this rewrite, or omit the line>
   👉 Next: code-issue <n> <SEC-ID>  (Coder: <model+effort>) — the first section whose dependencies are merged.

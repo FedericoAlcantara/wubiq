@@ -1,8 +1,9 @@
 # improve-issue · Java (Ant) application sections
 
-Read by `improve-issue` **Draft** when a section of an application whose registry toolchain is
-`java-ant` is in scope. Such a section changes the Java sources of one application directory,
-built by that directory's `build.xml`.
+Read by `improve-issue` **Draft** when a `BLD`, `BE` or `UI` section of an application whose
+registry toolchain is `java-ant` is in scope. Such a section changes one application directory,
+built by that directory's `build.xml`. Rules 1–11 hold for every type; § Per type adds what
+each type prescribes.
 
 ## Rules
 
@@ -21,13 +22,13 @@ built by that directory's `build.xml`.
    they overwrite the tracked jars in `wubiq-android-gradle/app/libs/`. It never commits `bin/`,
    `dist/`, `build/`, `build-tests/` or a jar. Compiling is the gate's job
    (`.claude/scripts/gate.sh`).
-6. **Dependencies.** No new third-party jar unless the section names it: the jar file, the
-   `lib` directory it goes in, and why a class already on the classpath does not serve.
+6. **Dependencies.** A third-party jar is added, replaced or removed only by a `BLD` section.
+   A `BE` or `UI` section that needs one depends on that `BLD` section and prescribes no jar.
 7. **Strings.** Every user-visible string is fixed, exact text, and comes from the
    application's `i18n/` bundle. The section gives the key and the text for every locale file
    the bundle has.
 8. **Protocol.** A key, command or parameter name both ends of the wire use is defined in
-   `wubiq-common`, in a `COM-k` section. The consuming section depends on it and cites the
+   `wubiq-common`, in a `COM-BE-k` section. The consuming section depends on it and cites the
    constant; it never repeats the literal.
 9. **Tests.** JUnit 4. The suites, and where a section's tests go:
 
@@ -45,16 +46,22 @@ built by that directory's `build.xml`.
 10. **Dot-matrix output.** `ant test-dotmatrix` only reports layout and golden-file mismatches
     unless `-Dwubiq.dotmatrix.strict=true` is set. An AC about what is printed names the JUnit
     assertion that fails, never the report.
-11. An application with a suite: at least three ACs, at least one of them an error path (a
-    missing printer, an unreadable stream, an unsupported option surfacing loudly). An
-    application with none: every AC a test cannot reach ends
-    `(mechanical — no red test; verified by <command>)`.
+11. An AC a test cannot reach ends `(mechanical — no red test; verified by <command>)` and
+    names the command.
+
+## Per type
+
+| Type | Prescribes | ACs and their proof |
+|---|---|---|
+| `BLD` | `build.xml` targets, properties and classpaths; vendored jars (the jar file, the `lib` directory it goes in, why a class already on the classpath does not serve); manifests; the installer definition (`wubiq-installer/installation/`); launch scripts. No change to what a class does | mostly mechanical: the gate (`.claude/scripts/gate.sh`) for "still compiles", and a named command for the rest — the Ant target run and what it must print or produce, a `grep` on the build file, `unzip -l` on a jar the target builds outside the tracked ones. Subsections Test ports and Red tests are omitted when every AC is mechanical |
+| `BE` | classes with no screen: protocol keys and wrappers, print managers, services, device drivers, servlet logic, persistence | red tests in the application's suite (rule 9): at least three ACs, at least one an error path (a missing printer, an unreadable stream, an unsupported option surfacing loudly). In `SRV`, `INS` and `PJB`, which have no suite, every AC is mechanical |
+| `UI` | Swing screens, JSP and `WebContent`, and the i18n text they show (rule 7) | a Swing screen or a JSP is not reachable headless: an AC about what the user sees is mechanical (a `grep` for the key in every locale file, for the component or the tag), and an AC about behaviour is a red test on the logic behind the screen, moved into a method a test can call — the section names that method. Where no suite exists, every AC is mechanical |
 
 ## Template
 
 ```markdown
-<!-- section:<APP>-k:start -->
-### <APP>-k — <application directory> · <capability>
+<!-- section:<APP>-<TYPE>-k:start -->
+### <APP>-<TYPE>-k — <Type> · <application directory> · <capability>
 Depends on: <ids>
 
 #### Documentation references
@@ -77,7 +84,8 @@ Language level: <source/target read from build.xml>
 
 ##### Code changes
 1. `<application>/src/<package path>/<Class>.java` `<Class>#<method>` — <the exact change>
-2. <i18n keys, with the text for every locale file>
+2. <`UI`: i18n keys, with the text for every locale file>
+3. <`BLD`: `<application>/build.xml` target `<name>` — the exact change; the jar and its `lib` directory>
 
 ##### Contract changes   (only when a signature, a protocol key or a serialized shape changes)
 | Site | Change | New handling |
@@ -90,5 +98,5 @@ Language level: <source/target read from build.xml>
 2. `.claude/scripts/suite.sh` — full suite green (review-issue runs this; code-issue runs only
    this section's test classes)
 3. `.claude/scripts/gate.sh` clean
-<!-- section:<APP>-k:end -->
+<!-- section:<APP>-<TYPE>-k:end -->
 ```

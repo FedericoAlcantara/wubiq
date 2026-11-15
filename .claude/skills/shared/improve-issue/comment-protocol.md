@@ -58,11 +58,11 @@ blocks separated by one blank line. A kind with no input has no block.
 ```markdown
 <!-- spec-defect-resolved 2481937461 -->
 <!-- spec-defect-resolved 2481940022 -->
-Spec revised <date>: COM-1, CLI-2 re-grounded.
+Spec revised <date>: COM-BE-1, CLI-BE-2 re-grounded.
 
 <!-- review-feedback-resolved 2481951103 -->
-- item 1 → CLI-2: AC-3, AC-4 rewritten; step 6 rewritten
-- item 2 → CLI-2: step 4 rewritten
+- item 1 → CLI-BE-2: AC-3, AC-4 rewritten; step 6 rewritten
+- item 2 → CLI-BE-2: step 4 rewritten
 - item 3 → declined: contradicts AC-1 — an association field keeps `html_type: :unimplemented` by design
 ```
 
@@ -71,7 +71,7 @@ Rules for a feedback block:
 1. One line per item. Every item has a line.
    Why: an item with no line leaves the orchestrator halting on `SPEC_PENDING` indefinitely.
 2. An absorbed item's line reads `- item k → <SEC-ID>: …`, with the colon directly after the id
-   (`CLI-1:` never matches `CLI-10:`), and `<SEC-ID>` is the one in the feedback marker.
+   (`CLI-BE-1:` never matches `CLI-BE-10:`), and `<SEC-ID>` is the one in the feedback marker.
 3. The line names every AC and every numbered implementation step the item changed. A change
    that touches a step and no AC still names the step.
    Why: these lines are `code-issue`'s amend work list; an unnamed step is never re-coded.

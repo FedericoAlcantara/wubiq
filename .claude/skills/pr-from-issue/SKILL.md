@@ -54,14 +54,15 @@ everywhere else the block changes nothing.
   ```bash
   BRANCH=$(git rev-parse --abbrev-ref HEAD)
   N=$(printf '%s\n'   "$BRANCH" | sed -n 's|^[a-z]*/\([0-9]\{1,\}\)-.*|\1|p')
-  SEC=$(printf '%s\n' "$BRANCH" | sed -n 's|^[a-z]*/[0-9]\{1,\}-\([a-z]\{2,3\}-[0-9]\{1,\}\)-.*|\1|p' \
+  SEC=$(printf '%s\n' "$BRANCH" | sed -n 's|^[a-z]*/[0-9]\{1,\}-\([a-z]\{2,3\}-[a-z]\{2,3\}-[0-9]\{1,\}\)-.*|\1|p' \
         | tr '[:lower:]' '[:upper:]')
-  # feat/360-cli-1-paper-size  → N=360  SEC=CLI-1
-  # docs/360-doc-1-changelog   → N=360  SEC=DOC-1
+  # feat/360-cli-be-1-paper-size  → N=360  SEC=CLI-BE-1
+  # docs/360-cli-doc-1-changelog  → N=360  SEC=CLI-DOC-1
   ```
 
-  `[a-z]\{2,3\}` matches `DOC` and every application code in
-  `.claude/scripts/apps.tsv`; a new code must stay two or three letters.
+  A section id is `<APP>-<TYPE>-<k>`. The first `[a-z]\{2,3\}` matches every
+  application code in `.claude/scripts/apps.tsv`, the second every type (`DOC`,
+  `BLD`, `BE`, `UI`); a new code or type must stay two or three letters.
 
 If neither yields both values, do not guess — ask the user. Under
 `NON_INTERACTIVE: true` return `NEEDS_DECISION` per `../shared/escalation.md`,
@@ -141,8 +142,8 @@ then the status line, then stop:
 
 | Precondition | Verdict | Evidence | Fix |
 |---|---|---|---|
-| Branch is not master | ✅ pass | feat/360-cli-1-paper-size | — |
-| Section reviewed | ❌ fail | review table row reads PENDING | /skill review-issue 360 CLI-1 |
+| Branch is not master | ✅ pass | feat/360-cli-be-1-paper-size | — |
+| Section reviewed | ❌ fail | review table row reads PENDING | /skill review-issue 360 CLI-BE-1 |
 | ... every row ... | | | |
 
 STATUS: BLOCKED — preflight: <slug>[, <slug>]
@@ -167,7 +168,7 @@ Three values, all read, none invented:
 1. **Branch** — the Section Map row's `Branch` cell. Confirmed by preflight
    row 6.
 2. **PR title** — the Section Map row's `PR title` cell, verbatim, ending
-   `(#<n> · <SEC-ID>)`. A `DOC-1` row carries `docs:` rather than `feat:`; pass
+   `(#<n> · <SEC-ID>)`. A `DOC` section's row carries `docs` rather than `feat`; pass
    it through unchanged. The type was decided at enrichment and is the Section
    Map's business.
 3. **Issue reference** — decided by the completion phrase in the body fetched
@@ -241,8 +242,9 @@ This skill is outermost in the chain, so it owns the end of the turn, and is
 | Every remaining Section Map row depends, directly or transitively, on the section just shipped | `nothing can start until <this-pr-url> merges` |
 | Some remaining row's dependencies are all merged | `code-issue <n> <SEC-ID>` |
 
-The middle row is the ordinary outcome of an issue's **first** run: `DOC-1`
-ships first and every other section's dependency chain reaches it. It costs no
+The middle row is the ordinary outcome of an issue's **first** run: the first
+application's `DOC` section ships first and every other section's dependency
+chain reaches it. It costs no
 `gh` call — the PR just opened is unmerged by definition, so the Section Map
 alone settles it. Probe with `gh pr list --head` only for a candidate row whose
 dependencies do *not* include the section just shipped.

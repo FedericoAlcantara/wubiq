@@ -3,7 +3,7 @@
 Loaded by `epic-orchestrator`'s Provision, only when the batch holds a section spawn.
 
 One worktree per section, from its first spawn until `merge-pr` retires it. Path:
-`.claude/worktrees/section-<n>-<sec>`, `<sec>` lowercased (`CLI-7` → `cli-7`). Gitignored.
+`.claude/worktrees/section-<n>-<sec>`, `<sec>` lowercased (`CLI-BE-7` → `cli-be-7`). Gitignored.
 Each section compiles into its own checkout's output directories, so parallel sections
 never overwrite each other's classes.
 

@@ -7,8 +7,8 @@ description: >
   "implement the section", "code this up", "start coding", "fix the gaps" or
   "address the review findings" on an issue that improve-issue has already
   sectioned — the gaps live in the section's review-table row, not in the issue
-  body. Each run delivers exactly one section (Documentation, or one application's
-  work) on its own branch, ready for its own PR. Always write tests alongside
+  body. Each run delivers exactly one section — one application's documentation
+  (`DOC`), build (`BLD`), backend (`BE`) or screens (`UI`) — on its own branch, ready for its own PR. Always write tests alongside
   implementation. Always run improve-issue first; always run review-issue after.
 ---
 
@@ -188,6 +188,12 @@ bodies, not just their timestamps) fetches
    - `<SEC-ID>` given as an argument: it must appear as a Section Map row and
      as a `<!-- section:<SEC-ID>:start -->` fence — the same exact marker
      Step 2 extracts with, not a heading prefix. Slug: `section-unknown`.
+     A section id is `<APP>-<TYPE>-<k>` (`CLI-BE-1`, `AND-UI-2`, `COM-DOC-1`):
+     `<APP>` is the application's code in `.claude/scripts/apps.tsv`, `<TYPE>`
+     is `DOC`, `BLD`, `BE` or `UI`. Read both from the id —
+     `APP=${SEC%%-*}`, `TYPE=$(printf '%s' "$SEC" | cut -d- -f2)` — and the
+     application's directory from the registry row of `<APP>`. Every rule
+     below that names a type keys on that second part, never on a literal id.
    - No argument: auto-select the **first** Section Map row (map order is
      execution order) that is not delivered (row 5) and whose dependencies
      are all merged (row 6). If no row qualifies, report why each was skipped.
@@ -213,15 +219,15 @@ bodies, not just their timestamps) fetches
    gate goes.
 
    **Never probe with `gh pr list --search "… in:title"`.** GitHub's search is
-   a stemmed token AND, not a literal match: `(#905 · CLI-1) in:title` drops the
+   a stemmed token AND, not a literal match: `(#905 · CLI-BE-1) in:title` drops the
    punctuation and matches any title carrying both `905` and a term stemming to
-   `CLI-1` — `CLI-10` and `CLI-11` included. On an issue with ten client
-   sections that reports `CLI-1` as delivered when it is not. `--head` has no
+   `CLI-BE-1` — `CLI-BE-10` and `CLI-BE-11` included. On an issue with ten client
+   sections that reports `CLI-BE-1` as delivered when it is not. `--head` has no
    such semantics, and a prefix of a branch name matches nothing.
 6. **Dependencies merged.** From the target section's `Depends on:` line, each
    dependency resolves to a branch name and gets the same `--head` probe, which
    must show a `MERGED` PR:
-   - a sibling id (`COM-1`, `CLI-2`, …) → its branch is in this issue's Section
+   - a sibling id (`COM-BE-1`, `CLI-DOC-1`, …) → its branch is in this issue's Section
      Map;
    - a cross-issue dep (`#<m>·<SEC-ID>`) → one `gh issue view <m>` for that
      issue's Section Map row, then the same probe against its branch;
@@ -254,7 +260,7 @@ bodies, not just their timestamps) fetches
 
    1. The newest comment whose body starts with `<!-- review-feedback-resolved`
       and contains a line `- item <k> → <SEC-ID>:` (the colon is the
-      delimiter — `CLI-1:` never matches `CLI-10:`) has a `created_at` later
+      delimiter — `CLI-BE-1:` never matches `CLI-BE-10:`) has a `created_at` later
       than the newest `<!-- section-log #<n> <SEC-ID> -->` comment's. The
       spec was rewritten after the section was last coded. This clause is
       **amend resume**. It is read only against an `OPEN` PR: an item is
@@ -334,7 +340,7 @@ status line, then stop:
 | Precondition | Verdict | Evidence | Fix |
 |---|---|---|---|
 | Enriched spec v2 present | ✅ pass | marker found | — |
-| Dependencies merged | ❌ fail | COM-1 has no merged PR | run code-issue <n> COM-1 first |
+| Dependencies merged | ❌ fail | COM-BE-1 has no merged PR | run code-issue <n> COM-BE-1 first |
 | ... every row ... | | | |
 
 STATUS: BLOCKED — preflight: <slug>[, <slug>]
@@ -390,7 +396,7 @@ the file as extracted, mention the notice in the summary, and let the orchestrat
 An **empty** result means the spec has no fence for this section — it predates
 the fence contract. Halt: `STATUS: BLOCKED — section-fence-missing`, re-run
 `improve-issue`. Never fall back to a heading- or `---`-bounded guess: a
-heading bound prefix-matches `CLI-1` against `CLI-10`, and a `---` bound runs
+heading bound prefix-matches `CLI-BE-1` against `CLI-BE-10`, and a `---` bound runs
 into whatever follows.
 
 Then keep in working memory:
@@ -425,10 +431,12 @@ each for:
   constant, Ant target, Gradle task, resource or i18n key, doc `§` anchor),
 - every `new` symbol the section introduces,
 - every red-test row's placement target,
-- every prescribed documentation edit (`DOC-1`: each `#####` file block, the CHANGELOG entry),
+- every prescribed documentation edit (a `DOC` section: each `#####` file block, the CHANGELOG entry),
 - every file path the section names, which must sit inside the section's own
-  application directory (`.claude/scripts/apps.tsv` maps the code in `<SEC-ID>`
-  to it).
+  application directory (`.claude/scripts/apps.tsv` maps the `<APP>` part of
+  `<SEC-ID>` to it); a `DOC` section also names `CHANGELOG.md`,
+- every dependency the section adds or upgrades (the jar file or the Gradle
+  coordinate), which only a `BLD` section may prescribe.
 
 Then verify each row independently against the repo and record a pass/fail
 verdict — a fail on one row never skips the rows after it:
@@ -442,12 +450,18 @@ verdict — a fail on one row never skips the rows after it:
   prescribed new one — that is a coding-time judgment, i.e. a guess.
 - **Red-test placement row:** `amend` — the named test exists in the named
   file; `add to` — the file exists; `new file` — the file does not exist.
-- **Documentation row:** for `DOC-1`, the text each `#####` block says to
-  change is present, verbatim, in the current doc, and the CHANGELOG headings it
-  inserts under (`## Wubiq X.Y.Z`, `### Wubiq-<module>`) exist or are prescribed
-  as new. Other sections prescribe none.
-- **File-path row:** the path is under the application's directory. One that is
-  not fails (slug `out-of-application`) and is always `design-gap`.
+- **Documentation row:** for a `DOC` section, the text each `#####` block says
+  to change is present, verbatim, in the current doc, and the CHANGELOG headings
+  it inserts under (`## Wubiq X.Y.Z`, `### Wubiq-<module>`) exist or are
+  prescribed as new. A section of any other type prescribes none; one that does
+  fails (slug `doc-outside-doc-section`) and is always `design-gap`.
+- **File-path row:** the path is under the application's directory, or is
+  `CHANGELOG.md` in a `DOC` section. One that is not fails (slug
+  `out-of-application`) and is always `design-gap`.
+- **Dependency row:** the section's type is `BLD`. A `BE` or `UI` section that
+  prescribes a change under `lib/` or `libs/`, or to a Gradle `dependencies`
+  block, fails (slug `dependency-outside-build-section`) and is always
+  `design-gap`.
 - **Every row, additionally:** the instruction must be executable with zero
   inference — no "or", no "consider", no discovery, no missing param shape,
   no unlisted caller on a contract change — and free of internal
@@ -474,8 +488,9 @@ does triage run over the failing ones.
   row from this class.
 - **`design-gap`** — everything else: genuinely plausible alternative fixes,
   an approach that conflicts with a project rule (a file outside the section's
-  application, the module's language level, a dependency the spec does not
-  name), or a comprehension failure (Part
+  application, the module's language level, a documentation edit outside a
+  `DOC` section, a dependency outside a `BLD` section or one the spec does
+  not name), or a comprehension failure (Part
   2, slug `not-understandable`). Always bounces.
 
 **Process every failing row before emitting any status line — a `design-gap`
@@ -603,21 +618,23 @@ nothing is lost, because the spec and the notes both live on the issue.
 that branch. It is a human's to explain, never this skill's to recreate under
 a PR that would then show a diff against nothing.
 
-## Step 5 — Documentation is DOC-1's work
+## Step 5 — Documentation is a `DOC` section's work
 
-Every documentation edit an issue owes, and its CHANGELOG entry, lives in one section. What this
-step does depends on which section this run targets:
+Every documentation edit an application owes for this issue, and its CHANGELOG
+entry, lives in that application's `DOC` section (`<APP>-DOC-1`). What this
+step does depends on the type of the section this run targets:
 
-| Target | Action |
+| Target type | Action |
 |---|---|
-| `DOC-1` | Its `#### Implementation details` **are** the doc edits, one `#####` block per file. Apply them verbatim — that is the whole of this section's work. No Red/Green loop follows. The CHANGELOG entry goes under the `## Wubiq X.Y.Z` and `### Wubiq-<module>` headings the block names, with **no issue-link suffix** (house convention H-4); prescribed text that carries one is an `oversight` defect citing H-4 — strip the suffix, log the pair. |
-| Any other section | Nothing to apply. Editing `CHANGELOG.md` or any `README.md` is out of scope: a documentation change this section turns out to need is a spec defect (Step 6), never a drive-by edit. Javadoc on the classes and methods this section edits **is** its own work. |
+| `DOC` | Its `#### Implementation details` **are** the doc edits, one `#####` block per file: `CHANGELOG.md`, and Markdown files under the application's directory. Apply them verbatim — that is the whole of this section's work. No Red/Green loop follows. The CHANGELOG entry goes under the `## Wubiq X.Y.Z` and `### Wubiq-<module>` headings the block names, with **no issue-link suffix** (house convention H-4); prescribed text that carries one is an `oversight` defect citing H-4 — strip the suffix, log the pair. |
+| `BLD`, `BE`, `UI` | Nothing to apply. Editing `CHANGELOG.md` or any `.md` file is out of scope: a documentation change this section turns out to need is a spec defect (Step 6), never a drive-by edit. Javadoc on the classes and methods this section edits **is** its own work. |
 
-`DOC-1` merges before any code section starts, so a code section reads the
-documentation as already correct.
+An application's `DOC` section comes first in its order (`DOC` → `BLD` → `BE`
+→ `UI`), so a later section reads the documentation as already correct.
 
-The dry-run already proved `DOC-1`'s edits apply. If one no longer does, the
-doc changed under the run — treat it as a mid-implementation defect (Step 6).
+The dry-run already proved the `DOC` section's edits apply. If one no longer
+does, the doc changed under the run — treat it as a mid-implementation defect
+(Step 6).
 
 ## Step 6 — Implement, subsection by subsection
 
@@ -630,7 +647,7 @@ subsection.
 `.claude/scripts/section-test.sh --reset` once, before the first test of this
 step, and run **every** targeted test of this step through
 `.claude/scripts/section-test.sh <APP> <test>...` instead of calling `ant`,
-`java` or `gradlew` directly. `<APP>` is the registry code in `<SEC-ID>`
+`java` or `gradlew` directly. `<APP>` is the first part of `<SEC-ID>`
 (`CLI`, `WIT`, `AND`, …); `<test>` is a fully qualified JUnit class name for an
 Ant application and a Gradle `--tests` filter (class, or `Class.method`) for
 `AND`. The script compiles the application and what it depends on first, counts
@@ -670,7 +687,9 @@ lives in the section log only.
 
 ### Sections with an empty red-tests table
 
-Documentation sections, and any section whose ACs all carry a
+`DOC` sections, most `BLD` sections (a build or packaging change is usually
+verified by the gate or by a command the AC names), and any section whose ACs
+all carry a
 `(visual|mechanical|manual — no red test; verified by …)` marker, have no
 Red/Green loop. Follow the section's numbered implementation subsections
 (the per-file doc blocks, the classes and resources to change, …) in order.
@@ -789,8 +808,7 @@ resolves as **gaps resume** (Step 0 row 8) and reads this comment as its work li
    caller is inside this section's application, and otherwise report a defect
    (Step 6's protocol), because the fix belongs to another section. Do not
    hand off red. (`gate.sh` may instead print
-   `SKIPPED: no application affected` and exit 0 for a documentation-only
-   section — that is not a broken run, it means there was nothing to compile.)
+   `SKIPPED: no application affected` and exit 0 for a `DOC` section — that is not a broken run, it means there was nothing to compile.)
    After a fix, run `gate.sh` again (same backgrounding). A failure that needs
    design judgment to fix is a defect to report, never something to improvise
    around.
@@ -799,12 +817,15 @@ resolves as **gaps resume** (Step 0 row 8) and reads this comment as its work li
 ```
 - [ ] Every red-test row has red AND green evidence (or the section's table is empty)
 - [ ] Every AC in the section is implemented
-- [ ] DOC-1: every prescribed edit applied verbatim, the CHANGELOG entry carries no issue
-      link. Any other section: no documentation file (`CHANGELOG.md`, any `README.md`)
+- [ ] `DOC` section: every prescribed edit applied verbatim, the CHANGELOG entry carries
+      no issue link. Any other type: no documentation file (`CHANGELOG.md`, any `.md`)
       touched
-- [ ] Every changed file is inside the section's application directory (plus the spec tick)
-- [ ] Nothing above the module's language level; no new jar or Gradle dependency the spec
-      does not name
+- [ ] Every changed file is inside the section's application directory (plus the spec
+      tick, and `CHANGELOG.md` in a `DOC` section)
+- [ ] Nothing above the module's language level
+- [ ] `BLD` section: every jar or Gradle dependency added or upgraded is one the spec
+      names. `BE` or `UI`: nothing changed under `lib/`, `libs/` or a Gradle
+      `dependencies` block
 - [ ] New tests are JUnit 4, headless, and need no printer, device, server or network
 - [ ] Every new user-visible string is in the i18n bundles, in every existing locale
 - [ ] No build output and no rebuilt jar in `git status`
@@ -894,8 +915,8 @@ resolves as **gaps resume** (Step 0 row 8) and reads this comment as its work li
    **Branch:** <branch> (PR title per Section Map: "<title>")
    **Files created/modified:**
    - `wubiq-client/src/...` — <what changed>
-   **Docs applied:** <DOC-1's prescribed edits, CHANGELOG entry included ·
-   "none — documentation is DOC-1's">
+   **Docs applied:** <the `DOC` section's prescribed edits, CHANGELOG entry included ·
+   "none — documentation is <APP>-DOC-1's">
    **Tests run (targeted):** <files> — green
    **Pending human verification:** <the visual/manual ACs and their stated means, or "none">
    **Review threads answered:** <k solved, j declined — all resolved | n/a>
@@ -932,9 +953,10 @@ subsection.
    jar. Those targets overwrite the tracked jars in
    `wubiq-android-gradle/app/libs/`, which would ship an unreviewed binary
    inside a source PR.
-4. **No new third-party jar or Gradle dependency unless the spec names it.**
-   Libraries are vendored and shipped with each application, so adding one is a
-   decision for the spec.
+4. **A dependency changes only in a `BLD` section, and only as the spec names
+   it.** Libraries are vendored and shipped with each application, so adding or
+   upgrading one is a decision for the spec; a `BE` or `UI` section changes
+   nothing under `lib/`, `libs/` or a Gradle `dependencies` block.
 5. **User-visible text goes through the i18n bundles** (the `i18n/` directories;
    `res/values*/strings.xml` on Android), with every existing locale filled in.
    A hardcoded string is untranslated for every other locale.
@@ -944,8 +966,16 @@ subsection.
 7. **No test asserts a version string.** It fails on every release and proves
    nothing about behavior.
 8. **A section edits files only inside its own application's directory**, plus
-   the spec tick. Each section's PR is gated and reviewed for one application;
-   a change another application needs is that application's section.
+   the spec tick; a `DOC` section also edits `CHANGELOG.md`. Each section's PR
+   is gated and reviewed for one application; a change another application
+   needs is that application's section.
+9. **A section stays inside its type.** `DOC`: the application's CHANGELOG
+   bullets and its Markdown files. `BLD`: build and packaging — `build.xml`,
+   Gradle files, vendored jars, the installer definition, manifests,
+   R8/ProGuard rules, launch scripts. `BE`: logic with no screen. `UI`: what
+   the user sees — Swing, JSP and `WebContent`, Android activities, layouts
+   and `res/`, displayed i18n text. A file the spec did not name that belongs
+   to another type is that type's section, reported as a defect (Step 6).
 
 ### Tests by application
 

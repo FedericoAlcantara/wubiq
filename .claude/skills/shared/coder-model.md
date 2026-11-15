@@ -187,7 +187,7 @@ Every `👉 Next:` hand-off names the following step's group and model, because 
 a model before invoking it is the one who needs that number:
 
 ```
-👉 Next: code-issue 905 CLI-1  (Coder: Opus 5.5+medium)
+👉 Next: code-issue 905 CLI-BE-1  (Coder: Opus 5.5+medium)
 ```
 
 The hand-off does not carry the level — the next skill reads it from the issue.

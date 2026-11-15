@@ -118,7 +118,7 @@ SEC=<SEC-ID> awk '
 ```
 
 Whole-line equality (`$0 ==`), never a regex or a heading bound. A heading bound
-prefix-matches `COM-1` against `COM-10`; a `---` bound runs into whatever
+prefix-matches `COM-BE-1` against `COM-BE-10`; a `---` bound runs into whatever
 follows. The id arrives through `ENVIRON` so the shell never sees the `!` in the
 comment marker.
 

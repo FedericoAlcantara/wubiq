@@ -26,7 +26,7 @@ sections' `Agent` calls together. Instead, each section spawn's own prompt carri
 action, before it does anything else — see the verify step below.
 
 Announce per spawn: `<SEC-ID> → <skill> @ <model+effort>`, the model by its "Announced as"
-name from the registry — `CLI-1 → code-issue @ Sonnet 5.5+medium`.
+name from the registry — `CLI-BE-1 → code-issue @ Sonnet 5.5+medium`.
 
 ## Section spawn — `code-issue`, `review-issue <n> <SEC-ID>`, `pr-from-issue`
 

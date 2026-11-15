@@ -24,7 +24,7 @@ blocked() {
 }
 
 [[ "$issue_number" =~ ^[0-9]+$ ]] || blocked "bad-issue-number"
-[[ "$section_id" =~ ^[A-Za-z]+-[0-9]+$ ]] || blocked "bad-section-id"
+[[ "$section_id" =~ ^[A-Za-z]+-[A-Za-z]+-[0-9]+$ ]] || blocked "bad-section-id"
 [[ "$branch" =~ ^[A-Za-z0-9._/-]+$ ]] || blocked "bad-branch"
 
 section_slug="$(printf '%s' "$section_id" | tr '[:upper:]' '[:lower:]')"

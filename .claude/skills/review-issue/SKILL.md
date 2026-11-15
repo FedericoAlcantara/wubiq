@@ -52,7 +52,7 @@ raise the spec defect itself if the AC is unexecutable as written.
    note and back to `code-issue`; this skill never implements. One non-behavioral finding is deliberately excepted and
    loops instead: a Step 2 documentation-scope violation. Its "fix" would be
    to delete the offending edit, and that destroys the only evidence that
-   `DOC-1` was incomplete.
+   the application's `DOC` section was incomplete.
 7. **Every halt emits a terminal `STATUS: BLOCKED — <slug>` line**
    (`../shared/escalation.md`). Exit means exit: after the status line,
    write nothing and read nothing further.
@@ -150,7 +150,7 @@ not just the timestamps and STATE cell `SECTION_STATE:` already carried.
    and the comparison above.
 
    **Never probe with `gh pr list --search "… in:title"`.** GitHub's search is
-   a stemmed token AND, so `CLI-1` matches `CLI-10`; `--head` is an exact ref
+   a stemmed token AND, so `CLI-BE-1` matches `CLI-BE-10`; `--head` is an exact ref
    filter. `code-issue`'s row 5 carries the full reasoning.
 6. **Section branch checks out.** The branch named in the Section Map row
    exists (locally or on origin); `git checkout <branch>` (fetch first).
@@ -185,7 +185,7 @@ spec-load <n> <SEC-ID>     # writes /tmp/spec-<n>-<SEC-ID>.md
 An **empty** result means the spec predates the fence contract. Halt:
 `STATUS: BLOCKED — section-fence-missing`, re-run `improve-issue`. Never fall
 back to a heading- or `---`-bounded guess — a heading bound prefix-matches
-`CLI-1` against `CLI-10`.
+`CLI-BE-1` against `CLI-BE-10`.
 
 `/tmp/review-issue-<n>-comments.json` may not exist yet — preflight skipped
 writing it under `SECTION_STATE:` (Step 0). If the file is missing, fetch it
@@ -229,8 +229,19 @@ Then, per AC:
 
 ### The documentation-scope and CHANGELOG check (every section, every run)
 
-`DOC-1` is the only section that edits documentation. The **documentation set** is
-`CHANGELOG.md` and every `README.md`, at the root or in a module. Prove
+A section id is `<APP>-<TYPE>-<k>` (`CLI-BE-1`, `AND-UI-2`, `COM-DOC-1`): `<APP>` is the
+application's code in `.claude/scripts/apps.tsv`, `<TYPE>` is `DOC`, `BLD`, `BE` or `UI`. Read
+both from the id, and the application's directory from the registry:
+
+```bash
+APP=${SEC%%-*}; TYPE=$(printf '%s' "$SEC" | cut -d- -f2)
+DIR=$(awk -F'\t' -v c="$APP" '$1 == c { print $2 }' .claude/scripts/apps.tsv)
+```
+
+Every rule in this skill that names a type keys on `$TYPE`, never on a literal id.
+
+Only a `DOC` section edits documentation, and only its own application's. Its
+**documentation set** is `CHANGELOG.md` and every `.md` file under `$DIR/`. Prove
 scope from the diff rather than trusting the spec, once per run, on the checked-out section branch:
 
 ```bash
@@ -243,23 +254,32 @@ The spec file `specs/issue-<n>-enriched-spec.md` is exempt from the tables below
 section's diff carries its AC ticks there. Instead, its diff must show only `- [ ]` → `- [x]`
 flips inside this section's fence (note `Scope: spec file edited beyond ticks` otherwise).
 
-| Target | Requirement | Note on violation |
+| Target type | Requirement | Note on violation |
 |---|---|---|
-| `DOC-1` | every path is in the documentation set | `Scope: <path> is outside the documentation set` |
-| Any other section | no path in the documentation set | `Scope: edits <path>, not prescribed` |
+| `DOC` | every path is `CHANGELOG.md` or a `.md` file under `$DIR/` | `Scope: <path> is outside the documentation set` |
+| `BLD`, `BE`, `UI` | no path is `CHANGELOG.md` or ends in `.md` | `Scope: edits <path>, not prescribed` |
 
-For `DOC-1` this is the same command its own AC-2 names — run it once and read it twice, for that
-AC's verdict and for this check.
+```bash
+F=/tmp/review-issue-<n>-<SEC-ID>-files.txt
+if [ "$TYPE" = DOC ]; then
+  sort -u "$F" | grep -vE "^CHANGELOG\.md$|^$DIR/.*\.md$|^specs/issue-<n>-enriched-spec\.md$"
+else
+  sort -u "$F" | grep -E '(^|/)[^/]+\.md$' | grep -v '^specs/issue-<n>-enriched-spec\.md$'
+fi
+```
 
-**CHANGELOG (house convention H-4).** `DOC-1` only: `CHANGELOG.md` is in the diff, its added lines
-are `-` bullets under the `## Wubiq X.Y.Z` heading the section names, each below the
-`### Wubiq-<module>` subheading of the module it describes, and none carries an issue link
-(`#[0-9]+`). Otherwise note `Changelog: <what is missing or wrong>` — a missing entry is a
+Either prints nothing on a clean section. For a `DOC` section this is the same check its own AC-2
+names — run it once and read it twice, for that AC's verdict and for this check.
+
+**CHANGELOG (house convention H-4).** `DOC` sections only: `CHANGELOG.md` is in the diff, its
+added lines are `-` bullets under the `## Wubiq X.Y.Z` heading the section names, all below the
+`### Wubiq-<module>` subheading of this section's application and no other, and none carries an
+issue link (`#[0-9]+`). Otherwise note `Changelog: <what is missing or wrong>` — a missing entry is a
 gap, and it loops.
 
 **A violation is a table note, never a Step 4 reviewer fix.** Reverting the
-edit would delete the only evidence that `DOC-1` was incomplete, and a
-documentation change a code section turns out to need is a spec defect, which
+edit would delete the only evidence that the application's `DOC` section was
+incomplete, and a documentation change another section turns out to need is a spec defect, which
 only `code-issue` may raise. Note it, loop, and let the coder decide.
 
 **Then one write, after every AC has a verdict.** Invoke
@@ -322,9 +342,9 @@ other red becomes a note on the section's table row:
 ever merges a PR whose gate already passed, so any branch cut from it starts
 from content that already compiled and passed the full suite, and a diff with
 no code cannot regress either. No test reads `CHANGELOG.md` or a `README.md`.
-`DOC-1` — the section shape this is almost always — is also always the first
-section cut for its issue, so it never rides on a sibling section's
-not-yet-gated work either.
+A `DOC` section — the section shape this is almost always — is also the first
+in its application's order (`DOC` → `BLD` → `BE` → `UI`), so it never rides on
+that application's not-yet-gated work either.
 
 ## Step 4 — Project checks and light fixes (REVIEWER-FIXED)
 
@@ -361,8 +381,8 @@ scoped_not() { local p="$1" f="$2";      _scoped_run "$p" $(printf '%s\n' $CHANG
 
 `rg` has no look-around without `--pcre2`; use `scoped_not` for exclusions.
 
-`<dir>` below is the directory of the section's application — the `dir` column of its row in
-`.claude/scripts/apps.tsv`, found by the section ID's prefix (`CLI-2` → `wubiq-client`). Test
+`<dir>` below is the directory of the section's application — `$DIR` from Step 2, the `dir`
+column of the registry row the section ID's first part names (`CLI-BE-2` → `wubiq-client`). Test
 paths are `tests-src/` in a `java-ant` application and `app/src/test/` in the `android-gradle` one;
 `TESTS='(^|/)tests-src/|/src/test/'` matches both.
 
@@ -407,18 +427,22 @@ A `->` inside a comment or a string is not a hit; read the line before flagging 
 git diff --name-only origin/master...HEAD | grep -E '(^|/)(bin|dist|build|build-tests)/|\.(jar|aar|apk|aab|class)$'
 ```
 
-returns nothing, unless the section names that file. The jars under
-`wubiq-android-gradle/app/libs/` are the usual offender: the default targets of the common and
-client builds overwrite them.
+returns nothing, for every section type. Two things are never allowed, whatever the spec says:
+anything under `bin/`, `dist/`, `build/` or `build-tests/`, and a rebuilt `wubiq-*.jar` — the
+ones under `wubiq-android-gradle/app/libs/` are the usual offender, because the default targets
+of the common and client builds overwrite them. The one allowed hit is a vendored third-party
+jar (or `.aar`) in a `BLD` section whose spec names that file.
 
-**4. No new dependency.**
+**4. Dependencies change only in a `BLD` section.**
 
 ```bash
 printf '%s\n' $CHANGED | grep -E '(^|/)libs?(-[a-z]+)?/'
 git diff origin/master...HEAD -- '*.gradle.kts' '*.gradle' | grep -E '^[+-].*(implementation|api|compileOnly|runtimeOnly|classpath|testImplementation|androidTestImplementation)\b'
 ```
 
-Both return nothing, unless the section names the dependency and its version.
+In a `BE` or `UI` section both return nothing; any hit is a flag, because adding or upgrading a
+dependency belongs to the application's `BLD` section. In a `BLD` section every hit is a
+dependency its spec names, at the version it names; one the spec does not name is a flag.
 
 **5. Internationalised strings.** A string the user reads comes from a bundle, never from a
 literal in code. For every key the diff adds to a bundle, each locale file that bundle already has
@@ -441,8 +465,8 @@ user-visible literal that is not a bundle lookup is a flag.
 printf '%s\n' $CHANGED | grep -vE '^<dir>/|^specs/issue-<n>-enriched-spec\.md$'
 ```
 
-returns nothing. On `DOC-1` the requirement is Step 2's
-documentation-scope table instead, already checked. A change another application needs belongs to that application's own section; a file
+returns nothing. On a `DOC` section the requirement is Step 2's documentation-scope table
+instead, already checked (it also admits `CHANGELOG.md`). A change another application needs belongs to that application's own section; a file
 outside every application directory that the section does not name is a flag.
 
 **Integrity (read the diff; each failure is a `Flag:` note):**
@@ -468,12 +492,12 @@ once, at the end, below. Guards: never a behavior change, never a spec edit beyo
 checkboxes, never labels. When in doubt whether a fix changes behavior, it does — table note
 instead.
 
-On a `DOC-1` branch this pass carries most of its weight, and two rules bind:
+On a `DOC` section's branch this pass carries most of its weight, and two rules bind:
 
 - H-1 (cite documentation by section, never by line) and H-4 are the hits that dominate. Both
   are non-behavioral, so all are fixed here as usual — H-4's fix (dropping an issue-link suffix)
-  also restores `DOC-1`'s own AC-1, which is why the AC re-run above matters.
-- **A reviewer fix on a `DOC-1` branch stays inside the documentation set.** Creating or editing
+  also restores the section's own AC-1, which is why the AC re-run above matters.
+- **A reviewer fix on a `DOC` section's branch stays inside its documentation set.** Creating or editing
   any file outside it breaks that section's AC-2, which Step 2 has already verified. A fix that
   cannot be made within it is a table note.
 
@@ -504,11 +528,12 @@ of the issue, updated by every later run, never posted twice:
 <!-- review-table #<n> -->
 | SECTION | STATE |
 |---|---|
-| DOC-1 | COMPLETED |
-| COM-1 | COMPLETED |
-| CLI-1 | Scope: edits wubiq-client/README.md, not prescribed |
-| CLI-2 | AC-2: `wubiq-client/src/net/sf/wubiq/clients/LocalPrintManager.java` `processPendingJob` — a failed job is never retried; retry once and assert the second attempt in `wubiq-client/tests-src/net/sf/wubiq/clients/LocalPrintManagerTest.java` |
-| AND-1 | PENDING |
+| COM-DOC-1 | COMPLETED |
+| COM-BE-1 | COMPLETED |
+| CLI-DOC-1 | COMPLETED |
+| CLI-BLD-1 | Scope: edits wubiq-client/README.md, not prescribed |
+| CLI-BE-1 | AC-2: `wubiq-client/src/net/sf/wubiq/clients/LocalPrintManager.java` `processPendingJob` — a failed job is never retried; retry once and assert the second attempt in `wubiq-client/tests-src/net/sf/wubiq/clients/LocalPrintManagerTest.java` |
+| AND-UI-1 | PENDING |
 ```
 
 - One row per Section Map entry, in map order.
@@ -611,8 +636,8 @@ checkbox. So:
 1. Count the unticked ACs of every section on `master`'s spec (`spec-load <n>`). List them in the
    chat summary as `Unticked on master: <SEC-ID> AC-k, …` (merged PR + section log + `COMPLETED` row
    are the evidence they were met) and leave them. They never gate the verdict.
-2. Confirm the CHANGELOG (H-4): `DOC-1`'s merged PR touched `CHANGELOG.md`, or the spec's Overview
-   states the issue owes no documentation edit. Neither → demote the row that should have carried
+2. Confirm the CHANGELOG (H-4): every `DOC` section's merged PR touched `CHANGELOG.md`, or the
+   spec's Overview states the issue owes no documentation edit. Neither → demote the row that should have carried
    it with a `Changelog:` note, retract the phrase, `STATUS: LOOP`.
 3. Run the gate once (`.claude/scripts/gate.sh --all`, then `.claude/scripts/suite.sh`, per
    `../shared/background-long-commands.md`) — final integration check on the merged whole.

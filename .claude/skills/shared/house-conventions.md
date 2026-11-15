@@ -51,11 +51,12 @@ against a stub.
 
 `CHANGELOG.md` is one file for every application. A feature or fix gets a `-` bullet under
 the `### Wubiq-<module>` subheading of the version being prepared (`## Wubiq X.Y.Z`); the
-spec's `DOC-1` names both headings. The new entry has **no** issue reference (no `(#22)`);
+spec's `DOC` section for that application names both headings. The new entry has **no** issue reference (no `(#22)`);
 older entries keep theirs — do not copy it, do not strip it.
 
-`improve-issue` prescribes the entry verbatim in `DOC-1`; `code-issue` transcribes it;
-`review-issue` raises a missing entry as a gap. A section outside `DOC-1` never edits the file.
+`improve-issue` prescribes the entry verbatim in the application's `DOC` section
+(`<APP>-DOC-1`); `code-issue` transcribes it; `review-issue` raises a missing entry as a gap.
+A section of any other type never edits the file.
 
 ## H-6 · Never touch the human review labels
 

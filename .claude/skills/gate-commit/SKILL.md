@@ -61,7 +61,7 @@ type is the `Type` column.
 | 2 | it is CI config (`.github/workflows/**`) | `ci` | `ci: <what changed>` |
 | 3 | it is build or dependency config (`build.xml`, `*.gradle.kts`, `gradle/**`, `gradle.properties`, a jar under `lib/` or `libs/`, `docker-compose.yml`) | `build` | `build(<scope>): <what changed>` |
 | 4 | it is a test file (anything under `tests-src/`, `app/src/test/`, `lib-test/`) | `test` | `test(<scope>): <details>` |
-| 5 | it is `CHANGELOG.md`, or a README that documents the change | `docs` | `docs: <scope>` |
+| 5 | it is `CHANGELOG.md`, or a README that documents the change | `docs` | `docs(<scope>): <what is documented>` |
 | 6 | it adds new user-facing behavior | `feat` | `feat(<scope>): <why>` |
 | 7 | it fixes a bug | `fix` | `fix(<scope>): <why>` |
 | 8 | it improves performance without changing behavior | `perf` | `perf(<scope>): <why>` |
@@ -73,7 +73,8 @@ type is the `Type` column.
 `<scope>` is the application the group's files belong to — `common`, `witness`, `client`,
 `server`, `installer`, `printerjob`, `android` (`../README.md` § Applications). Files of
 two applications are two groups, one commit each; a group with no single application
-(rows 1, 2, 5, 11) takes no scope.
+(rows 1, 2, 11) takes no scope. A `CHANGELOG.md` hunk takes the scope of the
+`### Wubiq-<module>` block it is in.
 
 Rules that override the table:
 

@@ -48,19 +48,29 @@ with `-` as its `jdk`.
 merged alone on top of its dependencies, every affected application compiles and the
 full suite stays green.
 
-- A section is `DOC-1` (Documentation) or `<APP>-<k>` — `CLI-1`, `AND-2` — and belongs
-  to exactly one application: it edits files only under that application's directory.
-  An issue that spans applications has sections in each.
-- Order follows the registry: `DOC-1` first, then a section depends on this issue's
-  sections in the applications its own application depends on (`COM` before `CLI`
-  before `SRV` and `INS`).
-- Documentation leads structurally. `DOC-1` is one section per issue carrying every doc
-  edit it owes — the `CHANGELOG.md` entry and README changes — and its PR merges
-  **before** any code section starts.
+- A section id is `<APP>-<TYPE>-<k>` — `CLI-DOC-1`, `CLI-BE-2`, `AND-UI-1`: the
+  application's registry code, the section type, and a number per application and type.
+  A section belongs to exactly one application and edits files only under that
+  application's directory. An issue that spans applications has sections in each.
+
+  | Type | Name | Holds |
+  |---|---|---|
+  | `DOC` | Documentation | the application's `CHANGELOG.md` entry (under `### Wubiq-<module>`) and the Markdown files in its directory; at most one per application per issue |
+  | `BLD` | Build | build and packaging: `build.xml`, Gradle files, vendored jars, the installer definition, manifests, R8 rules, launch scripts. The only type that adds or upgrades a dependency |
+  | `BE` | Backend | logic with no screen: protocol keys, print managers, services, device drivers, servlet logic, persistence |
+  | `UI` | UI | what the user sees: Swing screens, JSP and `WebContent`, Android activities, layouts and `res/` |
+
+- Order inside an application is `DOC` → `BLD` → `BE` → `UI`. Across applications it
+  follows the registry: a section depends on this issue's sections in the applications
+  its own application depends on (`COM` before `CLI` before `SRV` and `INS`).
+- Documentation leads structurally. An application's `DOC` section carries every doc edit
+  the issue owes for it, and its PR merges **before** that application's other sections
+  start. Only `DOC` sections edit documentation; since they all edit the one
+  `CHANGELOG.md`, the `DOC` sections of an issue are chained in registry order.
 - Nothing is stored unapproved. `improve-issue` presents the exact spec and stores it
   only after a human approves it — every run, re-runs included. A non-interactive
   spawn cannot approve, so it halts with `STATUS: SPEC_PENDING` and writes nothing.
-- One PR per section, on branch `<type>/<n>-<sec>-<slug>` (`feat/52-cli-1-jlink-runtime`),
+- One PR per section, on branch `<type>/<n>-<sec>-<slug>` (`feat/52-cli-bld-1-jlink-runtime`),
   titled `<type>(<scope>): … (#<n> · <SEC-ID>)`. A section may not start until every
   dependency's PR is **merged**. Section status is derived from GitHub (the PR on the
   section's branch), never cached in the issue body.
