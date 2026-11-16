@@ -5,14 +5,9 @@ package net.sf.wubiq.utils;
 
 import java.awt.Font;
 import java.awt.Graphics2D;
-import java.awt.font.TextAttribute;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Point2D;
 import java.awt.print.PageFormat;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Map;
 
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.PrinterType;
@@ -115,7 +110,6 @@ public enum GraphicsUtils {
 		Font font = originalFont.deriveFont(originalFont.getStyle());
 		String fontName = originalFont.getName();
 		String style = determineStyle(originalFont);
-		int kerning = TextAttribute.KERNING_ON;
 		if (fontName.toLowerCase().contains("arial") ||
 				fontName.toLowerCase().contains("helvetica")) {
 			if ("arial bold".equalsIgnoreCase(fontName)
@@ -136,26 +130,11 @@ public enum GraphicsUtils {
 			fontName = "Monospaced";
 			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
 			font = Font.decode(decodeString);
-			kerning = 0;
 		} else if (fontName.toLowerCase().contains("verdana") ||
 				fontName.equalsIgnoreCase("dialog")) {
 			fontName = "SansSerif";
 			String decodeString = fontName + "-" + style + "-" + originalFont.getSize();
 			font = Font.decode(decodeString);
-		}
-		if (System.getProperty("java.version").compareTo("1.7") >= 0) {
-			float scale = 0.55f; // <------ Heuristical values
-			//										vvvv
-			BigDecimal multiplier = new BigDecimal("0.250").divide(new BigDecimal("12"), 50, RoundingMode.HALF_UP);
-			float tracking = multiplier.multiply(new BigDecimal(font.getSize())).floatValue();
-			AffineTransform affine = new AffineTransform();
-			affine.scale(scale, 1);
-			Map<TextAttribute, Object> attributes = new HashMap<TextAttribute, Object>();
-			attributes.put(TextAttribute.KERNING, kerning);
-			attributes.put(TextAttribute.TRACKING, tracking);
-			attributes.put(TextAttribute.TRANSFORM, affine);
-			attributes.put(TextAttribute.SIZE, font.getSize());
-			font = font.deriveFont(attributes);
 		}
 		return font;
 	}
