@@ -914,11 +914,11 @@ Language level: `wubiq-server/build.xml` target `compileWar` sets no `source` an
 `wubiq-server/WebContent/wubiq-client.jar` and `wubiq-server/WebContent/wubiq-setup.jar` are tracked files. This section edits neither: it only removes the build steps that overwrite them and the steps that build applications a JDK 8 cannot compile any more.
 
 ##### Acceptance criteria
-- [ ] AC-1: no target of `wubiq-server/build.xml` runs the client's or the installer's build, and none copies a jar into `WebContent` (mechanical — no red test; verified by `grep -c -E 'antfile="\.\./wubiq-(client|installer)/build\.xml" inheritall="false" />' wubiq-server/build.xml` printing `0` and `grep -c 'todir="${basedir}/WebContent"' wubiq-server/build.xml` printing `1`, the copy of `wubiq-android.apk`)
-- [ ] AC-2: target `distribuite-binaries` takes no file from `wubiq-client/dist` and `wubiq-installer/dist` (mechanical — no red test; verified by `grep -c -E '\.\./wubiq-(client|installer)/dist' wubiq-server/build.xml` printing `0`)
-- [ ] AC-3: the build file no longer names the Android project's `libs` (mechanical — no red test; verified by `grep -c 'basedir.gradle' wubiq-server/build.xml` printing `0`)
-- [ ] AC-4: the tracked jars under `WebContent` are untouched by this section (mechanical — no red test; verified by `git diff --name-only origin/master...HEAD -- wubiq-server/WebContent` returning nothing)
-- [ ] AC-5: the build file is still well formed and the server still compiles (mechanical — no red test; verified by `ant -q -f wubiq-server/build.xml -projecthelp` listing the targets without an error, and `.claude/scripts/gate.sh` ending `EXIT: 0`)
+- [x] AC-1: no target of `wubiq-server/build.xml` runs the client's or the installer's build, and none copies a jar into `WebContent` (mechanical — no red test; verified by `grep -c -E 'antfile="\.\./wubiq-(client|installer)/build\.xml" inheritall="false" />' wubiq-server/build.xml` printing `0` and `grep -c 'todir="${basedir}/WebContent"' wubiq-server/build.xml` printing `1`, the copy of `wubiq-android.apk`)
+- [x] AC-2: target `distribuite-binaries` takes no file from `wubiq-client/dist` and `wubiq-installer/dist` (mechanical — no red test; verified by `grep -c -E '\.\./wubiq-(client|installer)/dist' wubiq-server/build.xml` printing `0`)
+- [x] AC-3: the build file no longer names the Android project's `libs` (mechanical — no red test; verified by `grep -c 'basedir.gradle' wubiq-server/build.xml` printing `0`)
+- [x] AC-4: the tracked jars under `WebContent` are untouched by this section (mechanical — no red test; verified by `git diff --name-only origin/master...HEAD -- wubiq-server/WebContent` returning nothing)
+- [x] AC-5: the build file is still well formed and the server still compiles (mechanical — no red test; verified by `ant -q -f wubiq-server/build.xml -projecthelp` listing the targets without an error, and `.claude/scripts/gate.sh` ending `EXIT: 0`)
 
 ##### Code changes
 1. `wubiq-server/build.xml` — delete the line `<property name="basedir.gradle" value="${workspace.dir}/wubiq-android-gradle" />`.
