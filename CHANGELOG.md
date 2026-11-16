@@ -1,5 +1,11 @@
 # Changelog
 
+## Wubiq 2.8.0
+### Wubiq-common
+- Dot-matrix text on Windows prints at its real width: the horizontal narrowing (0.55) and the tracking applied on Java 7 and later are removed.
+- Compiled for Java 8. The build no longer copies `wubiq-common.jar` into `wubiq-android-gradle`.
+- Protocol names for the packaged client: command `v2` (download the client package), parameters `cpf` (platform) and `cpt` (package type).
+
 ## Wubiq 2.7.4
 ### Wubiq-android-gradle
 - New advanced configuration parameter "Pause Between Copies" (top of the screen): pick Minimal (about 1 second, the least the printer needs between copies), 2, 5, 7.5 or 10 seconds, or Custom for any value from 0 to 10 seconds (rounded to 0.1); defaults to 2 seconds. Stored in milliseconds.
