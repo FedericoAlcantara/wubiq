@@ -446,12 +446,12 @@ Fixed values:
 | Lines needed | 3 measured lines per sheet |
 
 ##### Acceptance criteria
-- [ ] AC-1: Given a job with three graphics bars at 1 in from the left, 2.0, 3.0 and 1.5 in wide, on three text lines, and three expected lines of the same widths whose left edge is 1.25 in, when `TextExtents#check(EscpResult, List)` runs, then the result passes with three `PASS` items
-- [ ] AC-2: Given the same expected lines and bars 0.55 times as wide (1.1, 1.65 and 0.833 in), when `check` runs, then the result fails and names the measured and the expected width of the first line: `width 1.100 in, expected 2.000 in`
-- [ ] AC-3: Given the bars of AC-1 with the third one starting at 1.25 in, when `check` runs, then the result fails on the third line only, naming its left edge
-- [ ] AC-4: Given a job with two bars and two expected lines, when `check` runs, then the result fails with `only 2 text line(s) measured, 3 needed`; given a job without graphics, it fails with `no graphics dots to measure` (error paths: too little to measure never passes)
-- [ ] AC-5: Given an expected file whose second row has two fields, when `TextExtents#read(File)` reads it, then it throws an `IOException` whose message contains `:2:`
-- [ ] AC-6: `Main` accepts the `extents` command and refuses it without `--expect` (mechanical — no red test; verified by `ant -q -f wubiq-dotmatrix-witness/build.xml compile && java -cp wubiq-dotmatrix-witness/bin net.sf.wubiq.dotmatrix.witness.Main extents wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page-9pin.escp; echo $?` printing `extents needs --expect FILE and the job to check.`, the usage text with the `extents` line, and `2`)
+- [x] AC-1: Given a job with three graphics bars at 1 in from the left, 2.0, 3.0 and 1.5 in wide, on three text lines, and three expected lines of the same widths whose left edge is 1.25 in, when `TextExtents#check(EscpResult, List)` runs, then the result passes with three `PASS` items
+- [x] AC-2: Given the same expected lines and bars 0.55 times as wide (1.1, 1.65 and 0.833 in), when `check` runs, then the result fails and names the measured and the expected width of the first line: `width 1.100 in, expected 2.000 in`
+- [x] AC-3: Given the bars of AC-1 with the third one starting at 1.25 in, when `check` runs, then the result fails on the third line only, naming its left edge
+- [x] AC-4: Given a job with two bars and two expected lines, when `check` runs, then the result fails with `only 2 text line(s) measured, 3 needed`; given a job without graphics, it fails with `no graphics dots to measure` (error paths: too little to measure never passes)
+- [x] AC-5: Given an expected file whose second row has two fields, when `TextExtents#read(File)` reads it, then it throws an `IOException` whose message contains `:2:`
+- [x] AC-6: `Main` accepts the `extents` command and refuses it without `--expect` (mechanical — no red test; verified by `ant -q -f wubiq-dotmatrix-witness/build.xml compile && java -cp wubiq-dotmatrix-witness/bin net.sf.wubiq.dotmatrix.witness.Main extents wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page-9pin.escp; echo $?` printing `extents needs --expect FILE and the job to check.`, the usage text with the `extents` line, and `2`)
 
 ##### Test ports
 - `net.sf.wubiq.dotmatrix.witness.TextExtents#check(EscpResult, java.util.List<TextExtents.Line>)` · in: an interpreted job and the expected lines · out: `CheckResult` · new (`grep -rIl TextExtents` over the repository returns nothing)
