@@ -5,6 +5,9 @@
 - Dot-matrix text on Windows prints at its real width: the horizontal narrowing (0.55) and the tracking applied on Java 7 and later are removed.
 - Compiled for Java 8. The build no longer copies `wubiq-common.jar` into `wubiq-android-gradle`.
 - Protocol names for the packaged client: command `v2` (download the client package), parameters `cpf` (platform) and `cpt` (package type).
+### Wubiq-dotmatrix-witness
+- Compiled for Java 8.
+- New `extents` command: measures the width of the text lines a job prints and compares them with expected text extents, so a job is checked without a reference job printed by another Java.
 
 ## Wubiq 2.7.4
 ### Wubiq-android-gradle

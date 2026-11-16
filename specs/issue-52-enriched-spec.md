@@ -195,15 +195,15 @@ Fixed values of this section:
 | Version pattern | `^\d+(\.\d+)*$` |
 
 ##### Acceptance criteria
-- [ ] AC-1: Given `"2.10.0"` and `"2.9.9"`, when `ClientPackages#compareVersions(String, String)` compares them, then the result is positive; given `"2.8"` and `"2.8.0"`, the result is `0` (numbers, not strings; a missing part counts as 0)
-- [ ] AC-2: Given an offered version, when `ClientPackages#isNewer(String, String)` compares it with the own version `"2.8.0"`, then it returns `true` for `"2.8.1"` and `false` for `"2.8.0"`, `"2.7.4"`, `""`, `null` and `"< 2.0"` (an equal, older, empty or malformed offer is rejected)
-- [ ] AC-3: Given version `2.8.0`, platform `linux-x64` and type `deb`, when `ClientPackages#fileName(String, String, String)` builds the name, then it returns `wubiq-client-2.8.0-linux-x64.deb`, and `ClientPackages#parse(String)` of that name returns `{"2.8.0", "linux-x64", "deb"}`
-- [ ] AC-4: Given a name that does not follow the pattern (`wubiq-client-2.8.0-linux-x64.zip`, `Wubiq-2.8.0.pkg`, `wubiq-client-2.8.0-solaris-x64.deb`), when `parse` reads it, then it returns `null`
-- [ ] AC-5: Given a directory holding `wubiq-client-2.8.0-linux-x64.deb`, `wubiq-client-2.10.0-linux-x64.deb`, `wubiq-client-2.9.0-linux-x64.rpm`, `wubiq-client-3.0.0-windows-x64.msi`, `wubiq-client-2.8.0-macos-arm64.pkg`, `wubiq-client-2.9.0-macos-arm64.pkg`, `wubiq-client-2.10.0-macos-x64.pkg` and `notes.txt`, when `ClientPackages#latest(File, String, String)` is asked, then `linux-x64` and `deb` give `wubiq-client-2.10.0-linux-x64.deb`, `macos-arm64` and `pkg` give `wubiq-client-2.9.0-macos-arm64.pkg`, `macos-x64` and `pkg` give `wubiq-client-2.10.0-macos-x64.pkg`, and `windows-x64` and `msi` give `wubiq-client-3.0.0-windows-x64.msi` (every platform has a package in the directory; a higher version of the other macOS platform is never picked)
-- [ ] AC-6: Given each of these: a directory that does not exist; a `null` directory; the AC-5 directory asked for `linux-x64` and `pkg`, a platform and type no file there has — when `latest` is asked, then it returns `null` (the server answers that it offers nothing; it never throws)
-- [ ] AC-7: Given an OS name and architecture, when `ClientPackages#platform(String, String)` maps them, then `("Windows 11", "amd64")` gives `windows-x64`, `("Mac OS X", "aarch64")` gives `macos-arm64`, `("Mac OS X", "x86_64")` gives `macos-x64`, `("Linux", "amd64")` gives `linux-x64`, and `("Linux", "arm")` and `("SunOS", "amd64")` give `""`
-- [ ] AC-8: Given a package type and a path, when `ClientPackages#installCommand(String, String)` builds the unattended install command, then it returns the row of the table in Code changes step 3, and `null` for an unknown type
-- [ ] AC-9: the protocol names and keys exist with the values of Code changes step 1 (mechanical — no red test; verified by `grep -rhoE 'READ_PACKAGE = "v2"|CLIENT_PLATFORM = "cpf"|CLIENT_PACKAGE_TYPE = "cpt"|PROPERTY_CLIENT_PACKAGES_DIRECTORY = "client.packages.directory"|WUBIQ_PACKAGE_TYPE = "wubiq.package.type"' wubiq-common/src/net/sf/wubiq/common | wc -l` printing `5`)
+- [x] AC-1: Given `"2.10.0"` and `"2.9.9"`, when `ClientPackages#compareVersions(String, String)` compares them, then the result is positive; given `"2.8"` and `"2.8.0"`, the result is `0` (numbers, not strings; a missing part counts as 0)
+- [x] AC-2: Given an offered version, when `ClientPackages#isNewer(String, String)` compares it with the own version `"2.8.0"`, then it returns `true` for `"2.8.1"` and `false` for `"2.8.0"`, `"2.7.4"`, `""`, `null` and `"< 2.0"` (an equal, older, empty or malformed offer is rejected)
+- [x] AC-3: Given version `2.8.0`, platform `linux-x64` and type `deb`, when `ClientPackages#fileName(String, String, String)` builds the name, then it returns `wubiq-client-2.8.0-linux-x64.deb`, and `ClientPackages#parse(String)` of that name returns `{"2.8.0", "linux-x64", "deb"}`
+- [x] AC-4: Given a name that does not follow the pattern (`wubiq-client-2.8.0-linux-x64.zip`, `Wubiq-2.8.0.pkg`, `wubiq-client-2.8.0-solaris-x64.deb`), when `parse` reads it, then it returns `null`
+- [x] AC-5: Given a directory holding `wubiq-client-2.8.0-linux-x64.deb`, `wubiq-client-2.10.0-linux-x64.deb`, `wubiq-client-2.9.0-linux-x64.rpm`, `wubiq-client-3.0.0-windows-x64.msi`, `wubiq-client-2.8.0-macos-arm64.pkg`, `wubiq-client-2.9.0-macos-arm64.pkg`, `wubiq-client-2.10.0-macos-x64.pkg` and `notes.txt`, when `ClientPackages#latest(File, String, String)` is asked, then `linux-x64` and `deb` give `wubiq-client-2.10.0-linux-x64.deb`, `macos-arm64` and `pkg` give `wubiq-client-2.9.0-macos-arm64.pkg`, `macos-x64` and `pkg` give `wubiq-client-2.10.0-macos-x64.pkg`, and `windows-x64` and `msi` give `wubiq-client-3.0.0-windows-x64.msi` (every platform has a package in the directory; a higher version of the other macOS platform is never picked)
+- [x] AC-6: Given each of these: a directory that does not exist; a `null` directory; the AC-5 directory asked for `linux-x64` and `pkg`, a platform and type no file there has — when `latest` is asked, then it returns `null` (the server answers that it offers nothing; it never throws)
+- [x] AC-7: Given an OS name and architecture, when `ClientPackages#platform(String, String)` maps them, then `("Windows 11", "amd64")` gives `windows-x64`, `("Mac OS X", "aarch64")` gives `macos-arm64`, `("Mac OS X", "x86_64")` gives `macos-x64`, `("Linux", "amd64")` gives `linux-x64`, and `("Linux", "arm")` and `("SunOS", "amd64")` give `""`
+- [x] AC-8: Given a package type and a path, when `ClientPackages#installCommand(String, String)` builds the unattended install command, then it returns the row of the table in Code changes step 3, and `null` for an unknown type
+- [x] AC-9: the protocol names and keys exist with the values of Code changes step 1 (mechanical — no red test; verified by `grep -rhoE 'READ_PACKAGE = "v2"|CLIENT_PLATFORM = "cpf"|CLIENT_PACKAGE_TYPE = "cpt"|PROPERTY_CLIENT_PACKAGES_DIRECTORY = "client.packages.directory"|WUBIQ_PACKAGE_TYPE = "wubiq.package.type"' wubiq-common/src/net/sf/wubiq/common | wc -l` printing `5`)
 
 ##### Test ports
 - `net.sf.wubiq.utils.ClientPackages#compareVersions(String, String)` · in: two versions matching the version pattern · out: negative, 0 or positive `int`; throws `IllegalArgumentException` when either does not match · new (`grep -rIl ClientPackages` over the repository returns nothing)
@@ -293,29 +293,17 @@ Depends on: COM-DOC-1
 `wubiq-server/README.md` § Client packages (the console line that lists the connected clients by version).
 
 #### Implementation details
-Language level: Java 1.6 syntax and classes, for the reason stated in COM-BE-1.
+Language level: `source="1.8" target="1.8" release="8"` in the `javac` tasks of `wubiq-common/build.xml`. This section prescribes no Java source.
 
 The server's labels live in this application: `wubiq-common/i18n/server_labels_en.properties` and `wubiq-common/i18n/server_labels_es.properties`, read through `ServerLabels#get(String, String...)` (`wubiq-common/src/net/sf/wubiq/utils/ServerLabels.java`). `Labels#get(String, String...)` replaces `%0` with the first parameter and returns the key itself when the bundle has no such key.
 
+Every AC is mechanical: the section has no test port, no red test and no test class.
+
 ##### Acceptance criteria
-- [x] AC-1: Given the English locale, when `ServerLabels#get(String, String...)` is asked for `server.clients_by_version` with the parameter `2.7.4 (3)`, then it returns `Connected clients by version: 2.7.4 (3)`
-- [x] AC-2: Given the Spanish locale, the same call returns `Clientes conectados por versión: 2.7.4 (3)`
-- [x] AC-3: Given a key no bundle has (`server.no_such_label`), when `ServerLabels#get` is asked for it, then it returns the key (degraded path kept: a missing label never throws)
-
-##### Test ports
-- `net.sf.wubiq.utils.ServerLabels#get(String, String...)` · in: key and parameters · out: the localized text, or the key · existing (`wubiq-common/src/net/sf/wubiq/utils/ServerLabels.java`, `ServerLabels#get(String, String...)`)
-- `net.sf.wubiq.utils.ServerLabels#setLocale(java.util.Locale)` · in: the locale to read the bundle with; it also calls `Locale.setDefault` · existing (same file, `ServerLabels#setLocale(Locale)`)
-
-##### Red tests (write first; each must fail before implementation)
-Setup shared by every row: a `@Before` method stores `Locale.getDefault()`; an `@After` method calls `ServerLabels.setLocale(Locale.ENGLISH)` and then `Locale.setDefault(<stored>)`.
-
-| AC | Placement | Setup | Test file | Test name | Assertion sketch |
-|---|---|---|---|---|---|
-| AC-1 | new file (`ls wubiq-common/tests-src/net/sf/wubiq` lists no file) | `ServerLabels.setLocale(Locale.ENGLISH)` | wubiq-common/tests-src/net/sf/wubiq/utils/ServerLabelsTest.java | `clientsByVersionInEnglish` | `assertEquals("Connected clients by version: 2.7.4 (3)", ServerLabels.get("server.clients_by_version", "2.7.4 (3)"))` |
-| AC-2 | add to that file | `ServerLabels.setLocale(new Locale("es"))` | same | `clientsByVersionInSpanish` | `assertEquals("Clientes conectados por versi\u00f3n: 2.7.4 (3)", ServerLabels.get("server.clients_by_version", "2.7.4 (3)"))` |
-| AC-3 | add to that file | `ServerLabels.setLocale(Locale.ENGLISH)` | same | `missingLabelReturnsItsKey` | `assertEquals("server.no_such_label", ServerLabels.get("server.no_such_label"))` |
-
-AC-3 passes before implementation: it pins the existing fallback and is not a red test. AC-1 and AC-2 are red.
+- [ ] AC-1: `wubiq-common/i18n/server_labels_en.properties` holds the line `server.clients_by_version=Connected clients by version: %0` once (mechanical — no red test; verified by `grep -c -x -F 'server.clients_by_version=Connected clients by version: %0' wubiq-common/i18n/server_labels_en.properties` printing `1`)
+- [ ] AC-2: `wubiq-common/i18n/server_labels_es.properties` holds the line `server.clients_by_version=Clientes conectados por versi\u00F3n: %0` once (mechanical — no red test; verified by `grep -c '^server\.clients_by_version=Clientes conectados por versi\\u00F3n: %0$' wubiq-common/i18n/server_labels_es.properties` printing `1`; the pattern is a regular expression, in which `\\u00F3` matches the six characters `\u00F3`)
+- [ ] AC-3: Every `server_labels_*.properties` file in `wubiq-common/i18n` has the key `server.clients_by_version`; a locale file without it makes `ServerLabels#get(String, String...)` return the key itself as the console text (mechanical — no red test; verified by `grep -L '^server\.clients_by_version=' wubiq-common/i18n/server_labels_*.properties` printing nothing)
+- [ ] AC-4: The section adds no file under `wubiq-common/tests-src` (mechanical — no red test; verified by `git diff --name-only origin/master...HEAD -- wubiq-common/tests-src` printing nothing)
 
 ##### Code changes
 1. `wubiq-common/i18n/server_labels_en.properties` — after the line `server.client_disconnected=Client is disconnected`, insert:
@@ -323,12 +311,11 @@ AC-3 passes before implementation: it pins the existing fallback and is not a re
 2. `wubiq-common/i18n/server_labels_es.properties` — after the line `server.client_disconnected=Cliente desconectado`, insert:
    `server.clients_by_version=Clientes conectados por versi\u00F3n: %0`
    (the six characters `\u00F3` are typed as shown; the file is ISO-8859-1 with unicode escapes).
+3. Add no test class. `wubiq-common/tests-src/net/sf/wubiq/utils/ServerLabelsTest.java` is not part of this section.
 
 ##### Green tests
-1. The red tests above pass, unmodified (code-issue runs these, targeted:
-   `.claude/scripts/section-test.sh COM net.sf.wubiq.utils.ServerLabelsTest`)
-2. `.claude/scripts/suite.sh` — full suite green (review-issue runs this; code-issue runs only
-   this section's test classes)
+1. The four AC commands above print what each AC states
+2. `.claude/scripts/suite.sh` — full suite green (review-issue runs this)
 3. `.claude/scripts/gate.sh` clean
 <!-- section:COM-UI-1:end -->
 <!-- section:WIT-DOC-1:start -->
@@ -403,14 +390,14 @@ Depends on: COM-DOC-1
 9. § Java API — replace the last sentence `` `wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK (`wubiq-client/test-dotmatrix-jdks.sh`). `` with `` `wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK 25 or later (`wubiq-client/test-dotmatrix-jdks.sh`). ``
 
 ##### Acceptance criteria
-- [ ] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-dotmatrix-witness` and
+- [x] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-dotmatrix-witness` and
       carries no issue reference (mechanical — no red test; verified by
       `git diff origin/master...HEAD -- CHANGELOG.md | grep -E '^\+.*\(#[0-9]+\)'` returning nothing)
-- [ ] AC-2: nothing but this application's documentation modified, apart from this issue's
+- [x] AC-2: nothing but this application's documentation modified, apart from this issue's
       spec file (its AC ticks) (mechanical — no red test; verified by
       `git diff --name-only origin/master...HEAD | grep -vE '^CHANGELOG\.md$|^wubiq-dotmatrix-witness/.*\.md$|^specs/issue-52-enriched-spec\.md$'`
       returning nothing)
-- [ ] AC-3: `wubiq-dotmatrix-witness/README.md` documents the `extents` command and the Java 8 level, and no longer mentions Java 6 as a build or run level nor the copies into the Android project (mechanical — no red test; verified by `grep -c -E 'extents --expect FILE|--expect FILE     extents|compiles for Java 8' wubiq-dotmatrix-witness/README.md` printing `3` and `grep -c -E 'compiles for Java 6|runs on Java 6 and later|app/libs' wubiq-dotmatrix-witness/README.md` printing `0`)
+- [x] AC-3: `wubiq-dotmatrix-witness/README.md` documents the `extents` command and the Java 8 level, and no longer mentions Java 6 as a build or run level nor the copies into the Android project (mechanical — no red test; verified by `grep -c -E 'extents --expect FILE|--expect FILE     extents|compiles for Java 8' wubiq-dotmatrix-witness/README.md` printing `3` and `grep -c -E 'compiles for Java 6|runs on Java 6 and later|app/libs' wubiq-dotmatrix-witness/README.md` printing `0`)
 
 ##### Green checks
 1. `.claude/scripts/gate.sh` clean (code-issue); `.claude/scripts/suite.sh` — full suite green

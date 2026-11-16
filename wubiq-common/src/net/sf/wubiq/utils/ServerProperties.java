@@ -60,6 +60,14 @@ public class ServerProperties extends BaseProperties {
 	public String getRemotePrintJobManager() {
 		return get(ConfigurationKeys.PROPERTY_REMOTE_PRINT_JOB_MANAGER, ConfigurationKeys.DEFAULT_REMOTE_PRINT_JOB_MANAGER);
 	}
+
+	/**
+	 * Directory on the server machine that holds the client packages.
+	 * @return The configured path, blank when none is configured.
+	 */
+	public String getClientPackagesDirectory() {
+		return get(ConfigurationKeys.PROPERTY_CLIENT_PACKAGES_DIRECTORY, "").trim();
+	}
 	
 	/**
 	 * Pdf to image dots per inch. Default value is 144dpi.

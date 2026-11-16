@@ -70,7 +70,8 @@ public final class ConfigurationKeys {
 	
 	public static final String PROPERTY_PDF_TO_IMAGE_DOTS_PER_INCH = "pdf.to.image.dpi";
 	public static final String PROPERTY_KEEP_ALIVE = "keep.alive";
-	public static final String PROPERTY_SUPPRESS_LOGS = "suppress.logs";	
+	public static final String PROPERTY_SUPPRESS_LOGS = "suppress.logs";
+	public static final String PROPERTY_CLIENT_PACKAGES_DIRECTORY = "client.packages.directory";
 	private static boolean persistenceActive = false;
 
 	/**
