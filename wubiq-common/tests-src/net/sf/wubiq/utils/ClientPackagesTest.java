@@ -21,6 +21,9 @@ public class ClientPackagesTest {
 		"wubiq-client-2.10.0-linux-x64.deb",
 		"wubiq-client-2.9.0-linux-x64.rpm",
 		"wubiq-client-3.0.0-windows-x64.msi",
+		"wubiq-client-2.8.0-macos-arm64.pkg",
+		"wubiq-client-2.9.0-macos-arm64.pkg",
+		"wubiq-client-2.10.0-macos-x64.pkg",
 		"notes.txt"
 	};
 
@@ -58,6 +61,9 @@ public class ClientPackagesTest {
 		File dir = createPackageDirectory();
 		try {
 			assertEquals("wubiq-client-2.10.0-linux-x64.deb", ClientPackages.latest(dir, "linux-x64", "deb").getName());
+			assertEquals("wubiq-client-2.9.0-macos-arm64.pkg", ClientPackages.latest(dir, "macos-arm64", "pkg").getName());
+			assertEquals("wubiq-client-2.10.0-macos-x64.pkg", ClientPackages.latest(dir, "macos-x64", "pkg").getName());
+			assertEquals("wubiq-client-3.0.0-windows-x64.msi", ClientPackages.latest(dir, "windows-x64", "msi").getName());
 		} finally {
 			deletePackageDirectory(dir);
 		}
@@ -69,7 +75,7 @@ public class ClientPackagesTest {
 		try {
 			assertNull(ClientPackages.latest(new File(dir, "missing"), "linux-x64", "deb"));
 			assertNull(ClientPackages.latest(null, "linux-x64", "deb"));
-			assertNull(ClientPackages.latest(dir, "macos-arm64", "pkg"));
+			assertNull(ClientPackages.latest(dir, "linux-x64", "pkg"));
 		} finally {
 			deletePackageDirectory(dir);
 		}
