@@ -293,29 +293,17 @@ Depends on: COM-DOC-1
 `wubiq-server/README.md` § Client packages (the console line that lists the connected clients by version).
 
 #### Implementation details
-Language level: Java 1.6 syntax and classes, for the reason stated in COM-BE-1.
+Language level: `source="1.8" target="1.8" release="8"` in the `javac` tasks of `wubiq-common/build.xml`. This section prescribes no Java source.
 
 The server's labels live in this application: `wubiq-common/i18n/server_labels_en.properties` and `wubiq-common/i18n/server_labels_es.properties`, read through `ServerLabels#get(String, String...)` (`wubiq-common/src/net/sf/wubiq/utils/ServerLabels.java`). `Labels#get(String, String...)` replaces `%0` with the first parameter and returns the key itself when the bundle has no such key.
 
+Every AC is mechanical: the section has no test port, no red test and no test class.
+
 ##### Acceptance criteria
-- [ ] AC-1: Given the English locale, when `ServerLabels#get(String, String...)` is asked for `server.clients_by_version` with the parameter `2.7.4 (3)`, then it returns `Connected clients by version: 2.7.4 (3)`
-- [ ] AC-2: Given the Spanish locale, the same call returns `Clientes conectados por versión: 2.7.4 (3)`
-- [ ] AC-3: Given a key no bundle has (`server.no_such_label`), when `ServerLabels#get` is asked for it, then it returns the key (degraded path kept: a missing label never throws)
-
-##### Test ports
-- `net.sf.wubiq.utils.ServerLabels#get(String, String...)` · in: key and parameters · out: the localized text, or the key · existing (`wubiq-common/src/net/sf/wubiq/utils/ServerLabels.java`, `ServerLabels#get(String, String...)`)
-- `net.sf.wubiq.utils.ServerLabels#setLocale(java.util.Locale)` · in: the locale to read the bundle with; it also calls `Locale.setDefault` · existing (same file, `ServerLabels#setLocale(Locale)`)
-
-##### Red tests (write first; each must fail before implementation)
-Setup shared by every row: a `@Before` method stores `Locale.getDefault()`; an `@After` method calls `ServerLabels.setLocale(Locale.ENGLISH)` and then `Locale.setDefault(<stored>)`.
-
-| AC | Placement | Setup | Test file | Test name | Assertion sketch |
-|---|---|---|---|---|---|
-| AC-1 | new file (`ls wubiq-common/tests-src/net/sf/wubiq` lists no file) | `ServerLabels.setLocale(Locale.ENGLISH)` | wubiq-common/tests-src/net/sf/wubiq/utils/ServerLabelsTest.java | `clientsByVersionInEnglish` | `assertEquals("Connected clients by version: 2.7.4 (3)", ServerLabels.get("server.clients_by_version", "2.7.4 (3)"))` |
-| AC-2 | add to that file | `ServerLabels.setLocale(new Locale("es"))` | same | `clientsByVersionInSpanish` | `assertEquals("Clientes conectados por versi\u00f3n: 2.7.4 (3)", ServerLabels.get("server.clients_by_version", "2.7.4 (3)"))` |
-| AC-3 | add to that file | `ServerLabels.setLocale(Locale.ENGLISH)` | same | `missingLabelReturnsItsKey` | `assertEquals("server.no_such_label", ServerLabels.get("server.no_such_label"))` |
-
-AC-3 passes before implementation: it pins the existing fallback and is not a red test. AC-1 and AC-2 are red.
+- [ ] AC-1: `wubiq-common/i18n/server_labels_en.properties` holds the line `server.clients_by_version=Connected clients by version: %0` once (mechanical — no red test; verified by `grep -c -x -F 'server.clients_by_version=Connected clients by version: %0' wubiq-common/i18n/server_labels_en.properties` printing `1`)
+- [ ] AC-2: `wubiq-common/i18n/server_labels_es.properties` holds the line `server.clients_by_version=Clientes conectados por versi\u00F3n: %0` once (mechanical — no red test; verified by `grep -c '^server\.clients_by_version=Clientes conectados por versi\\u00F3n: %0$' wubiq-common/i18n/server_labels_es.properties` printing `1`; the pattern is a regular expression, in which `\\u00F3` matches the six characters `\u00F3`)
+- [ ] AC-3: Every `server_labels_*.properties` file in `wubiq-common/i18n` has the key `server.clients_by_version`; a locale file without it makes `ServerLabels#get(String, String...)` return the key itself as the console text (mechanical — no red test; verified by `grep -L '^server\.clients_by_version=' wubiq-common/i18n/server_labels_*.properties` printing nothing)
+- [ ] AC-4: The section adds no file under `wubiq-common/tests-src` (mechanical — no red test; verified by `git diff --name-only origin/master...HEAD -- wubiq-common/tests-src` printing nothing)
 
 ##### Code changes
 1. `wubiq-common/i18n/server_labels_en.properties` — after the line `server.client_disconnected=Client is disconnected`, insert:
@@ -323,12 +311,11 @@ AC-3 passes before implementation: it pins the existing fallback and is not a re
 2. `wubiq-common/i18n/server_labels_es.properties` — after the line `server.client_disconnected=Cliente desconectado`, insert:
    `server.clients_by_version=Clientes conectados por versi\u00F3n: %0`
    (the six characters `\u00F3` are typed as shown; the file is ISO-8859-1 with unicode escapes).
+3. Add no test class. `wubiq-common/tests-src/net/sf/wubiq/utils/ServerLabelsTest.java` is not part of this section.
 
 ##### Green tests
-1. The red tests above pass, unmodified (code-issue runs these, targeted:
-   `.claude/scripts/section-test.sh COM net.sf.wubiq.utils.ServerLabelsTest`)
-2. `.claude/scripts/suite.sh` — full suite green (review-issue runs this; code-issue runs only
-   this section's test classes)
+1. The four AC commands above print what each AC states
+2. `.claude/scripts/suite.sh` — full suite green (review-issue runs this)
 3. `.claude/scripts/gate.sh` clean
 <!-- section:COM-UI-1:end -->
 <!-- section:WIT-DOC-1:start -->
