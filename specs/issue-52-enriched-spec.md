@@ -664,9 +664,9 @@ Depends on: CLI-DOC-1
 Language level: `source="1.6" target="1.6"` in the four `javac` tasks of `wubiq-client/build.xml`: one in target `create-client-jar`, two in target `compile` (the first compiles `wubiq-common/src`, the second the client), one in target `compile-tests`. This section raises all four to Java 8.
 
 ##### Acceptance criteria
-- [ ] AC-1: the four `javac` tasks compile for Java 8 (mechanical — no red test; verified by `grep -c 'source="1.8" target="1.8" release="8"' wubiq-client/build.xml` printing `4` and `grep -c '1\.6' wubiq-client/build.xml` printing `0`)
-- [ ] AC-2: no target of `wubiq-client/build.xml` writes into `wubiq-android-gradle` (mechanical — no red test; verified by `grep -c -E 'basedir\.gradle|app/libs' wubiq-client/build.xml` printing `0`)
-- [ ] AC-3: Given JDK 8, whose `javac` has no `--release` option, when the gate compiles `CLI` and the applications that depend on it, then they compile: Ant ignores `release` on JDK 8, and `INS` still compiles at `-source 1.6` against the Java 8 classes (mechanical — no red test; verified by `.claude/scripts/gate.sh` ending `EXIT: 0`)
+- [x] AC-1: the four `javac` tasks compile for Java 8 (mechanical — no red test; verified by `grep -c 'source="1.8" target="1.8" release="8"' wubiq-client/build.xml` printing `4` and `grep -c '1\.6' wubiq-client/build.xml` printing `0`)
+- [x] AC-2: no target of `wubiq-client/build.xml` writes into `wubiq-android-gradle` (mechanical — no red test; verified by `grep -c -E 'basedir\.gradle|app/libs' wubiq-client/build.xml` printing `0`)
+- [x] AC-3: Given JDK 8, whose `javac` has no `--release` option, when the gate compiles `CLI` and the applications that depend on it, then they compile: Ant ignores `release` on JDK 8, and `INS` still compiles at `-source 1.6` against the Java 8 classes (mechanical — no red test; verified by `.claude/scripts/gate.sh` ending `EXIT: 0`)
 
 ##### Code changes
 1. `wubiq-client/build.xml` — delete the line
