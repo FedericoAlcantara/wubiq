@@ -787,11 +787,11 @@ Depends on: CLI-DOC-1
 Language level: Java 1.6 syntax and classes (the level `wubiq-client/build.xml` sets for `tests-src` until CLI-BLD-1 merges; this section does not depend on it). The tool lives in the test sources: `test.classpath` of `wubiq-client/build.xml` holds PDFBox 1.8.6 (`wubiq-common/lib-nondeploy/pdfbox-1.8.6.jar`, `fontbox-1.8.6.jar`); the client's own classpath does not.
 
 ##### Acceptance criteria
-- [ ] AC-1: Given a one-page PDF (US Letter) with `Hello` drawn in Helvetica 12 at 72 points from the left and 720 points from the bottom, when `TestPageExtents#extract(InputStream)` reads it, then it returns one row whose tab-separated fields are sheet `0`, left `1.000`, a right edge between 1.37 and 1.39, baseline `1.000` and the text `Hello`
-- [ ] AC-2: Given a two-page PDF with one text on each page, when `extract` reads it, then the first row's sheet is `0` and the second row's sheet is `1`
-- [ ] AC-3: Given a stream that is not a PDF, when `extract` reads it, then it throws an `IOException` (error path: an unreadable page never yields an empty extents file)
-- [ ] AC-4: the committed extents file holds the 44 text runs of the server's test page (mechanical — no red test; verified by `grep -c -v '^#' wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents` printing `44` and `grep -c "$(printf '^0\t0.789\t6.502\t1.472\tFree your printing')" wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents` printing `1`)
-- [ ] AC-5: the suite runs the new test class (mechanical — no red test; verified by `grep -c 'net.sf.wubiq.dotmatrix.TestPageExtentsTest' wubiq-client/build.xml` printing `1`)
+- [x] AC-1: Given a one-page PDF (US Letter) with `Hello` drawn in Helvetica 12 at 72 points from the left and 720 points from the bottom, when `TestPageExtents#extract(InputStream)` reads it, then it returns one row whose tab-separated fields are sheet `0`, left `1.000`, a right edge between 1.37 and 1.39, baseline `1.000` and the text `Hello`
+- [x] AC-2: Given a two-page PDF with one text on each page, when `extract` reads it, then the first row's sheet is `0` and the second row's sheet is `1`
+- [x] AC-3: Given a stream that is not a PDF, when `extract` reads it, then it throws an `IOException` (error path: an unreadable page never yields an empty extents file)
+- [x] AC-4: the committed extents file holds the 44 text runs of the server's test page (mechanical — no red test; verified by `grep -c -v '^#' wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents` printing `44` and `grep -c "$(printf '^0\t0.789\t6.502\t1.472\tFree your printing')" wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents` printing `1`)
+- [x] AC-5: the suite runs the new test class (mechanical — no red test; verified by `grep -c 'net.sf.wubiq.dotmatrix.TestPageExtentsTest' wubiq-client/build.xml` printing `1`)
 
 ##### Test ports
 - `net.sf.wubiq.dotmatrix.TestPageExtents#extract(java.io.InputStream)` · in: a PDF stream · out: `List<String>`, one row per text run: `sheet<TAB>left<TAB>right<TAB>baseline<TAB>text`, inches with three decimals, sheet from 0 · new (`grep -rIl TestPageExtents` over the repository returns nothing)
