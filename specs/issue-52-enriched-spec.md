@@ -403,14 +403,14 @@ Depends on: COM-DOC-1
 9. § Java API — replace the last sentence `` `wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK (`wubiq-client/test-dotmatrix-jdks.sh`). `` with `` `wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK 25 or later (`wubiq-client/test-dotmatrix-jdks.sh`). ``
 
 ##### Acceptance criteria
-- [ ] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-dotmatrix-witness` and
+- [x] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-dotmatrix-witness` and
       carries no issue reference (mechanical — no red test; verified by
       `git diff origin/master...HEAD -- CHANGELOG.md | grep -E '^\+.*\(#[0-9]+\)'` returning nothing)
-- [ ] AC-2: nothing but this application's documentation modified, apart from this issue's
+- [x] AC-2: nothing but this application's documentation modified, apart from this issue's
       spec file (its AC ticks) (mechanical — no red test; verified by
       `git diff --name-only origin/master...HEAD | grep -vE '^CHANGELOG\.md$|^wubiq-dotmatrix-witness/.*\.md$|^specs/issue-52-enriched-spec\.md$'`
       returning nothing)
-- [ ] AC-3: `wubiq-dotmatrix-witness/README.md` documents the `extents` command and the Java 8 level, and no longer mentions Java 6 as a build or run level nor the copies into the Android project (mechanical — no red test; verified by `grep -c -E 'extents --expect FILE|--expect FILE     extents|compiles for Java 8' wubiq-dotmatrix-witness/README.md` printing `3` and `grep -c -E 'compiles for Java 6|runs on Java 6 and later|app/libs' wubiq-dotmatrix-witness/README.md` printing `0`)
+- [x] AC-3: `wubiq-dotmatrix-witness/README.md` documents the `extents` command and the Java 8 level, and no longer mentions Java 6 as a build or run level nor the copies into the Android project (mechanical — no red test; verified by `grep -c -E 'extents --expect FILE|--expect FILE     extents|compiles for Java 8' wubiq-dotmatrix-witness/README.md` printing `3` and `grep -c -E 'compiles for Java 6|runs on Java 6 and later|app/libs' wubiq-dotmatrix-witness/README.md` printing `0`)
 
 ##### Green checks
 1. `.claude/scripts/gate.sh` clean (code-issue); `.claude/scripts/suite.sh` — full suite green
