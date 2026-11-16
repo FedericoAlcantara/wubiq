@@ -102,9 +102,9 @@ Depends on: COM-DOC-1
 Language level: `source="1.6" target="1.6"` in the three `javac` tasks of `wubiq-common/build.xml` (targets `create-common-jar`, `compile`, `compile-tests`). This section raises it to Java 8.
 
 ##### Acceptance criteria
-- [ ] AC-1: the three `javac` tasks compile for Java 8 (mechanical — no red test; verified by `grep -c 'source="1.8" target="1.8" release="8"' wubiq-common/build.xml` printing `3` and `grep -c '1\.6' wubiq-common/build.xml` printing `0`)
-- [ ] AC-2: no target of `wubiq-common/build.xml` writes into `wubiq-android-gradle` (mechanical — no red test; verified by `grep -c -E 'basedir\.gradle|app/libs' wubiq-common/build.xml` printing `0`)
-- [ ] AC-3: Given JDK 8, whose `javac` has no `--release` option, when the gate compiles `COM`, then it compiles: Ant ignores `release` on JDK 8 and uses `source` and `target` (mechanical — no red test; verified by `.claude/scripts/gate.sh` ending `EXIT: 0`)
+- [x] AC-1: the three `javac` tasks compile for Java 8 (mechanical — no red test; verified by `grep -c 'source="1.8" target="1.8" release="8"' wubiq-common/build.xml` printing `3` and `grep -c '1\.6' wubiq-common/build.xml` printing `0`)
+- [x] AC-2: no target of `wubiq-common/build.xml` writes into `wubiq-android-gradle` (mechanical — no red test; verified by `grep -c -E 'basedir\.gradle|app/libs' wubiq-common/build.xml` printing `0`)
+- [x] AC-3: Given JDK 8, whose `javac` has no `--release` option, when the gate compiles `COM`, then it compiles: Ant ignores `release` on JDK 8 and uses `source` and `target` (mechanical — no red test; verified by `.claude/scripts/gate.sh` ending `EXIT: 0`)
 
 ##### Code changes
 1. `wubiq-common/build.xml` — delete the line
