@@ -298,9 +298,9 @@ Language level: Java 1.6 syntax and classes, for the reason stated in COM-BE-1.
 The server's labels live in this application: `wubiq-common/i18n/server_labels_en.properties` and `wubiq-common/i18n/server_labels_es.properties`, read through `ServerLabels#get(String, String...)` (`wubiq-common/src/net/sf/wubiq/utils/ServerLabels.java`). `Labels#get(String, String...)` replaces `%0` with the first parameter and returns the key itself when the bundle has no such key.
 
 ##### Acceptance criteria
-- [ ] AC-1: Given the English locale, when `ServerLabels#get(String, String...)` is asked for `server.clients_by_version` with the parameter `2.7.4 (3)`, then it returns `Connected clients by version: 2.7.4 (3)`
-- [ ] AC-2: Given the Spanish locale, the same call returns `Clientes conectados por versión: 2.7.4 (3)`
-- [ ] AC-3: Given a key no bundle has (`server.no_such_label`), when `ServerLabels#get` is asked for it, then it returns the key (degraded path kept: a missing label never throws)
+- [x] AC-1: Given the English locale, when `ServerLabels#get(String, String...)` is asked for `server.clients_by_version` with the parameter `2.7.4 (3)`, then it returns `Connected clients by version: 2.7.4 (3)`
+- [x] AC-2: Given the Spanish locale, the same call returns `Clientes conectados por versión: 2.7.4 (3)`
+- [x] AC-3: Given a key no bundle has (`server.no_such_label`), when `ServerLabels#get` is asked for it, then it returns the key (degraded path kept: a missing label never throws)
 
 ##### Test ports
 - `net.sf.wubiq.utils.ServerLabels#get(String, String...)` · in: key and parameters · out: the localized text, or the key · existing (`wubiq-common/src/net/sf/wubiq/utils/ServerLabels.java`, `ServerLabels#get(String, String...)`)
