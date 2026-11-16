@@ -11,7 +11,6 @@
 	<property name="jar.build" value="${basedir}/dist/build" />
 	<property name="workspace.dir" value="${basedir}/.." />
 	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
-	<property name="basedir.gradle" value="${workspace.dir}/wubiq-android-gradle" />
 	<!-- Packages the client reaches by reflection; Java 9+ opens them when the jar runs with -jar, older JDKs ignore it. -->
 	<property name="client.add.opens" value="java.base/java.lang java.desktop/javax.print java.desktop/sun.print" />
 	
@@ -37,7 +36,7 @@
 		<antcall target="create-common-jar" />
 		
 		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="builds.failed"
-				debug="true" target="1.6" source="1.6"> 
+				debug="true" source="1.8" target="1.8" release="8"> 
 			<src refid="project.src"/>
 			<classpath refid="project.classpath" /> 
 		</javac>
@@ -53,7 +52,6 @@
 				<attribute name="Add-Opens" value="${client.add.opens}"/>
 			</manifest>		
 		</jar>
-		<copy todir="${basedir.gradle}/app/libs/" file="${output.jar}.jar"/>
 	</target>
 	
 	<target name="create-common-jar" if="wubiq-common-exists">
@@ -106,12 +104,12 @@
 	<target name="compile" description="Compiles wubiq-common and the client sources without packaging">
 		<mkdir dir="${basedir.common}/bin"/>
 		<javac srcdir="${basedir.common}/src" destdir="${basedir.common}/bin" nowarn="true" failonerror="true"
-				includeantruntime="false" debug="true" target="1.6" source="1.6">
+				includeantruntime="false" debug="true" source="1.8" target="1.8" release="8">
 			<classpath refid="common.classpath" />
 		</javac>
 		<mkdir dir="${bin}"/>
 		<javac destdir="${bin}" nowarn="true" failonerror="true" includeantruntime="false"
-				debug="true" target="1.6" source="1.6">
+				debug="true" source="1.8" target="1.8" release="8">
 			<src refid="project.src"/>
 			<classpath refid="test.classpath" />
 		</javac>
@@ -121,7 +119,7 @@
 		<ant dir="${witness.dir}" target="compile" inheritAll="false" />
 		<mkdir dir="${testBin}"/>
 		<javac srcdir="${basedir}/tests-src" destdir="${testBin}" nowarn="true" failonerror="true"
-				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8">
+				includeantruntime="false" debug="true" source="1.8" target="1.8" release="8" encoding="UTF-8">
 			<classpath refid="test.classpath" />
 		</javac>
 	</target>
