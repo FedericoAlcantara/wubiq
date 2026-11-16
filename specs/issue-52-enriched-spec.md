@@ -414,8 +414,8 @@ Depends on: WIT-DOC-1
 Language level: `source="1.6" target="1.6"` in the two `javac` tasks of `wubiq-dotmatrix-witness/build.xml` (targets `compile`, `compile-tests`). This section raises it to Java 8.
 
 ##### Acceptance criteria
-- [ ] AC-1: both `javac` tasks compile for Java 8 (mechanical — no red test; verified by `grep -c 'source="1.8" target="1.8" release="8"' wubiq-dotmatrix-witness/build.xml` printing `2` and `grep -c '1\.6' wubiq-dotmatrix-witness/build.xml` printing `0`)
-- [ ] AC-2: Given JDK 8, whose `javac` has no `--release` option, when the gate compiles `WIT` and `CLI`, then both compile: Ant ignores `release` on JDK 8 (mechanical — no red test; verified by `.claude/scripts/gate.sh` ending `EXIT: 0`)
+- [x] AC-1: both `javac` tasks compile for Java 8 (mechanical — no red test; verified by `grep -c 'source="1.8" target="1.8" release="8"' wubiq-dotmatrix-witness/build.xml` printing `2` and `grep -c '1\.6' wubiq-dotmatrix-witness/build.xml` printing `0`)
+- [x] AC-2: Given JDK 8, whose `javac` has no `--release` option, when the gate compiles `WIT` and `CLI`, then both compile: Ant ignores `release` on JDK 8 (mechanical — no red test; verified by `.claude/scripts/gate.sh` ending `EXIT: 0`)
 
 ##### Code changes
 1. `wubiq-dotmatrix-witness/build.xml` targets `compile` and `compile-tests` — in each `javac` task replace `target="1.6" source="1.6"` with `source="1.8" target="1.8" release="8"`. Change no other attribute.

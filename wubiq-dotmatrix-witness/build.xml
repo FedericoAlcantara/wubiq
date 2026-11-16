@@ -18,7 +18,7 @@
 	<target name="compile">
 		<mkdir dir="${bin}"/>
 		<javac srcdir="${basedir}/src" destdir="${bin}" nowarn="true" failonerror="true"
-				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8" />
+				includeantruntime="false" debug="true" source="1.8" target="1.8" release="8" encoding="UTF-8" />
 	</target>
 
 	<target name="create-witness-jar" depends="clean,compile" description="Builds the virtual dot-matrix printer jar">
@@ -33,7 +33,7 @@
 	<target name="compile-tests" depends="compile">
 		<mkdir dir="${testBin}"/>
 		<javac srcdir="${basedir}/tests-src" destdir="${testBin}" nowarn="true" failonerror="true"
-				includeantruntime="false" debug="true" target="1.6" source="1.6" encoding="UTF-8">
+				includeantruntime="false" debug="true" source="1.8" target="1.8" release="8" encoding="UTF-8">
 			<classpath refid="test.classpath" />
 		</javac>
 	</target>
