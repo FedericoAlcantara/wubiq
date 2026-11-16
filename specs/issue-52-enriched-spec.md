@@ -640,14 +640,14 @@ Depends on: WIT-DOC-1
    ````
 
 ##### Acceptance criteria
-- [ ] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-client` and
+- [x] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-client` and
       carries no issue reference (mechanical — no red test; verified by
       `git diff origin/master...HEAD -- CHANGELOG.md | grep -E '^\+.*\(#[0-9]+\)'` returning nothing)
-- [ ] AC-2: nothing but this application's documentation modified, apart from this issue's
+- [x] AC-2: nothing but this application's documentation modified, apart from this issue's
       spec file (its AC ticks) (mechanical — no red test; verified by
       `git diff --name-only origin/master...HEAD | grep -vE '^CHANGELOG\.md$|^wubiq-client/.*\.md$|^specs/issue-52-enriched-spec\.md$'`
       returning nothing)
-- [ ] AC-3: `wubiq-client/README.md` states Java 25 and documents the three client rows (mechanical — no red test; verified by `grep -c -E 'The client runs on Java 25\.|--packaged-java JAVA --packaged-app DIR|-PackagedJava JAVA -PackagedApp DIR|Run it with a JDK 25\.' wubiq-client/README.md` printing `4` and `grep -c -E 'Java 6 and later|JDK 8|source and target 1\.6' wubiq-client/README.md` printing `0`)
+- [x] AC-3: `wubiq-client/README.md` states Java 25 and documents the three client rows (mechanical — no red test; verified by `grep -c -E 'The client runs on Java 25\.|--packaged-java JAVA --packaged-app DIR|-PackagedJava JAVA -PackagedApp DIR|Run it with a JDK 25\.' wubiq-client/README.md` printing `4` and `grep -c -E 'Java 6 and later|JDK 8|source and target 1\.6' wubiq-client/README.md` printing `0`)
 
 ##### Green checks
 1. `.claude/scripts/gate.sh` clean (code-issue); `.claude/scripts/suite.sh` — full suite green
