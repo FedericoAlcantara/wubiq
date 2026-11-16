@@ -12,6 +12,11 @@
 - The client is compiled for Java 25 and is distributed inside the native packages of wubiq-installer, with their own Java runtime. Installed 2.7.4 clients keep receiving the 2.7.4 jar from wubiq-server.
 - The build no longer copies `wubiq-client.jar` into `wubiq-android-gradle`.
 - The dot-matrix end to end scripts print with the 2.7.4 jar on every JDK, with the client built from source on JDK 25 and with a packaged client, and check the text extents of each job.
+### Wubiq-server
+- Two client lanes on the same servlet. A client that asks for the version without naming its platform (2.7.4 and older) is answered `2.7.4` and keeps downloading the 2.7.4 `wubiq-client.jar`. A packaged client names its platform and package type, is answered the highest version among the packages of `client.packages.directory`, and downloads that package through the servlet.
+- New property `client.packages.directory` in `wubiq-server.properties`: the directory that holds the client packages.
+- The console lists the connected clients by version.
+- The build no longer builds wubiq-client and wubiq-installer; `WebContent/wubiq-client.jar` is the 2.7.4 jar and is not rebuilt.
 
 ## Wubiq 2.7.4
 ### Wubiq-android-gradle

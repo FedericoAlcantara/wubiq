@@ -888,14 +888,14 @@ Depends on: CLI-DOC-1
 3. § Distributing the application — after the paragraph `That will create all the distribution files in **wubiq-server/dist**.` add the paragraph: `The client packages are built by `../wubiq-installer`, on each operating system; `ant` here does not build them.`
 
 ##### Acceptance criteria
-- [ ] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-server` and
+- [x] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-server` and
       carries no issue reference (mechanical — no red test; verified by
       `git diff origin/master...HEAD -- CHANGELOG.md | grep -E '^\+.*\(#[0-9]+\)'` returning nothing)
-- [ ] AC-2: nothing but this application's documentation modified, apart from this issue's
+- [x] AC-2: nothing but this application's documentation modified, apart from this issue's
       spec file (its AC ticks) (mechanical — no red test; verified by
       `git diff --name-only origin/master...HEAD | grep -vE '^CHANGELOG\.md$|^wubiq-server/.*\.md$|^specs/issue-52-enriched-spec\.md$'`
       returning nothing)
-- [ ] AC-3: `wubiq-server/README.md` has § Client packages with the property and the file names (mechanical — no red test; verified by `grep -c -E '^### Client packages$|^client\.packages\.directory=|^wubiq-client-2\.8\.0-' wubiq-server/README.md` printing `7`)
+- [x] AC-3: `wubiq-server/README.md` has § Client packages with the property and the file names (mechanical — no red test; verified by `grep -c -E '^### Client packages$|^client\.packages\.directory=|^wubiq-client-2\.8\.0-' wubiq-server/README.md` printing `7`)
 
 ##### Green checks
 1. `.claude/scripts/gate.sh` clean (code-issue); `.claude/scripts/suite.sh` — full suite green
