@@ -43,6 +43,8 @@ public final class ParameterKeys {
 	public static final String PRINT_TEST_COPIES = "TPC";
 	public static final String CLIENT_VERSION = "cv";
 	public static final String CLIENT_SUPPORTS_COMPRESSION = "csp";
+	public static final String CLIENT_PLATFORM = "cpf";
+	public static final String CLIENT_PACKAGE_TYPE = "cpt";
 	
 	/* Developers parameters not used or ignored in production */
 	public static final String DEVELOPMENT_PROPERTY_NAME="zp01";
