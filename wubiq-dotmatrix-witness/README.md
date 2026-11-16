@@ -1,6 +1,6 @@
 ## wubiq-dotmatrix-witness
 
-A virtual Epson ESC/P (9-pin) and ESC/P 2 (24-pin) dot-matrix printer, so dot-matrix output can be checked without a printer. It has no dependencies, compiles for Java 6, and runs on any later JDK.
+A virtual Epson ESC/P (9-pin) and ESC/P 2 (24-pin) dot-matrix printer, so dot-matrix output can be checked without a printer. It has no dependencies, compiles for Java 8, and runs on Java 8 and later.
 
 It does not depend on any other Wubiq module, so it can test any program that produces ESC/P bytes, in any language.
 
@@ -43,7 +43,7 @@ ant create-witness-jar     # dist/wubiq-dotmatrix-witness.jar
 ant test                   # witness unit tests
 ```
 
-Compile with JDK 8. The jar runs on Java 6 and later.
+Compile with JDK 8 or later. The jar runs on Java 8 and later.
 
 ### Command line
 
@@ -51,6 +51,7 @@ Compile with JDK 8. The jar runs on Java 6 and later.
 java -jar dist/wubiq-dotmatrix-witness.jar render [options] FILE|-
 java -jar dist/wubiq-dotmatrix-witness.jar listen [options]
 java -jar dist/wubiq-dotmatrix-witness.jar compare [options] BASE OTHER
+java -jar dist/wubiq-dotmatrix-witness.jar extents --expect FILE [options] JOB
 
   --pins 9|24       printer type (default 9)
   --paper WxH       sheet size in inches (default 8.5x11)
@@ -60,7 +61,8 @@ java -jar dist/wubiq-dotmatrix-witness.jar compare [options] BASE OTHER
   --port N          listen port (default 9100)
   --bind ADDRESS    listen address (default 127.0.0.1; 0.0.0.0 to accept LAN clients)
   --strict          render: exit 1 when the printer reports warnings
-  --tolerance IN    compare: largest accepted shift or size change (default 1/60 in across, 1/72 in down)
+  --tolerance IN    compare: largest accepted shift or size change (default 1/60 in across, 1/72 in down); extents: largest accepted width or left edge difference (default 0.1 in)
+  --expect FILE     extents: the expected text lines
 ```
 
 `listen` behaves like a raw (JetDirect, port 9100) network printer. Each connection is one job, and `index.html` in the output directory lists every job received.
@@ -78,6 +80,20 @@ DIFFERENT: java8/job.escp against java6/job.escp
   PASS  sheet 1 size: 6.000 x 7.431 in
   PASS  sheet 1 dots: 99.1% of 32884 dots in place once the shift is undone (32955 dots printed)
 ```
+
+`extents` checks a job rendered as graphics by a printer driver against the text the page is known to hold, and exits with 1 when a line differs. FILE has one text line per row, tab separated, in inches: the sheet (from 0), the left edge, the right edge, the baseline, and the text. Rows that start with `#` are comments.
+
+```
+0	0.789	6.502	1.472	Free your printing. Wubiq: Ubiquituous printing from anywhere to everywhere.
+```
+
+The witness splits the sheet's dots into horizontal bands, places the first expected line on the first band, and measures every expected line that has a band of its own:
+- the band must be as wide as the line, within the tolerance;
+- its left edge must be shifted like the other lines', within the tolerance.
+
+Lines that share a band with another line are reported as notes. At least three lines must be measured.
+
+`wubiq-client/tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents` holds the lines of wubiq-server's test page.
 
 ### Using it as a printer
 
@@ -135,7 +151,7 @@ The server runs in Tomcat under Docker (see `wubiq-server/README.md`). It needs 
 docker compose up -d
 ```
 
-`ant wubiq-server` also builds wubiq-common and wubiq-client. Both of those builds copy their jars into `wubiq-android-gradle/app/libs/`; don't commit those copies by accident.
+`ant wubiq-server` also builds wubiq-common.
 
 The console is at `http://localhost:8080/wubiq-server` (user `test`, password `12345`).
 
@@ -148,18 +164,25 @@ The console is at `http://localhost:8080/wubiq-server` (user `test`, password `1
    lpoptions -d Witness_9-pin     # restore later with lpoptions -d <previous default>
    ```
 
-2. Start the client with the JDK you want to test.
+2. Start the client. The client built from source needs Java 25:
 
    ```
-   java -jar wubiq-client/dist/wubiq-client.jar -h http://localhost:8080 -u client-test -v
+   (cd wubiq-client && ant create-launcher-jar)
+   java -jar wubiq-client/build-tests/wubiq-client-launcher.jar -h http://localhost:8080 -u client-test -v
    ```
 
-   Start it with `-jar`: on Java 9 and later, the jar's manifest opens the JDK packages the client uses by reflection (`Add-Opens`), and `-cp` skips the manifest.
+   Start it with `-jar`: the jar's manifest opens the JDK packages the client uses by reflection (`Add-Opens`), and `-cp` skips the manifest.
+
+   To test an older Java, start the 2.7.4 jar wubiq-server serves to the installed clients:
+
+   ```
+   java -jar wubiq-server/WebContent/wubiq-client.jar -h http://localhost:8080 -u client-test -v
+   ```
 
    On Apple Silicon, start Apple's Java 6 with `-Xint -XX:+UseMembar -Djava.awt.headless=true`:
 
    ```
-   /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -jar wubiq-client/dist/wubiq-client.jar -h http://localhost:8080 -u client-test -v
+   /Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -Xint -XX:+UseMembar -Djava.awt.headless=true -jar wubiq-server/WebContent/wubiq-client.jar -h http://localhost:8080 -u client-test -v
    ```
 
    When it registers its printers, the log shows `Wubiq witness 9-pin -> DOT_MATRIX`. If the printer shows as `UNDEFINED`, its description doesn't contain a dot-matrix marker. Fix the description, or add the name with `-Dwubiq.printers.dotmatrix=NAME`, a comma-separated list matched as substrings.
@@ -210,7 +233,7 @@ Open `wubiq-dotmatrix-witness/witness-jobs/index.html`. It lists every job the l
 - `lines.json`: the printed text runs, for checks in other tools;
 - `job.escp`: the raw bytes.
 
-Compare the sheets with the test page PDF to see where the text should be. To check another JDK against a known good job, use `compare` on the two `job.escp` files. `wubiq-client/test-dotmatrix-e2e.sh` runs these steps on every installed JDK and compares each job with the Java 6 one.
+Compare the sheets with the test page PDF to see where the text should be. To check another JDK against a known good job, use `compare` on the two `job.escp` files. `wubiq-client/test-dotmatrix-e2e.sh` runs these steps with the 2.7.4 jar on every installed JDK, with the client built from source on JDK 25 and with a packaged client, compares each job with the Java 6 one and checks its text extents.
 
 ### Testing a Windows client
 
@@ -220,7 +243,7 @@ On the runner, it:
 1. installs Oracle Java 6u45 and the Zulu builds of Java 6, 7, 8u112, 8, 11, 17, 21 and 25;
 2. builds wubiq-server and runs it on Tomcat 7, with the files `docker-compose.yml` mounts;
 3. installs the Epson LX-350 ESC/P driver and adds the printer `Wubiq witness 9-pin` on a Standard TCP/IP port to the witness at `127.0.0.1:9100`;
-4. runs `wubiq-client/test-dotmatrix-e2e-windows.ps1`, which prints wubiq-server's test page with every JDK, through the printer driver and through the fast path (the client writes ESC/P to a file), and compares each job with the Oracle Java 6 one.
+4. runs `wubiq-client/test-dotmatrix-e2e-windows.ps1`, which prints wubiq-server's test page with the 2.7.4 jar on every JDK and with the packaged client, through the printer driver and through the fast path (the client writes ESC/P to a file), compares each job with the Oracle Java 6 one and checks the text extents of the packaged client's job.
 
 The run's summary lists every JDK as `REFERENCE`, `SAME`, `DIFFERENT` or `NOT PRINTED`, in one row for the driver job and one with `-fast` for the fast path file, which is `WARNINGS` when the witness reports a warning in it. The `dotmatrix-e2e-windows` artifact holds every job's report (`jobs/job-*/index.html`), the client and witness logs, and the Tomcat logs.
 
@@ -264,4 +287,4 @@ new WitnessReport(profile).write(directory, "my job", bytes, result, referenceIm
 
 A pitch mismatch is a note, unless strict pitch is enabled.
 
-`wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK (`wubiq-client/test-dotmatrix-jdks.sh`).
+`wubiq-client/tests-src/net/sf/wubiq/dotmatrix` uses this API to check the 2.x client's ESC/P path on every installed JDK 25 or later (`wubiq-client/test-dotmatrix-jdks.sh`).
