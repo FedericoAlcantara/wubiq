@@ -163,6 +163,7 @@
 			</syspropertyset>
 			<arg value="net.sf.wubiq.dotmatrix.ReferenceEncoderTest" />
 			<arg value="net.sf.wubiq.dotmatrix.DotMatrixWitnessTest" />
+			<arg value="net.sf.wubiq.dotmatrix.TestPageExtentsTest" />
 		</java>
 	</target>
 
