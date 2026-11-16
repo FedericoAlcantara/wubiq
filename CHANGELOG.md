@@ -8,6 +8,10 @@
 ### Wubiq-dotmatrix-witness
 - Compiled for Java 8.
 - New `extents` command: measures the width of the text lines a job prints and compares them with expected text extents, so a job is checked without a reference job printed by another Java.
+### Wubiq-client
+- The client is compiled for Java 25 and is distributed inside the native packages of wubiq-installer, with their own Java runtime. Installed 2.7.4 clients keep receiving the 2.7.4 jar from wubiq-server.
+- The build no longer copies `wubiq-client.jar` into `wubiq-android-gradle`.
+- The dot-matrix end to end scripts print with the 2.7.4 jar on every JDK, with the client built from source on JDK 25 and with a packaged client, and check the text extents of each job.
 
 ## Wubiq 2.7.4
 ### Wubiq-android-gradle
