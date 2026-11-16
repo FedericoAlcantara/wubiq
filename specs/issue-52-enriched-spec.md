@@ -128,10 +128,10 @@ Depends on: COM-DOC-1
 Language level: Java 1.6 syntax and classes. `wubiq-client/build.xml` target `compile` compiles `wubiq-common/src` with `source="1.6"` until CLI-BLD-1 merges, so this section prescribes nothing above 1.6, in sources and in tests.
 
 ##### Acceptance criteria
-- [ ] AC-1: Given the cached OS name `Windows 10`, when `GraphicsUtils#properFont(Font, PrinterType)` receives `new Font("Arial", Font.PLAIN, 12)` and `PrinterType.DOT_MATRIX`, then the returned font has an identity transform
-- [ ] AC-2: Given the same call, then the returned font has no `TextAttribute.TRACKING` attribute, its size is 12 and its family is `SansSerif`
-- [ ] AC-3: Given the cached OS name `Windows 10`, when `properFont` receives `new Font("Courier New", Font.PLAIN, 12)` and `PrinterType.DOT_MATRIX_HQ`, then the returned font is named `Monospaced` and has an identity transform
-- [ ] AC-4: Given a font name the method does not map (`"Wingdings"`), when `properFont` receives it with `PrinterType.DOT_MATRIX`, then the returned font keeps the name `Wingdings`, size 12 and an identity transform (degraded path: an unmapped font is printed as sent, never narrowed)
+- [x] AC-1: Given the cached OS name `Windows 10`, when `GraphicsUtils#properFont(Font, PrinterType)` receives `new Font("Arial", Font.PLAIN, 12)` and `PrinterType.DOT_MATRIX`, then the returned font has an identity transform
+- [x] AC-2: Given the same call, then the returned font has no `TextAttribute.TRACKING` attribute, its size is 12 and its family is `SansSerif`
+- [x] AC-3: Given the cached OS name `Windows 10`, when `properFont` receives `new Font("Courier New", Font.PLAIN, 12)` and `PrinterType.DOT_MATRIX_HQ`, then the returned font is named `Monospaced` and has an identity transform
+- [x] AC-4: Given a font name the method does not map (`"Wingdings"`), when `properFont` receives it with `PrinterType.DOT_MATRIX`, then the returned font keeps the name `Wingdings`, size 12 and an identity transform (degraded path: an unmapped font is printed as sent, never narrowed)
 
 ##### Test ports
 - `net.sf.wubiq.utils.GraphicsUtils#properFont(java.awt.Font, net.sf.wubiq.enums.PrinterType)` ·
