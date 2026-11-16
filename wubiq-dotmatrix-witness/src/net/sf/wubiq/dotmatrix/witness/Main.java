@@ -20,6 +20,7 @@ import java.util.List;
  *   render [options] FILE|-   interpret one ESC/P stream and write a report
  *   listen [options]          act as a raw (port 9100) network printer; one report per job
  *   compare [options] BASE OTHER   check that OTHER prints like BASE; exit 1 when it doesn't
+ *   extents --expect FILE [options] JOB   check the printed text widths against the expected lines; exit 1 when one differs
  * </pre>
  * @author Federico Alcantara
  *
@@ -34,6 +35,7 @@ public class Main {
 	private String input;
 	private final List<String> inputs = new ArrayList<String>();
 	private Double tolerance;
+	private File expect;
 	private final List<String[]> jobs = new ArrayList<String[]>();
 	private int jobCount;
 
@@ -77,6 +79,8 @@ public class Main {
 				strict = true;
 			} else if ("--tolerance".equals(arg)) {
 				tolerance = Double.valueOf(value(args, ++index, arg));
+			} else if ("--expect".equals(arg)) {
+				expect = new File(value(args, ++index, arg));
 			} else if (arg.startsWith("--")) {
 				throw new IllegalArgumentException("Unknown option " + arg);
 			} else {
@@ -91,6 +95,8 @@ public class Main {
 			return 0;
 		} else if ("compare".equals(command)) {
 			return compare();
+		} else if ("extents".equals(command)) {
+			return extents();
 		}
 		throw new IllegalArgumentException("Unknown command " + command);
 	}
@@ -117,6 +123,23 @@ public class Main {
 		}
 		CheckResult check = comparison.compare(base, other);
 		System.out.println((check.isPassed() ? "SAME" : "DIFFERENT") + ": " + inputs.get(1) + " against " + inputs.get(0));
+		for (CheckResult.Item item : check.getItems()) {
+			System.out.println("  " + item);
+		}
+		return check.isPassed() ? 0 : 1;
+	}
+
+	private int extents() throws IOException {
+		if (expect == null || inputs.size() != 1) {
+			throw new IllegalArgumentException("extents needs --expect FILE and the job to check.");
+		}
+		EscpResult result = new EscpInterpreter(profile).interpret(read(new File(inputs.get(0))));
+		TextExtents extents = new TextExtents();
+		if (tolerance != null) {
+			extents.setTolerance(tolerance);
+		}
+		CheckResult check = extents.check(result, TextExtents.read(expect));
+		System.out.println((check.isPassed() ? "EXTENTS OK" : "EXTENTS DIFFERENT") + ": " + inputs.get(0));
 		for (CheckResult.Item item : check.getItems()) {
 			System.out.println("  " + item);
 		}
@@ -213,6 +236,7 @@ public class Main {
 				+ "  java -jar wubiq-dotmatrix-witness.jar render [options] FILE|-\n"
 				+ "  java -jar wubiq-dotmatrix-witness.jar listen [options]\n"
 				+ "  java -jar wubiq-dotmatrix-witness.jar compare [options] BASE OTHER\n"
+				+ "  java -jar wubiq-dotmatrix-witness.jar extents --expect FILE [options] JOB\n"
 				+ "Options:\n"
 				+ "  --pins 9|24       printer type (default 9)\n"
 				+ "  --paper WxH       sheet size in inches (default 8.5x11)\n"
@@ -222,6 +246,7 @@ public class Main {
 				+ "  --port N          listen port (default 9100)\n"
 				+ "  --bind ADDRESS    listen address (default 127.0.0.1, 0.0.0.0 for the LAN)\n"
 				+ "  --strict          render: exit 1 when the printer reports warnings\n"
-				+ "  --tolerance IN    compare: largest accepted shift or size change (default 1/60 in across, 1/72 in down)");
+				+ "  --tolerance IN    compare: largest accepted shift or size change (default 1/60 in across, 1/72 in down); extents: largest accepted width or left edge difference (default 0.1 in)\n"
+				+ "  --expect FILE     extents: the expected text lines");
 	}
 }

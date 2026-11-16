@@ -3,9 +3,14 @@ package net.sf.wubiq.dotmatrix.witness;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -245,6 +250,87 @@ public class EscpInterpreterTest {
 		CheckResult changed = comparison.compare(base, retyped);
 		assertFalse(changed.isPassed());
 		assertTrue(changed.toString(), changed.toString().contains("\"Tota1\""));
+	}
+
+	@Test
+	public void textExtentsMatchExpectedWidths() {
+		CheckResult check = new TextExtents().check(bars(new int[] {60, 60, 60}, new int[] {120, 180, 90}),
+				expectedLines(new double[] {2.0, 3.0, 1.5}));
+		assertTrue(check.toString(), check.isPassed());
+		assertEquals(3, check.count(CheckResult.Status.PASS));
+	}
+
+	@Test
+	public void textExtentsFindNarrowedText() {
+		CheckResult check = new TextExtents().check(bars(new int[] {60, 60, 60}, new int[] {66, 99, 50}),
+				expectedLines(new double[] {2.0, 3.0, 1.5}));
+		assertFalse(check.isPassed());
+		assertTrue(check.toString(), check.toString().contains("width 1.100 in, expected 2.000 in"));
+	}
+
+	@Test
+	public void textExtentsFindAMovedLine() {
+		CheckResult check = new TextExtents().check(bars(new int[] {60, 60, 75}, new int[] {120, 180, 90}),
+				expectedLines(new double[] {2.0, 3.0, 1.5}));
+		assertFalse(check.isPassed());
+		assertEquals(1, check.count(CheckResult.Status.FAIL));
+		assertTrue(check.toString(), check.toString().contains("left edge"));
+	}
+
+	@Test
+	public void textExtentsNeedEnoughLines() {
+		CheckResult first = new TextExtents().check(bars(new int[] {60, 60}, new int[] {120, 180}),
+				expectedLines(new double[] {2.0, 3.0}));
+		CheckResult second = new TextExtents().check(interpret(ESC, '@', "Total", CR, FF),
+				expectedLines(new double[] {2.0, 3.0, 1.5}));
+		assertTrue(first.toString().contains("only 2 text line(s) measured, 3 needed"));
+		assertTrue(second.toString().contains("no graphics dots to measure"));
+		assertFalse(first.isPassed());
+		assertFalse(second.isPassed());
+	}
+
+	@Test
+	public void textExtentsFileWithABadRowIsRefused() throws IOException {
+		File file = File.createTempFile("extents", ".txt");
+		try {
+			Writer writer = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+			try {
+				writer.write("0\t1.25\t3.25\t0.5\tline 0\n0\t1.25\n");
+			} finally {
+				writer.close();
+			}
+			try {
+				TextExtents.read(file);
+				fail();
+			} catch (IOException e) {
+				assertTrue(e.getMessage(), e.getMessage().contains(":2:"));
+			}
+		} finally {
+			file.delete();
+		}
+	}
+
+	private EscpResult bars(int[] starts, int[] columns) {
+		List<Object> stream = new ArrayList<Object>();
+		stream.add(ESC);
+		stream.add('@');
+		for (int i = 0; i < starts.length; i++) {
+			stream.addAll(Arrays.<Object>asList(ESC, '$', starts[i], 0, ESC, 'K', columns[i], 0));
+			for (int column = 0; column < columns[i]; column++) {
+				stream.add(0x80);
+			}
+			stream.addAll(Arrays.<Object>asList(CR, LF, LF));
+		}
+		stream.add(FF);
+		return interpret(stream.toArray());
+	}
+
+	private List<TextExtents.Line> expectedLines(double[] widths) {
+		List<TextExtents.Line> lines = new ArrayList<TextExtents.Line>();
+		for (int i = 0; i < widths.length; i++) {
+			lines.add(new TextExtents.Line(0, 1.25, 1.25 + widths[i], 0.5 + i / 3d, "line " + i));
+		}
+		return lines;
 	}
 
 	private EscpResult interpret(Object... parts) {
