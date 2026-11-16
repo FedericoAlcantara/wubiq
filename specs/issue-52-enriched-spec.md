@@ -300,10 +300,10 @@ The server's labels live in this application: `wubiq-common/i18n/server_labels_e
 Every AC is mechanical: the section has no test port, no red test and no test class.
 
 ##### Acceptance criteria
-- [ ] AC-1: `wubiq-common/i18n/server_labels_en.properties` holds the line `server.clients_by_version=Connected clients by version: %0` once (mechanical — no red test; verified by `grep -c -x -F 'server.clients_by_version=Connected clients by version: %0' wubiq-common/i18n/server_labels_en.properties` printing `1`)
-- [ ] AC-2: `wubiq-common/i18n/server_labels_es.properties` holds the line `server.clients_by_version=Clientes conectados por versi\u00F3n: %0` once (mechanical — no red test; verified by `grep -c '^server\.clients_by_version=Clientes conectados por versi\\u00F3n: %0$' wubiq-common/i18n/server_labels_es.properties` printing `1`; the pattern is a regular expression, in which `\\u00F3` matches the six characters `\u00F3`)
-- [ ] AC-3: Every `server_labels_*.properties` file in `wubiq-common/i18n` has the key `server.clients_by_version`; a locale file without it makes `ServerLabels#get(String, String...)` return the key itself as the console text (mechanical — no red test; verified by `grep -L '^server\.clients_by_version=' wubiq-common/i18n/server_labels_*.properties` printing nothing)
-- [ ] AC-4: The section adds no file under `wubiq-common/tests-src` (mechanical — no red test; verified by `git diff --name-only origin/master...HEAD -- wubiq-common/tests-src` printing nothing)
+- [x] AC-1: `wubiq-common/i18n/server_labels_en.properties` holds the line `server.clients_by_version=Connected clients by version: %0` once (mechanical — no red test; verified by `grep -c -x -F 'server.clients_by_version=Connected clients by version: %0' wubiq-common/i18n/server_labels_en.properties` printing `1`)
+- [x] AC-2: `wubiq-common/i18n/server_labels_es.properties` holds the line `server.clients_by_version=Clientes conectados por versi\u00F3n: %0` once (mechanical — no red test; verified by `grep -c '^server\.clients_by_version=Clientes conectados por versi\\u00F3n: %0$' wubiq-common/i18n/server_labels_es.properties` printing `1`; the pattern is a regular expression, in which `\\u00F3` matches the six characters `\u00F3`)
+- [x] AC-3: Every `server_labels_*.properties` file in `wubiq-common/i18n` has the key `server.clients_by_version`; a locale file without it makes `ServerLabels#get(String, String...)` return the key itself as the console text (mechanical — no red test; verified by `grep -L '^server\.clients_by_version=' wubiq-common/i18n/server_labels_*.properties` printing nothing)
+- [x] AC-4: The section adds no file under `wubiq-common/tests-src` (mechanical — no red test; verified by `git diff --name-only origin/master...HEAD -- wubiq-common/tests-src` printing nothing)
 
 ##### Code changes
 1. `wubiq-common/i18n/server_labels_en.properties` — after the line `server.client_disconnected=Client is disconnected`, insert:
