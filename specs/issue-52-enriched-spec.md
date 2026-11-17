@@ -24,7 +24,7 @@ The 2.x print client ships as a native package per OS (MSI, PKG, DEB, RPM) that 
 | CLI-BE-1 | Backend | `TestPageExtents` test tool and the test page extents file | CLI-DOC-1 | test/52-cli-be-1-test-page-extents | test(client): text extents of the server test page (#52 · CLI-BE-1) |
 | SRV-DOC-1 | Documentation | `CHANGELOG.md` › Wubiq-server; `wubiq-server/README.md` § Requirements, § Running the server, § Client packages | CLI-DOC-1 | docs/52-srv-doc-1-server-docs | docs(server): client packages directory and the two client lanes (#52 · SRV-DOC-1) |
 | SRV-BLD-1 | Build | `wubiq-server/build.xml`: no client or installer build, the served client jar is not overwritten | SRV-DOC-1 | build/52-srv-bld-1-frozen-client-jar | build(server): stop building the client and keep the served jar (#52 · SRV-BLD-1) |
-| SRV-BE-1 | Backend | `READ_VERSION` lanes and package streaming in `RemotePrintServlet` | SRV-DOC-1, COM-BE-2 | feat/52-srv-be-1-client-lanes | feat(server): frozen legacy lane and packaged client lane (#52 · SRV-BE-1) |
+| SRV-BE-1 | Backend | `READ_VERSION` lanes and package streaming in `RemotePrintServlet` | SRV-DOC-1, COM-BE-2, CLI-BLD-3 | feat/52-srv-be-1-client-lanes | feat(server): frozen legacy lane and packaged client lane (#52 · SRV-BE-1) |
 | SRV-UI-1 | UI | Console: connected clients by version | SRV-DOC-1, COM-UI-1 | feat/52-srv-ui-1-versions-summary | feat(server): show the connected clients by version (#52 · SRV-UI-1) |
 | INS-DOC-1 | Documentation | `CHANGELOG.md` › Wubiq-installer; `wubiq-installer/README.md` (whole file) | SRV-DOC-1 | docs/52-ins-doc-1-installer-docs | docs(installer): native packages with a bundled Java (#52 · INS-DOC-1) |
 | INS-BLD-1 | Build | IzPack build and assets removed; `build.xml` compiles at Java 25 | INS-DOC-1, CLI-BLD-2 | build/52-ins-bld-1-remove-izpack | build(installer): remove IzPack and compile for Java 25 (#52 · INS-BLD-1) |
@@ -944,7 +944,7 @@ Language level: `wubiq-server/build.xml` target `compileWar` sets no `source` an
 <!-- section:SRV-BLD-1:end -->
 <!-- section:SRV-BE-1:start -->
 ### SRV-BE-1 — Backend · wubiq-server · `READ_VERSION` lanes and package streaming
-Depends on: SRV-DOC-1, COM-BE-2
+Depends on: SRV-DOC-1, COM-BE-2, CLI-BLD-3
 
 #### Documentation references
 `wubiq-server/README.md` § Client packages.
@@ -960,7 +960,7 @@ Language level: Java 8 — `wubiq-server/build.xml` target `compileWar` sets no 
 - [ ] AC-3: Given a running server whose `client.packages.directory` holds `wubiq-client-2.8.0-linux-x64.deb` and `wubiq-client-2.10.0-linux-x64.deb`, when a client posts `command=v1`, then the answer is `2.7.4`; when it posts `command=v1&cpf=linux-x64&cpt=deb`, the answer is `2.10.0`; when it posts `command=v1&cpf=macos-arm64&cpt=pkg`, the answer is empty (manual — no red test; verified by `curl -s -d 'command=v1' http://localhost:8080/wubiq-server/wubiq.do` and the two other bodies, against the server of `wubiq-server/README.md` § Running the server with the property set)
 - [ ] AC-4: Given the same server, when a client posts `command=v2&cpf=linux-x64&cpt=deb`, then it receives the bytes of the `2.10.0` file with `Content-Type: application/octet-stream` and a `Content-Length` equal to the file size (manual — no red test; verified by `curl -s -D headers.txt -o got.deb -d 'command=v2&cpf=linux-x64&cpt=deb' http://localhost:8080/wubiq-server/wubiq.do && cmp got.deb <the directory>/wubiq-client-2.10.0-linux-x64.deb`)
 - [ ] AC-5: Given no `client.packages.directory`, a directory that does not exist, or no package for the platform and type, when a client posts `command=v2&cpf=linux-x64&cpt=rpm`, then the server answers HTTP 404 and logs nothing at error level; a `cpf` or `cpt` value such as `../../etc` selects no file, because the values are only compared with parsed file names (error paths; manual — no red test; verified by `curl -s -o /dev/null -w '%{http_code}' -d 'command=v2&cpf=linux-x64&cpt=rpm' http://localhost:8080/wubiq-server/wubiq.do` printing `404`, and the same with `cpf=../../etc`)
-- [ ] AC-6: a 2.7.4 installation keeps printing against this server and is offered nothing but the 2.7.4 jar (manual — no red test; verified by the `legacy-java-VERSION` rows of `wubiq-client/test-dotmatrix-e2e.sh` reading `SAME` against a server built from this branch)
+- [ ] AC-6: a 2.7.4 installation keeps printing against this server and is offered nothing but the 2.7.4 jar (manual — no red test; verified on a Mac with the `Witness_9-pin` queue, with the script CLI-BLD-3 merged: `grep -c 'legacy-java-' wubiq-client/test-dotmatrix-e2e.sh` prints at least `1` on this branch; from the repository root, `(cd wubiq-server && ant wubiq-server) && docker compose up -d` starts a server built from this branch; `curl -s -d 'command=v1' http://localhost:8080/wubiq-server/wubiq.do` prints `2.7.4`; `./test-dotmatrix-e2e.sh`, run from `wubiq-client/`, writes `build-tests/dotmatrix-e2e/summary.txt`, where every `legacy-java-VERSION` row reads `SAME`. This section edits no file under `wubiq-client/`)
 
 ##### Code changes
 1. Precondition, checked before any edit: `unzip -p wubiq-server/WebContent/wubiq-client.jar META-INF/MANIFEST.MF | grep -c '^Add-Opens:'` prints `1`. When it prints `0`, the tracked jar is not the 2.7.4 jar of PR H0 ("Out of Scope"): change nothing and end with `STATUS: BLOCKED — hand-pr-h0-not-merged`.
