@@ -12,6 +12,15 @@
 		<pathelement path="${client.dir}/bin" />
 	</path>
 
+	<property name="package.dir" value="${basedir}/package" />
+	<property name="package.build" value="${basedir}/build/package" />
+	<property name="dist" value="${basedir}/dist" />
+	<property name="jdk.bin" value="${java.home}/bin" />
+
+	<condition property="package.windows"><os family="windows" /></condition>
+	<condition property="package.macos"><os family="mac" /></condition>
+	<condition property="package.linux"><and><os family="unix" /><not><os family="mac" /></not></and></condition>
+
 	<target name="compile" description="Compiles wubiq-common, wubiq-client and the installer sources without packaging">
 		<ant dir="${client.dir}" target="compile" inheritAll="false" />
 		<delete dir="${bin}" failonerror="false" />
@@ -27,6 +36,151 @@
 			</fileset>
 		</copy>
 	</target>
+
+	<target name="stage" depends="compile" description="Writes the package input and the Java runtime into build/package">
+		<delete dir="${package.build}" failonerror="false" />
+		<mkdir dir="${package.build}/input" />
+		<mkdir dir="${dist}" />
+		<jar jarfile="${package.build}/input/wubiq-common.jar">
+			<fileset dir="${common.dir}/bin" />
+			<fileset dir="${common.dir}/i18n" />
+		</jar>
+		<jar jarfile="${package.build}/input/wubiq-client.jar">
+			<fileset dir="${client.dir}/bin" />
+			<fileset dir="${client.dir}/i18n" />
+		</jar>
+		<jar jarfile="${package.build}/input/wubiq-installer.jar" basedir="${bin}" />
+		<copy todir="${package.build}/input" flatten="true">
+			<fileset dir="${lib}" includes="commons-logging-1.1.1.jar,miglayout15-swing.jar" />
+			<fileset dir="${client.dir}/lib" includes="cglib-nodep-3.1.jar,commons-cli-1.2.jar" />
+			<fileset dir="${common.dir}/lib" includes="commons-lang3-3.4.jar" />
+		</copy>
+		<java classname="net.sf.wubiq.clients.VersionInformation" outputproperty="app.version" failonerror="true" fork="true">
+			<classpath><fileset dir="${package.build}/input" includes="*.jar" /></classpath>
+		</java>
+		<exec executable="${jdk.bin}/jdeps" outputproperty="jdeps.modules" failonerror="true">
+			<arg value="--ignore-missing-deps" />
+			<arg value="--print-module-deps" />
+			<arg value="--multi-release" />
+			<arg value="25" />
+			<arg value="--class-path" />
+			<arg value="${package.build}/input/*" />
+			<arg value="${package.build}/input/wubiq-installer.jar" />
+			<arg value="${package.build}/input/wubiq-client.jar" />
+			<arg value="${package.build}/input/wubiq-common.jar" />
+		</exec>
+		<exec executable="${jdk.bin}/jlink" failonerror="true">
+			<arg value="--add-modules" />
+			<arg value="${jdeps.modules},java.logging,jdk.charsets" />
+			<arg value="--output" />
+			<arg value="${package.build}/runtime" />
+			<arg value="--strip-debug" />
+			<arg value="--no-man-pages" />
+			<arg value="--no-header-files" />
+		</exec>
+	</target>
+
+	<macrodef name="jpackage">
+		<attribute name="type" />
+		<attribute name="os" />
+		<attribute name="shortcut" default="" />
+		<element name="options" optional="true" />
+		<sequential>
+			<echo file="${package.build}/WubiqConfigurator-@{type}.properties">main-class=net.sf.wubiq.clients.WubiqConfigurator
+java-options=-Dwubiq.package.type=@{type}
+launcher-as-service=false
+@{shortcut}
+</echo>
+			<exec executable="${jdk.bin}/jpackage" failonerror="true">
+				<arg value="--type" />
+				<arg value="@{type}" />
+				<arg value="--name" />
+				<arg value="Wubiq" />
+				<arg value="--app-version" />
+				<arg value="${app.version}" />
+				<arg value="--vendor" />
+				<arg value="Wubiq" />
+				<arg value="--description" />
+				<arg value="Wubiq print client" />
+				<arg value="--input" />
+				<arg value="${package.build}/input" />
+				<arg value="--main-jar" />
+				<arg value="wubiq-installer.jar" />
+				<arg value="--main-class" />
+				<arg value="net.sf.wubiq.clients.WubiqLauncher" />
+				<arg value="--arguments" />
+				<arg value="start" />
+				<arg value="--runtime-image" />
+				<arg value="${package.build}/runtime" />
+				<arg value="--java-options" />
+				<arg value="-Dwubiq.package.type=@{type}" />
+				<arg value="--java-options" />
+				<arg value="--add-opens=java.base/java.lang=ALL-UNNAMED" />
+				<arg value="--java-options" />
+				<arg value="--add-opens=java.desktop/javax.print=ALL-UNNAMED" />
+				<arg value="--java-options" />
+				<arg value="--add-opens=java.desktop/sun.print=ALL-UNNAMED" />
+				<arg value="--add-launcher" />
+				<arg value="WubiqConfigurator=${package.build}/WubiqConfigurator-@{type}.properties" />
+				<arg value="--resource-dir" />
+				<arg value="${package.dir}/resources/@{os}" />
+				<arg value="--dest" />
+				<arg value="${package.build}/out-@{type}" />
+				<arg value="--verbose" />
+				<options />
+			</exec>
+			<java classname="net.sf.wubiq.utils.ClientPackages" outputproperty="package.file.@{type}" failonerror="true" fork="true">
+				<classpath><fileset dir="${package.build}/input" includes="*.jar" /></classpath>
+				<arg value="@{type}" />
+			</java>
+			<move todir="${dist}">
+				<fileset dir="${package.build}/out-@{type}" includes="*.@{type}" />
+				<mergemapper to="${package.file.@{type}}" />
+			</move>
+		</sequential>
+	</macrodef>
+
+	<target name="package-windows" depends="stage" if="package.windows">
+		<copy todir="${package.build}/input">
+			<fileset dir="${package.dir}/windows" />
+		</copy>
+		<jpackage type="msi" os="windows" shortcut="win-menu=true">
+			<options>
+				<arg value="--win-upgrade-uuid" />
+				<arg value="E1687847-85F4-415F-8395-E4B6674F9FCC" />
+			</options>
+		</jpackage>
+	</target>
+
+	<target name="package-macos" depends="stage" if="package.macos">
+		<jpackage type="pkg" os="macos">
+			<options>
+				<arg value="--launcher-as-service" />
+				<arg value="--mac-package-identifier" />
+				<arg value="net.sf.wubiq.client" />
+			</options>
+		</jpackage>
+	</target>
+
+	<target name="package-linux" depends="stage" if="package.linux">
+		<jpackage type="deb" os="linux" shortcut="linux-shortcut=true">
+			<options>
+				<arg value="--launcher-as-service" />
+				<arg value="--linux-package-name" />
+				<arg value="wubiq" />
+			</options>
+		</jpackage>
+		<jpackage type="rpm" os="linux" shortcut="linux-shortcut=true">
+			<options>
+				<arg value="--launcher-as-service" />
+				<arg value="--linux-package-name" />
+				<arg value="wubiq" />
+			</options>
+		</jpackage>
+	</target>
+
+	<target name="package" depends="package-windows,package-macos,package-linux"
+			description="Writes the native package of this operating system into dist" />
 
 	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
 		<echo message="Creating wubiq-installer javadoc" />
