@@ -23,6 +23,8 @@
 - The service updates itself: when wubiq-server offers a package with a higher version, it downloads it and runs the operating system's installer unattended.
 - The configuration is kept outside the installation folder and through updates. An IzPack installation is taken over at the first start: its `wubiq-installer.properties` is imported and its service removed.
 - The packages are not signed.
+### Wubiq-android-gradle
+- The app has its own copy of the classes it shares with the server (the device table, the protocol names and the polling client) and no longer ships `wubiq-client.jar` and `wubiq-common.jar`; cglib, commons-cli and commons-logging leave the APK.
 
 ## Wubiq 2.7.4
 ### Wubiq-android-gradle
