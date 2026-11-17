@@ -9,6 +9,8 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.SortedMap;
+import java.util.TreeMap;
 
 import javax.print.PrintServiceLookup;
 import javax.servlet.http.HttpServletRequest;
@@ -19,6 +21,7 @@ import net.sf.wubiq.data.RemoteClient;
 import net.sf.wubiq.persistence.PersistenceManager;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
+import net.sf.wubiq.utils.Is;
 import net.sf.wubiq.utils.PrintServiceUtils;
 import net.sf.wubiq.utils.ServerWebUtils;
 
@@ -193,6 +196,44 @@ public class RemoteClientManager implements Serializable {
 			returnValue.addAll(getRemotes().keySet());
 		}
 		return returnValue;
+	}
+
+	/**
+	 * Counts the active clients by the version they registered with.
+	 * @return Count of active clients per client version, ordered by version.
+	 */
+	public SortedMap<String, Integer> clientVersionCounts() {
+		SortedMap<String, Integer> returnValue = new TreeMap<String, Integer>();
+		for (String uuid : getUuids()) {
+			RemoteClient client = getRemoteClient(uuid, true);
+			if (client == null
+					|| Boolean.TRUE.equals(client.isKilled())
+					|| !isRemoteActive(uuid)) {
+				continue;
+			}
+			String version = client.getClientVersion();
+			if (Is.emptyString(version)) {
+				version = "?";
+			}
+			Integer count = returnValue.get(version);
+			returnValue.put(version, count == null ? 1 : count + 1);
+		}
+		return returnValue;
+	}
+
+	/**
+	 * @return Active clients by version as "version (count)" entries separated by ", ",
+	 * or an empty string when no client is active.
+	 */
+	public String clientVersionSummary() {
+		StringBuilder returnValue = new StringBuilder();
+		for (Map.Entry<String, Integer> entry : clientVersionCounts().entrySet()) {
+			if (returnValue.length() > 0) {
+				returnValue.append(", ");
+			}
+			returnValue.append(entry.getKey()).append(" (").append(entry.getValue()).append(")");
+		}
+		return returnValue.toString();
 	}
 	
 	/**
