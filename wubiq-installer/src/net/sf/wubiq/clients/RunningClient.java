@@ -18,10 +18,14 @@ import java.util.Set;
 
 import net.sf.wubiq.common.CommandKeys;
 import net.sf.wubiq.common.InstallerKeys;
+import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.PropertyKeys;
+import net.sf.wubiq.utils.ClientPackages;
 import net.sf.wubiq.utils.InstallerProperties;
 import net.sf.wubiq.utils.InstallerUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.Labels;
+import net.sf.wubiq.utils.PackageUpdater;
 
 /**
  * @author Federico Alcantara
@@ -156,7 +160,8 @@ public class RunningClient extends AbstractLocalPrintManager {
 
 		javaRun.setJvmParameters(jvmParameters);
 		javaRun.setMainName(InstallerKeys.CLIENT_MAIN_CLASS);
-		serverVersion();
+		String offered = serverVersion();
+		PackageUpdater.INSTANCE.updateIfNewer(offered, getPreferredURL(), getUuid());
 	}
 	
 	private void killClient() {
@@ -278,7 +283,15 @@ public class RunningClient extends AbstractLocalPrintManager {
 	}
 	
 	private String serverVersion() throws ConnectException {
-		return (String)pollServer(CommandKeys.READ_VERSION);
+		String platform = ClientPackages.currentPlatform();
+		String type = InstallerUtils.INSTANCE.packageType();
+		if (Is.emptyString(platform) || Is.emptyString(type)) {
+			return (String) pollServer(CommandKeys.READ_VERSION);
+		}
+		return (String) pollServer(CommandKeys.READ_VERSION,
+				ParameterKeys.CLIENT_VERSION + ParameterKeys.PARAMETER_SEPARATOR + Labels.VERSION,
+				ParameterKeys.CLIENT_PLATFORM + ParameterKeys.PARAMETER_SEPARATOR + platform,
+				ParameterKeys.CLIENT_PACKAGE_TYPE + ParameterKeys.PARAMETER_SEPARATOR + type);
 	}
 	
 	/**
