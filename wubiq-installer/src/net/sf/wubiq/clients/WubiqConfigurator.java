@@ -63,6 +63,7 @@ import net.sf.wubiq.common.ConfigurationKeys;
 import net.sf.wubiq.common.ParameterKeys;
 import net.sf.wubiq.common.PropertyKeys;
 import net.sf.wubiq.enums.AddressStatus;
+import net.sf.wubiq.utils.ClientPackages;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.InstallerBundle;
 import net.sf.wubiq.utils.InstallerProperties;
@@ -663,8 +664,41 @@ public class WubiqConfigurator {
 		} finally {
 			changingId = false;
 		}
+		checkForUpdate();
 	}
-	
+
+	/**
+	 * Asks the saved connections, on a thread of its own, for the version on offer,
+	 * and shows in the title when it is higher than this one.
+	 */
+	private void checkForUpdate() {
+		if (!InstallerUtils.INSTANCE.isPackaged() || Is.emptyString(ClientPackages.currentPlatform())) {
+			return;
+		}
+		Thread thread = new Thread(() -> {
+			String answer = null;
+			for (String part : InstallerProperties.INSTANCE(serviceName).getConnections().split("[,;]")) {
+				String address = part.trim();
+				if (address.isEmpty()) {
+					continue;
+				}
+				answer = readCommandConnection(address, CommandKeys.READ_VERSION,
+						ParameterKeys.CLIENT_VERSION + "=" + Labels.VERSION,
+						ParameterKeys.CLIENT_PLATFORM + "=" + ClientPackages.currentPlatform(),
+						ParameterKeys.CLIENT_PACKAGE_TYPE + "=" + InstallerUtils.INSTANCE.packageType());
+				if (answer != null) {
+					break;
+				}
+			}
+			if (answer != null && ClientPackages.isNewer(answer, Labels.VERSION)) {
+				final String offered = answer;
+				EventQueue.invokeLater(() -> frame.setTitle("Version:" + Labels.VERSION + " - " + InstallerBundle.getMessage("info.update_available", offered)));
+			}
+		}, "UpdateCheck");
+		thread.setDaemon(true);
+		thread.start();
+	}
+
 	/**
 	 * Resets the current data.
 	 * @param event Click event.
@@ -962,10 +996,10 @@ public class WubiqConfigurator {
 				}
 			} catch (FileNotFoundException e) {
 				LOG.error(e.getMessage());
-				handleException(e);
+				handleException(new IOException(InstallerBundle.getMessage("error.cannot_write_configuration", Matcher.quoteReplacement(String.valueOf(e.getMessage())))));
 			} catch (IOException e) {
 				LOG.error(e.getMessage());
-				handleException(e);
+				handleException(new IOException(InstallerBundle.getMessage("error.cannot_write_configuration", Matcher.quoteReplacement(String.valueOf(e.getMessage())))));
 			} catch (Exception e) {
 				LOG.error(e.getMessage());
 				handleException(e);
@@ -1154,13 +1188,14 @@ public class WubiqConfigurator {
 	 * Reads the connection's content
 	 * @param address Address to read the content from.
 	 * @param command Command to use for the connection.
+	 * @param parameters Parameters in the form parameterName=parameterValue sent with the command.
 	 * @return Webpage content, null value if invalid connection.
 	 */
-	private String readCommandConnection(String address, String command) {
+	private String readCommandConnection(String address, String command, String... parameters) {
 		String returnValue = null;
 		try {
 			URL url = hostServletUrl(address);
-			String encodedParameters = encodedParameters(command);
+			String encodedParameters = encodedParameters(command, parameters);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setDoOutput(true);
 			connection.setDoInput(true);
