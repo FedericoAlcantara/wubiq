@@ -177,6 +177,9 @@ public class InstallerProperties extends BaseProperties {
 			fileName.append('-')
 					.append(serviceName);
 		}
+		if (InstallerUtils.INSTANCE.isPackaged()) {
+			return new File(InstallerUtils.INSTANCE.configDirectory(), fileName.toString() + ".properties");
+		}
 		return super.getPropertiesFile(fileName.toString());
 	}
 	

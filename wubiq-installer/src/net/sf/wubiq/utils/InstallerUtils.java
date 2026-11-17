@@ -3,13 +3,13 @@
  */
 package net.sf.wubiq.utils;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
+
+import net.sf.wubiq.common.InstallerKeys;
+import net.sf.wubiq.common.PropertyKeys;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -38,45 +38,55 @@ public enum InstallerUtils {
 		return new File(System.getProperty("user.dir"));
 	}
 	
-	public File wubiqClientFile() {
-		return new File(installPath().getPath() + "/wubiq-client.jar");
-	}
-	
 	/**
-	 * Wubiq client version.
-	 * @return String containing the client version or blank if client is too old or does not exists.
+	 * Package type the client was installed with.
+	 * @return Value of the wubiq.package.type system property, blank when it is not set.
 	 */
-	public String wubiqClientVersion() {
-		System.out.println("Checking VERSION");
-		String returnValue = "";
-		System.out.println("Creating process builder");
-		ProcessBuilder processBuilder = new ProcessBuilder();
-		processBuilder.command(jrePath(), "-cp", wubiqClientFile().toString(), "net.sf.wubiq.clients.VersionInformation");
+	public String packageType() {
+		String returnValue = System.getProperty(PropertyKeys.WUBIQ_PACKAGE_TYPE);
+		return returnValue == null ? "" : returnValue;
+	}
+
+	/**
+	 * Tells whether this client runs from a native package.
+	 * @return True when a package type is set.
+	 */
+	public boolean isPackaged() {
+		return !Is.emptyString(packageType());
+	}
+
+	/**
+	 * Directory that holds wubiq-installer.jar and the other jars, whatever the operating system's package layout.
+	 * @return Application directory.
+	 */
+	public File appDirectory() {
 		try {
-			System.out.println("Starting the process");
-			Process process = processBuilder.start();
-			System.out.println("Waiting for response...");
-			
-			StreamGobbler errors = new StreamGobbler(process.getErrorStream());
-			StreamGobbler messages = new StreamGobbler(process.getInputStream());
-			
-			errors.start();
-			messages.start();
-			
-			System.out.println("Waiting for version...");
-			process.waitFor();
-			if (errors.output != null 
-					&& !"".equals(errors.output)) {
-				throw new IOException(errors.output);
+			return new File(InstallerUtils.class.getProtectionDomain().getCodeSource().getLocation().toURI()).getParentFile();
+		} catch (URISyntaxException e) {
+			throw new IllegalStateException(e);
+		}
+	}
+
+	/**
+	 * Configuration directory of a packaged client. It is created when it does not exist.
+	 * @return Configuration directory.
+	 */
+	public File configDirectory() {
+		String os = System.getProperty("os.name");
+		File returnValue;
+		if (os.startsWith("Windows")) {
+			String programData = System.getenv("ProgramData");
+			if (programData == null) {
+				programData = "C:\\ProgramData";
 			}
-			returnValue = messages.output;
-		} catch (IOException e) {
-			LOG.error(e.getMessage(), e);
-			e.printStackTrace();
-		} catch (InterruptedException e) {
-			LOG.fatal(e.getMessage(), e);
-		} finally {
-			
+			returnValue = new File(programData, InstallerKeys.CONFIG_DIRECTORY_NAME);
+		} else if (os.startsWith("Mac")) {
+			returnValue = new File("/Library/Application Support", InstallerKeys.CONFIG_DIRECTORY_NAME);
+		} else {
+			returnValue = new File("/etc/wubiq");
+		}
+		if (!returnValue.exists()) {
+			returnValue.mkdirs();
 		}
 		return returnValue;
 	}
@@ -157,37 +167,3 @@ public enum InstallerUtils {
 		return returnValue.toString().trim().replaceAll(" ", "_");
 	}
 }
-
-/**
- * Stream globber for consuming messages and error from process. 
- * @author Federico Alcantara
- *
- */
-class StreamGobbler extends Thread {
-    InputStream is;
-    String output;
-    
-    StreamGobbler(InputStream is) {
-        this.is = is;
-        output = "";
-    }
-    
-    /**
-     * Will consume stream, then close it.
-     */
-    public void run() {
-        try {
-            InputStreamReader isr = new InputStreamReader(is);
-            BufferedReader br = new BufferedReader(isr);
-            String line=null;
-            while ( (line = br.readLine()) != null) {
-                output = output + line;
-            }
-            br.close();
-        } catch (IOException ioe) {
-            ioe.printStackTrace();  
-        }
-    }
-}
-
-
