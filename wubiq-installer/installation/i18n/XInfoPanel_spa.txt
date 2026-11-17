@@ -1,3 +1,0 @@
-Usted siempre puede cambiar La configuración de la impresión remota ejecutando
-"Configurar" del menú de programas "Wubiq"
-
