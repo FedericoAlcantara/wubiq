@@ -1,0 +1,10 @@
+[Unit]
+Description=SERVICE_DESCRIPTION
+
+[Service]
+ExecStart=APPLICATION_LAUNCHER
+Restart=on-failure
+KillMode=process
+
+[Install]
+WantedBy=multi-user.target
