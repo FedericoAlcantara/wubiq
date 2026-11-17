@@ -8,15 +8,3 @@
 -keepattributes SourceFile,LineNumberTable
 -renamesourcefileattribute SourceFile
 
-# wubiq-client.jar bundles commons-logging 1.1.1, compiled for Java 1.1: its class literals
-# and its factory / log adapter discovery all use Class.forName, so it must not be renamed.
-# The adapters for log4j, Avalon, LogKit and servlets are never selected on Android.
--keep class org.apache.commons.logging.** { *; }
--dontwarn org.apache.log4j.**
--dontwarn org.apache.avalon.framework.logger.**
--dontwarn org.apache.log.**
--dontwarn javax.servlet.**
-
-# wubiq-client.jar: IOUtils.resetInputStream only logs through commons-lang3, inside a
-# catch block that ByteArrayInputStream.reset() never reaches. commons-lang3 is not bundled.
--dontwarn org.apache.commons.lang3.exception.ExceptionUtils
