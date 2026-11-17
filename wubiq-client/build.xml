@@ -11,7 +11,7 @@
 	<property name="jar.build" value="${basedir}/dist/build" />
 	<property name="workspace.dir" value="${basedir}/.." />
 	<property name="basedir.common" value="${workspace.dir}/wubiq-common" />
-	<!-- Packages the client reaches by reflection; Java 9+ opens them when the jar runs with -jar, older JDKs ignore it. -->
+	<!-- Packages the client reaches by reflection; Java opens them when the jar runs with -jar. -->
 	<property name="client.add.opens" value="java.base/java.lang java.desktop/javax.print java.desktop/sun.print" />
 	
 	<path id="project.classpath">
@@ -36,7 +36,7 @@
 		<antcall target="create-common-jar" />
 		
 		<javac destdir="${bin}" nowarn="true" failonerror="true" errorproperty="builds.failed"
-				debug="true" source="1.8" target="1.8" release="8"> 
+				debug="true" release="25"> 
 			<src refid="project.src"/>
 			<classpath refid="project.classpath" /> 
 		</javac>
@@ -109,7 +109,7 @@
 		</javac>
 		<mkdir dir="${bin}"/>
 		<javac destdir="${bin}" nowarn="true" failonerror="true" includeantruntime="false"
-				debug="true" source="1.8" target="1.8" release="8">
+				debug="true" release="25">
 			<src refid="project.src"/>
 			<classpath refid="test.classpath" />
 		</javac>
@@ -119,7 +119,7 @@
 		<ant dir="${witness.dir}" target="compile" inheritAll="false" />
 		<mkdir dir="${testBin}"/>
 		<javac srcdir="${basedir}/tests-src" destdir="${testBin}" nowarn="true" failonerror="true"
-				includeantruntime="false" debug="true" source="1.8" target="1.8" release="8" encoding="UTF-8">
+				includeantruntime="false" debug="true" release="25" encoding="UTF-8">
 			<classpath refid="test.classpath" />
 		</javac>
 	</target>
