@@ -9,6 +9,8 @@ import java.awt.print.PrinterException;
 import java.awt.print.PrinterJob;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -64,10 +66,10 @@ import net.sf.wubiq.print.managers.impl.RemotePrintJobManagerFactory;
 import net.sf.wubiq.print.services.RemotePrintService;
 import net.sf.wubiq.print.services.RemotePrintServiceLookup;
 import net.sf.wubiq.remote.RemoteClientManager;
+import net.sf.wubiq.utils.ClientPackages;
 import net.sf.wubiq.utils.DirectConnectUtils;
 import net.sf.wubiq.utils.IOUtils;
 import net.sf.wubiq.utils.Is;
-import net.sf.wubiq.utils.Labels;
 import net.sf.wubiq.utils.PageableUtils;
 import net.sf.wubiq.utils.PdfUtils;
 import net.sf.wubiq.utils.PrintServiceUtils;
@@ -88,6 +90,11 @@ import org.apache.commons.logging.LogFactory;
 public class RemotePrintServlet extends HttpServlet {
 	private static final Log LOG = LogFactory.getLog(RemotePrintServlet.class);
 	private static final long serialVersionUID = 1L;
+	/**
+	 * Version answered to every client that does not name its platform: the version of
+	 * WebContent/wubiq-client.jar, the last jar those clients are served. It never changes.
+	 */
+	static final String LEGACY_CLIENT_VERSION = "2.7.4";
 	private long timeStamp = -1l;
 	private IRemotePrintJobManager manager;
 
@@ -117,7 +124,9 @@ public class RemotePrintServlet extends HttpServlet {
 				developmentServerPropertyValue(uuid, request, response, parameters);
 			} else  {
 				if (CommandKeys.READ_VERSION.equalsIgnoreCase(command)) {
-					respond(Labels.VERSION, response);
+					readVersionCommand(request, response, parameters);
+				} else if (CommandKeys.READ_PACKAGE.equalsIgnoreCase(command)) {
+					readPackageCommand(uuid, request, response, parameters);
 				} else if (CommandKeys.CONNECTION_TEST.equalsIgnoreCase(command)) {
 					respond(ParameterKeys.CONNECTION_TEST_STRING, response);
 				} else if (!Is.emptyString(uuid)) {
@@ -304,6 +313,59 @@ public class RemotePrintServlet extends HttpServlet {
 	}
 
 	/**
+	 * Finds the client package offered to the platform and package type the client names.
+	 * @param request Originating request.
+	 * @param parameters Processed request parameters.
+	 * @return The package with the highest version, or null when none is offered.
+	 */
+	private File clientPackage(HttpServletRequest request, Map<String, Object> parameters) {
+		String directory = ServerProperties.INSTANCE.getClientPackagesDirectory();
+		if (Is.emptyString(directory)) {
+			return null;
+		}
+		return ClientPackages.latest(new File(directory),
+				getParameter(request, parameters, ParameterKeys.CLIENT_PLATFORM),
+				getParameter(request, parameters, ParameterKeys.CLIENT_PACKAGE_TYPE));
+	}
+
+	/**
+	 * Answers the client version: the legacy version to a client that names no platform,
+	 * otherwise the version of the package offered to it, or an empty answer.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @param parameters Processed request parameters.
+	 */
+	private void readVersionCommand(HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) {
+		if (Is.emptyString(getParameter(request, parameters, ParameterKeys.CLIENT_PLATFORM))) {
+			respond(LEGACY_CLIENT_VERSION, response);
+		} else {
+			File offered = clientPackage(request, parameters);
+			respond(offered == null ? "" : ClientPackages.parse(offered.getName())[0], response);
+		}
+	}
+
+	/**
+	 * Streams the client package offered to the client, or answers not found.
+	 * @param uuid Unique computer identification.
+	 * @param request Originating request.
+	 * @param response Destination response.
+	 * @param parameters Processed request parameters.
+	 * @throws IOException
+	 */
+	private void readPackageCommand(String uuid, HttpServletRequest request, HttpServletResponse response, Map<String, Object> parameters) throws IOException {
+		File offered = clientPackage(request, parameters);
+		if (offered == null) {
+			response.sendError(HttpServletResponse.SC_NOT_FOUND);
+			return;
+		}
+		response.setContentType("application/octet-stream");
+		response.setHeader("Content-Length", Long.toString(offered.length()));
+		response.setHeader("Content-Disposition", "attachment;filename=" + offered.getName());
+		LOG.info("Client package " + offered.getName() + " requested by " + uuid + " (" + request.getRemoteAddr() + ")");
+		IOUtils.INSTANCE.copy(new FileInputStream(offered), response.getOutputStream());
+	}
+
+	/**
 	 * Registers computer and clear its print services.
 	 * @param uuid Unique computer identification.
 	 * @param request Originating request.
@@ -329,6 +391,7 @@ public class RemotePrintServlet extends HttpServlet {
 			client.setClientVersion("< 2.0");
 		}
 		getRemoteClientManager(request).addRemote(uuid, client);
+		LOG.info("Client registered: " + uuid + ", version " + client.getClientVersion());
 		respond("ok", response);
 	}
 	
