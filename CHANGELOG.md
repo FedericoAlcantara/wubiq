@@ -17,6 +17,12 @@
 - New property `client.packages.directory` in `wubiq-server.properties`: the directory that holds the client packages.
 - The console lists the connected clients by version.
 - The build no longer builds wubiq-client and wubiq-installer; `WebContent/wubiq-client.jar` is the 2.7.4 jar and is not rebuilt.
+### Wubiq-installer
+- The client is installed from a native package per operating system: MSI for 64-bit Windows 10 or later, PKG for macOS, DEB and RPM for Linux. Each package carries its own Java 25 runtime: no Java has to be installed. IzPack and `wubiq-setup.jar` are no longer built.
+- The package registers the client as a service that starts at boot (Windows service `wubiq-client`, launchd daemon `net.sf.wubiq.client-Wubiq`, systemd unit `wubiq-Wubiq`) and adds the configurator to the applications menu.
+- The service updates itself: when wubiq-server offers a package with a higher version, it downloads it and runs the operating system's installer unattended.
+- The configuration is kept outside the installation folder and through updates. An IzPack installation is taken over at the first start: its `wubiq-installer.properties` is imported and its service removed.
+- The packages are not signed.
 
 ## Wubiq 2.7.4
 ### Wubiq-android-gradle
