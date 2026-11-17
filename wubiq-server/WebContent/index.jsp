@@ -134,6 +134,16 @@ String ready = ServletsStatus.isReady() ? "" : "paused" ;
 				</td>
 				<td>&nbsp;</td>
 			</tr>
+<%
+String clientsByVersion = RemoteClientManager.getRemoteClientManager(request).clientVersionSummary();
+if (!Is.emptyString(clientsByVersion)) {
+%>
+			<tr>
+				<td align="center" colspan="5"><%=ServerLabels.get("server.clients_by_version", clientsByVersion)%></td>
+			</tr>
+<%
+}
+%>
 			<tr>
 				<td>
 				</td>
