@@ -3,12 +3,12 @@
 #
 #   ./test-dotmatrix-jdks.sh [--strict]
 #
-# - Compiles once with a JDK 8 (javac 12+ can't target Java 6).
-# - Runs DotMatrixWitnessTest on Java 6, 8, 11, 17, 21 and any Homebrew OpenJDK found,
-#   or on the JDK homes listed in WUBIQ_JDKS (space separated).
+# - Compiles once with a JDK 25.
+# - Runs DotMatrixWitnessTest on every installed JDK 25 or later, or on the JDK homes listed in
+#   WUBIQ_JDKS (space separated); older JDKs are skipped.
 # - Writes build-tests/dotmatrix-report/index.html with a fixture x JDK matrix and
 #   converts job.ps (what a laser printer would print) to PDF when Ghostscript is installed.
-# - --strict: exit 1 when a layout check fails or a JDK's bytes differ from Java 8's.
+# - --strict: exit 1 when a layout check fails or a JDK's bytes differ from Java 25's.
 #   Without it the script only reports (exit 0).
 #
 # Compatible with the bash 3.2 shipped with macOS.
@@ -24,13 +24,9 @@ STRICT=false
 
 . "$BASE/jdk-homes.sh"
 if [ -z "$COMPILE_HOME" ]; then
-	echo "A JDK 8 (with javac) is needed to compile for Java 6." >&2
+	echo "A JDK 25 (with javac) is needed to compile the client." >&2
 	exit 2
 fi
-
-for wanted in 6 8 11 17 21; do
-	case "$SEEN" in *" $wanted "*) ;; *) echo "Note: no Java $wanted found, skipped." ;; esac
-done
 
 echo "Compiling with $COMPILE_HOME"
 JAVA_HOME="$COMPILE_HOME" ant -q -f "$BASE/build.xml" compile-tests || exit 2
@@ -48,50 +44,22 @@ run_java() {
 	"$JAVA_BIN" -Djava.awt.headless=true $EXTRA -Dwubiq.dotmatrix.report="$OUT" -cp "$CP" "$@"
 }
 
-self_check() {
-	run_java org.junit.runner.JUnitCore "$SELF_CHECK" && touch "$OUT/self-check.ok"
-}
-
-# Runs the command up to 5 times until the file exists (Java 6 crashes at random).
-retry() {
-	local done_file="$1"
-	shift
-	local attempt
-	for attempt in 1 2 3 4 5; do
-		"$@" >> "$LOG" 2>&1
-		[ -f "$done_file" ] && return 0
-	done
-	return 1
-}
-
 rm -rf "$REPORT"
 mkdir -p "$REPORT"
 RUNS=""
 while IFS='|' read -r m home version; do
 	[ -n "$m" ] || continue
+	[ "$m" -ge 25 ] || continue
 	OUT="$REPORT/java-$m"
 	LOG="$REPORT/java-$m.log"
 	JAVA_BIN="$home/bin/java"
 	EXTRA=""
 	mkdir -p "$OUT"
 	echo "Java $version ($home)"
-	if [ "$m" = "6" ]; then
-		# Apple's Java 6 under Rosetta crashes at random: no JIT, no memory serialize page, and one JVM per case.
-		EXTRA="-Xint -XX:+UseMembar"
-		retry "$OUT/self-check.ok" self_check || echo "  reference self-check FAILED"
-		missing=0
-		for name in $("$COMPILE_HOME/bin/java" -Djava.awt.headless=true -cp "$CP" $TEST list 2>/dev/null); do
-			retry "$OUT/$name/result.tsv" run_java -Dwubiq.dotmatrix.only="$name" org.junit.runner.JUnitCore $TEST \
-				|| { missing=$((missing + 1)); echo "  $name: no result after 5 attempts"; }
-		done
-		retry "$OUT/summary.tsv" run_java $TEST index
-		echo "  one JVM per case, $missing case(s) without a result"
-	else
-		run_java org.junit.runner.JUnitCore $SELF_CHECK $TEST > "$LOG" 2>&1
-		status=$?
-		grep -E '^(OK|Tests run)' "$LOG" | sed 's/^/  /'
-		[ $status -gt 1 ] && echo "  (JVM exited with $status)"
-	fi
+	run_java org.junit.runner.JUnitCore $SELF_CHECK $TEST > "$LOG" 2>&1
+	status=$?
+	grep -E '^(OK|Tests run)' "$LOG" | sed 's/^/  /'
+	[ $status -gt 1 ] && echo "  (JVM exited with $status)"
 	if [ -f "$OUT/summary.tsv" ]; then
 		RUNS="$RUNS$m|$version
 "
@@ -108,7 +76,7 @@ if command -v gs > /dev/null 2>&1; then
 	done
 fi
 
-BASELINE=8
+BASELINE=25
 [ -f "$REPORT/java-$BASELINE/summary.tsv" ] || BASELINE="$(printf '%s' "$RUNS" | head -1 | cut -d'|' -f1)"
 
 # Matrix: one row per fixture-driver, one column per JDK.
