@@ -74,6 +74,13 @@ public class WubiqLauncher implements Runnable {
 	
 	public WubiqLauncher(String serviceName) {
 		this.serviceName = serviceName;
+		Runtime.getRuntime().addShutdownHook(new Thread(new Runnable() {
+			public void run() {
+				if (runningClient != null) {
+					runningClient.destroyProcess();
+				}
+			}
+		}, "WubiqShutdown"));
 	}
 	
 	/**
