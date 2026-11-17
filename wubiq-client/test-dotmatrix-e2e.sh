@@ -1,18 +1,32 @@
 #!/bin/bash
-# Prints wubiq-server's test page through a real wubiq-client on every installed JDK build into
-# the dot-matrix witness, and compares each job with the golden job printed by Java 6.
-# Every distinct version runs (1.8.0_112 and 1.8.0_362 are both tested).
+# Prints wubiq-server's test page through a real client into the dot-matrix witness, and compares
+# each job with tests-src/net/sf/wubiq/dotmatrix/golden/test-page-9pin.escp, the job printed by
+# Java 6. It prints with three clients:
+# - legacy-java-VERSION: ../wubiq-server/WebContent/wubiq-client.jar, the 2.7.4 jar wubiq-server
+#   serves to the installed clients, on every installed JDK build (1.8.0_112 and 1.8.0_362 both run);
+# - source-java-VERSION: build-tests/wubiq-client-launcher.jar (ant create-launcher-jar), the
+#   compiled classes with the manifest of wubiq-client.jar, on the JDK 25 that compiled them;
+# - packaged: the jars of an installed package, DIR of --packaged-app, on the package's own
+#   runtime, JAVA of --packaged-java.
+# The source and packaged jobs also get a row named ROW-extents: the witness measures the width of
+# the job's text lines against tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents, the text
+# extents of the test page PDF (extents in ../wubiq-dotmatrix-witness/README.md). The row reads
+# NOT CHECKED when there is no extents file.
 #
-#   ./test-dotmatrix-e2e.sh [--update-golden]
+#   ./test-dotmatrix-e2e.sh [--update-golden] [--packaged-java JAVA --packaged-app DIR]
 #
 # Needs:
 # - wubiq-server running (WUBIQ_SERVER, default http://localhost:8080);
 # - the Witness_9-pin CUPS queue with the witness driver (../wubiq-dotmatrix-witness/README.md);
-# - port 9100 free: the script starts and stops its own listener.
+# - port 9100 free: the script starts and stops its own listener;
+# - a JDK 25 with javac.
 #
 # While it runs, the witness queue is the default printer; the previous default is restored on exit.
-# --update-golden prints with Java 6 only and stores its job as the golden file.
-# Exit codes: 0 every JDK prints like Java 6, 1 a JDK prints differently or not at all, 2 setup error.
+# --update-golden prints with the 2.7.4 jar on Java 6 only and stores its job as the golden file.
+# Exit codes: 0 every row prints like Java 6 and no extents row is EXTENTS DIFFERENT, 1 a row prints
+# differently, doesn't print, or its text extents differ, 2 setup error (no server, no queue, port
+# 9100 in use, no JDK 25 to compile, no 2.7.4 jar, --packaged-java without --packaged-app, no
+# packaged client at JAVA and DIR, an unknown option).
 #
 # Compatible with the bash 3.2 shipped with macOS.
 
@@ -24,12 +38,39 @@ SERVER="${WUBIQ_SERVER:-http://localhost:8080}"
 QUEUE="${WUBIQ_E2E_QUEUE:-Witness_9-pin}"
 REPORT="$BASE/build-tests/dotmatrix-e2e"
 GOLDEN="$BASE/tests-src/net/sf/wubiq/dotmatrix/golden/test-page-9pin.escp"
+LEGACY_JAR="$BASE/../wubiq-server/WebContent/wubiq-client.jar"
+EXTENTS="$BASE/tests-src/net/sf/wubiq/dotmatrix/golden/test-page.extents"
 UPDATE=false
-[ "${1:-}" = "--update-golden" ] && UPDATE=true
+PACKAGED_JAVA=""
+PACKAGED_APP=""
+while [ $# -gt 0 ]; do
+	case "$1" in
+		--update-golden) UPDATE=true ;;
+		--packaged-java) PACKAGED_JAVA="${2:-}"; [ $# -gt 1 ] && shift ;;
+		--packaged-app) PACKAGED_APP="${2:-}"; [ $# -gt 1 ] && shift ;;
+		*)
+			echo "Unknown option: $1" >&2
+			exit 2
+			;;
+	esac
+	shift
+done
+if { [ -n "$PACKAGED_JAVA" ] && [ -z "$PACKAGED_APP" ]; } || { [ -z "$PACKAGED_JAVA" ] && [ -n "$PACKAGED_APP" ]; }; then
+	echo "--packaged-java and --packaged-app go together." >&2
+	exit 2
+fi
+if [ -n "$PACKAGED_JAVA" ] && { [ ! -x "$PACKAGED_JAVA" ] || [ ! -d "$PACKAGED_APP" ]; }; then
+	echo "No packaged client at $PACKAGED_JAVA and $PACKAGED_APP." >&2
+	exit 2
+fi
 
 . "$BASE/jdk-homes.sh"
 if [ -z "$COMPILE_HOME" ]; then
-	echo "A JDK 8 (with javac) is needed to compile for Java 6." >&2
+	echo "A JDK 25 (with javac) is needed to compile the client." >&2
+	exit 2
+fi
+if [ ! -f "$LEGACY_JAR" ]; then
+	echo "No 2.7.4 jar at $LEGACY_JAR." >&2
 	exit 2
 fi
 if [ "$(curl -s -o /dev/null -w '%{http_code}' "$SERVER/wubiq-server/")" != "200" ]; then
@@ -110,19 +151,18 @@ client_failure() {
 	echo "$reason"
 }
 
-# Prints the test page with one JDK. Leaves the job in $OUT/jobs and returns 1 when none arrived.
+# Prints the test page with the client command in the arguments after the row name:
+# print_with NAME COMMAND [ARG...]. Leaves the job in $OUT/jobs and returns 1 when none arrived.
 print_with() {
-	local m="$1" home="$2" name="$3"
+	local name="$1"
 	local uuid="witness-$name"
-	local extra=""
-	[ "$m" = "6" ] && extra="-Xint -XX:+UseMembar -Djava.awt.headless=true"
+	shift
 	rm -rf "$OUT"
 	mkdir -p "$OUT/jobs"
 	$WITNESS_JAVA listen --out "$OUT/jobs" > "$OUT/witness.log" 2>&1 &
 	LISTENER=$!
 	wait_for 15 listening || { echo "  the witness listener didn't start"; return 1; }
-	( cd "$OUT" && exec "$home/bin/java" $extra -jar "$LAUNCHER" -h "$SERVER" -u "$uuid" -v ) \
-		> "$OUT/client.log" 2>&1 &
+	( cd "$OUT" && exec "$@" ) > "$OUT/client.log" 2>&1 &
 	CLIENT=$!
 	local status=0
 	wait_for 120 registered_or_gone "$uuid"
@@ -153,31 +193,9 @@ print_with() {
 	return $status
 }
 
-rm -rf "$REPORT"
-mkdir -p "$REPORT"
-SUMMARY="$REPORT/summary.txt"
-: > "$SUMMARY"
-FAILED=0
-while IFS='|' read -r m home version; do
-	[ -n "$m" ] || continue
-	$UPDATE && [ "$m" != "6" ] && continue
-	name="java-$(echo "$version" | tr '._+' '---')"
-	OUT="$REPORT/$name"
-	echo "Java $version ($home)"
-	attempts=1
-	[ "$m" = "6" ] && attempts=3
-	printed=false
-	for attempt in $(seq 1 $attempts); do
-		if print_with "$m" "$home" "$name"; then
-			printed=true
-			break
-		fi
-	done
-	if ! $printed; then
-		echo "$name	NOT PRINTED	$(cat "$OUT/failure.txt" 2> /dev/null)" >> "$SUMMARY"
-		FAILED=$((FAILED + 1))
-		continue
-	fi
+# Compares the printed job of row $1 with the golden file (stores it first under --update-golden).
+check_row() {
+	local name="$1"
 	JOB="$(ls -d "$OUT"/jobs/job-* | head -1)"
 	if $UPDATE; then
 		mkdir -p "$(dirname "$GOLDEN")"
@@ -192,9 +210,78 @@ while IFS='|' read -r m home version; do
 		FAILED=$((FAILED + 1))
 	fi
 	sed 's/^/  /' "$OUT/compare.txt"
+}
+
+# Checks the text extents of the printed job of row $1 against the extents file.
+check_extents() {
+	local name="$1"
+	if [ ! -f "$EXTENTS" ]; then
+		echo "$name-extents	NOT CHECKED	no $EXTENTS" >> "$SUMMARY"
+		return 0
+	fi
+	$WITNESS_JAVA extents --expect "$EXTENTS" "$JOB/job.escp" > "$OUT/extents.txt" 2>&1
+	if [ $? -eq 0 ]; then
+		echo "$name-extents	EXTENTS OK	$OUT/extents.txt" >> "$SUMMARY"
+	else
+		echo "$name-extents	EXTENTS DIFFERENT	$(grep -m1 'FAIL' "$OUT/extents.txt" | sed 's/^ *FAIL  //')" >> "$SUMMARY"
+		FAILED=$((FAILED + 1))
+	fi
+}
+
+# Prints row $1 with the client command after the number of attempts $2:
+# run_row NAME ATTEMPTS COMMAND [ARG...]. Returns 0 when the job printed.
+run_row() {
+	local name="$1" attempts="$2"
+	shift 2
+	OUT="$REPORT/$name"
+	local attempt
+	for attempt in $(seq 1 "$attempts"); do
+		if print_with "$name" "$@"; then
+			check_row "$name"
+			return 0
+		fi
+	done
+	echo "$name	NOT PRINTED	$(cat "$OUT/failure.txt" 2> /dev/null)" >> "$SUMMARY"
+	FAILED=$((FAILED + 1))
+	return 1
+}
+
+rm -rf "$REPORT"
+mkdir -p "$REPORT"
+SUMMARY="$REPORT/summary.txt"
+: > "$SUMMARY"
+FAILED=0
+JOB=""
+while IFS='|' read -r m home version; do
+	[ -n "$m" ] || continue
+	$UPDATE && [ "$m" != "6" ] && continue
+	name="legacy-java-$(echo "$version" | tr '._+' '---')"
+	echo "Java $version ($home)"
+	if [ "$m" = "6" ]; then
+		# Apple's Java 6 under Rosetta crashes at random: no JIT, no memory serialize page.
+		run_row "$name" 3 "$home/bin/java" -Xint -XX:+UseMembar -Djava.awt.headless=true \
+			-jar "$LEGACY_JAR" -h "$SERVER" -u "witness-$name" -v
+	else
+		run_row "$name" 1 "$home/bin/java" -jar "$LEGACY_JAR" -h "$SERVER" -u "witness-$name" -v
+	fi
 done <<EOF
 $ALL_JDKS
 EOF
+
+if ! $UPDATE; then
+	COMPILE_VERSION="$(java_version "$COMPILE_HOME")"
+	name="source-java-$(echo "$COMPILE_VERSION" | tr '._+' '---')"
+	echo "Java $COMPILE_VERSION ($COMPILE_HOME), client built from source"
+	run_row "$name" 1 "$COMPILE_HOME/bin/java" -jar "$LAUNCHER" -h "$SERVER" -u "witness-$name" -v \
+		&& check_extents "$name"
+	if [ -n "$PACKAGED_JAVA" ]; then
+		echo "Packaged client ($PACKAGED_JAVA, $PACKAGED_APP)"
+		run_row packaged 1 "$PACKAGED_JAVA" --add-opens=java.base/java.lang=ALL-UNNAMED \
+			--add-opens=java.desktop/javax.print=ALL-UNNAMED --add-opens=java.desktop/sun.print=ALL-UNNAMED \
+			-cp "$PACKAGED_APP/*" net.sf.wubiq.clients.LocalPrintManager -h "$SERVER" -u witness-packaged -v \
+			&& check_extents packaged
+	fi
+fi
 
 echo
 echo "Against $GOLDEN:"

@@ -4,7 +4,7 @@
 #   SELECTED      lines of "major|home|version", one per major version, in version order
 #   ALL_JDKS      the same, one per distinct version (for example both 1.8.0_112 and 1.8.0_362)
 #   SEEN          " 6 8 11 ... " for membership checks
-#   COMPILE_HOME  a JDK 8 with javac (empty when there is none)
+#   COMPILE_HOME  a JDK 25 with javac (empty when there is none)
 #
 # WUBIQ_JDKS (space-separated JDK homes) replaces the search.
 # Compatible with the bash 3.2 shipped with macOS.
@@ -59,7 +59,7 @@ ALL_JDKS="$(printf '%s' "$ALL_JDKS" | sort -t'|' -k1,1n -k3,3)"
 
 COMPILE_HOME=""
 while IFS='|' read -r m home version; do
-	if [ "$m" = "8" ] && [ -x "$home/bin/javac" ]; then COMPILE_HOME="$home"; fi
+	if [ "$m" = "25" ] && [ -x "$home/bin/javac" ]; then COMPILE_HOME="$home"; fi
 done <<EOF
 $SELECTED
 EOF

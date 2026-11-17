@@ -1,10 +1,17 @@
-# Prints wubiq-server's test page through a real wubiq-client on several JDK builds into the
-# dot-matrix witness, through a Windows printer driver, and compares each job with the job
-# printed by Java 6 in the same run. The same client then prints the page through the fast
-# path (the client writes ESC/P itself, to a file); those files are compared the same way, and
-# the witness checks that each one is a well formed ESC/P stream.
+# Prints wubiq-server's test page through a real client into the dot-matrix witness, through a
+# Windows printer driver. The rows are the ones of the macOS script: every JDK of -Jdks prints
+# with the 2.7.4 jar (legacy-java-VERSION), the JDK 25 of -CompileHome prints with the client
+# built from source (source-java-VERSION), and -PackagedJava with -PackagedApp print with an
+# installed package (packaged): C:\Program Files\Wubiq\runtime\bin\java.exe and
+# C:\Program Files\Wubiq\app. Java 6 prints first, and every other job is compared with its job.
+# Each client then prints the page through the fast path (the client writes ESC/P itself, to a
+# file); those files are compared the same way, and the witness checks that each one is a well
+# formed ESC/P stream. The source and packaged driver jobs also get a ROW-extents row, as in the
+# macOS script: the witness measures the width of the job's text lines against
+# tests-src\net\sf\wubiq\dotmatrix\golden\test-page.extents (EXTENTS OK, EXTENTS DIFFERENT, or
+# NOT CHECKED when there is no extents file).
 #
-#   .\test-dotmatrix-e2e-windows.ps1 -Jdks HOME1,HOME2,... [-CompileHome JDK8] [-Server URL] [-Printer NAME] [-Tolerance IN]
+#   .\test-dotmatrix-e2e-windows.ps1 -Jdks JDK6_HOME,JDK8_HOME,... [-CompileHome JDK25_HOME] [-PackagedJava JAVA -PackagedApp DIR] [-Server URL] [-Printer NAME] [-Tolerance IN]
 #
 # Needs:
 # - wubiq-server running (default http://localhost:8080);
@@ -14,17 +21,22 @@
 # - ant on the PATH.
 #
 # -Jdks must include a Java 6 home; it prints first and its job is the reference.
-# -CompileHome defaults to the first Java 8 in -Jdks.
+# -CompileHome is a JDK 25 with javac; it defaults to the first Java 25 in -Jdks.
+# -PackagedJava and -PackagedApp go together: the package's own java.exe and its app directory.
 # -Tolerance is the largest accepted shift or size change, in inches (default 0.025, 3 dots at
-# 120 dpi): Java 8 and later print text at its real width, Java 6 and 7 at Wubiq's narrowed width.
-# The summary has a row per JDK for the driver job and a row "NAME-fast" for the fast path job.
-# Exit codes: 0 every JDK prints like Java 6, 1 a JDK prints differently or not at all, 2 setup error.
+# 120 dpi).
+# The summary has a row per client for the driver job, a row "ROW-fast" for the fast path job and,
+# for the source and packaged rows, a row "ROW-extents" for the text extents.
+# Exit codes: 0 every row prints like Java 6 and no extents row is EXTENTS DIFFERENT, 1 a row prints
+# differently, doesn't print, or its text extents differ, 2 setup error.
 #
 # Compatible with Windows PowerShell 5.1.
 
 param(
 	[string[]]$Jdks = @(),
 	[string]$CompileHome = "",
+	[string]$PackagedJava = "",
+	[string]$PackagedApp = "",
 	[string]$Server = "http://localhost:8080",
 	[string]$Printer = "Wubiq witness 9-pin",
 	[string]$Tolerance = "0.025"
@@ -35,6 +47,8 @@ $Base = $PSScriptRoot
 $Witness = Join-Path $Base "..\wubiq-dotmatrix-witness"
 $Report = Join-Path $Base "build-tests\dotmatrix-e2e-windows"
 $Launcher = Join-Path $Base "build-tests\wubiq-client-launcher.jar"
+$LegacyJar = Join-Path $Base "..\wubiq-server\WebContent\wubiq-client.jar"
+$Extents = Join-Path $Base "tests-src\net\sf\wubiq\dotmatrix\golden\test-page.extents"
 
 if ($Jdks.Count -eq 0 -and $env:WUBIQ_JDKS) {
 	$Jdks = $env:WUBIQ_JDKS -split ";" | Where-Object { $_ }
@@ -134,9 +148,10 @@ $script:FastStray = $null
 # The fast path takes the PC850 character table, as the dot-matrix witness tests do.
 $ClientProperties = "-Dwubiq.dotmatrix.charset=IBM850 -Dwubiq.dotmatrix.table=3"
 
-# Prints the test page with one JDK. Leaves the job in $out\jobs; returns $false when none arrived.
-# Then prints it through the fast path into $out\fast.escp; $script:FastFailure says why it didn't.
-function Invoke-Print($jdkHome, $name, $out) {
+# Prints the test page with one client: its java.exe and the arguments that start it. Leaves the
+# job in $out\jobs; returns $false when none arrived. Then prints it through the fast path into
+# $out\fast.escp; $script:FastFailure says why it didn't.
+function Invoke-Print($javaExe, $javaArguments, $name, $out) {
 	$uuid = "witness-windows-$name"
 	$script:FastFailure = $null
 	$script:FastStray = $null
@@ -153,8 +168,8 @@ function Invoke-Print($jdkHome, $name, $out) {
 			Set-Content $failure "the witness listener didn't start"
 			return $false
 		}
-		$script:Client = Start-Process -FilePath "$jdkHome\bin\java.exe" -PassThru -NoNewWindow -WorkingDirectory $out `
-			-ArgumentList "$ClientProperties -jar $(Quote $Launcher) -h $Server -u $uuid -v" `
+		$script:Client = Start-Process -FilePath $javaExe -PassThru -NoNewWindow -WorkingDirectory $out `
+			-ArgumentList "$ClientProperties $javaArguments -h $Server -u $uuid -v" `
 			-RedirectStandardOutput (Join-Path $out "client.log") -RedirectStandardError (Join-Path $out "client-err.log")
 		Wait-For 120 { (Get-TestPageLink $uuid) -or $script:Client.HasExited } | Out-Null
 		$link = Get-TestPageLink $uuid
@@ -247,7 +262,39 @@ function Test-FastPath($run, $out, $failure) {
 	return $false
 }
 
+# Checks the text extents of the driver job $escp of one run and adds its row to the summary.
+# Returns $false when the extents differ.
+function Test-Extents($run, $out, $escp) {
+	$name = "$($run.Name)-extents"
+	if (-not (Test-Path $Extents -PathType Leaf)) {
+		Add-Content $Summary "$name`tNOT CHECKED`tno $Extents"
+		return $true
+	}
+	$extentsOut = Join-Path $out "extents.txt"
+	cmd /c "`"$WitnessJava`" -Djava.awt.headless=true -cp `"$Witness\bin`" net.sf.wubiq.dotmatrix.witness.Main extents --expect `"$Extents`" `"$escp`" > `"$extentsOut`" 2>&1"
+	if ($LASTEXITCODE -eq 0) {
+		Add-Content $Summary "$name`tEXTENTS OK`t$extentsOut"
+		return $true
+	}
+	$first = Select-String -Path $extentsOut -Pattern "FAIL" | Select-Object -First 1
+	$reason = "see $extentsOut"
+	if ($first) {
+		$reason = $first.Line -replace "^\s*FAIL\s+", ""
+	}
+	Add-Content $Summary "$name`tEXTENTS DIFFERENT`t$reason"
+	return $false
+}
+
 # Setup checks.
+if (($PackagedJava -and -not $PackagedApp) -or (-not $PackagedJava -and $PackagedApp)) {
+	Fail-Setup "-PackagedJava and -PackagedApp go together."
+}
+if ($PackagedJava -and (-not (Test-Path $PackagedJava -PathType Leaf) -or -not (Test-Path $PackagedApp -PathType Container))) {
+	Fail-Setup "No packaged client at $PackagedJava and $PackagedApp."
+}
+if (-not (Test-Path $LegacyJar -PathType Leaf)) {
+	Fail-Setup "No 2.7.4 jar at $LegacyJar."
+}
 $Runs = @()
 foreach ($jdkHome in $Jdks) {
 	if (-not (Test-Path "$jdkHome\bin\java.exe")) {
@@ -259,7 +306,8 @@ foreach ($jdkHome in $Jdks) {
 	}
 	$Runs += New-Object PSObject -Property @{
 		Home = $jdkHome; Version = $version; Major = (Get-Major $version)
-		Name = "java-" + ($version -replace "[._+]", "-")
+		Name = "legacy-java-" + ($version -replace "[._+]", "-")
+		JavaExe = "$jdkHome\bin\java.exe"; JavaArguments = "-jar " + (Quote $LegacyJar); Extents = $false
 	}
 }
 $Reference = $Runs | Where-Object { $_.Major -eq 6 } | Select-Object -First 1
@@ -267,13 +315,30 @@ if (-not $Reference) {
 	Fail-Setup "-Jdks needs a Java 6 home: its job is the reference."
 }
 if (-not $CompileHome) {
-	$java8 = $Runs | Where-Object { $_.Major -eq 8 } | Select-Object -First 1
-	if ($java8) {
-		$CompileHome = $java8.Home
+	$java25 = $Runs | Where-Object { $_.Major -eq 25 } | Select-Object -First 1
+	if ($java25) {
+		$CompileHome = $java25.Home
 	}
 }
 if (-not $CompileHome -or -not (Test-Path "$CompileHome\bin\javac.exe")) {
-	Fail-Setup "A JDK 8 (with javac) is needed to compile for Java 6; pass -CompileHome."
+	Fail-Setup "A JDK 25 (with javac) is needed to compile the client; pass -CompileHome."
+}
+$compileVersion = Get-JavaVersion $CompileHome
+$Runs += New-Object PSObject -Property @{
+	Home = $CompileHome; Version = $compileVersion; Major = (Get-Major $compileVersion)
+	Name = "source-java-" + ($compileVersion -replace "[._+]", "-")
+	JavaExe = "$CompileHome\bin\java.exe"; JavaArguments = "-jar " + (Quote $Launcher); Extents = $true
+}
+if ($PackagedJava) {
+	# The package's runtime home: java.exe is in its bin directory.
+	$packagedHome = Split-Path (Split-Path $PackagedJava)
+	$packagedVersion = Get-JavaVersion $packagedHome
+	$Runs += New-Object PSObject -Property @{
+		Home = $packagedHome; Version = $packagedVersion; Major = (Get-Major $packagedVersion)
+		Name = "packaged"; JavaExe = $PackagedJava
+		JavaArguments = "--add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.desktop/javax.print=ALL-UNNAMED --add-opens=java.desktop/sun.print=ALL-UNNAMED -cp " + (Quote "$PackagedApp\*") + " net.sf.wubiq.clients.LocalPrintManager"
+		Extents = $true
+	}
 }
 if (-not (Get-Command ant -ErrorAction SilentlyContinue)) {
 	Fail-Setup "ant is not on the PATH."
@@ -325,7 +390,7 @@ foreach ($run in $Ordered) {
 	}
 	$printed = $false
 	for ($attempt = 1; $attempt -le $attempts -and -not $printed; $attempt++) {
-		$printed = Invoke-Print $run.Home $run.Name $out
+		$printed = Invoke-Print $run.JavaExe $run.JavaArguments $run.Name $out
 	}
 	if (-not $printed) {
 		$reason = Get-Content (Join-Path $out "failure.txt") -ErrorAction SilentlyContinue
@@ -344,6 +409,9 @@ foreach ($run in $Ordered) {
 		$ReferenceJob = $escp
 		Write-Host "  reference job: $escp"
 		Add-Content $Summary "$($run.Name)`tREFERENCE`t$($job.FullName)\index.html"
+		if ($run.Extents -and -not (Test-Extents $run $out $escp)) {
+			$Failed++
+		}
 		continue
 	}
 	if (-not $ReferenceJob) {
@@ -362,6 +430,9 @@ foreach ($run in $Ordered) {
 			$reason = $first.Line -replace "^\s*FAIL\s+", ""
 		}
 		Add-Content $Summary "$($run.Name)`tDIFFERENT`t$reason"
+		$Failed++
+	}
+	if ($run.Extents -and -not (Test-Extents $run $out $escp)) {
 		$Failed++
 	}
 	Get-Content $compare | ForEach-Object { Write-Host "  $_" }
