@@ -1880,14 +1880,14 @@ Depends on: INS-DOC-1
    ```
 
 ##### Acceptance criteria
-- [ ] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-android-gradle` and
+- [x] AC-1: the CHANGELOG entry sits under `## Wubiq 2.8.0` › `### Wubiq-android-gradle` and
       carries no issue reference (mechanical — no red test; verified by
       `git diff origin/master...HEAD -- CHANGELOG.md | grep -E '^\+.*\(#[0-9]+\)'` returning nothing)
-- [ ] AC-2: nothing but this application's documentation modified, apart from this issue's
+- [x] AC-2: nothing but this application's documentation modified, apart from this issue's
       spec file (its AC ticks) (mechanical — no red test; verified by
       `git diff --name-only origin/master...HEAD | grep -vE '^CHANGELOG\.md$|^wubiq-android-gradle/.*\.md$|^specs/issue-52-enriched-spec\.md$'`
       returning nothing)
-- [ ] AC-3: `wubiq-android-gradle/README.md` has § Shared classes naming the device table and the protocol constants (mechanical — no red test; verified by `grep -c -E '^### Shared classes$|android/MobileDevices\.java|common/CommandKeys\.java' wubiq-android-gradle/README.md` printing `3`)
+- [x] AC-3: `wubiq-android-gradle/README.md` has § Shared classes naming the device table and the protocol constants (mechanical — no red test; verified by `grep -c -E '^### Shared classes$|android/MobileDevices\.java|common/CommandKeys\.java' wubiq-android-gradle/README.md` printing `3`)
 
 ##### Green checks
 1. `.claude/scripts/gate.sh` clean (code-issue); `.claude/scripts/suite.sh` — full suite green
