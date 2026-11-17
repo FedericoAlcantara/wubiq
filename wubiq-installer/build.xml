@@ -1,176 +1,37 @@
-<project name="Wubiq-installer" basedir="." default="make_install">
-	<property name="dist.dir" value = "${basedir}/dist"/>
-	<property name="build" value="${basedir}/build" />
-    <property name="bin" value="${basedir}/bin"/>
-	<property name="lib" value="${basedir}/lib"/>
-	<property name="common.dir" value = "${basedir}/../wubiq-common" /> 
-	<property name="common.bin" value="${common.dir}/bin" />
-	<property name="common.lib" value="${common.dir}/lib" />
-	<property name="client.dir" value = "${basedir}/../wubiq-client" /> 
-	<property name="client.bin" value="${client.dir}/bin" />
-	<property name="client.lib" value="${client.dir}/lib" />
-	<property name="install.dir" value="${basedir}/installation" />
-	<property name="izpack.dir" value="${install.dir}/IzPack" />
-    <property name="resources" value="${install.dir}/resources" />
-	<property name="name.jar" value="wubiq-installer" />
-	<property file="wubiq-setup.properties" />
-
+<project name="wubiq-installer" basedir="." default="compile">
+	<property name="bin" value="${basedir}/bin" />
+	<property name="lib" value="${basedir}/lib" />
+	<property name="common.dir" value="${basedir}/../wubiq-common" />
+	<property name="client.dir" value="${basedir}/../wubiq-client" />
 
 	<path id="project.classpath">
-		<pathelement path="${lib}"/>
-		<fileset dir="${lib}"> 
-			<include name="**/*.jar"/> 
-		</fileset>
+		<fileset dir="${lib}" includes="*.jar" />
+		<pathelement path="${common.dir}/bin" />
+		<fileset dir="${common.dir}/lib" includes="*.jar" />
+		<fileset dir="${common.dir}/lib-nondeploy" includes="*.jar" />
+		<pathelement path="${client.dir}/bin" />
 	</path>
 
-	<path id="project.src">
-		<pathelement path="${basedir}/src"/>
-	</path>	
-
-	<target name="compile">
+	<target name="compile" description="Compiles wubiq-common, wubiq-client and the installer sources without packaging">
+		<ant dir="${client.dir}" target="compile" inheritAll="false" />
 		<delete dir="${bin}" failonerror="false" />
 		<mkdir dir="${bin}" />
- 		<ant antfile="../wubiq-common/build.xml" inheritall="false" />
-		<ant antfile="../wubiq-client/build.xml" inheritall="false" />
- 		<javac destdir="${bin}" failonerror="true" includeantruntime="false"
-				debug="true" target="1.6" source="1.6">
-			<src refid="project.src"/>
+		<javac srcdir="${basedir}/src" destdir="${bin}" nowarn="true" failonerror="true" includeantruntime="false"
+				debug="true" release="25" encoding="UTF-8">
 			<classpath refid="project.classpath" />
-			<classpath location="${common.dir}/dist/wubiq-common.jar" />
-			<classpath location="${common.dir}/lib-nondeploy/cglib-nodep-3.1.jar" />
-			<classpath location="${client.dir}/dist/wubiq-client.jar" />
 		</javac>
- 		<copy todir="${bin}">
+		<copy todir="${bin}">
 			<fileset dir="${basedir}/src">
 				<include name="**/*.png" />
 				<include name="**/*.properties" />
 			</fileset>
 		</copy>
 	</target>
-	
-	<target name="clean" depends="compile">
-		<delete dir="${dist.dir}" failonerror="false" />
-		<delete dir="${install.dir}/build" />
-		<mkdir dir="${install.dir}/build" />
-		<mkdir dir="${dist.dir}" />
-		<copy todir="${install.dir}/build">
-			<fileset dir="${bin}">
-				<include name="**/*" />
-			</fileset>
-		</copy>
-		<copy todir="${install.dir}/build">
-			<fileset dir="${common.bin}">
-				<include name="**/*" />
-			</fileset>
-		</copy>
-		<copy todir="${install.dir}/build">
-			<fileset dir="${client.bin}">
-				<include name="**/*" />
-			</fileset>
-		</copy>
-		<unjar dest="${install.dir}/build">
-			<fileset dir="${lib}">
-				<include name="**/*" />
-			</fileset>
-		</unjar>
-		<unjar dest="${install.dir}/build">
-			<fileset dir="${common.lib}">
-				<include name="**/*" />
-			</fileset>
-		</unjar>
-		<unjar dest="${install.dir}/build">
-			<fileset dir="${client.lib}">
-				<include name="**/*" />
-			</fileset>
-		</unjar>
-		<delete dir="${install.dir}/build/META-INF"/>
-		<delete dir="${install.dir}/build/org/uispec4j" />
 
-		<delete>
-			<fileset dir="${install.dir}/build">
-				<include name="overview.html" />
-			</fileset>
-		</delete>
-		<delete dir="${install.dir}/build/tests" />
-		<delete dir="${install.dir}/build/org/uispec4j" />
-		
-		<delete>
-			<fileset dir="${install.dir}/build">
-				<include name="wubiq-installer*.properties" />
-				<include name="tests-build.xml" />
-				<include name="tests*.properties" />
-				<include name="empty.txt" />
-			</fileset>
-		</delete>
-		<delete file="${install.dir}/wubiq-installer.properties" failonerror="false" />
-		<touch file="${install.dir}/wubiq-installer.properties"/>
-	</target>
-	
 	<target name="create-javadoc-documentation" description="Creates javadoc documentation">
 		<echo message="Creating wubiq-installer javadoc" />
 		<javadoc destdir="${basedir}/javadoc" sourcepath="${basedir}/src" packagenames="net.sf.wubiq.*"
 				classpathref="project.classpath" failonerror="false" use="true" windowtitle="Wubiq Installer Javadoc"
 				doctitle="Wubiq Installer API Documentation" />
 	</target>
-
-	<target name="distribute" description="Distribute the application">
-		<delete dir="${build}" failonerror="false" />
-		<mkdir dir="${build}" />
-		<mkdir dir="${build}/installation" />
-		
-		<copy todir="${build}">
-			<fileset dir="${bin}">
-				<include name="net/sf/wubiq/utils/InstallerSetupUtils*.*" />
-			</fileset>
-			<fileset dir="${common.bin}">
-				<include name="net/sf/wubiq/utils/IOUtils*.*" />
-				<include name="net/sf/wubiq/utils/Labels*.*" />
-			</fileset>
-		</copy>
-		
-		<copy todir="${build}/installation">
-			<fileset dir="${install.dir}" />
-		</copy>
-		
-		<unjar dest="${build}">
-			<fileset dir="${lib}">
-				<include name="commons-logging*.jar" />
-			</fileset>
-		</unjar>
-
-		<jar jarfile="${dist.dir}/${name.jar}.jar" basedir="${build}" 
-				manifest="${basedir}/manifest.mf" manifestencoding="UTF-8"/>
-	</target>
-	
-	
-    <path id="izpack.classpath">
-		<fileset dir="${izpack.dir}/lib">
-			<include name = "*.jar" />
-		</fileset>
-	</path>
-
-    <taskdef name="IzPack" classpath="${izpack.dir}/lib/compiler.jar"
-        classname="com.izforge.izpack.ant.IzPackTask"
-        classpathref="izpack.classpath"
-    />
-	
-	<target name="sign-setup">
-		<signjar jar="${dist.dir}/wubiq-setup.jar" alias="${keyalias}" 
-			keystore="${keystore}" storepass="${storepass}" keypass="${keypass}"
-			verbose="true" >
-		</signjar>
-	</target>
-	
-	<target name="make_install" depends="clean">
-	    <IzPack input="${install.dir}/install.xml"
-	        output="${dist.dir}/wubiq-setup.jar"
-	        installerType="standard"
-	        basedir="${install.dir}"
-	        IzPackDir="${izpack.dir}" />
-		<chmod file="${dist.dir}/wubiq-setup.jar" perm="ugo+rx" />
-		<copy file="${dist.dir}/wubiq-setup.jar" tofile="${dist.dir}/wubiq-setup-unsigned.jar" />
-	    <antcall target="sign-setup" />
-		<antcall target="distribute" />
-	</target>
-
 </project>
