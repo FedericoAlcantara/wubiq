@@ -1,6 +1,7 @@
 package net.sf.wubiq.clients;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.PrintWriter;
@@ -12,7 +13,9 @@ import java.net.UnknownHostException;
 import net.sf.wubiq.enums.ServiceCommandType;
 import net.sf.wubiq.enums.ServiceReturnStatus;
 import net.sf.wubiq.utils.InstallerProperties;
+import net.sf.wubiq.utils.InstallerUtils;
 import net.sf.wubiq.utils.Is;
+import net.sf.wubiq.utils.LegacyInstallation;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -94,6 +97,14 @@ public class WubiqLauncher implements Runnable {
 			if (args.length > 1) {
 				serviceName = args[1].toLowerCase();
 			}
+			if ("start".equalsIgnoreCase(args[0]) && InstallerUtils.INSTANCE.isPackaged()) {
+				File legacyBin = LegacyInstallation.INSTANCE.find();
+				if (legacyBin != null) {
+					LegacyInstallation.INSTANCE.importConfiguration(legacyBin);
+					stopLegacyLauncher(serviceName);
+					LegacyInstallation.INSTANCE.removeService();
+				}
+			}
 			ServiceReturnStatus currentServiceStatus = requestServiceCommand(ServiceCommandType.STATUS, serviceName);
 			if (ServiceReturnStatus.NO_SERVICE.equals(currentServiceStatus) &&
 					!"stop".equalsIgnoreCase(args[0])) {
@@ -123,6 +134,20 @@ public class WubiqLauncher implements Runnable {
 		}
 	}
 	
+	/**
+	 * Ends a launcher that listens on this service's port: the one of an IzPack installation.
+	 */
+	private static void stopLegacyLauncher(String serviceName) throws InterruptedException {
+		for (int attempt = 0; attempt < 30; attempt++) {
+			if (ServiceReturnStatus.NO_SERVICE.equals(requestServiceCommand(ServiceCommandType.STATUS, serviceName))) {
+				return;
+			}
+			requestServiceCommand(ServiceCommandType.STOP, serviceName);
+			Thread.sleep(1000);
+		}
+		LOG.error("The IzPack installation's launcher is still running.");
+	}
+
 	/**
 	 * Request service command.
 	 * @param command Command to request.
